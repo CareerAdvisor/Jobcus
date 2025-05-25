@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jobcus – AI Career Advisor</title>
+  <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    main {
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 70px);
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 30px 20px;
+      box-sizing: border-box;
+    }
+
+    main.centered {
+      justify-content: center;
+    }
+
+    main.chat-started {
+      justify-content: flex-end;
+      padding-top: 50px;
+    }
+
+    .input-container.centered-input {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .input-container.chat-started-input {
+      position: static;
+      transform: none;
+    }
+
+    #chat-form {
+      padding-bottom: 20px;
+    }
+
+    .dropdown-menu {
+      position: relative;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 25px;
+      background-color: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 10px;
+      border-radius: 6px;
+      z-index: 1000;
+    }
+
+    .dropdown-content div {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+
+    .dropdown-content div img {
+      margin-right: 8px;
+    }
+
+    .dropdown-menu:hover .dropdown-content {
+      display: block;
+    }
+
+    .copy-icon {
+      float: right;
+      height: 16px;
+      margin-top: -8px;
+      cursor: pointer;
+    }
+
+    .scroll-down-icon {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: pointer;
+      height: 24px;
+      z-index: 1000;
+    }
+
+    .vertical-divider {
+      height: 24px;
+      width: 1px;
+      background-color: #ccc;
+      margin: 0 12px;
+    }
+
+    .start-new-chat-icon {
+      position: fixed;
+      bottom: 30px;
+      right: 20px;
+      height: 30px;
+      cursor: pointer;
+      background: #f5f5f5;
+      border-radius: 50%;
+      padding: 8px;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .start-new-chat-icon:hover,
+    .header-icons img:hover,
+    .icon-group img:hover {
+      transform: scale(1.1);
+      background-color: #e0e0e0;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <img src="/static/jobcus-logo.png" alt="Jobcus">
+    </div>
+    <div class="header-icons">
+      <div class="dropdown-menu">
+        <img src="/static/icons/ellipsis.svg" alt="Options">
+        <div class="dropdown-content">
+          <div onclick="exportPdf()"><img src="/static/icons/pdf.svg" alt="PDF"> Export as PDF</div>
+          <div onclick="exportDocx()"><img src="/static/icons/worddoc.svg" alt="Word"> Export as DOCX</div>
+          <div onclick="clearChat()"><img src="/static/icons/delete.svg" alt="Delete"> Delete</div>
+        </div>
+      </div>
+      <img src="/static/icons/share.svg" alt="Share" id="shareIcon">
+      <div class="vertical-divider"></div>
+      <img src="/static/icons/user.svg" alt="User">
+    </div>
+  </header>
+
+  <main class="centered" id="mainContainer">
+    <div class="chatbox" id="chatbox"></div>
+    <form id="chat-form">
+      <div class="center-wrapper" id="center-wrapper">
+        <div class="prompt" id="prompt">
+          <h1>What can I assist you with today?</h1>
+        </div>
+        <div class="input-container" id="inputContainer">
+          <input type="text" id="userInput" placeholder="Ask your career question..." />
+          <div class="icon-group">
+            <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
+            <input id="file-upload" type="file" style="display: none;">
+            <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
+            <button type="submit"><img src="/static/icons/enter.svg" alt="Send"></button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </main>
+
+  <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
+
+  <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
+
+  <script>
+  let form = document.getElementById("chat-form");  <!-- 🔁 Changed from const to let -->
+  const input = document.getElementById("userInput");
+  const chatbox = document.getElementById("chatbox");
+  const prompt = document.getElementById("prompt");
+  const centerWrapper = document.getElementById("center-wrapper");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = input.value.trim();
+    if (!message) return;
+
+    const res = await fetch("/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+    const data = await res.json();
+
+  // 🔁 Hide the prompt once an AI reply is received
+  prompt.style.display = 'none';
+  document.querySelector("main").classList.add("chat-started");
+
+  const aiBlock = document.createElement("div");
+
+
+  aiBlock.className = "chat-entry";
+    const existingEntries = document.querySelectorAll(".chat-entry").length;
+    aiBlock.innerHTML = `
+      <div class='user-question'><h2>${message}</h2></div>
+      <div class='ai-answer'>
+        <img src='/static/icons/copy.svg' alt='Copy' class='copy-icon'>
+        <span class="typed-response"></span>
+      </div>
+      ${existingEntries > 0 ? "<hr>" : ""}
+  `;
+
+  chatbox.prepend(aiBlock);
+
+  // Hide the prompt after response
+  prompt.style.display = 'none';
+  document.querySelector("main").classList.add("chat-started");
+
+  // Typing animation
+  const typedSpan = aiBlock.querySelector(".typed-response");
+  const replyText = marked.parse(data.reply);
+  let i = 0;
+
+  const typingSpeed = 10; // milliseconds per character (adjust for speed)
+
+  const typingInterval = setInterval(() => {
+  typedSpan.innerHTML = replyText.slice(0, i);
+  i++;
+  if (i > replyText.length) {
+    clearInterval(typingInterval);
+
+    // Enable copy button
+    const copyIcon = aiBlock.querySelector(".copy-icon");
+    copyIcon.onclick = () => navigator.clipboard.writeText(data.reply);
+
+    // Save complete HTML to localStorage AFTER typing ends
+    const existingHistory = localStorage.getItem("chatHistory") || "";
+    const updatedHistory = aiBlock.outerHTML + existingHistory;
+    localStorage.setItem("chatHistory", updatedHistory);
+  }
+});
+});
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const saved = localStorage.getItem("chatHistory");
+    if (saved) {
+      chatbox.innerHTML = saved;
+      prompt.style.display = 'none';
+      document.querySelector("main").classList.add("chat-started");
+    }
+  });
+
+  document.getElementById("mic-button").addEventListener("click", () => {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US';
+    recognition.start();
+    recognition.onresult = (e) => {
+      input.value = e.results[0][0].transcript;
+    };
+  });
+
+  input.addEventListener("keypress", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      form.dispatchEvent(new Event("submit"));
+    }
+  });
+
+  function clearChat() {
+    chatbox.innerHTML = "";
+    prompt.style.display = 'block';
+    localStorage.removeItem("chatHistory");
+    document.querySelector("main").classList.remove("chat-started");
+  }
+
+  function exportDocx() {
+    alert("Exporting to DOCX – feature under development");
+  }
+
+  function exportPdf() {
+    alert("Exporting to PDF – feature under development");
+  }
+
+  function scrollToBottom() {
+    chatbox.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  document.getElementById("shareIcon").addEventListener("click", () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert("Page link copied to clipboard.");
+  });
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</body>
+</html>
