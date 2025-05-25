@@ -181,6 +181,9 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message }),
     });
+
+    input.value = ""; // This clears the input after submitting
+
     const data = await res.json();
 
   // 🔁 Hide the prompt once an AI reply is received
