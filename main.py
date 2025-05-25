@@ -1,7 +1,12 @@
-import openai
+from flask import Flask, request, render_template, jsonify
+from flask_cors import CORS
 from openai import OpenAI
+import os
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY")) 
+app = Flask(__name__)
+CORS(app)
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route("/")
 def index():
@@ -21,7 +26,7 @@ def ask():
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o",  # or "gpt-3.5-turbo"
+            model="gpt-4o",
             messages=messages
         )
         ai_msg = response.choices[0].message.content
@@ -30,4 +35,4 @@ def ask():
         return jsonify({"reply": f"⚠️ Server Error: {str(e)}"})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=8080)
