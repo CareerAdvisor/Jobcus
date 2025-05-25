@@ -286,6 +286,7 @@ main.chat-started {
     width: 100%;
     max-width: 100%;
     margin-top: 10px;
+    box-sizing: border-box;
   }
 
   main {
@@ -431,7 +432,7 @@ main {
 .input-container {
   flex-wrap: wrap;
   word-break: break-word;
-  padding: 15px;
+  padding: 30px;
   margin-bottom: 10px;
 }
 
@@ -447,21 +448,5 @@ main {
     flex-wrap: wrap;
     justify-content: flex-start;
     width: 100%;
-  }
-
-  .input-container {
-    position: static !important;
-    transform: none !important;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .logo img {
-    height: auto;
-    max-width: 100%;
-  }
-
-  main {
-    padding: 20px 10px;
   }
 }
