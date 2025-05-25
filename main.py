@@ -1,15 +1,6 @@
-from flask import Flask, request, render_template, jsonify, session
 import openai
-import os
-from flask_cors import CORS
-
-# New SDK uses `OpenAI` client
 from openai import OpenAI
 
-app = Flask(__name__, static_folder="static", template_folder="templates")
-CORS(app)
-
-# Load API key from environment variable
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY")) 
 
 @app.route("/")
