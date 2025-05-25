@@ -3,11 +3,14 @@ import openai
 import os
 from flask_cors import CORS
 
-app = Flask(__name__)
-CORS(app)
-app.secret_key = os.urandom(24)  # For session-based memory
+# New SDK uses `OpenAI` client
+from openai import OpenAI
 
-openai.api_key = "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" 
+app = Flask(__name__, static_folder="static", template_folder="templates")
+CORS(app)
+
+# Load API key from environment variable
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY")) 
 
 @app.route("/")
 def index():
