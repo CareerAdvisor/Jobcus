@@ -43,8 +43,8 @@
         <div class="prompt" id="prompt">
           <h1>What can I assist you with today?</h1>
         </div>
-        <div class="input-container" id="inputContainer">
-          <input type="text" id="userInput" placeholder="Ask your career question..." />
+        <!-- Location and Job Type Fields -->
+        <div class="filters">
           <input type="text" id="locationInput" placeholder="Location (optional)" />
           <select id="jobType">
             <option value="">Job Type (optional)</option>
@@ -52,6 +52,10 @@
             <option value="onsite">Onsite</option>
             <option value="hybrid">Hybrid</option>
           </select>
+        </div>
+        <!-- Main Input Container -->
+        <div class="input-container" id="inputContainer">
+          <input type="text" id="userInput" placeholder="Ask your career question..." />
           <div class="icon-group">
             <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
             <input id="file-upload" type="file" style="display: none;">
