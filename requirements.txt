@@ -2,4 +2,5 @@ Flask
 openai>=1.0
 flask-cors
 gunicorn
+requests
 python-dotenv
