@@ -15,7 +15,7 @@ CORS(app)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Constants
-REMOTIVE_API_URL = "https://remotive.io/api/remote-jobs"
+REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
 ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs"
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
