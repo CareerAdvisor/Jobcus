@@ -19,7 +19,7 @@ header {
 }
 
 .logo img {
-  height: 60px;
+  height: 40px;
 }
 
 .header-icons {
@@ -540,7 +540,7 @@ main {
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  margin: 15px 0 5px;
+  margin: 1px 0 5px;
 }
 
 .search-suggestions .suggestion {
@@ -594,6 +594,15 @@ main {
     justify-content: flex-start;
     order: 1;
   }
+
+  /* Reduce header padding for smaller screens */
+  header {
+    padding: 8px 20px;
+  }
+
+  .logo img {
+    height: 40px;
+  }
 }
 
 /* Standalone footer content outside input-container */
@@ -604,4 +613,3 @@ main {
   margin-top: 12px;
   padding-bottom: 15px;
 }
-
