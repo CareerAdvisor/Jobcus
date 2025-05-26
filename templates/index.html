@@ -141,6 +141,16 @@
     </div>
   </header>
 
+  <!-- Add this right after the opening <body> tag or anywhere before the closing </body> tag -->
+<div id="menuOverlay" class="mobile-menu-overlay"></div>
+
+  <!-- Mobile Menu Sidebar -->
+<div class="mobile-menu" id="mobileMenu">
+  <img src="/static/icons/pencilchat.svg" alt="New Chat" onclick="clearChat()">
+  <img src="/static/icons/share.svg" alt="Share" onclick="sharePage()">
+  <img src="/static/icons/ellipsis.svg" alt="Options">
+</div>
+
   <main class="centered" id="mainContainer">
     <div class="chatbox" id="chatbox"></div>
     <form id="chat-form">
@@ -319,16 +329,6 @@
     alert("Link copied!");
   }
 </script>
-
-  <!-- Mobile Menu Sidebar -->
-<div class="mobile-menu" id="mobileMenu">
-  <img src="/static/icons/pencilchat.svg" alt="New Chat" onclick="clearChat()">
-  <img src="/static/icons/share.svg" alt="Share" onclick="sharePage()">
-  <img src="/static/icons/ellipsis.svg" alt="Options">
-</div>
-
-<!-- Overlay -->
-<div class="mobile-menu-overlay" id="menuOverlay"></div>
 
 <!-- Fixed User Icon -->
 <img src="/static/icons/user.svg" class="fixed-user-icon" alt="User">
