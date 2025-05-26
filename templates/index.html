@@ -43,7 +43,6 @@
         <div class="prompt" id="prompt">
           <h1>What can I assist you with today?</h1>
         </div>
-        <!-- Main Input Container -->
         <div class="input-container" id="inputContainer">
           <input type="text" id="userInput" placeholder="Ask your career question..." />
           <div class="icon-group">
@@ -61,6 +60,7 @@
       <div class="suggestion" onclick="insertSuggestion('What are trending tech jobs?')">What are trending tech jobs?</div>
       <div class="suggestion" onclick="insertSuggestion('How can I get into cybersecurity?')">How can I get into cybersecurity?</div>
     </div>
+    <div class="footer-note-static">All rights reserved for @ jobcus</div>
   </main>
 
   <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
@@ -72,8 +72,7 @@
       document.getElementById("userInput").value = text;
       document.getElementById("userInput").focus();
     }
-  </script>
-  <script>
+
     const hamburger = document.getElementById("hamburger");
     const mobileMenu = document.getElementById("mobileMenu");
     const menuOverlay = document.getElementById("menuOverlay");
@@ -97,13 +96,10 @@
     const input = document.getElementById("userInput");
     const chatbox = document.getElementById("chatbox");
     const prompt = document.getElementById("prompt");
-    const centerWrapper = document.getElementById("center-wrapper");
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const message = input.value.trim();
-      const location = document.getElementById("locationInput").value.trim();
-      const jobType = document.getElementById("jobType").value.trim();
       if (!message) return;
 
       const res = await fetch("/ask", {
@@ -147,24 +143,6 @@
           localStorage.setItem("chatHistory", updatedHistory);
         }
       }, typingSpeed);
-
-      // Fetch jobs
-      const jobRes = await fetch("/jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: message, location, jobType })
-      });
-      const jobs = await jobRes.json();
-
-      const jobResultsDiv = document.getElementById("job-results");
-      jobResultsDiv.innerHTML = "";
-
-      [...jobs.remotive, ...jobs.adzuna].forEach(job => {
-        const jobDiv = document.createElement("div");
-        jobDiv.className = "job-item";
-        jobDiv.innerHTML = `<strong>${job.title}</strong> - ${job.company} (${job.location})<br><a href="${job.url}" target="_blank">View Job</a>`;
-        jobResultsDiv.appendChild(jobDiv);
-      });
     });
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -197,7 +175,6 @@
       prompt.style.display = 'block';
       localStorage.removeItem("chatHistory");
       document.querySelector("main").classList.remove("chat-started");
-      document.getElementById("job-results").innerHTML = "";
     }
 
     function exportDocx() {
