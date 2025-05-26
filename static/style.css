@@ -616,3 +616,9 @@ main {
   margin-top: 12px;
   padding-bottom: 15px;
 }
+.chat-divider {
+  margin: 20px 0;
+  border: none;
+  border-top: 1px solid #ddd;
+}
+
