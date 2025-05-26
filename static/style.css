@@ -332,7 +332,7 @@ main.chat-started {
 }
 
 .icon-group img[alt="Send"] {
-  height: 22px;
+  height: 30px;
 }
 
 .icon-group img:hover {
@@ -615,4 +615,28 @@ main {
   color: #888;
   margin-top: 12px;
   padding-bottom: 15px;
+}
+
+.job-results {
+  margin-top: 20px;
+  padding: 15px;
+  border-top: 1px solid #eee;
+}
+
+.job-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  transition: background 0.3s;
+}
+
+.job-card:hover {
+  background: #f9f9f9;
+}
+
+.job-card a {
+  text-decoration: none;
+  color: #333;
 }
