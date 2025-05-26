@@ -125,7 +125,8 @@
       <img src="/static/jobcus-logo.png" alt="Jobcus">
       </a>
     </div>
-    <div class="header-icons">
+    <div class="hamburger" id="hamburger"></div>
+    <div class="header-icons" id="desktop-icons">
       <div class="dropdown-menu">
         <img src="/static/icons/ellipsis.svg" alt="Options">
         <div class="dropdown-content">
@@ -158,7 +159,20 @@
         </div>
       </div>
     </form>
-  </main>
+    <!-- Suggestions below input container -->
+    <div class="search-suggestions">
+      <div class="suggestion" onclick="insertSuggestion('How do I write a good CV?')">How do I write a good CV?</div>
+      <div class="suggestion" onclick="insertSuggestion('What are trending tech jobs?')">What are trending tech jobs?</div>
+      <div class="suggestion" onclick="insertSuggestion('How can I get into cybersecurity?')">How can I get into cybersecurity?</div>
+    </div>
+
+    <script>
+      function insertSuggestion(text) {
+        document.getElementById("userInput").value = text;
+        document.getElementById("userInput").focus();
+      }
+    </script>
+    </main>
 
   <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
 
@@ -285,5 +299,38 @@
   });
 </script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  const hamburger = document.getElementById("hamburger");
+  const mobileMenu = document.getElementById("mobileMenu");
+  const menuOverlay = document.getElementById("menuOverlay");
+
+  hamburger.addEventListener("click", () => {
+    mobileMenu.classList.toggle("active");
+    menuOverlay.classList.toggle("active");
+  });
+
+  menuOverlay.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+    menuOverlay.classList.remove("active");
+  });
+
+  function sharePage() {
+    navigator.clipboard.writeText(window.location.href);
+    alert("Link copied!");
+  }
+</script>
+
+  <!-- Mobile Menu Sidebar -->
+<div class="mobile-menu" id="mobileMenu">
+  <img src="/static/icons/pencilchat.svg" alt="New Chat" onclick="clearChat()">
+  <img src="/static/icons/share.svg" alt="Share" onclick="sharePage()">
+  <img src="/static/icons/ellipsis.svg" alt="Options">
+</div>
+
+<!-- Overlay -->
+<div class="mobile-menu-overlay" id="menuOverlay"></div>
+
+<!-- Fixed User Icon -->
+<img src="/static/icons/user.svg" class="fixed-user-icon" alt="User">
 </body>
 </html>
