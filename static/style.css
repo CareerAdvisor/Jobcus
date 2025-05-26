@@ -296,7 +296,7 @@ main.chat-started {
   }
 
   .chatbox {
-    max-height: 60vh;
+    max-height: 30vh;
   }
 }
 
