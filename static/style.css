@@ -1,615 +1,336 @@
-/* === Global Styles === */
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #f9fbf9;
-  margin: 0;
-  padding: 0;
-  color: #333;
-  overflow: hidden; /* Prevent scroll until chat starts */
-}
-
-/* === Header Layout === */
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 30px;
-  background-color: white;
-  border-bottom: 1px solid #f9fbf9;
-}
-
-.logo img {
-  height: 40px;
-}
-
-.header-icons {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.header-icons img {
-  height: 20px;
-  margin-left: 20px;
-  cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-
-.header-icons img[alt="User"] {
-  height: 30px;
-}
-
-.header-icons img:hover {
-  transform: scale(1.1);
-  opacity: 0.8;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-/* === Dropdown Menu === */
-.dropdown-content {
-  display: none;
-  position: absolute;
-  right: 0;
-  top: 25px;
-  background-color: white;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  padding: 10px;
-  border-radius: 6px;
-  z-index: 1000;
-}
-
-.dropdown-content div {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-  cursor: pointer;
-}
-
-.dropdown-menu {
-  position: relative;
-  display: inline-block;
-}
-.dropdown-content div img {
-  margin-right: 8px;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jobcus – AI Career Advisor</title>
+  <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    main {
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 70px);
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 30px 20px;
+      box-sizing: border-box;
     }
 
-.dropdown-menu.open .dropdown-content {
-  display: block;
-}
+    main.centered {
+      justify-content: center;
+    }
 
-/* === Prompt Area === */
-.prompt {
-  text-align: center;
-  margin-bottom: 30px;
-}
+    main.chat-started {
+      justify-content: flex-end;
+      padding-top: 50px;
+    }
 
-.prompt h1 {
-  font-weight: 500;
-  font-size: 24px;
-}
+    .input-container.centered-input {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
 
-/* === Main Layout Container === */
-main {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100vh - 70px);
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 30px 20px;
-  box-sizing: border-box;
-}
+    .input-container.chat-started-input {
+      position: static;
+      transform: none;
+    }
 
-main.centered {
-  justify-content: center;
-}
+    #chat-form {
+      padding-bottom: 20px;
+    }
 
-main.chat-started {
-  justify-content: flex-end;
-  padding-top: 50px;
-}
+    .dropdown-menu {
+      position: relative;
+    }
 
-/* === Chat Display === */
-.chatbox {
-  flex-grow: 1;
-  max-height: 75vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column-reverse;
-  margin-bottom: 10px;
-  padding: 5px;
-  scroll-behavior: smooth;
-  width: 100%;
-  box-sizing: border-box;
-}
-.chat-entry {
-  margin-bottom: 5px;
-  padding-bottom: 5px;
-}
-.chat-started .center-wrapper {
-  align-items: stretch;
-  justify-content: flex-start;
-  height: auto;
-}
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 25px;
+      background-color: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 10px;
+      border-radius: 6px;
+      z-index: 1000;
+    }
 
-.chat-started {
-  justify-content: flex-end;
-}
+    .dropdown-content div {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
 
- #chat-form {
-  padding-bottom: 20px;
-}
- .copy-icon {
-  float: right;
-  height: 16px;
-  margin-top: -8px;
-  cursor: pointer;
-}
-.center-wrapper {
-  width: 100%;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.user-question h2 {
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
+    .dropdown-content div img {
+      margin-right: 8px;
+    }
 
-.user-header {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #1b1b1b;
-  margin-bottom: 10px;
-}
+    .dropdown-menu:hover .dropdown-content {
+      display: block;
+    }
 
-/* === Custom Blinking Cursor for Input === */
-#userInput:focus::placeholder {
-  color: transparent;
-}
+    .copy-icon {
+      float: right;
+      height: 16px;
+      margin-top: -8px;
+      cursor: pointer;
+    }
 
-#userInput:focus {
-  position: relative;
-  caret-color: transparent; /* Hide default blinking line */
-}
+    .scroll-down-icon {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: pointer;
+      height: 24px;
+      z-index: 1000;
+    }
 
-#userInput:focus::after {
-  content: '|';
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #333;
-  animation: blink 0.8s infinite;
-  font-size: 1.2rem;
-  pointer-events: none;
-}
+    .vertical-divider {
+      height: 24px;
+      width: 1px;
+      background-color: #ccc;
+      margin: 0 12px;
+    }
 
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
+    .start-new-chat-icon {
+      position: fixed;
+      bottom: 30px;
+      right: 20px;
+      height: 20px;
+      cursor: pointer;
+      background: #f5f5f5;
+      border-radius: 50%;
+      padding: 8px;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
 
-/* === AI Answer Styling === */
-.ai-answer {
-  background-color: #f9fbf9;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #2b2b2b;
-  position: relative;
-  width: 100%;
-  box-sizing: border-box;
-}
+    .start-new-chat-icon:hover,
+    .header-icons img:hover,
+    .icon-group img:hover {
+      transform: scale(1.1);
+      background-color: #e0e0e0;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <a href="/">
+      <img src="/static/jobcus-logo.png" alt="Jobcus">
+      </a>
+    </div>
+    <div class="hamburger" id="hamburger"></div>
+    <div class="header-icons" id="desktop-icons">
+      <div class="dropdown-menu">
+        <img src="/static/icons/ellipsis.svg" alt="Options">
+        <div class="dropdown-content">
+          <div onclick="exportPdf()"><img src="/static/icons/pdf.svg" alt="PDF"> Export as PDF</div>
+          <div onclick="exportDocx()"><img src="/static/icons/worddoc.svg" alt="Word"> Export as DOCX</div>
+          <div onclick="clearChat()"><img src="/static/icons/delete.svg" alt="Delete"> Delete</div>
+        </div>
+      </div>
+      <img src="/static/icons/share.svg" alt="Share" id="shareIcon">
+      <div class="vertical-divider"></div>
+      <img src="/static/icons/user.svg" alt="User">
+    </div>
+  </header>
 
-.typing::after {
-  content: '|';
-  animation: blink 0.8s infinite;
-  color: #888;
-  margin-left: 2px;
-}
+  <!-- Add this right after the opening <body> tag or anywhere before the closing </body> tag -->
+<div id="menuOverlay" class="mobile-menu-overlay"></div>
 
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
+  <!-- Mobile Menu Sidebar -->
+<div class="mobile-menu" id="mobileMenu">
+  <img src="/static/icons/pencilchat.svg" alt="New Chat" onclick="clearChat()">
+  <img src="/static/icons/share.svg" alt="Share" onclick="sharePage()">
+  <img src="/static/icons/ellipsis.svg" alt="Options">
+</div>
 
-.ai-answer h3 {
-  margin-top: 0;
-}
+  <main class="centered" id="mainContainer">
+    <div class="chatbox" id="chatbox"></div>
+    <form id="chat-form">
+      <div class="center-wrapper" id="center-wrapper">
+        <div class="prompt" id="prompt">
+          <h1>What can I assist you with today?</h1>
+        </div>
+        <div class="input-container" id="inputContainer">
+          <input type="text" id="userInput" placeholder="Ask your career question..." />
+          <div class="icon-group">
+            <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
+            <input id="file-upload" type="file" style="display: none;">
+            <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
+            <button type="submit"><img src="/static/icons/enter.svg" alt="Send"></button>
+          </div>
+        </div>
+      </div>
+    </form>
+    <!-- Suggestions below input container -->
+    <div class="search-suggestions">
+      <div class="suggestion" onclick="insertSuggestion('How do I write a good CV?')">How do I write a good CV?</div>
+      <div class="suggestion" onclick="insertSuggestion('What are trending tech jobs?')">What are trending tech jobs?</div>
+      <div class="suggestion" onclick="insertSuggestion('How can I get into cybersecurity?')">How can I get into cybersecurity?</div>
+    </div>
 
-.ai-answer ul,
-.ai-answer ol {
-  padding-left: 20px;
-  margin: 10px 0;
-}
+    <script>
+      function insertSuggestion(text) {
+        document.getElementById("userInput").value = text;
+        document.getElementById("userInput").focus();
+      }
+    </script>
+    </main>
 
-.ai-answer table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 10px 0;
-}
+  <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
 
-.ai-answer table, .ai-answer th, .ai-answer td {
-  border: 1px solid #ccc;
-  padding: 8px;
-}
+  <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
 
-.ai-answer pre {
-  background: #f0f0f0;
-  padding: 10px;
-  overflow-x: auto;
-  border-radius: 6px;
-  margin: 10px 0;
-}
+  <script>
+  let form = document.getElementById("chat-form");  <!-- 🔁 Changed from const to let -->
+  const input = document.getElementById("userInput");
+  const chatbox = document.getElementById("chatbox");
+  const prompt = document.getElementById("prompt");
+  const centerWrapper = document.getElementById("center-wrapper");
 
-.ai-answer code {
-  background-color: #f0f0f0;
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-family: monospace;
-}
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = input.value.trim();
+    if (!message) return;
 
-.ai-answer a {
-  color: #0077cc;
-  text-decoration: underline;
-}
+    const res = await fetch("/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
 
-/* === Input Section === */
-.input-container {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  background-color: #fff;
-  padding: 30px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.04);
-  border: 1px solid #e0e0e0;
-}
+    input.value = ""; // This clears the input after submitting
 
-@media screen and (max-width: 600px) {
-  .input-container {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 12px;
-    position: static !important;
-    transform: none !important;
-    width: 100%;
-    max-width: 100%;
-    margin-top: 10px;
-    box-sizing: border-box;
+    const data = await res.json();
+
+  // 🔁 Hide the prompt once an AI reply is received
+  prompt.style.display = 'none';
+  document.querySelector("main").classList.add("chat-started");
+
+  const aiBlock = document.createElement("div");
+
+
+  aiBlock.className = "chat-entry";
+    const existingEntries = document.querySelectorAll(".chat-entry").length;
+    aiBlock.innerHTML = `
+      <div class='user-question'><h2>${message}</h2></div>
+      <div class='ai-answer'>
+        <img src='/static/icons/copy.svg' alt='Copy' class='copy-icon'>
+        <span class="typed-response"></span>
+      </div>
+      ${existingEntries > 0 ? "<hr>" : ""}
+  `;
+
+  chatbox.prepend(aiBlock);
+
+  // Hide the prompt after response
+  prompt.style.display = 'none';
+  document.querySelector("main").classList.add("chat-started");
+
+  // Typing animation
+  const typedSpan = aiBlock.querySelector(".typed-response");
+  const replyText = marked.parse(data.reply);
+  let i = 0;
+
+  const typingSpeed = 10; // milliseconds per character (adjust for speed)
+
+  const typingInterval = setInterval(() => {
+  typedSpan.innerHTML = replyText.slice(0, i);
+  i++;
+  if (i > replyText.length) {
+    clearInterval(typingInterval);
+
+    // Enable copy button
+    const copyIcon = aiBlock.querySelector(".copy-icon");
+    copyIcon.onclick = () => navigator.clipboard.writeText(data.reply);
+
+    // Save complete HTML to localStorage AFTER typing ends
+    const existingHistory = localStorage.getItem("chatHistory") || "";
+    const updatedHistory = aiBlock.outerHTML + existingHistory;
+    localStorage.setItem("chatHistory", updatedHistory);
+  }
+});
+});
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const saved = localStorage.getItem("chatHistory");
+    if (saved) {
+      chatbox.innerHTML = saved;
+      prompt.style.display = 'none';
+      document.querySelector("main").classList.add("chat-started");
+    }
+  });
+
+  document.getElementById("mic-button").addEventListener("click", () => {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US';
+    recognition.start();
+    recognition.onresult = (e) => {
+      input.value = e.results[0][0].transcript;
+    };
+  });
+
+  input.addEventListener("keypress", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      form.dispatchEvent(new Event("submit"));
+    }
+  });
+
+  function clearChat() {
+    chatbox.innerHTML = "";
+    prompt.style.display = 'block';
+    localStorage.removeItem("chatHistory");
+    document.querySelector("main").classList.remove("chat-started");
   }
 
-  main {
-    padding: 20px 10px;
-    overflow-y: auto;
-    flex-grow: 1;
+  function exportDocx() {
+    alert("Exporting to DOCX – feature under development");
   }
 
-  .chatbox {
-    max-height: 60vh;
-  }
-}
-
-.input-container input[type="text"] {
-  flex: 1;
-  border: none;
-  font-size: 16px;
-  outline: none;
-}
-
-.input-container.centered-input {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.input-container.chat-started-input {
-  position: static;
-  transform: none;
-}
-
-.icon-group {
-  display: flex;
-  align-items: center;
-}
-
-.icon-group img {
-  height: 18px;
-  margin-left: 14px;
-  cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-
-.icon-group img[alt="Send"] {
-  height: 22px;
-}
-
-.icon-group img:hover {
-  transform: scale(1.1);
-  opacity: 0.8;
-}
-
-.icon-group button {
-  background: none;
-  border: none;
-  margin-left: 14px;
-  padding: 0;
-  cursor: pointer;
-}
-
-.scroll-down-icon {
-  position: fixed;
-  bottom: 90px;
-  left: 50%;
-  transform: translateX(-50%);
-  cursor: pointer;
-  height: 24px;
-  z-index: 1000;
-  display: none;
-}
-
-.start-new-chat-icon {
-  position: fixed;
-  bottom: 30px;
-  right: 20px;
-  height: 30px;
-  cursor: pointer;
-  background: #f5f5f5;
-  border-radius: 50%;
-  padding: 8px;
-  transition: transform 0.2s ease, background 0.2s ease;
-}
-
-.start-new-chat-icon:hover,
-.copy-icon:hover,
-.dropdown-menu:hover {
-  transform: scale(1.1);
-  background-color: #e0e0e0;
-  border-radius: 50%;
-}
-
-.suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.suggestion {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.suggestion:hover {
-  background-color: #eee;
-}
-
-hr {
-  border: 0;
-  border-top: 1px solid #e0e0e0;
-  margin: 30px 0;
-}
-
- .vertical-divider {
-   height: 24px;
-   width: 1px;
-   background-color: #ccc;
-   margin: 0 12px;
-}
-
-/* Ensure the body and html always take up full height */
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
-
-/* Fix for the main container to allow scroll */
-main {
-  overflow-y: auto;
-  flex-grow: 1;
-}
-
-/* Ensure input-container doesn't cut off at bottom */
-.input-container {
-  flex-wrap: wrap;
-  word-break: break-word;
-  padding: 30px;
-  margin-bottom: 10px;
-}
-
-/* Adjust header responsiveness */
-@media screen and (max-width: 600px) {
-  header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+  function exportPdf() {
+    alert("Exporting to PDF – feature under development");
   }
 
-  .header-icons {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    width: 100%;
-  }
-}
-
-/* === ADDITIONAL STYLES FOR MOBILE NAV + FIXED INPUT ICONS + SUGGESTIONS === */
-
-/* Hamburger menu for mobile */
-.hamburger {
-  display: none;
-  flex-direction: column;
-  cursor: pointer;
-  gap: 4px;
-}
-
-.hamburger div {
-  width: 25px;
-  height: 3px;
-  background-color: #333;
-  border-radius: 2px;
-}
-
-/* Mobile side menu */
-.mobile-menu {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 250px;
-  height: 100%;
-  background-color: white;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.2);
-  padding: 20px;
-  z-index: 2000;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.mobile-menu.active {
-  display: flex;
-}
-
-.mobile-menu img {
-  width: 24px;
-  cursor: pointer;
-}
-
-/* Overlay when menu is open */
-.mobile-menu-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: 100vw;
-  background-color: rgba(0, 0, 0, 0.3);
-  z-index: 1500;
-}
-
-.mobile-menu-overlay.active {
-  display: block;
-}
-
-/* Fixed user icon at bottom */
-.fixed-user-icon {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  height: 30px;
-  cursor: pointer;
-  z-index: 1000;
-  background: #f5f5f5;
-  border-radius: 50%;
-  padding: 6px;
-}
-
-/* Fix input icons layout */
-.input-container .icon-group {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.input-container input[type="text"] {
-  flex-grow: 1;
-  min-width: 0;
-}
-
-/* Search Suggestions */
-.search-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin: 1px 0 5px;
-}
-
-.search-suggestions .suggestion {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.search-suggestions .suggestion:hover {
-  background-color: #eee;
-}
-
-/* Footer notice */
-.footer-note {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #777;
-  margin-top: 15px;
-  padding-bottom: 10px;
-}
-
-@media screen and (max-width: 600px) {
-  .hamburger {
-    display: flex;
+  function scrollToBottom() {
+    chatbox.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  .header-icons {
-    display: none;
-  }
+  document.getElementById("shareIcon").addEventListener("click", () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert("Page link copied to clipboard.");
+  });
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  const hamburger = document.getElementById("hamburger");
+  const mobileMenu = document.getElementById("mobileMenu");
+  const menuOverlay = document.getElementById("menuOverlay");
 
-  .input-container {
-    flex-direction: column-reverse;
-    align-items: stretch;
-    padding: 12px;
-    position: static !important;
-    transform: none !important;
-    width: 100%;
-    box-sizing: border-box;
-  }
+  hamburger.addEventListener("click", () => {
+    mobileMenu.classList.toggle("active");
+    menuOverlay.classList.toggle("active");
+  });
 
-  .input-container input[type="text"] {
-    order: 2;
-    margin-bottom: 10px;
-  }
+  menuOverlay.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+    menuOverlay.classList.remove("active");
+  });
 
-  .input-container .icon-group {
-    justify-content: flex-start;
-    order: 1;
+  function sharePage() {
+    navigator.clipboard.writeText(window.location.href);
+    alert("Link copied!");
   }
+</script>
 
-  /* Reduce header padding for smaller screens */
-  header {
-    padding: 8px 20px;
-  }
-
-  .logo img {
-    height: 40px;
-  }
-}
-
-/* Standalone footer content outside input-container */
-.footer-note-static {
-  font-size: 0.75rem;
-  text-align: center;
-  color: #888;
-  margin-top: 12px;
-  padding-bottom: 15px;
-}
+<!-- Fixed User Icon -->
+<img src="/static/icons/user.svg" class="fixed-user-icon" alt="User">
+</body>
+</html>
