@@ -86,7 +86,7 @@ def ask():
         ai_msg = response.choices[0].message.content
         return jsonify({"reply": ai_msg})
     except Exception as e:
-        return jsonify({"reply": f"\u26a0\ufe0f Server Error: {str(e)}"})
+        return jsonify({"reply": f"⚠️ Server Error: {str(e)}"})
 
 # Jobs API
 @app.route("/jobs", methods=["POST"])
