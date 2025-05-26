@@ -81,6 +81,10 @@ def get_jobs():
     data = request.json
     query = data.get("query", "")
     location = data.get("location", "")
+    job_type = data.get("jobType", "").lower()
+
+    remotive_jobs = get_remotive_jobs(query) if job_type == "remote" or job_type == "" else []
+    adzuna_jobs = get_adzuna_jobs(query, location, job_type) if job_type in ["onsite", "hybrid", ""] else []
 
     remotive_jobs = fetch_remotive_jobs(query)
     adzuna_jobs = fetch_adzuna_jobs(query, location)
