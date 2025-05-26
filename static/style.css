@@ -557,6 +557,15 @@ main {
   background-color: #eee;
 }
 
+/* Footer notice */
+.footer-note {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 15px;
+  padding-bottom: 10px;
+}
+
 @media screen and (max-width: 600px) {
   .hamburger {
     display: flex;
@@ -565,4 +574,34 @@ main {
   .header-icons {
     display: none;
   }
+
+  .input-container {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    padding: 12px;
+    position: static !important;
+    transform: none !important;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .input-container input[type="text"] {
+    order: 2;
+    margin-bottom: 10px;
+  }
+
+  .input-container .icon-group {
+    justify-content: flex-start;
+    order: 1;
+  }
 }
+
+/* Standalone footer content outside input-container */
+.footer-note-static {
+  font-size: 0.75rem;
+  text-align: center;
+  color: #888;
+  margin-top: 12px;
+  padding-bottom: 15px;
+}
+
