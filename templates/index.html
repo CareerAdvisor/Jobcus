@@ -239,7 +239,7 @@
   const replyText = marked.parse(data.reply);
   let i = 0;
 
-  const typingSpeed = 10; // milliseconds per character (adjust for speed)
+  const typingSpeed = 2; // milliseconds per character (adjust for speed)
 
   const typingInterval = setInterval(() => {
   typedSpan.innerHTML = replyText.slice(0, i);
