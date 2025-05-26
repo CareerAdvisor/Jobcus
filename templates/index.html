@@ -60,14 +60,13 @@
       <div class="suggestion" onclick="insertSuggestion('What are trending tech jobs?')">What are trending tech jobs?</div>
       <div class="suggestion" onclick="insertSuggestion('How can I get into cybersecurity?')">How can I get into cybersecurity?</div>
     </div>
-  
+    <div class="footer-note-static">
+   Jobcus uses third-party APIs to fetch job data. We do not own or guarantee the accuracy of external job listings.
+    </div>
   </main>
   <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
   <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
 <!-- Disclaimer Footer -->
-<footer class="footer-note-static">
-  Jobcus uses third-party APIs to fetch job data. We do not own or guarantee the accuracy of external job listings.
-</footer>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     function insertSuggestion(text) {
