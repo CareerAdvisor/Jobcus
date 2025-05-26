@@ -83,13 +83,17 @@ def get_jobs():
     location = data.get("location", "")
     job_type = data.get("jobType", "").lower()
 
-    remotive_jobs = get_remotive_jobs(query) if job_type == "remote" or job_type == "" else []
-    adzuna_jobs = get_adzuna_jobs(query, location, job_type) if job_type in ["onsite", "hybrid", ""] else []
+    remotive_jobs = []
+    adzuna_jobs = []
 
-    remotive_jobs = fetch_remotive_jobs(query)
-    adzuna_jobs = fetch_adzuna_jobs(query, location)
+    if job_type == "remote" or job_type == "":
+        remotive_jobs = fetch_remotive_jobs(query)
+
+    if job_type in ["onsite", "hybrid", ""]:
+        adzuna_jobs = fetch_adzuna_jobs(query, location, job_type)
 
     return jsonify({"remotive": remotive_jobs, "adzuna": adzuna_jobs})
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
