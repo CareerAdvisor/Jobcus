@@ -16,7 +16,7 @@
     </div>
     <div class="hamburger" id="hamburger"></div>
     <div class="header-icons" id="desktop-icons">
-      <div class="dropdown-menu">
+      <div class="dropdown-menu" onclick="toggleDropdown(this)">
         <img src="/static/icons/ellipsis.svg" alt="Options">
         <div class="dropdown-content">
           <div onclick="exportPdf()"><img src="/static/icons/pdf.svg" alt="PDF"> Export as PDF</div>
@@ -69,6 +69,19 @@
   <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
+
+     function toggleDropdown(el) {
+    const dropdown = el.querySelector('.dropdown-content');
+    dropdown.classList.toggle('show');
+  }
+
+  // Close all dropdowns when clicking outside
+  document.addEventListener("click", function (event) {
+    if (!event.target.closest('.dropdown-menu')) {
+      document.querySelectorAll('.dropdown-content').forEach(el => el.classList.remove('show'));
+    }
+  });
+    
     function insertSuggestion(text) {
       document.getElementById("userInput").value = text;
       document.getElementById("userInput").focus();
@@ -136,19 +149,7 @@
         jobResultsDiv.appendChild(jobDiv);
       });
     });
-  </script>
-  <script>
-  function toggleDropdown(el) {
-    const dropdown = el.querySelector('.dropdown-content');
-    dropdown.classList.toggle('show');
-  }
-
-  // Close all dropdowns when clicking outside
-  document.addEventListener("click", function (event) {
-    if (!event.target.closest('.dropdown-menu')) {
-      document.querySelectorAll('.dropdown-content').forEach(el => el.classList.remove('show'));
-    }
-  });
+    
 </script>
 </body>
 </html>
