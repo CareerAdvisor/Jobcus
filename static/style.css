@@ -183,20 +183,7 @@ main.chat-started {
 }
 
 #userInput:focus {
-  position: relative;
-  caret-color: transparent; /* Hide default blinking line */
-}
-
-#userInput:focus::after {
-  content: '|';
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #333;
-  animation: blink 0.8s infinite;
-  font-size: 1.2rem;
-  pointer-events: none;
+  caret-color: auto; /* ✅ Show the native blinking caret */
 }
 
 @keyframes blink {
@@ -314,6 +301,7 @@ main.chat-started {
   border: none;
   font-size: 16px;
   outline: none;
+  caret-color: auto;
 }
 
 .input-container.centered-input {
