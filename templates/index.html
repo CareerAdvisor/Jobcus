@@ -135,17 +135,19 @@
       let i = 0;
       const typingSpeed = 2;
 
-      const typingInterval = setInterval(() => {
-        typedSpan.innerHTML = replyText.slice(0, i);
-        i++;
-        if (i > replyText.length) {
-          clearInterval(typingInterval);
+      (async () => {
+        for (let i = 0; i <= replyText.length; i++) {
+          typedSpan.innerHTML = replyText.slice(0, i);
+          await new Promise(res => setTimeout(res, typingSpeed));
+        }
           aiBlock.querySelector(".copy-icon").onclick = () => navigator.clipboard.writeText(data.reply);
           const existingHistory = localStorage.getItem("chatHistory") || "";
           const updatedHistory = aiBlock.outerHTML + existingHistory;
           localStorage.setItem("chatHistory", updatedHistory);
-        }
-      }, typingSpeed);
+          
+      // ✅ Fetch job listings based on user's message
+      await fetchJobs(message);
+        })();
     });
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -208,6 +210,48 @@
       document.querySelectorAll('.dropdown-content').forEach(el => el.classList.remove('show'));
     }
   });
+    
+async function fetchJobs(query) {
+  try {
+    const res = await fetch("/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: query,
+        location: "",
+        jobType: ""
+      })
+    });
+
+    const data = await res.json();
+    displayJobs(data);
+  } catch (err) {
+    console.error("Job fetch error:", err);
+  }
+}
+
+function displayJobs(data) {
+  const jobResults = document.getElementById("job-results");
+  jobResults.innerHTML = "";
+
+  const allJobs = [...(data.remotive || []), ...(data.adzuna || [])];
+
+  if (allJobs.length === 0) {
+    jobResults.innerHTML = "<p>No jobs found for this query.</p>";
+    return;
+  }
+
+  allJobs.forEach(job => {
+    const jobCard = document.createElement("div");
+    jobCard.className = "job-card";
+    jobCard.innerHTML = `
+      <h3>${job.title}</h3>
+      <p><strong>${job.company}</strong> – ${job.location}</p>
+      <a href="${job.url}" target="_blank">View Job</a>
+    `;
+    jobResults.appendChild(jobCard);
+  });
+}
 </script>
 </body>
 </html>
