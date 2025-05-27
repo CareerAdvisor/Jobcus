@@ -610,12 +610,14 @@ main {
 
 /* Standalone footer content outside input-container */
 .footer-note-static {
-  font-size: 0.75rem;
   text-align: center;
-  color: #888;
-  margin-top: 12px;
-  padding-bottom: 15px;
+  font-size: 0.85rem;
+  color: #777;
+  padding: 20px 10px;
+  background-color: #f9fbf9;
+  border-top: 1px solid #eee;
 }
+
 .chat-divider {
   margin: 20px 0;
   border: none;
