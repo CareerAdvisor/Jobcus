@@ -42,8 +42,7 @@ header {
 /* Generic hover effect for icons */
 .header-icons img:hover {
   transform: scale(1.1);
-  background-color: #e0e0e0;
-  border-radius: 50%;
+  opacity: 0.8;
 }
 
 /* But not for the ellipsis */
