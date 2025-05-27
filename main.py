@@ -77,7 +77,6 @@ def ask():
             "If a user asks for jobs, provide advice and tell them to check below for matching job listings "
             "that Jobcus fetches automatically from job APIs like Adzuna and Remotive. "
             "Do not say you can’t share links — Jobcus shows them after your response."
-)},
 
         )},
         {"role": "user", "content": user_msg}
