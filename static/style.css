@@ -39,9 +39,19 @@ header {
   height: 30px;
 }
 
+/* Generic hover effect for icons */
 .header-icons img:hover {
   transform: scale(1.1);
-  opacity: 0.8;
+  background-color: #e0e0e0;
+  border-radius: 50%;
+}
+
+/* But not for the ellipsis */
+.header-icons img[alt="Options"]:hover {
+  background: none !important;
+  border-radius: 0 !important;
+  transform: none !important;
+  opacity: 1 !important;
 }
 
 .header-left {
@@ -55,12 +65,16 @@ header {
   display: none;
   position: absolute;
   right: 0;
-  top: 25px;
+  top: 30px;
   background-color: white;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   padding: 10px;
   border-radius: 6px;
   z-index: 1000;
+}
+
+.dropdown-content.show {
+  display: block;
 }
 
 .dropdown-content div {
@@ -77,10 +91,6 @@ header {
 .dropdown-content div img {
   margin-right: 8px;
     }
-
-.dropdown-menu.open .dropdown-content {
-  display: block;
-}
 
 /* === Prompt Area === */
 .prompt {
