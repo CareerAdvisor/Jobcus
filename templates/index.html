@@ -231,27 +231,32 @@ async function fetchJobs(query) {
 }
 
 function displayJobs(data) {
-  const jobResults = document.getElementById("job-results");
-  jobResults.innerHTML = "";
+  const aiAnswerBlock = document.querySelector(".chatbox .chat-entry .ai-answer:last-child");
+  if (!aiAnswerBlock) return;
+
+  const jobsContainer = document.createElement("div");
+  jobsContainer.className = "job-listings";
 
   const allJobs = [...(data.remotive || []), ...(data.adzuna || [])];
 
   if (allJobs.length === 0) {
-    jobResults.innerHTML = "<p>No jobs found for this query.</p>";
-    return;
+    jobsContainer.innerHTML = "<p>No jobs found for this query.</p>";
+  } else {
+    allJobs.forEach(job => {
+      const jobCard = document.createElement("div");
+      jobCard.className = "job-card";
+      jobCard.innerHTML = `
+        <h3>${job.title}</h3>
+        <p><strong>${job.company}</strong> – ${job.location}</p>
+        <a href="${job.url}" target="_blank">View Job</a>
+      `;
+      jobsContainer.appendChild(jobCard);
+    });
   }
 
-  allJobs.forEach(job => {
-    const jobCard = document.createElement("div");
-    jobCard.className = "job-card";
-    jobCard.innerHTML = `
-      <h3>${job.title}</h3>
-      <p><strong>${job.company}</strong> – ${job.location}</p>
-      <a href="${job.url}" target="_blank">View Job</a>
-    `;
-    jobResults.appendChild(jobCard);
-  });
+  aiAnswerBlock.appendChild(jobsContainer);
 }
+
 </script>
 </body>
 </html>
