@@ -145,12 +145,19 @@
           const updatedHistory = aiBlock.outerHTML + existingHistory;
           localStorage.setItem("chatHistory", updatedHistory);
           
-      // ✅ Fetch job listings based on user's message
-      await fetchJobs(message);
-        })();
-    });
+      // ✅ Only fetch jobs if the message likely relates to job search
+      const jobKeywords = ["job", "apply", "hiring", "position", "vacancy", "openings", "roles", "career"];
+      const lowerMessage = message.toLowerCase();
+      const shouldFetchJobs = jobKeywords.some(keyword => lowerMessage.includes(keyword));
 
-    window.addEventListener("DOMContentLoaded", () => {
+      if (shouldFetchJobs) {
+        await fetchJobs(message);
+      }
+
+        })();
+      });
+
+      window.addEventListener("DOMContentLoaded", () => {
       const saved = localStorage.getItem("chatHistory");
       if (saved) {
         chatbox.innerHTML = saved;
