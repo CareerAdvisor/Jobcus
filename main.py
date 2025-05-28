@@ -71,27 +71,44 @@ def index():
 def ask():
     user_msg = request.json.get("message")
     messages = [
-        {"role": "system", "content": (
-            {"role": "system", "content": (
-    "You are Jobcus, an AI-powered career advisor and assistant. Your job is to guide users with smart, friendly, and clear career advice. "
-    "You are allowed to reference external job listings, because the Jobcus platform automatically fetches them from APIs like Adzuna and Remotive. "
-    "If a user asks about job openings or where to apply, respond with helpful guidance based on their background, and then clearly inform them that job links will appear below your message. "
-    "Do not say you cannot provide links — Jobcus will display them after your reply. Be confident, supportive, and practical."
-    )},
-
-
-        )},
-        {"role": "user", "content": user_msg}
+        {
+            "role": "system",
+            "content": (
+                "You are Jobcus, an AI-powered career advisor and assistant. Your job is to guide users with smart, friendly, and clear career advice. "
+                "You are allowed to reference external job listings, because the Jobcus platform automatically fetches them from APIs like Adzuna and Remotive. "
+                "If a user asks about job openings or where to apply, respond with helpful guidance based on their background, and then clearly inform them that job links will appear below your message. "
+                "Do not say you cannot provide links — Jobcus will display them after your reply. Be confident, supportive, and practical."
+            )
+        },
+        {
+            "role": "user",
+            "content": user_msg
+        }
     ]
+
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=messages
         )
         ai_msg = response.choices[0].message.content
-        return jsonify({"reply": ai_msg})
+
+        # ✅ Optional: add job relevance detection logic
+        job_keywords = ["job", "apply", "hiring", "vacancy", "openings", "position", "career", "role"]
+        lower_msg = user_msg.lower()
+        suggest_jobs = any(keyword in lower_msg for keyword in job_keywords)
+
+        return jsonify({
+            "reply": ai_msg,
+            "suggestJobs": suggest_jobs
+        })
+
     except Exception as e:
-        return jsonify({"reply": f"⚠️ Server Error: {str(e)}"})
+        return jsonify({
+            "reply": f"⚠️ Server Error: {str(e)}",
+            "suggestJobs": False
+        })
+
 
 # Jobs API
 @app.route("/jobs", methods=["POST"])
