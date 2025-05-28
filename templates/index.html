@@ -144,6 +144,7 @@
           const existingHistory = localStorage.getItem("chatHistory") || "";
           const updatedHistory = aiBlock.outerHTML + existingHistory;
           localStorage.setItem("chatHistory", updatedHistory);
+          maybeShowScrollIcon(); // 👈 Add this here
           
       // ✅ Only fetch jobs if the message likely relates to job search
       if (data.suggestJobs) {
@@ -159,6 +160,7 @@
         prompt.style.display = 'none';
         document.querySelector("main").classList.add("chat-started");
       }
+        maybeShowScrollIcon();
     });
 
     document.getElementById("mic-button").addEventListener("click", () => {
@@ -200,6 +202,22 @@
       navigator.clipboard.writeText(window.location.href);
       alert("Page link copied to clipboard.");
     });
+
+    // Show the icon when content is scrollable
+function maybeShowScrollIcon() {
+  const chatbox = document.getElementById("chatbox");
+  const scrollIcon = document.getElementById("scrollDown");
+
+  if (chatbox.scrollHeight > chatbox.clientHeight) {
+    scrollIcon.style.display = "block";
+  } else {
+    scrollIcon.style.display = "none";
+  }
+}
+
+window.addEventListener("load", maybeShowScrollIcon);
+window.addEventListener("resize", maybeShowScrollIcon);
+
 
      function toggleDropdown(el) {
     const dropdown = el.querySelector('.dropdown-content');
