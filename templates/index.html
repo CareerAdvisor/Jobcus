@@ -146,11 +146,8 @@
           localStorage.setItem("chatHistory", updatedHistory);
           
       // ✅ Only fetch jobs if the message likely relates to job search
-      const jobKeywords = ["job", "apply", "hiring", "position", "vacancy", "openings", "roles", "career"];
-      const lowerMessage = message.toLowerCase();
-     
-        if (jobKeywords.some(word => lowerMessage.includes(word))) {
-          await fetchJobs(message);
+      if (data.suggestJobs) {
+        await fetchJobs(message);
       }
         })();
       });
