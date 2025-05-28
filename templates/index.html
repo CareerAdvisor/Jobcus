@@ -6,15 +6,57 @@
   <title>Jobcus – AI Career Advisor</title>
   <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 260px;
+      background-color: #fff;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .sidebar.active {
+      transform: translateX(0);
+    }
+    .sidebar h3 {
+      margin-top: 0;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar ul li {
+      margin: 15px 0;
+    }
+    .sidebar ul li a {
+      text-decoration: none;
+      color: #333;
+      font-weight: 500;
+    }
+    .sidebar ul li a:hover {
+      color: #0077cc;
+    }
+    .sidebar-toggle {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 1100;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <div class="sidebar" id="sidebar">
-    <h3>Menu</h3>
+    <h3>Jobcus</h3>
     <ul>
-      <li><a href="#">Home</a></li>
-      <li><a href="#">My Profile</a></li>
-      <li><a href="#">History</a></li>
-      <li><a href="#">Settings</a></li>
+      <li><a href="#" onclick="clearChat(); toggleSidebar();">📝 New Chat</a></li>
+      <li><a href="#" onclick="toggleSidebar(); showChatHistory();">💬 Chat History</a></li>
+      <li><a href="#" onclick="toggleSidebar(); alert('Settings coming soon');">⚙️ Settings</a></li>
     </ul>
   </div>
 
