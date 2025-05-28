@@ -6,7 +6,7 @@
   <title>Jobcus – AI Career Advisor</title>
   <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="/static/style.css" />
-  <style>
+   <style>
     .sidebar {
       position: fixed;
       top: 0;
@@ -42,11 +42,18 @@
       color: #0077cc;
     }
     .sidebar-toggle {
-      position: fixed;
-      top: 15px;
-      left: 15px;
+      position: absolute;
+      top: 20px;
+      left: 20px;
       z-index: 1100;
       cursor: pointer;
+    }
+    .sidebar-toggle img {
+      width: 28px;
+      height: 28px;
+    }
+    header {
+      padding-left: 60px; /* Adjust to make room for toggle button */
     }
   </style>
 </head>
