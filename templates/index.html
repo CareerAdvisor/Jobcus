@@ -148,12 +148,10 @@
       // ✅ Only fetch jobs if the message likely relates to job search
       const jobKeywords = ["job", "apply", "hiring", "position", "vacancy", "openings", "roles", "career"];
       const lowerMessage = message.toLowerCase();
-      const shouldFetchJobs = jobKeywords.some(keyword => lowerMessage.includes(keyword));
-
-      if (shouldFetchJobs) {
-        await fetchJobs(message);
+     
+        if (jobKeywords.some(word => lowerMessage.includes(word))) {
+          await fetchJobs(message);
       }
-
         })();
       });
 
