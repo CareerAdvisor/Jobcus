@@ -644,3 +644,15 @@ main {
   text-decoration: none;
   color: #0077cc;
 }
+
+.scroll-down-icon {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+  height: 24px;
+  z-index: 1000;
+  display: none; /* default hidden */
+}
+
