@@ -62,7 +62,31 @@ def fetch_adzuna_jobs(query, location="", job_type=""):
     except Exception as e:
         print("Adzuna error:", e)
         return []
-
+# Fetch jobs from JSearch (RapidAPI)
+def fetch_jsearch_jobs(query):
+    try:
+        url = f"https://{JSEARCH_API_HOST}/search"
+        headers = {
+            "X-RapidAPI-Key": JSEARCH_API_KEY,
+            "X-RapidAPI-Host": JSEARCH_API_HOST
+        }
+        params = {
+            "query": query,
+            "page": "1",
+            "num_pages": "1"
+        }
+        response = requests.get(url, headers=headers, params=params)
+        jobs = response.json().get("data", [])
+        return [{
+            "title": job.get("job_title"),
+            "company": job.get("employer_name"),
+            "location": job.get("job_city") or job.get("job_country", ""),
+            "url": job.get("job_apply_link")
+        } for job in jobs[:5]]
+    except Exception as e:
+        print("JSearch error:", e)
+        return []
+        
 # Home route
 @app.route("/")
 def index():
