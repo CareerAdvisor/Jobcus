@@ -19,6 +19,8 @@ REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
 ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs"
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
+JSEARCH_API_KEY = os.getenv("JSEARCH_API_KEY")
+ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
 
 # Fetch jobs from Remotive
 
