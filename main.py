@@ -119,7 +119,7 @@ def ask():
         )
         ai_msg = response.choices[0].message.content
 
-        # ✅ Optional: add job relevance detection logic
+        # Check for job-related keywords
         job_keywords = ["job", "apply", "hiring", "vacancy", "openings", "position", "career", "role"]
         lower_msg = user_msg.lower()
         suggest_jobs = any(keyword in lower_msg for keyword in job_keywords)
@@ -146,6 +146,7 @@ def get_jobs():
 
     remotive_jobs = []
     adzuna_jobs = []
+    jsearch_jobs = []
 
     if job_type == "remote" or job_type == "":
         remotive_jobs = fetch_remotive_jobs(query)
@@ -153,7 +154,14 @@ def get_jobs():
     if job_type in ["onsite", "hybrid", ""]:
         adzuna_jobs = fetch_adzuna_jobs(query, location, job_type)
 
-    return jsonify({"remotive": remotive_jobs, "adzuna": adzuna_jobs})
+    if not remotive_jobs and not adzuna_jobs:
+        jsearch_jobs = fetch_jsearch_jobs(query)
+
+    return jsonify({
+        "remotive": remotive_jobs,
+        "adzuna": adzuna_jobs,
+        "jsearch": jsearch_jobs
+    })
 
     if __name__ == "__main__":
         port = int(os.environ.get("PORT", 5000))
