@@ -23,6 +23,11 @@ header {
   align-items: center;
   gap: 5px;
 }
+ .header-icons {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    width: 100%;
+  }
 
 .header-icons img {
   height: 20px;
@@ -436,12 +441,6 @@ main {
     align-items: flex-start;
     gap: 10px;
   }
-
-  .header-icons {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    width: 100%;
-  }
 }
 
 /* === ADDITIONAL STYLES FOR MOBILE NAV + FIXED INPUT ICONS + SUGGESTIONS === */
@@ -677,10 +676,6 @@ header {
 @media (max-width: 768px) {
   .hamburger {
     display: block;
-  }
-
-  .header-icons {
-    display: none;
   }
 }
 
