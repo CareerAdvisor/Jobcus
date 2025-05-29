@@ -18,6 +18,10 @@ header {
   border-bottom: 1px solid #f9fbf9;
 }
 
+.logo img {
+  height: 40px;
+}
+
 .header-icons {
   display: flex;
   align-items: center;
@@ -436,6 +440,12 @@ main {
     align-items: flex-start;
     gap: 10px;
   }
+
+  .header-icons {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    width: 100%;
+  }
 }
 
 /* === ADDITIONAL STYLES FOR MOBILE NAV + FIXED INPUT ICONS + SUGGESTIONS === */
@@ -577,12 +587,16 @@ main {
     justify-content: space-between;
   }
 
-  .header {
+  .logo {
     order: 2;
     margin: 0 auto;
     display: flex;
     justify-content: center;
     flex-grow: 1;
+  }
+
+  .logo img {
+    height: 40px;
   }
 
   .start-new-chat-icon {
@@ -641,36 +655,3 @@ main {
   z-index: 1000;
   display: none; /* default hidden */
 }
-/* Ensures logo and hamburger are inline */
-header {
-  display: flex;
-  align-items: center;
-  padding: 10px 20px;
-  justify-content: flex-start;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  margin-right: 10px;
-}
-
-.logo img {
-  height: 40px; /* Adjust size as needed */
-  cursor: pointer;
-}
-
-.sidebar-toggle {
-  position: relative;
-  margin-right: 10px;
-}
-
-.hamburger {
-  display: none; /* Can be shown conditionally with media queries */
-}
-@media (max-width: 768px) {
-  .hamburger {
-    display: block;
-  }
-}
-
