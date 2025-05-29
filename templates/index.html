@@ -73,9 +73,19 @@
     </ul>
   </div>
 
-  <div class="sidebar-toggle" onclick="toggleSidebar()">
-    <img src="/static/icons/hamburger.svg" alt="Toggle Sidebar" width="24">
+   <div class="sidebar-toggle" onclick="toggleSidebar()">
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
   </div>
+  
+  <div id="menuOverlay" class="mobile-menu-overlay"></div>
+  <div class="mobile-menu" id="mobileMenu">
+    <img src="/static/icons/pencilchat.svg" alt="New Chat" onclick="clearChat()">
+    <img src="/static/icons/share.svg" alt="Share" onclick="sharePage()">
+    <img src="/static/icons/ellipsis.svg" alt="Options">
+  </div>
+  
   <header>
     <div class="logo">
       <a href="/">
@@ -95,13 +105,6 @@
       <img src="/static/icons/share.svg" alt="Share" id="shareIcon">
     </div>
   </header>
-
-  <div id="menuOverlay" class="mobile-menu-overlay"></div>
-  <div class="mobile-menu" id="mobileMenu">
-    <img src="/static/icons/pencilchat.svg" alt="New Chat" onclick="clearChat()">
-    <img src="/static/icons/share.svg" alt="Share" onclick="sharePage()">
-    <img src="/static/icons/ellipsis.svg" alt="Options">
-  </div>
 
   <main class="centered" id="mainContainer">
     <div class="chatbox" id="chatbox"></div>
@@ -341,6 +344,16 @@ function displayJobs(data) {
 
   aiAnswerBlock.appendChild(jobsContainer);
 }
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+    function showChatHistory() {
+      alert("Recent chat history will go here.");
+    }
+    function sharePage() {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link copied!");
+    }
 </script>
 <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
 </body>
