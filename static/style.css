@@ -23,11 +23,6 @@ header {
   align-items: center;
   gap: 5px;
 }
- .header-icons {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    width: 100%;
-  }
 
 .header-icons img {
   height: 20px;
