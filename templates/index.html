@@ -41,16 +41,22 @@
     .sidebar ul li a:hover {
       color: #0077cc;
     }
+      }
     .sidebar-toggle {
-      position: absolute;
-      top: 20px;
-      left: 20px;
+      position: fixed;
+      top: 15px;
+      left: 15px;
       z-index: 1100;
       cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
     }
-    .sidebar-toggle img {
-      width: 28px;
-      height: 28px;
+    .sidebar-toggle .bar {
+      width: 25px;
+      height: 3px;
+      background-color: #333;
+      border-radius: 2px;
     }
     header {
       padding-left: 60px; /* Adjust to make room for toggle button */
