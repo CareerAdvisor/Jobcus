@@ -69,16 +69,18 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      padding-left: 5px;
     }
 
     .sidebar-logo {
-      height: 40px;
+      height: 36px;
+      display: block;
     }
 
     .sidebar-menu-icon {
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
       cursor: pointer;
     }
   </style>
@@ -87,9 +89,7 @@
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <img src="/static/icons/hamburger.svg" alt="Toggle Sidebar" class="sidebar-menu-icon" onclick="toggleSidebar()">
-      <a href="/">
-        <img src="/static/icons/jobcus-logo-icon.png" alt="Jobcus" class="sidebar-logo">
-      </a>
+      <img src="/static/icons/jobcus-logo-icon.png" alt="Jobcus" class="sidebar-logo">
     </div>
     <ul>
       <li><a href="#" onclick="clearChat(); toggleSidebar();">📝 New Chat</a></li>
