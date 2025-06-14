@@ -68,15 +68,18 @@
 </head>
 <body>
   <div class="sidebar" id="sidebar">
-    <a href="/">
-      <img src="/static/icons/jobcus-logo-icon.png" alt="Jobcus" style="height: 40px;">
-    </a>
+    <div class="sidebar-header">
+      <img src="/static/icons/hamburger.svg" alt="Toggle Sidebar" class="sidebar-menu-icon" onclick="toggleSidebar()">
+      <a href="/">
+        <img src="/static/icons/jobcus-logo-icon.png" alt="Jobcus" class="sidebar-logo">
+      </a>
+    </div>
     <ul>
       <li><a href="#" onclick="clearChat(); toggleSidebar();">📝 New Chat</a></li>
       <li><a href="#" onclick="toggleSidebar(); showChatHistory();">💬 Chat History</a></li>
       <li><a href="#" onclick="toggleSidebar(); alert('Settings coming soon');">⚙️ Settings</a></li>
     </ul>
-  </div>
+    </div>
 
    <div class="sidebar-toggle" onclick="toggleSidebar()">
      <img src="/static/icons/hamburger.svg" alt="Toggle Sidebar">
