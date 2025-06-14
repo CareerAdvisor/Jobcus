@@ -673,4 +673,8 @@ main {
     transform: translateX(0);
   }
 }
+/* Hide header hamburger when sidebar is open */
+.sidebar.active ~ header .header-toggle {
+  display: none !important;
+}
 
