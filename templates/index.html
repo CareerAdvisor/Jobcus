@@ -118,11 +118,15 @@
   </div>
   
   <header>
-    <div class="logo">
-      <a href="/">
-        <img src="/static/jobcus-logo.png" alt="Jobcus">
-      </a>
+  <div class="logo">
+    <div class="sidebar-toggle header-toggle" onclick="toggleSidebar()">
+      <img src="/static/icons/hamburger.svg" alt="Toggle Sidebar">
     </div>
+    <a href="/">
+      <img src="/static/jobcus-logo.png" alt="Jobcus">
+    </a>
+  </div>
+
     <div class="hamburger" id="hamburger"></div>
     <div class="header-icons" id="desktop-icons">
       <div class="dropdown-menu" onclick="toggleDropdown(this)">
