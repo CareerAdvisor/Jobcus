@@ -286,14 +286,6 @@ main.chat-started {
     box-sizing: border-box;
   }
 }
-
-/* Desktop-specific sidebar toggle hide rule */
-@media screen and (min-width: 601px) {
-  .sidebar-toggle {
-    display: none !important;
-  }
-}
-
   main {
     padding: 20px 10px;
     overflow-y: auto;
