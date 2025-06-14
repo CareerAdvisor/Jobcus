@@ -7,19 +7,22 @@
   <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="/static/style.css" />
    <style>
-     .sidebar {
+   .sidebar {
       position: fixed;
       top: 0;
       left: 0;
-      height: 100%;
+      height: 100vh;
       width: 260px;
       background-color: #fff;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
       transform: translateX(-100%);
       transition: transform 0.3s ease;
       z-index: 1000;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
     }
+
     .sidebar.active {
       transform: translateX(0);
     }
@@ -51,24 +54,22 @@
       width: 24px;
       height: 24px;
     }
-     .sidebar-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 25px;
-  padding-left: 5px;
-}
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
 
-.sidebar-logo {
-  height: 36px;
-  display: block;
-}
+    .sidebar-logo {
+      height: 32px;
+    }
 
-.sidebar-menu-icon {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-}
+    .sidebar-menu-icon {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+    }
     header {
       padding-left: 60px;
       display: flex;
