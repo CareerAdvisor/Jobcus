@@ -258,6 +258,10 @@
       prompt.style.display = 'block';
       localStorage.removeItem("chatHistory");
       document.querySelector("main").classList.remove("chat-started");
+      
+      // Hide scroll-down icon
+      const scrollIcon = document.getElementById("scrollDown");
+      if (scrollIcon) scrollIcon.style.display = "none";
     }
 
     function exportDocx() {
