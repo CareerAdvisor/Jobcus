@@ -93,11 +93,12 @@
 </head>
 <body>
   <div class="sidebar" id="sidebar">
-
+    <div class="sidebar-header">
+      <img src="/static/icons/hamburger.svg" alt="Toggle Sidebar" class="sidebar-menu-icon" onclick="toggleSidebar()">
       <a href="/" class="sidebar-logo-link">
       <img src="/static/jobcus-logo-icon.png" alt="Jobcus" class="sidebar-logo">
       </a>
-   
+    </div>
     <ul>
       <li><a href="#" onclick="clearChat(); toggleSidebar();">📝 New Chat</a></li>
       <li><a href="#" onclick="toggleSidebar(); showChatHistory();">💬 Chat History</a></li>
