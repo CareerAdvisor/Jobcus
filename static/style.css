@@ -663,3 +663,14 @@ main {
   z-index: 1000;
   display: none; /* default hidden */
 }
+@media screen and (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+}
+
