@@ -303,6 +303,9 @@ main.chat-started {
   font-size: 16px;
   outline: none;
   caret-color: auto;
+  background-color: transparent;
+  box-shadow: none;
+  padding: 10px;
 }
 
 .input-container.centered-input {
