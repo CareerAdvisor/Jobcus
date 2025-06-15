@@ -265,7 +265,6 @@ main.chat-started {
   box-sizing: border-box;
   background-color: #fff;
   padding: 30px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.04);
