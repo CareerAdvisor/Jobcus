@@ -268,7 +268,6 @@ main.chat-started {
   display: flex;
   align-items: center;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.04);
-  border: 1px solid #e0e0e0;
 }
 
 /* Mobile-specific input form styling */
@@ -305,6 +304,8 @@ main.chat-started {
   background-color: transparent;
   box-shadow: none;
   padding: 10px;
+  border-radius: 16px;
+  border: 1px solid #ddd;
 }
 
 .input-container.centered-input {
