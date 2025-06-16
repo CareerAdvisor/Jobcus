@@ -295,19 +295,6 @@ main.chat-started {
   }
 }
 
-.input-container input[type="text"] {
-  flex: 1;
-  border: none;
-  font-size: 16px;
-  outline: none;
-  caret-color: auto;
-  background-color: transparent;
-  box-shadow: none;
-  padding: 10px;
-  border-radius: 16px;
-  border: 1px solid #ddd;
-}
-
 .input-container.centered-input {
   position: absolute;
   top: 50%;
@@ -679,5 +666,16 @@ main {
 /* Hide header hamburger when sidebar is open */
 .sidebar.active ~ header .header-toggle {
   display: none !important;
+}
+
+.input-container input[type="text"] {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  padding: 10px;
+  background-color: transparent;
+  box-shadow: none;
+  caret-color: auto;
 }
 
