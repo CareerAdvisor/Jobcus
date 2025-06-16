@@ -268,8 +268,6 @@ main.chat-started {
   display: flex;
   align-items: center;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.04);
-  border-radius: 16px;
-  border: 1px solid #ddd;
 }
 
 /* Mobile-specific input form styling */
