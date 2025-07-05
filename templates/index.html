@@ -146,9 +146,22 @@
     <div id="job-results" class="job-results"></div>
     <form id="chat-form">
       <div class="center-wrapper" id="center-wrapper">
-        <div class="prompt" id="prompt">
-          <h1>What can I assist you with today?</h1>
-        </div>
+      <div class="prompt" id="prompt">
+       <h1 class="fade-in">Welcome to Jobcus</h1>
+       <p class="lead-intro fade-in">
+        Your smart AI career advisor — helping you every step of the way.
+        </p>
+      <ul class="intro-benefits fade-in">
+      <li>✍️ Build and enhance your CV or resume</li>
+      <li>🔍 Discover job opportunities that match your skills</li>
+      <li>🎯 Prepare for interviews with expert guidance</li>
+      <li>📈 Explore career paths and emerging tech roles</li>
+    </ul>
+  <button class="cta-button fade-in" onclick="document.getElementById('userInput').focus();">
+    🚀 Get Started
+  </button>
+</div>
+
         <div class="input-container" id="inputContainer">
           <input type="text" id="userInput" placeholder="Ask your career question..." />
           <div class="icon-group">
