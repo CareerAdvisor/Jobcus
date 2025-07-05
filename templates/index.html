@@ -200,6 +200,13 @@
       </div>
     </form>
 
+    <div class="search-suggestions">
+      <div class="suggestion" onclick="insertSuggestion('How do I write a good CV?')">How do I write a good CV?</div>
+      <div class="suggestion" onclick="insertSuggestion('What are trending tech jobs?')">What are trending tech jobs?</div>
+      <div class="suggestion" onclick="insertSuggestion('How can I get into cybersecurity?')">How can I get into cybersecurity?</div>
+    </div>
+    <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
+
   <footer style="background-color: #111827; color: white; padding: 40px 20px; text-align: center;">
   <div style="margin-bottom: 20px;">
     <strong>Product</strong><br>
@@ -219,5 +226,232 @@
   </div>
   <p>© Copyright 2025. | Jobcus is an AI career advisor.</p>
 </footer>
+
+     </main>
+   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <script>
+    function insertSuggestion(text) {
+      document.getElementById("userInput").value = text;
+      document.getElementById("userInput").focus();
+    }
+
+    const hamburger = document.getElementById("hamburger");
+    const mobileMenu = document.getElementById("mobileMenu");
+    const menuOverlay = document.getElementById("menuOverlay");
+
+    hamburger.addEventListener("click", () => {
+      mobileMenu.classList.toggle("active");
+      menuOverlay.classList.toggle("active");
+    });
+
+    menuOverlay.addEventListener("click", () => {
+      mobileMenu.classList.remove("active");
+      menuOverlay.classList.remove("active");
+    });
+
+    function sharePage() {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link copied!");
+    }
+
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("userInput");
+    const chatbox = document.getElementById("chatbox");
+    const prompt = document.getElementById("prompt");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = input.value.trim();
+      if (!message) return;
+
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+
+      input.value = "";
+
+      const data = await res.json();
+      prompt.style.display = 'none';
+      document.querySelector("main").classList.add("chat-started");
+
+      const aiBlock = document.createElement("div");
+      aiBlock.className = "chat-entry";
+      const existingEntries = document.querySelectorAll(".chat-entry").length;
+      aiBlock.innerHTML = `
+        <div class='user-question'><h2>${message}</h2></div>
+        <div class='ai-answer'>
+          <img src='/static/icons/copy.svg' alt='Copy' class='copy-icon'>
+          <span class="typed-response"></span>
+        </div>
+        ${existingEntries > 0 ? "<hr>" : ""}
+      `;
+      chatbox.prepend(aiBlock);
+
+      const typedSpan = aiBlock.querySelector(".typed-response");
+      const replyText = marked.parse(data.reply);
+      let i = 0;
+      const typingSpeed = 2;
+
+      (async () => {
+        for (let i = 0; i <= replyText.length; i++) {
+          typedSpan.innerHTML = replyText.slice(0, i);
+          await new Promise(res => setTimeout(res, typingSpeed));
+        }
+          aiBlock.querySelector(".copy-icon").onclick = () => navigator.clipboard.writeText(data.reply);
+          const existingHistory = localStorage.getItem("chatHistory") || "";
+          const updatedHistory = aiBlock.outerHTML + existingHistory;
+          localStorage.setItem("chatHistory", updatedHistory);
+          maybeShowScrollIcon(); // 👈 Add this here
+          
+      // ✅ Only fetch jobs if the message likely relates to job search
+      if (data.suggestJobs) {
+        await fetchJobs(message);
+      }
+        })();
+      });
+
+      window.addEventListener("DOMContentLoaded", () => {
+      const saved = localStorage.getItem("chatHistory");
+      if (saved) {
+        chatbox.innerHTML = saved;
+        prompt.style.display = 'none';
+        document.querySelector("main").classList.add("chat-started");
+      }
+        maybeShowScrollIcon();
+    });
+
+    document.getElementById("mic-button").addEventListener("click", () => {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      recognition.start();
+      recognition.onresult = (e) => {
+        input.value = e.results[0][0].transcript;
+      };
+    });
+
+    input.addEventListener("keypress", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        form.dispatchEvent(new Event("submit"));
+      }
+    });
+
+    function clearChat() {
+      chatbox.innerHTML = "";
+      prompt.style.display = 'block';
+      localStorage.removeItem("chatHistory");
+      document.querySelector("main").classList.remove("chat-started");
+      
+      // Hide scroll-down icon
+      const scrollIcon = document.getElementById("scrollDown");
+      if (scrollIcon) scrollIcon.style.display = "none";
+    }
+
+    function exportDocx() {
+      alert("Exporting to DOCX – feature under development");
+    }
+
+    function exportPdf() {
+      alert("Exporting to PDF – feature under development");
+    }
+
+    function scrollToBottom() {
+      chatbox.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.getElementById("shareIcon").addEventListener("click", () => {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Page link copied to clipboard.");
+    });
+
+    // Show the icon when content is scrollable
+function maybeShowScrollIcon() {
+  const chatbox = document.getElementById("chatbox");
+  const scrollIcon = document.getElementById("scrollDown");
+
+  if (chatbox.scrollHeight > chatbox.clientHeight) {
+    scrollIcon.style.display = "block";
+  } else {
+    scrollIcon.style.display = "none";
+  }
+}
+
+window.addEventListener("load", maybeShowScrollIcon);
+window.addEventListener("resize", maybeShowScrollIcon);
+
+
+     function toggleDropdown(el) {
+    const dropdown = el.querySelector('.dropdown-content');
+    dropdown.classList.toggle('show');
+  }
+
+  // Close all dropdowns when clicking outside
+  document.addEventListener("click", function (event) {
+    if (!event.target.closest('.dropdown-menu')) {
+      document.querySelectorAll('.dropdown-content').forEach(el => el.classList.remove('show'));
+    }
+  });
+    
+async function fetchJobs(query) {
+  try {
+    const res = await fetch("/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: query,
+        location: "",
+        jobType: ""
+      })
+    });
+
+    const data = await res.json();
+    displayJobs(data);
+  } catch (err) {
+    console.error("Job fetch error:", err);
+  }
+}
+
+function displayJobs(data) {
+  const aiAnswerBlock = document.querySelector(".chatbox .chat-entry .ai-answer:last-child");
+  if (!aiAnswerBlock) return;
+
+  const jobsContainer = document.createElement("div");
+  jobsContainer.className = "job-listings";
+
+  const allJobs = [...(data.remotive || []), ...(data.adzuna || [])];
+
+  if (allJobs.length === 0) {
+    jobsContainer.innerHTML = "<p>No jobs found for this query.</p>";
+  } else {
+    allJobs.forEach(job => {
+      const jobCard = document.createElement("div");
+      jobCard.className = "job-card";
+      jobCard.innerHTML = `
+        <h3>${job.title}</h3>
+        <p><strong>${job.company}</strong> – ${job.location}</p>
+        <a href="${job.url}" target="_blank">View Job</a>
+      `;
+      jobsContainer.appendChild(jobCard);
+    });
+  }
+
+  aiAnswerBlock.appendChild(jobsContainer);
+}
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+    function showChatHistory() {
+      alert("Recent chat history will go here.");
+    }
+    function sharePage() {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link copied!");
+    }
+</script>
+<img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
+
 </body>
 </html>
