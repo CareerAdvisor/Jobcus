@@ -66,7 +66,7 @@ form.addEventListener("submit", async (e) => {
     </div>
     ${existingEntries > 0 ? "<hr>" : ""}
   `;
-  chatbox.appendChild(aiBlock);
+  chatbox.prepend(aiBlock);
 
   const typedSpan = aiBlock.querySelector(".typed-response");
   const replyText = marked.parse(data.reply);
