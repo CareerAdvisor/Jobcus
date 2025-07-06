@@ -161,14 +161,14 @@ async function fetchJobs(query) {
   }
 }
 
-function displayJobs(data) {
-  const aiAnswerBlock = document.querySelector(".chatbox .chat-entry .ai-answer:last-child");
+function displayJobs(data, aiBlock) {
+  const aiAnswerBlock = aiBlock.querySelector(".ai-answer");
   if (!aiAnswerBlock) return;
 
   const jobsContainer = document.createElement("div");
   jobsContainer.className = "job-listings";
 
-  const allJobs = [...(data.remotive || []), ...(data.adzuna || [])];
+  const allJobs = [...(data.remotive || []), ...(data.adzuna || []), ...(data.jsearch || [])];
 
   if (allJobs.length === 0) {
     jobsContainer.innerHTML = "<p>No jobs found for this query.</p>";
