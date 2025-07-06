@@ -29,7 +29,7 @@ function sharePage() {
 }
 
 // === Chat Form Submission ===
-const form = document.getElementById("chat-form");
+const form = document.getElementById("inputContainer");
 const input = document.getElementById("userInput");
 const chatbox = document.getElementById("chatbox");
 const prompt = document.getElementById("prompt");
@@ -39,10 +39,16 @@ form.addEventListener("submit", async (e) => {
   const message = input.value.trim();
   if (!message) return;
 
+  console.log("Sending message:", message);  // <== Add this
+
   const res = await fetch("/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message }),
+  });
+
+  const data = await res.json();
+  console.log("Received AI reply:", data);  // <== Add this
   });
 
   input.value = "";
@@ -50,8 +56,8 @@ form.addEventListener("submit", async (e) => {
   const data = await res.json();
   prompt.style.display = 'none';
   document.getElementById('mainContainer').classList.add('chat-started'); 
-  document.getElementById('input-Container').classList.remove('centered-input');
-  document.getElementById('input-Container').classList.add('chat-started-input');
+  document.getElementById('inputContainer').classList.remove('centered-input');
+  document.getElementById('inputContainer').classList.add('chat-started-input');
 
   const aiBlock = document.createElement("div");
   aiBlock.className = "chat-entry";
