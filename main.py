@@ -92,7 +92,7 @@ def fetch_jsearch_jobs(query):
 def index():
     return render_template("index.html")
 
-# Chat route – this is what you need to add
+# Chat route 
 @app.route("/chat")
 def chat():
     return render_template("chat.html")
