@@ -1,4 +1,3 @@
-
 // === Chat Suggestions Insertion ===
 function insertSuggestion(text) {
   document.getElementById("userInput").value = text;
@@ -49,11 +48,8 @@ form.addEventListener("submit", async (e) => {
 
   const data = await res.json();
   console.log("Received AI reply:", data);  // <== Add this
-  });
 
   input.value = "";
-
-  const data = await res.json();
   prompt.style.display = 'none';
   document.getElementById('mainContainer').classList.add('chat-started'); 
   document.getElementById('inputContainer').classList.remove('centered-input');
@@ -62,19 +58,18 @@ form.addEventListener("submit", async (e) => {
   const aiBlock = document.createElement("div");
   aiBlock.className = "chat-entry";
   const existingEntries = document.querySelectorAll(".chat-entry").length;
-  aiBlock.innerHTML = \`
+  aiBlock.innerHTML = `
     <div class='user-question'><h2>\${message}</h2></div>
     <div class='ai-answer'>
       <img src='/static/icons/copy.svg' alt='Copy' class='copy-icon'>
       <span class="typed-response"></span>
     </div>
-    \${existingEntries > 0 ? "<hr>" : ""}
-  \`;
+    ${existingEntries > 0 ? "<hr>" : ""}
+  `;
   chatbox.prepend(aiBlock);
 
   const typedSpan = aiBlock.querySelector(".typed-response");
   const replyText = marked.parse(data.reply);
-  let i = 0;
   const typingSpeed = 2;
 
   (async () => {
@@ -82,6 +77,7 @@ form.addEventListener("submit", async (e) => {
       typedSpan.innerHTML = replyText.slice(0, i);
       await new Promise(res => setTimeout(res, typingSpeed));
     }
+    
     aiBlock.querySelector(".copy-icon").onclick = () => navigator.clipboard.writeText(data.reply);
     const existingHistory = localStorage.getItem("chatHistory") || "";
     const updatedHistory = aiBlock.outerHTML + existingHistory;
@@ -92,7 +88,7 @@ form.addEventListener("submit", async (e) => {
       await fetchJobs(message);
     }
   })();
-});
+  });
 
 // === On Page Load Restore Chat ===
 window.addEventListener("DOMContentLoaded", () => {
