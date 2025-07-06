@@ -222,19 +222,6 @@ main.chat-started {
   box-sizing: border-box;
 }
 
-#chatbox {
-  width: 100vw; /* Full width of the viewport */
-  height: auto;
-  max-height: calc(100vh - 200px); /* Adjust for header + input field */
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 1rem;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* Center all inner content horizontally */
-}
-
 .ai-answer {
   background-color: #f9fbf9;
   padding: 10px;
