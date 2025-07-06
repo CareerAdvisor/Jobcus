@@ -4,31 +4,32 @@
 
 {% block content %}
   <main class="centered" id="mainContainer">
-    <!-- Chatbox -->
-    <div class="chatbox" id="chatbox"></div>
-    <form id="chat-form">
-      <div class="center-wrapper" id="center-wrapper">
-        <div class="prompt" id="prompt">
-          <h1>What can I assist you with today?</h1>
-        </div>
-        <div class="input-container" id="inputContainer">
-          <input type="text" id="userInput" placeholder="Ask your career question..." />
-          <div class="icon-group">
-            <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
-            <input id="file-upload" type="file" style="display: none;">
-            <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
-            <button type="submit"><img src="/static/icons/enter.svg" alt="Send"></button>
-          </div>
-        </div>
-      </div>
-    </form>
-    <div class="search-suggestions">
-      <div class="suggestion" onclick="insertSuggestion('How do I write a good CV?')">How do I write a good CV?</div>
-      <div class="suggestion" onclick="insertSuggestion('What are trending tech jobs?')">What are trending tech jobs?</div>
-      <div class="suggestion" onclick="insertSuggestion('How can I get into cybersecurity?')">How can I get into cybersecurity?</div>
+  <div class="chatbox" id="chatbox"></div>
+
+  <form id="chat-form" class="input-container">
+    <input type="text" id="userInput" placeholder="Ask your career question..." />
+    <div class="icon-group">
+      <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
+      <input id="file-upload" type="file" style="display: none;">
+      <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
+      <button type="submit"><img src="/static/icons/enter.svg" alt="Send"></button>
     </div>
-    <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
-  </main>
+  </form>
+
+  <div class="prompt" id="prompt">
+    <h1>What can I assist you with today?</h1>
+  </div>
+
+  <div class="search-suggestions">
+    <div class="suggestion" onclick="insertSuggestion('How do I write a good CV?')">How do I write a good CV?</div>
+    <div class="suggestion" onclick="insertSuggestion('What are trending tech jobs?')">What are trending tech jobs?</div>
+    <div class="suggestion" onclick="insertSuggestion('How can I get into cybersecurity?')">How can I get into cybersecurity?</div>
+  </div>
+
+  <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
+  <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
+</main>
+
 <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
 
 <!-- External chat logic -->
