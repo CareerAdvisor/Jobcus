@@ -237,8 +237,8 @@ main.chat-started {
 
 .chat-entry {
   width: 100%;
-  max-width: 700px; /* or 600px, depending on your design */
-  margin-bottom: 1.5rem;
+  max-width: 50%;
+  margin-bottom: 20px;
 }
 
 .ai-answer {
