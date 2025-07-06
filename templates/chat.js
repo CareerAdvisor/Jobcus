@@ -183,7 +183,13 @@ function displayJobs(data) {
 
   aiAnswerBlock.appendChild(jobsContainer);
 
-  function toggleMobileMenu() {
-    const menu = document.getElementById("mobileMenu");
-    menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+  document.addEventListener("DOMContentLoaded", () => {
+  const hamburger = document.querySelector(".hamburger");
+  const mobileMenu = document.getElementById("mobileMenu");
+
+  if (hamburger && mobileMenu) {
+    hamburger.addEventListener("click", () => {
+      mobileMenu.style.display = mobileMenu.style.display === "flex" ? "none" : "flex";
+    });
   }
+});
