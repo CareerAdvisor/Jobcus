@@ -691,3 +691,77 @@ main {
   caret-color: auto;
 }
 
+/* === Hero Section === */
+.hero {
+  padding: 60px 20px;
+  text-align: center;
+  background-color: #104879;
+  color: white;
+}
+
+.hero h1 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+}
+
+.btn-primary {
+  background-color: white;
+  color: #104879;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* === Section Styling for Homepage === */
+.section {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.section h2 {
+  font-size: 1.75rem;
+  margin-bottom: 16px;
+}
+
+.section p {
+  max-width: 600px;
+  margin: 0 auto 20px;
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.feature-box {
+  background-color: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive Layout for Features */
+@media(min-width: 768px) {
+  .hero h1 {
+    font-size: 3rem;
+  }
+
+  .features {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .feature-box {
+    width: 30%;
+  }
+}
+
+
