@@ -465,10 +465,9 @@ main {
   padding: 10px 20px;
   position: absolute;
   top: 70px;
-  left: 0;
-  width: 100%;
-  border-top: 1px solid #eee;
-  z-index: 999;
+  right: 10px;
+  border: 1px solid #ccc;
+  z-index: 1000;
 }
 
 /* Hamburger icon */
@@ -524,17 +523,15 @@ main {
   z-index: 900;
 }
 
-/* Show hamburger + hide normal nav on mobile */
+/* Hide desktop menu on small screens */
 @media (max-width: 768px) {
 .desktop-nav {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  justify-content: flex-end;
+  display: none;
   }
 
 .hamburger {
-  display: flex;
+  display: block;
+  cursor: pointer;
   }
 }
 
@@ -798,3 +795,10 @@ main {
     display: none;
   }
 }
+
+desktop-nav {
+  display: flex;
+  gap: 1rem;
+  align-item: center;
+  margin-left: auto;
+  }
