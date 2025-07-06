@@ -49,7 +49,9 @@ form.addEventListener("submit", async (e) => {
 
   const data = await res.json();
   prompt.style.display = 'none';
-  document.querySelector("main").classList.add("chat-started");
+  document.getElementById('mainContainer').classList.add('chat-started'); 
+  document.getElementById('inputContainer').classList.remove('centered-input');
+  document.getElementById('inputContainer').classList.add('chat-started-input');
 
   const aiBlock = document.createElement("div");
   aiBlock.className = "chat-entry";
