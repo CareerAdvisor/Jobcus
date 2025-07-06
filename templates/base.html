@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Jobcus{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <!-- ✅ Shared Header -->
+  <header>
+    <div class="logo">
+      <a href="/"><img src="/static/jobcus-logo.png" alt="Jobcus"></a>
+    </div>
+    <nav>
+      <a href="/chat" style="margin-right: 20px; color: #111827; text-decoration: none;">Chat</a>
+      <a href="#resume" style="color: #111827; text-decoration: none;">Resume</a>
+    </nav>
+  </header>
+
+  <!-- 🔁 Content Block -->
+  {% block content %}{% endblock %}
+
+  <!-- ✅ Shared Footer -->
+  <footer class="footer-note-static">
+    &copy; 2025 Jobcus – Your AI Career Advisor
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
