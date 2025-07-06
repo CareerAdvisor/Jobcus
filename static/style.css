@@ -793,17 +793,16 @@ main {
   }
 }
 
-a.health-check-btn {
-  display: inline-block;
+.cv-check-button {
   background-color: #104879;
   color: white;
-  padding: 12px 24px;
-  border-radius: 9999px;
+  padding: 14px 28px;
+  border-radius: 40px;
   text-decoration: none;
+  display: inline-block;
   font-size: 1rem;
-  max-width: 90%;
-  white-space: normal; /* allow wrapping */
-  line-height: 1.4;
   text-align: center;
+  line-height: 1.4;
+  white-space: normal;
+  max-width: 100%;
 }
-
