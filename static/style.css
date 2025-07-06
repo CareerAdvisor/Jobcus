@@ -262,6 +262,7 @@ main {
 }
 
 /* === USER INPUT CONTAINER === */
+/* Input field styling */
 .input-container {
   width: 100%;
   background-color: #fff;
@@ -275,6 +276,7 @@ main {
   margin-top: 15px;
   margin-bottom: 10px;
   box-sizing: border-box;
+  flex-wrap: wrap;
 }
 
 .input-container input[type="text"] {
