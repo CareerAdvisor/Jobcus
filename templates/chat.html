@@ -1,39 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Jobcus – AI Career Chat</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
-  <link rel="stylesheet" href="/static/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-</head>
-<body>
-    <header>
-    <div class="logo">
-    <a href="/">
-      <img src="/static/jobcus-logo.png" alt="Jobcus">
-    </a>
-  </div>
-    
-  <nav>
-    <a href="/chat" style="margin-right: 20px; color: #111827; text-decoration: none;">Chat</a>
-    <a href="#resume" style="color: #111827; text-decoration: none;">Resume</a>
-  </nav>
-</header>
-  <!-- Include Sidebar, Header, and Chat Interface from your original script here -->
-  <!-- I recommend copying everything from your existing working AI chat script: -->
-  <!-- This includes: -->
-  <!-- ✅ Sidebar -->
-  <!-- ✅ Header -->
-  <!-- ✅ <main> block with chatbox and job results -->
-  <!-- ✅ All JS <script> logic that powers form submission, job search, etc. -->
-  
-  <!-- For example, from: -->
+{% extends "base.html" %}
+
+{% block title %}Jobcus – AI Career Chat{% endblock %}
+
+{% block content %}
   <main class="centered" id="mainContainer">
+    <!-- Chatbox -->
     <div class="chatbox" id="chatbox"></div>
-    <div id="job-results" class="job-results"></div>
     <form id="chat-form">
       <div class="center-wrapper" id="center-wrapper">
         <div class="prompt" id="prompt">
@@ -50,7 +22,6 @@
         </div>
       </div>
     </form>
-
     <div class="search-suggestions">
       <div class="suggestion" onclick="insertSuggestion('How do I write a good CV?')">How do I write a good CV?</div>
       <div class="suggestion" onclick="insertSuggestion('What are trending tech jobs?')">What are trending tech jobs?</div>
@@ -58,16 +29,9 @@
     </div>
     <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
   </main>
+{% endblock %}
 
-  <!-- Optional Footer -->
-  <footer class="footer-note-static">
-    &copy; 2025 Jobcus – Your AI Career Advisor
-  </footer>
-
-  <!-- Scroll Down -->
-  <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
-
- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+{% block scripts %}
 
   <script>
     function insertSuggestion(text) {
@@ -289,7 +253,4 @@ function displayJobs(data) {
       alert("Link copied!");
     }
 </script>
-  
-</body>
-</html>
-
+{% endblock %}
