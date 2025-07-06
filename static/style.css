@@ -239,6 +239,12 @@ main.chat-started {
   box-sizing: border-box;
 }
 
+.ai-answer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .ai-answer h3 {
   margin-top: 0;
 }
@@ -404,3 +410,12 @@ main.chat-started {
     font-size: 20px;
   }
 }
+
+.copy-icon {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
