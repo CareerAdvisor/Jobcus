@@ -59,7 +59,7 @@ form.addEventListener("submit", async (e) => {
   aiBlock.className = "chat-entry";
   const existingEntries = document.querySelectorAll(".chat-entry").length;
   aiBlock.innerHTML = `
-    <div class='user-question'><h2>\${message}</h2></div>
+    <div class='user-question'><h2>${message}</h2></div>
     <div class='ai-answer'>
       <img src='/static/icons/copy.svg' alt='Copy' class='copy-icon'>
       <span class="typed-response"></span>
