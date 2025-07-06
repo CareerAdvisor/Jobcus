@@ -177,7 +177,7 @@ function displayJobs(data) {
       const jobCard = document.createElement("div");
       jobCard.className = "job-card";
       jobCard.innerHTML = `
-        <h3>\${job.title}</h3>
+        <h3>${job.title}</h3>
         <p><strong>${job.company}</strong> – ${job.location}</p>
         <a href="${job.url}" target="_blank">View Job</a>
       `;
