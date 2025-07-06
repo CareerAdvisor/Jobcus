@@ -182,14 +182,3 @@ function displayJobs(data) {
   }
 
   aiAnswerBlock.appendChild(jobsContainer);
-
-  document.addEventListener("DOMContentLoaded", () => {
-  const hamburger = document.querySelector(".hamburger");
-  const mobileMenu = document.getElementById("mobileMenu");
-
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener("click", () => {
-      mobileMenu.style.display = mobileMenu.style.display === "flex" ? "none" : "flex";
-    });
-  }
-});
