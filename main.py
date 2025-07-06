@@ -167,6 +167,7 @@ def get_jobs():
         "adzuna": adzuna_jobs,
         "jsearch": jsearch_jobs
     })
+    
 
     if __name__ == "__main__":
         port = int(os.environ.get("PORT", 5000))
