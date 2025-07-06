@@ -20,12 +20,16 @@ html, body {
 
 /* === Header Layout === */
 header {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  background-color: white;
+  padding: 20px 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 30px;
-  background-color: white;
-  border-bottom: 1px solid #f9fbf9;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .logo img {
