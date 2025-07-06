@@ -11,33 +11,32 @@
 </head>
 <body>
   <!-- ✅ Shared Header -->
-  <header>
-  <div class="header-container">
+  <!-- Inside <body> -->
+<header>
   <div class="logo">
-    <a href="/"><img src="/static/jobcus-logo.png" alt="Jobcus"></a>
+    <a href="/"><img src="/static/jobcus-logo.png" alt="Jobcus" /></a>
   </div>
-
-  <!-- Desktop menu -->
   <nav class="desktop-nav">
     <a href="/chat">Chat</a>
     <a href="#resume">Resume</a>
   </nav>
-
-  <!-- Hamburger icon (mobile only) -->
   <div class="hamburger" onclick="toggleMobileMenu()">
     <div></div>
     <div></div>
     <div></div>
   </div>
-
-  <!-- Mobile menu (hidden by default) -->
   <div class="mobile-nav" id="mobileMenu">
     <a href="/chat">Chat</a>
     <a href="#resume">Resume</a>
   </div>
-</div>
-
 </header>
+
+  <script>
+  function toggleMobileMenu() {
+    const menu = document.getElementById("mobileMenu");
+    menu.classList.toggle("show");
+  }
+</script>
 
   <!-- 🔁 Content Block -->
   {% block content %}{% endblock %}
