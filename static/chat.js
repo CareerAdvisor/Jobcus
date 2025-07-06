@@ -186,7 +186,9 @@ function displayJobs(data) {
   }
 
   aiAnswerBlock.appendChild(jobsContainer);
+}
 
+// ✅ This now sits outside any other function
   function toggleMobileMenu() {
     const menu = document.getElementById("mobileMenu");
     menu.classList.toggle("show");
