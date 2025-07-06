@@ -457,7 +457,21 @@ main {
 
 /* === ADDITIONAL STYLES FOR MOBILE NAV + FIXED INPUT ICONS + SUGGESTIONS === */
 
-/* Hamburger menu for mobile */
+/* Hide mobile nav by default */
+.mobile-nav {
+  display: none;
+  flex-direction: column;
+  background-color: white;
+  padding: 10px 20px;
+  position: absolute;
+  top: 70px;
+  left: 0;
+  width: 100%;
+  border-top: 1px solid #eee;
+  z-index: 999;
+}
+
+/* Hamburger icon */
 .hamburger {
   display: none;
   flex-direction: column;
@@ -470,6 +484,17 @@ main {
   height: 3px;
   background-color: #333;
   border-radius: 2px;
+}
+
+/* Show hamburger + hide normal nav on mobile */
+@media screen and (max-width: 768px) {
+  .desktop-nav {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
 }
 
 /* Mobile side menu */
@@ -768,4 +793,17 @@ main {
   }
 }
 
+a.health-check-btn {
+  display: inline-block;
+  background-color: #104879;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  text-decoration: none;
+  font-size: 1rem;
+  max-width: 90%;
+  white-space: normal; /* allow wrapping */
+  line-height: 1.4;
+  text-align: center;
+}
 
