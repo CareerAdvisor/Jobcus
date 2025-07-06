@@ -526,12 +526,16 @@ main {
 
 /* Show hamburger + hide normal nav on mobile */
 @media (max-width: 768px) {
-  .desktop-nav {
-    display: none;
+.desktop-nav {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: flex-end;
   }
-  .hamburger {
-      display: flex;
-    }
+
+.hamburger {
+  display: flex;
+  }
 }
 
 /* Fix input icons layout */
@@ -609,24 +613,12 @@ main {
     order: 1;
   }
 
-  /* Reduce header padding for smaller screens */
-  header {
-    padding: 6px 15px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-
   .logo {
     order: 2;
     margin: 0 auto;
     display: flex;
     justify-content: center;
     flex-grow: 1;
-  }
-
-  .logo img {
-    height: 60px;
   }
 
   .start-new-chat-icon {
@@ -692,9 +684,10 @@ main {
   }
 
   .sidebar.active {
-    transform: translateX(0);
+   transform: translateX(0);
   }
 }
+
 /* Hide header hamburger when sidebar is open */
 .sidebar.active ~ header .header-toggle {
   display: none !important;
