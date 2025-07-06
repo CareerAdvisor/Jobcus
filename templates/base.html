@@ -12,29 +12,32 @@
 <body>
   <!-- ✅ Shared Header -->
   <header>
-    <div class="logo">
-      <a href="/"><img src="/static/jobcus-logo.png" alt="Jobcus"></a>
-    </div>
-
-    <nav class="desktop-nav">
-      <a href="/chat">Chat</a>
-      <a href="#resume">Resume</a>
-    </nav>
-
-    <!-- Hamburger icon (mobile only) -->
-    <div class="hamburger" onclick="toggleMobileMenu()">
-      <div></div>
-      <div></div>
-      <div></div>
-    </div>
-
-    <!-- Mobile menu -->
-    <div class="mobile-nav" id="mobileMenu">
-      <a href="/chat">Chat</a>
-      <a href="#resume">Resume</a>
+  <div class="logo">
+    <a href="/"><img src="/static/jobcus-logo.png" alt="Jobcus"></a>
   </div>
-    
-  </header>
+
+  <!-- Desktop Navigation -->
+  <nav class="desktop-nav">
+    <a href="/chat">Chat</a>
+    <a href="#resume">Resume</a>
+  </nav>
+
+  <!-- Hamburger icon (mobile only) -->
+  <div class="hamburger" id="hamburger">
+    <div></div>
+    <div></div>
+    <div></div>
+  </div>
+
+  <!-- Mobile Navigation Menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/chat">Chat</a>
+    <a href="#resume">Resume</a>
+  </div>
+
+  <!-- Overlay for mobile menu -->
+  <div class="mobile-menu-overlay" id="menuOverlay"></div>
+</header>
 
   <!-- 🔁 Content Block -->
   {% block content %}{% endblock %}
