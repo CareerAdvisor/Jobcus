@@ -435,5 +435,6 @@ main.chat-started {
 
 body.chat-page, html {
   overflow-x: hidden;
+  overflow-y: hidden;
 }
 
