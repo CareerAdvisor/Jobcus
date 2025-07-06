@@ -1,24 +1,20 @@
-/* === Global Styles === */
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #f9fbf9;
+/* === GLOBAL RESETS === */
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  color: #333;
-  overflow-x: hidden;
-  overflow-y: auto;
-  /* Prevent scroll until chat starts */
 }
 
 html, body {
   height: 100%;
-  margin: 0;
-  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f9fbf9;
+  color: #333;
   overflow-x: hidden;
   overflow-y: auto;
 }
 
-/* === Header Layout === */
+/* === HEADER === */
 header {
   position: sticky;
   top: 0;
@@ -36,446 +32,24 @@ header {
   height: 60px;
 }
 
-.header-icons {
+/* === DESKTOP NAV === */
+.desktop-nav {
   display: flex;
-  align-items: center;
-  gap: 5px;
+  gap: 1rem;
+  margin-left: auto;
 }
 
-.header-icons img {
-  height: 20px;
-  margin-left: 20px;
-  cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+.desktop-nav a {
+  text-decoration: none;
+  color: #111827;
 }
 
-.header-icons img[alt="User"] {
-  height: 30px;
-}
-
-/* Generic hover effect for icons */
-.header-icons img:hover {
-  transform: scale(1.1);
-  opacity: 0.8;
-}
-
-/* But not for the ellipsis */
-.header-icons img[alt="Options"]:hover {
-  background: none !important;
-  border-radius: 0 !important;
-  transform: none !important;
-  opacity: 1 !important;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-/* === Dropdown Menu === */
-.dropdown-content {
-  display: none;
-  position: absolute;
-  right: 0;
-  top: 30px;
-  background-color: white;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  padding: 10px;
-  border-radius: 6px;
-  z-index: 1000;
-}
-
-.dropdown-content.show {
-  display: block;
-}
-
-.dropdown-content div {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-  cursor: pointer;
-}
-
-.dropdown-menu {
-  position: relative;
-  display: inline-block;
-}
-.dropdown-content div img {
-  margin-right: 8px;
-    }
-
-/* === Prompt Area === */
-.prompt {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.prompt h1 {
-  font-weight: 500;
-  font-size: 24px;
-}
-
-/* === Main Layout Container === */
-main {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100vh - 70px);
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 30px 20px;
-  box-sizing: border-box;
-}
-
-main.centered {
-  justify-content: center;
-}
-
-main.chat-started {
-  justify-content: flex-end;
-  padding-top: 50px;
-}
-
-/* === Chat Display === */
-.chatbox {
-  flex-grow: 1;
-  max-height: 75vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column-reverse;
-  margin-bottom: 5px;
-  padding: 5px;
-  scroll-behavior: smooth;
-  width: 100%;
-  box-sizing: border-box;
-}
-.chat-entry {
-  margin-bottom: 5px;
-  padding-bottom: 5px;
-}
-.chat-started .center-wrapper {
-  align-items: stretch;
-  justify-content: flex-start;
-  height: auto;
-}
-
-.chat-started {
-  justify-content: flex-end;
-}
-
- #chat-form {
-  padding-bottom: 5px;
-}
- .copy-icon {
-  float: right;
-  height: 16px;
-  margin-top: -8px;
-  cursor: pointer;
-}
-.center-wrapper {
-  width: 100%;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.user-question h2 {
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.user-header {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #1b1b1b;
-  margin-bottom: 10px;
-}
-
-/* === Custom Blinking Cursor for Input === */
-#userInput:focus::placeholder {
-  color: transparent;
-}
-
-#userInput:focus {
-  caret-color: auto; /* ✅ Show the native blinking caret */
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-/* === AI Answer Styling === */
-.ai-answer {
-  background-color: #f9fbf9;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #2b2b2b;
-  position: relative;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.typing::after {
-  content: '|';
-  animation: blink 0.8s infinite;
-  color: #888;
-  margin-left: 2px;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-.ai-answer h3 {
-  margin-top: 0;
-}
-
-.ai-answer ul,
-.ai-answer ol {
-  padding-left: 20px;
-  margin: 10px 0;
-}
-
-.ai-answer table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 10px 0;
-}
-
-.ai-answer table, .ai-answer th, .ai-answer td {
-  border: 1px solid #ccc;
-  padding: 8px;
-}
-
-.ai-answer pre {
-  background: #f0f0f0;
-  padding: 10px;
-  overflow-x: auto;
-  border-radius: 6px;
-  margin: 10px 0;
-}
-
-.ai-answer code {
-  background-color: #f0f0f0;
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-family: monospace;
-}
-
-.ai-answer a {
-  color: #0077cc;
-  text-decoration: underline;
-}
-
-/* === Input Section === */
-.input-container {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  background-color: #fff;
-  padding: 30px;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.04);
-  border-radius: 16px;
-  border: 1px solid #ddd;
-}
-
-/* Mobile-specific input form styling */
-@media screen and (max-width: 600px) {
-  .input-container {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 12px;
-    position: static !important;
-    transform: none !important;
-    width: 100%;
-    max-width: 100%;
-    margin-top: 10px;
-    box-sizing: border-box;
-  }
-}
-  main {
-    padding: 20px 10px;
-    overflow-y: auto;
-    flex-grow: 1;
-  }
-
-  .chatbox {
-    max-height: 60vh;
-  }
-}
-
-.input-container.centered-input {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.input-container.chat-started-input {
-  position: static;
-  transform: none;
-}
-
-.icon-group {
-  display: flex;
-  align-items: center;
-}
-
-.icon-group img {
-  height: 18px;
-  margin-left: 14px;
-  cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-
-.icon-group img[alt="Send"] {
-  height: 30px;
-}
-
-.icon-group img:hover {
-  transform: scale(1.1);
-  opacity: 0.8;
-}
-
-.icon-group button {
-  background: none;
-  border: none;
-  margin-left: 14px;
-  padding: 0;
-  cursor: pointer;
-}
-
-.scroll-down-icon {
-  position: fixed;
-  bottom: 90px;
-  left: 50%;
-  transform: translateX(-50%);
-  cursor: pointer;
-  height: 24px;
-  z-index: 1000;
-  display: none;
-}
-
-.start-new-chat-icon {
-  position: fixed;
-  bottom: 10px;
-  right: 20px;
-  height: 20px;
-  cursor: pointer;
-  background: #f5f5f5;
-  border-radius: 50%;
-  padding: 3px;
-  transition: transform 0.2s ease, background 0.2s ease;
-}
-
-.start-new-chat-icon:hover,
-.copy-icon:hover,
-.dropdown-menu:hover {
-  transform: scale(1.1);
-  background-color: #e0e0e0;
-  border-radius: 50%;
-}
-
-.suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.suggestion {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.suggestion:hover {
-  background-color: #eee;
-}
-
-hr {
-  border: 0;
-  border-top: 1px solid #e0e0e0;
-  margin: 30px 0;
-}
-
- .vertical-divider {
-   height: 24px;
-   width: 1px;
-   background-color: #ccc;
-   margin: 0 12px;
-}
-
-/* Ensure the body and html always take up full height */
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
-
-/* Fix for the main container to allow scroll */
-main {
-  overflow-y: auto;
-  flex-grow: 1;
-}
-
-/* Ensure input-container doesn't cut off at bottom */
-.input-container {
-  flex-wrap: wrap;
-  word-break: break-word;
-  padding: 30px;
-  margin-bottom: 10px;
-}
-
-/* Adjust header responsiveness */
-@media screen and (max-width: 600px) {
-  header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .header-icons {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    width: 100%;
-  }
-}
-
-/* === ADDITIONAL STYLES FOR MOBILE NAV + FIXED INPUT ICONS + SUGGESTIONS === */
-
-/* Hide mobile nav by default */
-.mobile-nav {
-  display: none;
-  flex-direction: column;
-  background-color: white;
-  padding: 10px 20px;
-  position: absolute;
-  top: 70px;
-  right: 10px;
-  border: 1px solid #ccc;
-  z-index: 1000;
-}
-
-/* Hamburger icon */
+/* === MOBILE NAV === */
 .hamburger {
   display: none;
   flex-direction: column;
-  cursor: pointer;
   gap: 5px;
+  cursor: pointer;
 }
 
 .hamburger div {
@@ -483,225 +57,41 @@ main {
   height: 3px;
   background-color: #333;
 }
-  
-/* Mobile side menu */
-.mobile-menu {
+
+.mobile-nav {
   display: none;
-  position: absolute;
-  top: 70;
-  left: 20;
-  background-color: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0.1);
-  border-radius: 6px;
-  padding: 15px;
-  z-index: 1000;
   flex-direction: column;
+  position: absolute;
+  top: 70px;
+  right: 10px;
+  background-color: white;
+  padding: 10px 20px;
+  border: 1px solid #ccc;
+  z-index: 1000;
 }
 
- .mobile-menu.active {
-    display: flex;
-  }
-
-.mobile-menu a {
-    margin-bottom: 10px;
-    text-decoration: none;
-    color: #111827;
-  }
-
-.mobile-menu-overlay {
-  display: none;
+.mobile-nav.show {
+  display: flex;
 }
 
-.mobile-menu-overlay.active {
-  display: block;
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: 100vw;
-  background-color: rgba(0, 0, 0, 0.3);
-  z-index: 900;
+.mobile-nav a {
+  text-decoration: none;
+  color: #111827;
+  margin-bottom: 10px;
 }
 
-/* Hide desktop menu on small screens */
+/* === RESPONSIVE TOGGLE === */
 @media (max-width: 768px) {
-.desktop-nav {
-  display: none;
-  }
-
-.hamburger {
-  display: block;
-  cursor: pointer;
-  }
-}
-
-/* Fix input icons layout */
-.input-container .icon-group {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.input-container input[type="text"] {
-  flex-grow: 1;
-  min-width: 0;
-}
-
-/* Search Suggestions */
-.search-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin: 1px 0 2px;
-}
-
-.search-suggestions .suggestion {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.search-suggestions .suggestion:hover {
-  background-color: #eee;
-}
-
-/* Footer notice */
-.footer-note {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #777;
-  margin-top: 15px;
-  padding-bottom: 10px;
-}
-
-  /* Desktop-specific sidebar toggle hide rule */
-  @media screen and (min-width: 601px) {
-  .sidebar-toggle {
-    display: none !important;
-  }
-}
-
-  .header-icons {
+  .desktop-nav {
     display: none;
   }
 
-  .input-container {
-    flex-direction: column-reverse;
-    align-items: stretch;
-    padding: 12px;
-    position: static !important;
-    transform: none !important;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .input-container input[type="text"] {
-    order: 2;
-    margin-bottom: 10px;
-  }
-
-  .input-container .icon-group {
-    justify-content: flex-start;
-    order: 1;
-  }
-
-  .logo {
-    order: 2;
-    margin: 0 auto;
+  .hamburger {
     display: flex;
-    justify-content: center;
-    flex-grow: 1;
-  }
-
-  .start-new-chat-icon {
-    order: 3;
-    margin-left: auto;
   }
 }
 
-/* Standalone footer content outside input-container */
-.footer-note-static {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #777;
-  padding: 20px 10px;
-  background-color: #f9fbf9;
-  border-top: 1px solid #eee;
-}
-
-.chat-divider {
-  margin: 20px 0;
-  border: none;
-  border-top: 1px solid #ddd;
-}
-.job-listings {
-  margin-top: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.job-card {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  padding: 15px;
-  border-radius: 10px;
-  margin: 10px 0;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.04);
-}
-
-.job-card h3 {
-  margin: 0 0 5px;
-}
-
-.job-card a {
-  text-decoration: none;
-  color: #0077cc;
-}
-
-.scroll-down-icon {
-  position: fixed;
-  bottom: 90px;
-  left: 50%;
-  transform: translateX(-50%);
-  cursor: pointer;
-  height: 24px;
-  z-index: 1000;
-  display: none; /* default hidden */
-}
-@media screen and (max-width: 768px) {
-  .sidebar {
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-  }
-
-  .sidebar.active {
-   transform: translateX(0);
-  }
-}
-
-/* Hide header hamburger when sidebar is open */
-.sidebar.active ~ header .header-toggle {
-  display: none !important;
-}
-
-.input-container input[type="text"] {
-  flex: 1;
-  border: none;
-  outline: none;
-  font-size: 16px;
-  padding: 10px;
-  background-color: transparent;
-  box-shadow: none;
-  caret-color: auto;
-}
-
-/* === Hero Section === */
+/* === HERO SECTION === */
 .hero {
   padding: 60px 20px;
   text-align: center;
@@ -719,16 +109,30 @@ main {
   margin-bottom: 30px;
 }
 
+.btn-primary,
+.cv-check-button {
+  background-color: #104879;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 40px;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 1rem;
+  line-height: 1.4;
+  white-space: normal;
+  display: inline-block;
+  max-width: 100%;
+  text-align: center;
+}
+
 .btn-primary {
   background-color: white;
   color: #104879;
   padding: 12px 24px;
   border-radius: 9999px;
-  font-weight: 600;
-  text-decoration: none;
 }
 
-/* === Section Styling for Homepage === */
+/* === SECTION === */
 .section {
   padding: 40px 20px;
   text-align: center;
@@ -744,6 +148,7 @@ main {
   margin: 0 auto 20px;
 }
 
+/* === FEATURES === */
 .features {
   display: flex;
   flex-direction: column;
@@ -758,7 +163,6 @@ main {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
 }
 
-/* Responsive Layout for Features */
 @media(min-width: 768px) {
   .hero h1 {
     font-size: 3rem;
@@ -774,31 +178,12 @@ main {
   }
 }
 
-.cv-check-button {
-  background-color: #104879;
-  color: white;
-  padding: 14px 28px;
-  border-radius: 40px;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 1rem;
+/* === FOOTER === */
+.footer-note-static {
   text-align: center;
-  line-height: 1.4;
-  white-space: normal;
-  max-width: 100%;
+  font-size: 0.85rem;
+  color: #777;
+  padding: 20px 10px;
+  background-color: #f9fbf9;
+  border-top: 1px solid #eee;
 }
-
-/* Show desktop nav on wider screens */
-@media (min-width: 769px) {
-  .hamburger,
-  .mobile-menu {
-    display: none;
-  }
-}
-
-desktop-nav {
-  display: flex;
-  gap: 1rem;
-  align-item: center;
-  margin-left: auto;
-  }
