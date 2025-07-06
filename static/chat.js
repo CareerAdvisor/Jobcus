@@ -176,11 +176,11 @@ function displayJobs(data) {
     allJobs.forEach(job => {
       const jobCard = document.createElement("div");
       jobCard.className = "job-card";
-      jobCard.innerHTML = \`
+      jobCard.innerHTML = `
         <h3>\${job.title}</h3>
-        <p><strong>\${job.company}</strong> – \${job.location}</p>
-        <a href="\${job.url}" target="_blank">View Job</a>
-      \`;
+        <p><strong>${job.company}</strong> – ${job.location}</p>
+        <a href="${job.url}" target="_blank">View Job</a>
+      `;
       jobsContainer.appendChild(jobCard);
     });
   }
