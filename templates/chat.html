@@ -5,7 +5,11 @@
 {% block content %}
   <main class="centered" id="mainContainer">
   <div class="chatbox" id="chatbox"></div>
-
+    
+    <div class="prompt" id="prompt">
+    <h1>What can I assist you with today?</h1>
+  </div>
+    
   <form id="chat-form" class="input-container">
     <input type="text" id="userInput" placeholder="Ask your career question..." />
     <div class="icon-group">
@@ -15,10 +19,6 @@
       <button type="submit"><img src="/static/icons/enter.svg" alt="Send"></button>
     </div>
   </form>
-
-  <div class="prompt" id="prompt">
-    <h1>What can I assist you with today?</h1>
-  </div>
 
   <div class="search-suggestions">
     <div class="suggestion" onclick="insertSuggestion('How do I write a good CV?')">How do I write a good CV?</div>
