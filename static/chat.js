@@ -85,7 +85,7 @@ form.addEventListener("submit", async (e) => {
     maybeShowScrollIcon();
 
     if (data.suggestJobs) {
-      await fetchJobs(message);
+      await fetchJobs(message, aiBlock);
     }
   })();
   });
@@ -147,7 +147,7 @@ window.addEventListener("load", maybeShowScrollIcon);
 window.addEventListener("resize", maybeShowScrollIcon);
 
 // === Fetch Jobs ===
-async function fetchJobs(query) {
+async function fetchJobs(query, aiBlock) {
   try {
     const res = await fetch("/jobs", {
       method: "POST",
@@ -155,7 +155,7 @@ async function fetchJobs(query) {
       body: JSON.stringify({ query, location: "", jobType: "" }),
     });
     const data = await res.json();
-    displayJobs(data);
+    displayJobs(data, aiBlock);
   } catch (err) {
     console.error("Job fetch error:", err);
   }
