@@ -13,14 +13,22 @@
     </div>
     
   <form id="inputContainer" class="input-container">
-    <input type="text" id="userInput" placeholder="Ask your career question..." />
-    <div class="icon-group">
-      <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
-      <input id="file-upload" type="file" style="display: none;">
-      <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
-      <button type="submit"><img src="/static/icons/enter.svg" alt="Send"></button>
-    </div>
-  </form>
+  <label for="file-upload" class="attach-icon">
+    <img src="/static/icons/paperclip.svg" alt="Attach">
+  </label>
+  <input id="file-upload" type="file" style="display: none;">
+
+  <div class="input-wrapper">
+    <input type="text" id="userInput" placeholder="Ask your career question…" />
+  </div>
+
+  <div class="icon-group">
+    <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
+    <button type="submit">
+      <img src="/static/icons/enter.svg" alt="Send">
+    </button>
+  </div>
+</form>
 
   <div class="search-suggestions">
     <div class="suggestion" onclick="insertSuggestion('How do I write a good CV?')">How do I write a good CV?</div>
