@@ -309,24 +309,6 @@ main.chat-started {
   gap: 14px;
 }
 
-#inputContainer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
-  background: white; /* or your page background */
-  padding: 10px 15px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-}
-
-#inputContainer input {
-  flex: 1;
-  min-width: 0;
-}
-
 .icon-group img {
   height: 24px;
   cursor: pointer;
@@ -441,3 +423,68 @@ body.chat-page, html {
   overflow-y: hidden;
 }
 
+/* Centered input container with fixed position at bottom */
+#inputContainer {
+  position: fixed;
+  bottom: 20px; /* Optional: gives some space from screen edge */
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 25px;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 90%;
+  max-width: 600px; /* So it stays centered and compact */
+  z-index: 1000;
+}
+
+/* Attachment icon on the left */
+#inputContainer .attach-icon img {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+}
+
+/* Input box aligned to the top right */
+#inputContainer .input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+}
+
+#userInput {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  padding: 5px 8px;
+  margin-top: 2px;
+}
+
+/* Icon group on the right */
+#inputContainer .icon-group {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+#inputContainer .icon-group img {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+}
+
+#inputContainer button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+#inputContainer input {
+  flex: 1;
+  min-width: 0;
+}
