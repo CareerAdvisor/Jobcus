@@ -13,22 +13,24 @@
     </div>
     
   <form id="inputContainer" class="input-container">
-  <label for="file-upload" class="attach-icon">
-    <img src="/static/icons/paperclip.svg" alt="Attach">
-  </label>
-  <input id="file-upload" type="file" style="display: none;">
+  <div class="icon-left">
+    <label for="file-upload" class="attach-icon">
+      <img src="/static/icons/paperclip.svg" alt="Attach">
+    </label>
+    <input id="file-upload" type="file" style="display: none;">
+  </div>
 
   <div class="input-wrapper">
-    <input type="text" id="userInput" placeholder="Ask your career question..." />
-  </div>
-
-  <div class="icon-group">
-    <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
-    <button type="submit">
-      <img src="/static/icons/enter.svg" alt="Send">
-    </button>
+    <textarea id="userInput" placeholder="Ask your career question..."></textarea>
+    <div class="icon-right">
+      <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
+      <button type="submit">
+        <img src="/static/icons/enter.svg" alt="Send">
+      </button>
+    </div>
   </div>
 </form>
+
   <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
   <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
 </main>
