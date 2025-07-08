@@ -431,8 +431,8 @@ body.chat-page, html {
   align-items: center;
   gap: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  width: 100%;
-  max-width: 1000px; /* So it stays centered and compact */
+  width: 80%;
+  max-width: 800px; /* So it stays centered and compact */
   z-index: 1000;
   min-height: 100px; /* Ensures comfortable height */
 }
@@ -455,7 +455,7 @@ body.chat-page, html {
   border: none;
   outline: none;
   font-size: 16px;
-  padding: 8px 0;
+  padding: 2px 0;
   overflow-y: auto;
   background: transparent;
   font-family: inherit;
