@@ -422,7 +422,6 @@ body.chat-page, html {
 /* Centered input container with fixed position at bottom */
 #inputContainer {
   position: fixed;
-  bottom: 5px; /* Optional: gives some space from screen edge */
   left: 50%;
   transform: translateX(-50%);
   background: white;
@@ -456,8 +455,12 @@ body.chat-page, html {
   border: none;
   outline: none;
   font-size: 16px;
-  padding: 5px 0px;
+  padding: 8px 0;
+  line-height: 1.4;
+  max-height: 200px;
+  overflow-y: auto;
   background: transparent;
+  font-family: inherit;
 }
 
 /* Icon group on the right */
