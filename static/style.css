@@ -479,3 +479,7 @@ body.chat-page, html {
 #inputContainer {
   border: 1px solid #ccc;
 }
+
+#chatbox {
+  padding-bottom: 100px; /* Adjust to the height of your input container */
+}
