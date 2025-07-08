@@ -5,32 +5,25 @@
 {% block body_class %}chat-page{% endblock %}
 
 {% block content %}
-  <main class="centered" id="mainContainer">
-  <div class="chatbox" id="chatbox"></div>
-
-    <div class="prompt" id="prompt">
-    <h1>What can I assist you with today?</h1>
-    </div>
-    
-  <form id="inputContainer">
-  <div class="icon-left">
-    <label for="file-upload">
-      <img src="/static/icons/paperclip.svg" alt="Attach">
-    </label>
-    <input id="file-upload" type="file" style="display: none;">
-  </div>
-
-  <div class="input-wrapper">
-    <input type="text" id="userInput" placeholder="Ask your career question..." />
-  </div>
-
-  <div class="icon-right">
-    <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
-    <button type="submit">
-      <img src="/static/icons/enter.svg" alt="Send">
-    </button>
-  </div>
-</form>
+    <main class="centered" id="mainContainer">
+    <div class="chatbox" id="chatbox"></div>
+    <div id="job-results" class="job-results"></div>
+    <form id="chat-form">
+      <div class="center-wrapper" id="center-wrapper">
+        <div class="prompt" id="prompt">
+          <h1>What can I assist you with today?</h1>
+        </div>
+        <div class="input-container" id="inputContainer">
+          <input type="text" id="userInput" placeholder="Ask your career question..." />
+          <div class="icon-group">
+            <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
+            <input id="file-upload" type="file" style="display: none;">
+            <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
+            <button type="submit"><img src="/static/icons/enter.svg" alt="Send"></button>
+          </div>
+        </div>
+      </div>
+    </form>
 
   <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
   <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
