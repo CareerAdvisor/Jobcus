@@ -490,15 +490,3 @@ body.chat-page, html {
 body.chat-page {
   overflow-x: hidden;
 }
-
-/* Textarea */
-#inputContainer textarea#userInput {
-  width: 100%;
-  min-height: 42px;
-  resize: none;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  box-sizing: border-box;
-}
