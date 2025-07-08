@@ -427,21 +427,21 @@ body.chat-page, html {
   transform: translateX(-50%);
   background: white;
   border-radius: 25px;
-  padding: 10px 15px;
+  padding: 12px 18px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   width: 90%;
   max-width: 600px; /* So it stays centered and compact */
   z-index: 1000;
+  min-height: 64px; /* Ensures comfortable height */
 }
 
 /* Attachment icon on the left */
 #inputContainer .attach-icon img {
-  width: 22px;
-  height: 22px;
-  cursor: pointer;
+  width: 24px;
+  height: 24px;
 }
 
 /* Input box aligned to the top right */
@@ -455,9 +455,9 @@ body.chat-page, html {
   width: 100%;
   border: none;
   outline: none;
-  font-size: 14px;
-  padding: 5px 8px;
-  margin-top: 2px;
+  font-size: 16px;
+  padding: 5px 0px;
+  background: transparent;
 }
 
 /* Icon group on the right */
@@ -465,12 +465,6 @@ body.chat-page, html {
   display: flex;
   gap: 10px;
   align-items: flex-end;
-}
-
-#inputContainer .icon-group img {
-  width: 22px;
-  height: 22px;
-  cursor: pointer;
 }
 
 #inputContainer button {
@@ -487,4 +481,8 @@ body.chat-page, html {
 #inputContainer input {
   flex: 1;
   min-width: 0;
+}
+
+#inputContainer {
+  border: 1px solid #ccc;
 }
