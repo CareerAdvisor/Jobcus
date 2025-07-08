@@ -5,26 +5,35 @@
 {% block body_class %}chat-page{% endblock %}
 
 {% block content %}
-    <main class="centered" id="mainContainer">
-    <div class="chatbox" id="chatbox"></div>
-    <div id="job-results" class="job-results"></div>
-    <form id="chat-form">
-      <div class="center-wrapper" id="center-wrapper">
-        <div class="prompt" id="prompt">
-          <h1>What can I assist you with today?</h1>
-        </div>
-        <div class="input-container" id="inputContainer">
-          <input type="text" id="userInput" placeholder="Ask your career question..." />
-          <div class="icon-group">
-            <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
-            <input id="file-upload" type="file" style="display: none;">
-            <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
-            <button type="submit"><img src="/static/icons/enter.svg" alt="Send"></button>
-          </div>
-        </div>
-      </div>
-    </form>
+  <main class="chat-started" id="mainContainer">
+  <div class="chat-wrapper">
+    
+    <!-- Prompt appears before chat starts -->
+    <div class="prompt" id="prompt">
+      <h1>What can I assist you with today?</h1>
+    </div>
 
+    <!-- Chat content goes here -->
+    <div class="chatbox" id="chatbox"></div>
+
+    <!-- Job results container -->
+    <div id="job-results" class="job-results"></div>
+  </div>
+
+  <!-- Input always at the bottom -->
+  <form id="chat-form">
+    <div class="input-container" id="inputContainer">
+      <input type="text" id="userInput" placeholder="Ask your career question..." />
+      <div class="icon-group">
+        <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
+        <input id="file-upload" type="file" style="display: none;">
+        <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
+        <button type="submit"><img src="/static/icons/enter.svg" alt="Send"></button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Icons -->
   <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
   <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
 </main>
