@@ -422,7 +422,7 @@ body.chat-page, html {
 /* Centered input container with fixed position at bottom */
 #inputContainer {
   position: fixed;
-  bottom: 20px; /* Optional: gives some space from screen edge */
+  bottom: 5px; /* Optional: gives some space from screen edge */
   left: 50%;
   transform: translateX(-50%);
   background: white;
