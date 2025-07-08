@@ -424,7 +424,7 @@ body.chat-page, html {
   position: fixed;
   bottom: 0;
   left: 0;
-  width: 100%;
+  width: 90%;
   z-index: 1000;
   background: white; /* or your page background */
   padding: 10px 15px;
