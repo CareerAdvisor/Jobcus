@@ -499,8 +499,6 @@ body.chat-page {
   overflow-x: hidden;
 }
 
-.chatbox {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
+#chatbox {
+  padding-bottom: 100px; /* Adjust to the height of your input container */
 }
