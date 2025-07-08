@@ -19,7 +19,7 @@
   <input id="file-upload" type="file" style="display: none;">
 
   <div class="input-wrapper">
-    <input type="text" id="userInput" placeholder="Ask your career question…" />
+    <textarea id="userInput" rows="1" placeholder="Ask your career question..."></textarea>
   </div>
 
   <div class="icon-group">
@@ -29,14 +29,6 @@
     </button>
   </div>
 </form>
-
-  <div class="search-suggestions">
-    <div class="suggestion" onclick="insertSuggestion('How do I write a good CV?')">How do I write a good CV?</div>
-    <div class="suggestion" onclick="insertSuggestion('What are trending tech jobs?')">What are trending tech jobs?</div>
-    <div class="suggestion" onclick="insertSuggestion('How can I get into cybersecurity?')">How can I get into cybersecurity?</div>
-  </div>
-
-  <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
   <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
 </main>
 
