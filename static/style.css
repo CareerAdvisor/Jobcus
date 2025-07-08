@@ -424,6 +424,7 @@ body.chat-page, html {
   position: fixed;
   bottom: 0; /* Optional: gives some space from screen edge */
   left: 50%;
+  right: 50%;
   transform: translateX(-50%);
   background: white;
   border-radius: 25px;
