@@ -7,11 +7,6 @@
 {% block content %}
   <main class="chat-started" id="mainContainer">
   <div class="chat-wrapper">
-    
-    <!-- Prompt appears before chat starts -->
-    <div class="prompt" id="prompt">
-      <h1>What can I assist you with today?</h1>
-    </div>
 
     <!-- Chat content goes here -->
     <div class="chatbox" id="chatbox"></div>
@@ -22,6 +17,10 @@
 
   <!-- Input always at the bottom -->
   <form id="chat-form">
+        <!-- Prompt appears before chat starts -->
+    <div class="prompt" id="prompt">
+      <h1>What can I assist you with today?</h1>
+    </div>
     <div class="input-container" id="inputContainer">
       <input type="text" id="userInput" placeholder="Ask your career question..." />
       <div class="icon-group">
