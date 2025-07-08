@@ -431,10 +431,10 @@ body.chat-page, html {
   align-items: center;
   gap: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  width: 90%;
-  max-width: 600px; /* So it stays centered and compact */
+  width: 100%;
+  max-width: 1000px; /* So it stays centered and compact */
   z-index: 1000;
-  min-height: 64px; /* Ensures comfortable height */
+  min-height: 100px; /* Ensures comfortable height */
 }
 
 /* Attachment icon on the left */
@@ -456,8 +456,6 @@ body.chat-page, html {
   outline: none;
   font-size: 16px;
   padding: 8px 0;
-  line-height: 1.4;
-  max-height: 200px;
   overflow-y: auto;
   background: transparent;
   font-family: inherit;
@@ -475,15 +473,6 @@ body.chat-page, html {
   border: none;
   padding: 0;
   margin: 0;
-}
-
-#chatbox {
-  padding-bottom: 100px; /* Adjust to the height of your input container */
-}
-
-#inputContainer input {
-  flex: 1;
-  min-width: 0;
 }
 
 #inputContainer {
