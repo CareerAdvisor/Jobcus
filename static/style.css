@@ -471,13 +471,6 @@ img {
   z-index: 1000;
 }
 
-@media screen and (max-width: 600px) {
-  .input-container {
-    flex-direction: column;
-    padding: 12px;
-  }
-}
-
 /* Center prompt vertically before chat starts */
 #mainContainer:not(.chat-started) .chat-wrapper {
   display: flex;
@@ -492,4 +485,16 @@ img {
 #mainContainer:not(.chat-started) .chatbox,
 #mainContainer:not(.chat-started) #job-results {
   display: none; /* hide chat area until message is sent */
+}
+
+@media screen and (min-width: 768px) {
+  .input-container {
+    height: 80px; /* Increase height */
+    padding: 20px 30px;
+  }
+
+  .input-container input[type="text"] {
+    font-size: 1rem;
+    padding: 18px 16px;
+  }
 }
