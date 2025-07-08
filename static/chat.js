@@ -33,12 +33,6 @@ const input = document.getElementById("userInput");
 const chatbox = document.getElementById("chatbox");
 const prompt = document.getElementById("prompt");
 
-// === Auto-expand textarea as user types ===
-input.addEventListener("input", () => {
-  input.style.height = "auto";
-  input.style.height = input.scrollHeight + "px";
-});
-
 // === Form submission handler ===
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
