@@ -8,19 +8,19 @@
   <main id="mainContainer">
   <div class="chat-wrapper">
 
-    <!-- Chat content goes here -->
-    <div class="chatbox" id="chatbox"></div>
-
-    <!-- Job results container -->
-    <div id="job-results" class="job-results"></div>
-  </div>
-
-    <div class="center-wrapper" id="center-wrapper">
+    <!-- Prompt appears only before chat starts -->
     <div class="prompt" id="prompt">
       <h1>What can I assist you with today?</h1>
     </div>
-    </div>
-  <!-- Input always at the bottom -->
+
+    <!-- Chat messages scroll here -->
+    <div class="chatbox" id="chatbox"></div>
+
+    <!-- Job results inserted dynamically -->
+    <div id="job-results" class="job-results"></div>
+  </div>
+
+  <!-- Fixed input bar at the bottom -->
   <form id="chat-form">
     <div class="input-container" id="inputContainer">
       <input type="text" id="userInput" placeholder="Ask your career question..." />
@@ -33,7 +33,7 @@
     </div>
   </form>
 
-  <!-- Icons -->
+  <!-- Floating action icons -->
   <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
   <img src="/static/icons/pencilchat.svg" class="start-new-chat-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()">
 </main>
