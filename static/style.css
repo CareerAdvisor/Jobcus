@@ -312,6 +312,9 @@ main.chat-started {
 
 .icon-group img {
   height: 24px;
+  width: 24px; /* Add this */
+  max-width: 100%;
+  object-fit: contain;
   cursor: pointer;
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
@@ -396,6 +399,7 @@ main.chat-started {
     flex-direction: column-reverse;
     align-items: stretch;
     padding: 12px;
+    gap: 10px; /* Add this */
   }
 
   .input-container input[type="text"] {
@@ -403,9 +407,10 @@ main.chat-started {
   }
 
   .icon-group {
-    justify-content: flex-start;
+    justify-content: center; /* Optional: align icons horizontally */
+    gap: 12px;
   }
-
+}
   .prompt h1 {
     font-size: 20px;
   }
@@ -417,4 +422,10 @@ main.chat-started {
   cursor: pointer;
   vertical-align: middle;
   margin-left: 8px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
 }
