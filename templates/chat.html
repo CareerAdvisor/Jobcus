@@ -12,9 +12,9 @@
     <h1>What can I assist you with today?</h1>
     </div>
     
-  <form id="inputContainer" class="input-container">
+  <form id="inputContainer">
   <div class="icon-left">
-    <label for="file-upload" class="attach-icon">
+    <label for="file-upload">
       <img src="/static/icons/paperclip.svg" alt="Attach">
     </label>
     <input id="file-upload" type="file" style="display: none;">
@@ -22,12 +22,13 @@
 
   <div class="input-wrapper">
     <textarea id="userInput" placeholder="Ask your career question..."></textarea>
-    <div class="icon-right">
-      <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
-      <button type="submit">
-        <img src="/static/icons/enter.svg" alt="Send">
-      </button>
-    </div>
+  </div>
+
+  <div class="icon-right">
+    <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
+    <button type="submit">
+      <img src="/static/icons/enter.svg" alt="Send">
+    </button>
   </div>
 </form>
 
