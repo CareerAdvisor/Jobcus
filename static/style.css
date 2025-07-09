@@ -38,6 +38,7 @@ header {
 
 .logo img {
   height: 40px;
+  width: auto;
 }
 
 /* === DESKTOP NAV === */
@@ -426,6 +427,7 @@ main.chat-started {
 
   .logo img {
     height: 30px;
+    width: auto;
   }
 
   .hamburger div {
@@ -516,7 +518,6 @@ img {
 .header-left,
 .header-center,
 .header-right {
-  flex: 1;
   display: flex;
   align-items: center;
 }
@@ -532,7 +533,8 @@ img {
 
 /* Pencil icon on the left */
 .header-left {
-  justify-content: flex-start;
+  flex: 0 0 auto;
+  gap: 10px;
 }
 
 .header-pencil-icon {
@@ -548,7 +550,13 @@ img {
 
 /* Right: hamburger only */
 .header-right {
-  justify-content: flex;
-  align-items: right;
+  justify-content: flex-end;
+  align-items: center;
   gap: 16px;
+}
+
+  
+.header-right {
+  flex: 0 0 auto;
+  justify-content: flex-end;
 }
