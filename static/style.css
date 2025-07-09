@@ -521,7 +521,7 @@ img {
 
   .icon-group img {
     height: 22px;
-    width: 22px; /* Add this */
+    width: auto; /* Add this */
   }
   
    header {
