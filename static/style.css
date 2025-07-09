@@ -36,7 +36,7 @@ header {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.logo img {
+.logo-img {
   height: 40px;
   width: auto;
 }
@@ -425,7 +425,7 @@ main.chat-started {
     height: 50px;
   }
 
-  .logo img {
+  .logo-img {
     height: 30px;
     width: auto;
   }
