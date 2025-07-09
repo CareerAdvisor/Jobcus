@@ -431,8 +431,6 @@ main.chat-started {
   .logo-img {
     height: 40px;
     width: auto;
-    justify-content: center !important;
-    align-items: center !important;
   }
 
   .hamburger div {
