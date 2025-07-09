@@ -13,19 +13,18 @@
   <!-- ✅ Shared Header -->
   <!-- Inside <body> -->
 <header>
-  <!-- Left: Pencilchat -->
+  <!-- Left: Pencil Icon -->
   <div class="header-left">
-    <a href="/"><img src="/static/pencilchat.svg" alt="pencilchat" /></a>
+    <img src="/static/icons/pencilchat.svg" class="header-pencil-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()" />
   </div>
 
   <!-- Center: Logo -->
   <div class="header-center">
     <a href="/"><img src="/static/jobcus-logo.png" alt="Jobcus" /></a>
   </div>
-  <nav class="desktop-nav">
-    <a href="/chat">Chat</a>
-    <a href="#resume">Resume</a>
-    </nav>
+
+  <!-- Right: Hamburger only (optional) -->
+  <div class="header-right">
     <div class="hamburger" onclick="toggleMobileMenu()">
       <div></div>
       <div></div>
@@ -33,13 +32,11 @@
     </div>
   </div>
 
-  <!-- Mobile Navigation -->
+  <!-- Mobile Nav (keep or delete as needed) -->
   <div class="mobile-nav" id="mobileMenu">
     <a href="/chat">Chat</a>
-    <a href="#resume">Resume</a>
   </div>
 </header>
-
 
   <script>
   function toggleMobileMenu() {
