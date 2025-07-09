@@ -415,7 +415,7 @@ main.chat-started {
   }
 
   .input-container input[type="text"] {
-    margin-bottom: 10px;
+    margin-bottom: 0;
   }
 
   .icon-group {
