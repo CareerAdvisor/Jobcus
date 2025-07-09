@@ -426,7 +426,7 @@ main.chat-started {
   .logo-img {
     height: 40px;
     width: auto;
-    align-items: center;
+    justify-content: center;
   }
 
   .hamburger div {
