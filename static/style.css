@@ -332,6 +332,7 @@ main.chat-started {
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
+.input-container 
 .icon-group img:hover {
   transform: scale(1.1);
   opacity: 0.8;
@@ -411,7 +412,6 @@ main.chat-started {
   .input-container {
     flex-direction: column;
     padding: 12px;
-    bottom: 0;
   }
 
   .input-container input[type="text"] {
@@ -490,8 +490,8 @@ img {
 
 @media screen and (min-width: 768px) {
   .input-container {
-    height: 60px; /* Increase height */
-    padding: 20px 30px;
+    height: 80px; /* Increase height */
+    padding: 30px 30px;
   }
 
   .input-container input[type="text"] {
