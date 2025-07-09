@@ -39,7 +39,7 @@ form.addEventListener("submit", async (e) => {
   const message = input.value.trim();
   if (!message) return;
 
-  console.log("Sending message:", message);  // <== Add this
+  console.log("Sending message:", message);
 
   const res = await fetch("/ask", {
     method: "POST",
@@ -48,11 +48,12 @@ form.addEventListener("submit", async (e) => {
   });
 
   const data = await res.json();
-  console.log("Received AI reply:", data);  // <== Add this
+  console.log("Received AI reply:", data);
 
   input.value = "";
-  prompt.style.display = 'none';
-  document.getElementById('mainContainer').classList.add('chat-started'); 
+  if (prompt) prompt.style.display = 'none';
+
+  document.getElementById('mainContainer').classList.add('chat-started');
   document.getElementById('inputContainer').classList.remove('centered-input');
   document.getElementById('inputContainer').classList.add('chat-started-input');
 
@@ -78,7 +79,7 @@ form.addEventListener("submit", async (e) => {
       typedSpan.innerHTML = replyText.slice(0, i);
       await new Promise(res => setTimeout(res, typingSpeed));
     }
-    
+
     aiBlock.querySelector(".copy-icon").onclick = () => navigator.clipboard.writeText(data.reply);
     const existingHistory = localStorage.getItem("chatHistory") || "";
     const updatedHistory = aiBlock.outerHTML + existingHistory;
@@ -89,14 +90,14 @@ form.addEventListener("submit", async (e) => {
       await fetchJobs(message, aiBlock);
     }
   })();
-  });
+});
 
 // === On Page Load Restore Chat ===
 window.addEventListener("DOMContentLoaded", () => {
   const saved = localStorage.getItem("chatHistory");
   if (saved) {
     chatbox.innerHTML = saved;
-    prompt.style.display = 'none';
+    if (prompt) prompt.style.display = 'none';
     document.querySelector("main").classList.add("chat-started");
   }
   maybeShowScrollIcon();
@@ -123,7 +124,7 @@ input.addEventListener("keypress", function (e) {
 // === Clear Chat ===
 function clearChat() {
   chatbox.innerHTML = "";
-  prompt.style.display = 'block';
+  if (prompt) prompt.style.display = 'block';
   localStorage.removeItem("chatHistory");
   document.querySelector("main").classList.remove("chat-started");
   const scrollIcon = document.getElementById("scrollDown");
@@ -189,8 +190,9 @@ function displayJobs(data, aiBlock) {
   aiAnswerBlock.appendChild(jobsContainer);
 }
 
-// ✅ This now sits outside any other function
-  function toggleMobileMenu() {
-    const menu = document.getElementById("mobileMenu");
-    menu.classList.toggle("show");
-  }
+// ✅ Outside function: toggle menu
+function toggleMobileMenu() {
+  const menu = document.getElementById("mobileMenu");
+  menu.classList.toggle("show");
+}
+
