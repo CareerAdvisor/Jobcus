@@ -13,23 +13,33 @@
   <!-- ✅ Shared Header -->
   <!-- Inside <body> -->
 <header>
-  <div class="logo">
+  <!-- Left: Chat Link -->
+  <div class="header-left">
+    <a href="/chat" class="chat-link">Chat</a>
+  </div>
+
+  <!-- Center: Logo -->
+  <div class="header-center">
     <a href="/"><img src="/static/jobcus-logo.png" alt="Jobcus" /></a>
   </div>
-  <nav class="desktop-nav">
-    <a href="/chat">Chat</a>
-    <a href="#resume">Resume</a>
-  </nav>
-  <div class="hamburger" onclick="toggleMobileMenu()">
-    <div></div>
-    <div></div>
-    <div></div>
+
+  <!-- Right: Resume Link or Hamburger -->
+  <div class="header-right">
+    <a href="#resume" class="resume-link">Resume</a>
+    <div class="hamburger" onclick="toggleMobileMenu()">
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
   </div>
+
+  <!-- Mobile Navigation -->
   <div class="mobile-nav" id="mobileMenu">
     <a href="/chat">Chat</a>
     <a href="#resume">Resume</a>
   </div>
 </header>
+
 
   <script>
   function toggleMobileMenu() {
