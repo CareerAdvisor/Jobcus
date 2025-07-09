@@ -417,6 +417,11 @@ main.chat-started {
     align-items: center;
     height: 100%
   }
+
+  .icon-group img {
+    height: 22px;
+    width: 22px; /* Add this */
+  }
   
    header {
     padding: 8px 16px;
@@ -427,6 +432,7 @@ main.chat-started {
     height: 40px;
     width: auto;
     justify-content: center !important;
+    align-items: center !important;
   }
 
   .hamburger div {
