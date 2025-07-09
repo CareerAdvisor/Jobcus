@@ -323,8 +323,8 @@ main.chat-started {
 }
 
 .icon-group img {
-  height: 28px;
-  width: 28px; /* Add this */
+  height: 24px;
+  width: 24px; /* Add this */
 }
 
 .input-container 
@@ -493,8 +493,8 @@ img {
 
 @media screen and (min-width: 768px) {
   .input-container {
-    height: 90px; /* Increase height */
-    padding: 30px 30px;
+    height: 100px; /* Increase height */
+    padding: 40px 40px;
   }
 
   .input-container input[type="text"] {
