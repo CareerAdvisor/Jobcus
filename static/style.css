@@ -503,7 +503,7 @@ img {
 
 @media screen and (min-width: 768px) {
   .input-container {
-    height: 80px; /* Increase height */
+    height: 60px; /* Increase height */
     padding: 20px 30px;
   }
 
@@ -511,24 +511,6 @@ img {
     font-size: 1rem;
     padding: 18px 16px;
   }
-}
-
-/* Use flex layout for three sections */
-.header-left,
-.header-center,
-.header-right {
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-
-/* Center the logo */
-.header-center {
-  justify-content: center;
-}
-
-.header-center img {
-  height: 34px;
 }
 
 /* Pencil icon on the left */
@@ -550,6 +532,6 @@ img {
 /* Right: hamburger only */
 .header-right {
   justify-content: flex;
-  align-items: center;
+  align-items: right;
   gap: 16px;
 }
