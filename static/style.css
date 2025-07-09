@@ -39,7 +39,6 @@ header {
 
 .logo img {
   height: 50px;
-  width: auto;
 }
 
 /* === DESKTOP NAV === */
@@ -52,6 +51,8 @@ header {
 .desktop-nav a {
   text-decoration: none;
   color: #111827;
+  font-weight: 500;
+  font-size: 14px;
 }
 
 /* === MOBILE NAV === */
@@ -549,5 +550,7 @@ img {
 
 /* Right: hamburger only */
 .header-right {
-  justify-content: flex-end;
+  justify-content: flex;
+  align-items: center;
+  gap: 16px;
 }
