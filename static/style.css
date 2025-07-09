@@ -546,5 +546,16 @@ img {
   .header-center {
     justify-content: center;
     flex: 1;
+    order: 0; /* Ensure its in the middle */
+  }
+
+  .header-left {
+    flex: 0 0 auto;
+    padding-left: 10px;
+  }
+
+  .header-right {
+    flex: 0 0 auto;
+    padding-right: 10px;
   }
 }
