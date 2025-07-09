@@ -28,12 +28,13 @@ header {
   top: 0;
   z-index: 999;
   background-color: white;
-  padding: 10px 20px;
+  padding: 0px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  height: 60px;
 }
 
 .logo img {
@@ -62,7 +63,7 @@ header {
 }
 
 .hamburger div {
-  width: 20px;
+  width: 18px;
   height: 2px;
   background-color: #333;
 }
@@ -511,3 +512,48 @@ img {
     padding: 18px 16px;
   }
 }
+
+/* Use flex layout for three sections */
+.header-left,
+.header-center,
+.header-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+/* Center the logo */
+.header-center {
+  justify-content: center;
+}
+
+.header-center img {
+  height: 36px;
+}
+
+/* Align chat link to the left */
+.header-left {
+  justify-content: flex-start;
+}
+
+.chat-link {
+  text-decoration: none;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+/* Align resume link + hamburger to the right */
+.header-right {
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.resume-link {
+  text-decoration: none;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+}
+
