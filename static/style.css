@@ -435,6 +435,12 @@ main.chat-started {
    .prompt h1 {
     font-size: 20px;
   }
+     
+  /* Center logo */
+  .header-center {
+    justify-content: center;
+    flex: 1;
+  }
 }
  
 .copy-icon {
@@ -505,11 +511,6 @@ img {
   display: flex;
   align-items: center;
   padding: 0 20px; /* Add padding to move items away from edges */
-}
-
-/* Center logo */
-.header-center {
-  justify-content: center;
 }
 
 .header-center img {
