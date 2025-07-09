@@ -3,6 +3,13 @@
 {% block title %}Jobcus – AI Career Chat{% endblock %}
 
 {% block body_class %}chat-page{% endblock %}
+{% block header_icon %}
+  <img src="/static/icons/pencilchat.svg"
+       class="header-pencil-icon"
+       alt="New Chat"
+       title="Start a new chat"
+       onclick="clearChat()" />
+{% endblock %}
 
 {% block content %}
   <main id="mainContainer">
