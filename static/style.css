@@ -34,11 +34,11 @@ header {
   align-items: center;
   border-bottom: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  height: 60px;
+  height: 80px;
 }
 
 .logo img {
-  height: 40px;
+  height: 50px;
   width: auto;
 }
 
@@ -528,32 +528,26 @@ img {
 }
 
 .header-center img {
-  height: 36px;
+  height: 34px;
 }
 
-/* Align chat link to the left */
+/* Pencil icon on the left */
 .header-left {
   justify-content: flex-start;
 }
 
-.chat-link {
-  text-decoration: none;
-  font-weight: 500;
-  color: #333;
-  font-size: 14px;
+.header-pencil-icon {
+  height: 24px;
+  width: 24px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
-/* Align resume link + hamburger to the right */
+.header-pencil-icon:hover {
+  transform: scale(1.1);
+}
+
+/* Right: hamburger only */
 .header-right {
   justify-content: flex-end;
-  gap: 10px;
 }
-
-.resume-link {
-  text-decoration: none;
-  font-weight: 500;
-  color: #333;
-  font-size: 14px;
-}
-}
-
