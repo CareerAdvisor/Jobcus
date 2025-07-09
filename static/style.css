@@ -513,6 +513,23 @@ img {
   }
 }
 
+.header-left,
+.header-center,
+.header-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+/* Center logo */
+.header-center {
+  justify-content: center;
+}
+
+.header-center img {
+  height: 34px;
+}
+
 /* Pencil icon on the left */
 .header-left {
   justify-content: flex-start;
