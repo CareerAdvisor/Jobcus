@@ -318,19 +318,13 @@ main.chat-started {
 }
 
 .input-container .icon-group {
-  display: flex;
   align-items: center;
-  flex-shrink: 0;
-  gap: 14px;
+  height: 100%;
 }
 
 .icon-group img {
-  height: 24px;
-  width: 24px; /* Add this */
-  max-width: 100%;
-  object-fit: contain;
-  cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  height: 28px;
+  width: 28px; /* Add this */
 }
 
 .input-container 
@@ -420,9 +414,10 @@ main.chat-started {
   }
 
   .icon-group {
-    justify-content: center; /* Optional: align icons horizontally */
-    gap: 12px;
+    align-items: center;
+    height: 100%
   }
+  
    header {
     padding: 8px 16px;
     height: 80px;
@@ -491,13 +486,16 @@ img {
 
 @media screen and (min-width: 768px) {
   .input-container {
-    height: 80px; /* Increase height */
+    height: 90px; /* Increase height */
     padding: 30px 30px;
   }
 
   .input-container input[type="text"] {
     font-size: 1rem;
-    padding: 18px 16px;
+    padding: 0;
+    height: 100%
+    display: flex;
+    align-items: center;
   }
 }
 
