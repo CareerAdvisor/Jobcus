@@ -533,6 +533,7 @@ img {
   .logo-img {
     height: 50px;
     width: auto;
+    align-items: left;
   }
 
   .hamburger div {
