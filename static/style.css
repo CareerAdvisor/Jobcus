@@ -90,20 +90,6 @@ header {
   margin-bottom: 10px;
 }
 
-@media(min-width: 768px) {
-  .hero h1 {
-    font-size: 3rem;
-  }
-  .features {
-    flex-direction: row;
-    justify-content: space-between;
-  }
-
-  .feature-box {
-    width: 30%;
-  }
-}
-
 /* === RESPONSIVE TOGGLE === */
 @media (max-width: 768px) {
   .desktop-nav {
@@ -187,6 +173,20 @@ header {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
     flex: 1;
   }
+
+@media(min-width: 768px) {
+  .hero h1 {
+    font-size: 3rem;
+  }
+  .features {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .feature-box {
+    width: 30%;
+  }
+}
 
 /* === FOOTER === */
 .footer-note-static {
