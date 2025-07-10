@@ -10,61 +10,53 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
-  <!-- ✅ Shared Header -->
-  <!-- Inside <body> -->
-<header>
-  <div class="header-left">
-    {% block header_icon %}
-    <img src="/static/icons/pencilchat.svg"
-         class="header-pencil-icon"
-         alt="New Chat"
-         title="Start a new chat"
-         onclick="clearChat()" />
-    {% endblock %}
-  </div>
-
-  <div class="header-center">
-    <a href="/"><img src="/static/jobcus-logo.png" alt="Jobcus" class="logo-img" /></a>
-  </div>
-
-  <div class="header-right">
-    <nav class="desktop-nav">
-      <a href="/chat">Chat</a>
-    <a href="#resume">Resume</a>
-    <a href="#product">Product</a>
-    <a href="#resources">Resources</a>
-    <a href="#about us">About Us</a> 
-    </nav>
-    <div class="hamburger" onclick="toggleMobileMenu()">
-      <div></div>
-      <div></div>
-      <div></div>
+  <header class="site-header">
+    <div class="header-left">
+      {% block header_icon %}
+      <img src="/static/icons/pencilchat.svg" class="header-pencil-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()" />
+      {% endblock %}
     </div>
-  </div>
 
-<!-- Mobile Navigation -->
-  <div class="mobile-nav" id="mobileMenu">
-    <a href="/chat">Chat</a>
-    <a href="#resume">Resume</a>
-    <a href="#product">Product</a>
-    <a href="#resources">Resources</a>
-    <a href="#about us">About Us</a>    
-  </div>
-</header>
+    <div class="header-center">
+      <a href="/">
+        <img src="/static/jobcus-logo.png" alt="Jobcus" class="logo-img" />
+      </a>
+    </div>
 
-  
-  
+    <div class="header-right">
+      <nav class="desktop-nav">
+        <a href="/chat">Chat</a>
+        <a href="#resume">Resume</a>
+        <a href="#product">Product</a>
+        <a href="#resources">Resources</a>
+        <a href="#about us">About Us</a>
+      </nav>
+      <div class="hamburger" onclick="toggleMobileMenu()">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav" id="mobileMenu">
+      <a href="/chat">Chat</a>
+      <a href="#resume">Resume</a>
+      <a href="#product">Product</a>
+      <a href="#resources">Resources</a>
+      <a href="#about us">About Us</a>
+    </div>
+  </header>
+
   <script>
-  function toggleMobileMenu() {
-    const menu = document.getElementById("mobileMenu");
-    menu.classList.toggle("show");
-  }
-</script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById("mobileMenu");
+      menu.classList.toggle("show");
+    }
+  </script>
 
-  <!-- 🔁 Content Block -->
   {% block content %}{% endblock %}
 
-  <!-- ✅ Shared Footer -->
   <footer class="footer-note-static">
     &copy; 2025 Jobcus – Your AI Career Advisor
   </footer>
@@ -72,3 +64,76 @@
   {% block scripts %}{% endblock %}
 </body>
 </html>
+
+<style>
+  header.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background-color: white;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .header-left,
+  .header-center,
+  .header-right {
+    display: flex;
+    align-items: center;
+  }
+
+  .header-left {
+    flex: 1;
+    gap: 20px;
+  }
+
+  .header-center {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .header-right {
+    flex: 1;
+    justify-content: flex-end;
+    gap: 16px;
+  }
+
+  .logo-img {
+    height: 50px;
+    width: auto;
+  }
+
+  @media screen and (max-width: 768px) {
+    .header-left {
+      flex: 0;
+    }
+
+    .header-right {
+      flex: 0;
+    }
+
+    .header-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      flex: none;
+    }
+
+    .logo-img {
+      height: 40px;
+    }
+  }
+
+  @media screen and (min-width: 769px) {
+    .header-center {
+      justify-content: flex-start;
+      position: static;
+      transform: none;
+    }
+  }
+</style>
