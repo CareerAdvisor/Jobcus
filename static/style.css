@@ -459,10 +459,10 @@ img {
   .input-container input[type="text"] {
     font-size: 1rem;
     padding: 0;
-    height: 100%
+    height: 100%;
     display: flex;
     align-items: center;
-  }
+  }  
 }
 
 .header-left,
@@ -508,7 +508,7 @@ img {
 @media screen and (max-width: 600px) {
   .input-container {
     flex-direction: column;
-    padding: 12px; 16px
+    padding: 12px 16px;
   }
 
   .input-container input[type="text"] {
@@ -548,11 +548,10 @@ img {
   .header-center {
     position: absolute;
     left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     justify-content: center;
     display: flex;
-    transform: translateX(-50%);
-    top: 50%
-    transform: translate(-50%, -50%)
     align-items: center;
   }
 
