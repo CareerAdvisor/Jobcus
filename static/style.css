@@ -564,3 +564,56 @@ img {
     flex: 0 0 auto;
   }
 }
+
+.input-container textarea {
+  flex-grow: 1;
+  resize: none;
+  overflow: hidden;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  padding: 10px;
+  background-color: transparent;
+  line-height: 1.4;
+  max-height: 200px; /* Optional max height */
+}
+
+.job-listings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.job-card {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 16px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.job-card h3 {
+  font-size: 1rem;
+  margin-bottom: 6px;
+  color: #104879;
+}
+
+.job-card p {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.job-card a {
+  color: #0077cc;
+  text-decoration: underline;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.job-card {
+  display: flex;
+  flex-direction: column;
+}
