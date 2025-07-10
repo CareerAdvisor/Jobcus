@@ -550,7 +550,7 @@ img {
     justify-content: flex-start;
   }
   .features {
-    flex-direction: column;
+    flex-direction: row;
     justify-content: space-between;
   }
 
