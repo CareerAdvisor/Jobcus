@@ -25,7 +25,7 @@
   <!-- Fixed input bar at the bottom -->
   <form id="chat-form">
     <div class="input-container" id="inputContainer">
-      <input type="text" id="userInput" placeholder="Ask your career question..." />
+     <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)"></textarea>
       <div class="icon-group">
         <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
         <input id="file-upload" type="file" style="display: none;">
