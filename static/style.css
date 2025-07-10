@@ -555,20 +555,24 @@ img {
     align-items: center;
   }
 
-  .header-left 
-  .header-right {
-    flex: 0 0 auto;
+  .header-left {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    justify-content: center;
   }
 }
 
 /* On desktop, don't center */
 @media screen and (min-width: 601px) {
-  .header-center {
-    display: flex;
+  .header-left {
     justify-content: flex-start;
-    align-items: center;
     position: static;
     transform: none;
+  }
+
+  .logo-img {
+    height: 50px; /* consistent desktop size */
   }
 }
 
