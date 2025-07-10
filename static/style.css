@@ -18,6 +18,12 @@ body.chat-page {
   overflow-y: hidden;
 }
 
+img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}
+
 /* === HEADER === */
 header {
   position: sticky;
@@ -73,40 +79,7 @@ header {
   transform: scale(1.1);
 }
 
-/* === DROPDOWN STYLES === */
-.dropdown-menu {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown-content {
-  display: none;
-  position: absolute;
-  right: 0;
-  top: 30px;
-  background-color: white;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  padding: 10px;
-  border-radius: 6px;
-  z-index: 1000;
-}
-
-.dropdown-content.show {
-  display: block;
-}
-
-.dropdown-content div {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-  cursor: pointer;
-}
-
-.dropdown-content div img {
-  margin-right: 8px;
-}
-
-/* === DESKTOP NAV === */
+/* === NAVIGATION === */
 .desktop-nav {
   display: flex;
   gap: 1rem;
@@ -120,7 +93,6 @@ header {
   font-size: 14px;
 }
 
-/* === MOBILE NAV === */
 .hamburger {
   display: none;
   flex-direction: column;
@@ -156,49 +128,40 @@ header {
   margin-bottom: 10px;
 }
 
-/* === RESPONSIVE TOGGLE === */
-@media (max-width: 768px) {
-  .desktop-nav {
-    display: none;
-  }
-
-  .hamburger {
-    display: flex;
-  }
-
-  .header-center {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    flex: none;
-  }
-
-  .logo-img {
-    height: 40px;
-    width: auto;
-  }
-
-  header {
-    padding: 8px 16px;
-    height: 80px;
-    position: relative;
-  }
-
-  .prompt h1 {
-    font-size: 20px;
-  }
+/* === DROPDOWN === */
+.dropdown-menu {
+  position: relative;
+  display: inline-block;
 }
 
-@media (min-width: 769px) {
-  .header-center {
-    justify-content: flex-start;
-    position: static;
-    transform: none;
-  }
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 30px;
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  padding: 10px;
+  border-radius: 6px;
+  z-index: 1000;
 }
 
-/* === MAIN CHAT LAYOUT === */
+.dropdown-content.show {
+  display: block;
+}
+
+.dropdown-content div {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.dropdown-content div img {
+  margin-right: 8px;
+}
+
+/* === MAIN === */
 main {
   display: flex;
   flex-direction: column;
@@ -246,7 +209,7 @@ main.chat-started {
   padding-bottom: 5px;
 }
 
-/* === INPUT CONTAINER === */
+/* === INPUT === */
 .input-container {
   position: fixed;
   bottom: 10px;
@@ -308,7 +271,7 @@ main.chat-started {
   cursor: pointer;
 }
 
-/* === CONTENT STYLING === */
+/* === CONTENT === */
 .prompt h1 {
   font-weight: 600;
   font-size: 24px;
@@ -392,12 +355,6 @@ main.chat-started {
   margin-left: 8px;
 }
 
-img {
-  max-width: 100%;
-  height: auto;
-  display: inline-block;
-}
-
 /* === JOB LISTINGS === */
 .job-listings {
   display: flex;
@@ -444,4 +401,65 @@ img {
   padding: 20px 10px;
   background-color: #f9fbf9;
   border-top: 1px solid #eee;
+}
+
+/* === MEDIA QUERIES === */
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  .header-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    flex: none;
+  }
+
+  .logo-img {
+    height: 40px;
+    width: auto;
+  }
+
+  header {
+    padding: 8px 16px;
+    height: 80px;
+    position: relative;
+  }
+
+  .prompt h1 {
+    font-size: 20px;
+  }
+
+  .input-container {
+    flex-direction: column;
+    padding: 12px 16px;
+  }
+
+  .input-container input[type="text"] {
+    margin-bottom: 0;
+  }
+
+  .icon-group {
+    align-items: center;
+    height: 100%;
+  }
+
+  .icon-group img {
+    height: 22px;
+    width: auto;
+  }
+}
+
+@media (min-width: 769px) {
+  .header-center {
+    justify-content: flex-start;
+    position: static;
+    transform: none;
+  }
 }
