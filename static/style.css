@@ -35,6 +35,11 @@ header {
   height: auto;
 }
 
+.logo-img {
+    height: 50px;
+    width: auto;
+  }
+
 /* === DESKTOP NAV === */
 .desktop-nav {
   display: flex;
@@ -85,6 +90,21 @@ header {
   margin-bottom: 10px;
 }
 
+@media(min-width: 768px) {
+  .hero h1 {
+    font-size: 3rem;
+  }
+
+  .features {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .feature-box {
+    width: 30%;
+  }
+}
+
 /* === RESPONSIVE TOGGLE === */
 @media (max-width: 768px) {
   .desktop-nav {
@@ -93,12 +113,6 @@ header {
 
   .hamburger {
     display: flex;
-  }
-  
-  .logo-img {
-  height: 40px;
-  width: auto;
-  align-items: left;
   }
 }
 
@@ -172,21 +186,6 @@ header {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-}
-
-@media(min-width: 768px) {
-  .hero h1 {
-    font-size: 3rem;
-  }
-
-  .features {
-    flex-direction: row;
-    justify-content: center;
-  }
-
-  .feature-box {
-    width: 30%;
-  }
 }
 
 /* === FOOTER === */
@@ -549,7 +548,6 @@ img {
     position: absolute;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -568,10 +566,6 @@ img {
     justify-content: flex-start;
     position: static;
     transform: none;
-  }
-
-  .logo-img {
-    height: 40px; /* consistent desktop size */
   }
 }
 
