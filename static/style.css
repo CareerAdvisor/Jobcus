@@ -559,15 +559,6 @@ img {
   }
 }
 
-/* On desktop, don't center */
-@media screen and (min-width: 601px) {
-  .header-left {
-    justify-content: flex-start;
-    position: static;
-    transform: none;
-  }
-}
-
 .input-container textarea {
   flex-grow: 1;
   resize: none;
