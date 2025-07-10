@@ -621,3 +621,45 @@ img {
   display: flex;
   flex-direction: column;
 }
+
+/* === MEDIA QUERIES === */
+@media screen and (max-width: 768px) {
+  .desktop-nav {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  .header-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    flex: none;
+  }
+
+  .logo-img {
+    height: 40px;
+    width: auto;
+  }
+
+  header.site-header {
+    padding: 8px 16px;
+    height: 80px;
+    position: relative;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .header-center {
+    justify-content: flex-start;
+    position: static;
+    transform: none;
+  }
+
+  .logo-img {
+    height: 50px;
+  }
+}
