@@ -173,22 +173,6 @@ header {
   margin: 0 auto 20px;
 }
 
-/* === FEATURES === */
-.features {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-top: 30px;
-}
-
-.feature-box {
-  background-color: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-  flex: 1;
-}
-
 /* === FOOTER === */
 .footer-note-static {
   text-align: center;
@@ -557,6 +541,21 @@ img {
     position: static;
     transform: none;
     justify-content: flex-start;
+  }
+  /* === FEATURES === */
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 30px;
+  }
+
+  .feature-box {
+    background-color: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    flex: 1;
   }
 }
 
