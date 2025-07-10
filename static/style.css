@@ -35,12 +35,6 @@ header {
   height: auto;
 }
 
-.logo-img {
-  height: 50px;
-  width: auto;
-  align-items: left;
-}
-
 /* === DESKTOP NAV === */
 .desktop-nav {
   display: flex;
@@ -557,11 +551,25 @@ img {
     justify-content: center;
     display: flex;
     transform: translateX(-50%);
+    top: 50%
+    transform: translate(-50%, -50%)
+    align-items: center;
   }
 
   .header-left 
   .header-right {
     flex: 0 0 auto;
+  }
+}
+
+/* On desktop, don't center */
+@media screen and (min-width: 601px) {
+  .header-center {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    position: static;
+    transform: none;
   }
 }
 
