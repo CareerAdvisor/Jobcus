@@ -187,7 +187,7 @@ function displayJobs(data, aiBlock) {
     });
   }
 
-  aiAnswerBlock.appendChild(jobsContainer);
+  aiBlock.appendChild(jobsContainer);
 }
 
 // ✅ Outside function: toggle menu
