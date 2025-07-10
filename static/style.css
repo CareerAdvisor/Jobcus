@@ -95,12 +95,12 @@ header {
     font-size: 3rem;
   }
   .features {
-    flex-direction: column;
+    flex-direction: row;
     justify-content: space-between;
   }
 
   .feature-box {
-    width: 25%;
+    width: 30%;
   }
 }
 
@@ -175,7 +175,7 @@ header {
  /* === FEATURES === */
   .features {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     gap: 20px;
     margin-top: 30px;
   }
