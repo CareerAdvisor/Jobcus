@@ -92,6 +92,12 @@ form.addEventListener("submit", async (e) => {
   })();
 });
 
+// === Auto Resize Textarea ===
+function autoResize(textarea) {
+  textarea.style.height = "auto";
+  textarea.style.height = textarea.scrollHeight + "px";
+}
+
 // === On Page Load Restore Chat ===
 window.addEventListener("DOMContentLoaded", () => {
   const saved = localStorage.getItem("chatHistory");
