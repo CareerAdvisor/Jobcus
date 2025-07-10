@@ -550,16 +550,15 @@ img {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    justify-content: center;
     display: flex;
+    justify-content: center;
     align-items: center;
   }
 
   .header-left {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    justify-content: center;
+    position: static;
+    transform: none;
+    justify-content: flex-start;
   }
 }
 
