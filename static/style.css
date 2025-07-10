@@ -94,15 +94,6 @@ header {
   .hero h1 {
     font-size: 3rem;
   }
-
-  .features {
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
-  .feature-box {
-    width: 25%;
-  }
 }
 
 /* === RESPONSIVE TOGGLE === */
@@ -557,6 +548,14 @@ img {
     position: static;
     transform: none;
     justify-content: flex-start;
+  }
+  .features {
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .feature-box {
+    width: 25%;
   }
 }
 
