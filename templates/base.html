@@ -14,20 +14,26 @@
   <!-- Inside <body> -->
 <header>
   <div class="header-left">
-    {% block header_icon %}{% endblock %}
+    {% block header_icon %}
+    <img src="/static/icons/pencilchat.svg"
+         class="header-pencil-icon"
+         alt="New Chat"
+         title="Start a new chat"
+         onclick="clearChat()" />
+    {% endblock %}
   </div>
 
-  <div class="header-left">
+  <div class="header-center">
     <a href="/"><img src="/static/jobcus-logo.png" alt="Jobcus" class="logo-img" /></a>
   </div>
 
   <div class="header-right">
     <nav class="desktop-nav">
-    <a href="/chat">Chat</a>
+      <a href="/chat">Chat</a>
     <a href="#resume">Resume</a>
     <a href="#product">Product</a>
     <a href="#resources">Resources</a>
-    <a href="#about us">About Us</a>
+    <a href="#about us">About Us</a> 
     </nav>
     <div class="hamburger" onclick="toggleMobileMenu()">
       <div></div>
@@ -36,7 +42,7 @@
     </div>
   </div>
 
-  <!-- Mobile Navigation -->
+<!-- Mobile Navigation -->
   <div class="mobile-nav" id="mobileMenu">
     <a href="/chat">Chat</a>
     <a href="#resume">Resume</a>
@@ -45,6 +51,8 @@
     <a href="#about us">About Us</a>    
   </div>
 </header>
+
+  
   
   <script>
   function toggleMobileMenu() {
