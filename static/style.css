@@ -76,10 +76,6 @@ header.site-header {
     transform: translate(-50%, -50%);
     flex: none;
   }
-
-  .logo-img {
-    height: 40px;
-  }
 }
 
 @media screen and (min-width: 769px) {
@@ -260,6 +256,10 @@ main.chat-started {
     padding: 12px 16px;
   }
 
+   .logo-img {
+    height: 40px;
+  }
+  
   .icon-group img {
     height: 22px;
     width: auto;
