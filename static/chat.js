@@ -5,20 +5,9 @@ function insertSuggestion(text) {
 }
 
 // === Toggle Mobile Menu ===
-const hamburger = document.getElementById("hamburger");
-const mobileMenu = document.getElementById("mobileMenu");
-const menuOverlay = document.getElementById("menuOverlay");
-
-if (hamburger && mobileMenu && menuOverlay) {
-  hamburger.addEventListener("click", () => {
-    mobileMenu.classList.toggle("active");
-    menuOverlay.classList.toggle("active");
-  });
-
-  menuOverlay.addEventListener("click", () => {
-    mobileMenu.classList.remove("active");
-    menuOverlay.classList.remove("active");
-  });
+function toggleMobileMenu() {
+  const menu = document.getElementById("mobileMenu");
+  if (menu) menu.classList.toggle("show");
 }
 
 // === Share Page ===
@@ -33,13 +22,10 @@ const input = document.getElementById("userInput");
 const chatbox = document.getElementById("chatbox");
 const prompt = document.getElementById("prompt");
 
-// === Form submission handler ===
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const message = input.value.trim();
   if (!message) return;
-
-  console.log("Sending message:", message);
 
   const res = await fetch("/ask", {
     method: "POST",
@@ -48,18 +34,17 @@ form.addEventListener("submit", async (e) => {
   });
 
   const data = await res.json();
-  console.log("Received AI reply:", data);
-
   input.value = "";
-  if (prompt) prompt.style.display = 'none';
+  if (prompt) prompt.style.display = "none";
 
-  document.getElementById('mainContainer').classList.add('chat-started');
-  document.getElementById('inputContainer').classList.remove('centered-input');
-  document.getElementById('inputContainer').classList.add('chat-started-input');
+  document.getElementById("mainContainer").classList.add("chat-started");
+  document.getElementById("inputContainer").classList.remove("centered-input");
+  document.getElementById("inputContainer").classList.add("chat-started-input");
 
   const aiBlock = document.createElement("div");
   aiBlock.className = "chat-entry";
   const existingEntries = document.querySelectorAll(".chat-entry").length;
+
   aiBlock.innerHTML = `
     <div class='user-question'><h2>${message}</h2></div>
     <div class='ai-answer'>
@@ -77,7 +62,7 @@ form.addEventListener("submit", async (e) => {
   (async () => {
     for (let i = 0; i <= replyText.length; i++) {
       typedSpan.innerHTML = replyText.slice(0, i);
-      await new Promise(res => setTimeout(res, typingSpeed));
+      await new Promise((res) => setTimeout(res, typingSpeed));
     }
 
     aiBlock.querySelector(".copy-icon").onclick = () => navigator.clipboard.writeText(data.reply);
@@ -98,12 +83,12 @@ function autoResize(textarea) {
   textarea.style.height = textarea.scrollHeight + "px";
 }
 
-// === On Page Load Restore Chat ===
+// === Restore Chat History on Load ===
 window.addEventListener("DOMContentLoaded", () => {
   const saved = localStorage.getItem("chatHistory");
   if (saved) {
     chatbox.innerHTML = saved;
-    if (prompt) prompt.style.display = 'none';
+    if (prompt) prompt.style.display = "none";
     document.querySelector("main").classList.add("chat-started");
   }
   maybeShowScrollIcon();
@@ -112,7 +97,7 @@ window.addEventListener("DOMContentLoaded", () => {
 // === Voice Input ===
 document.getElementById("mic-button").addEventListener("click", () => {
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = 'en-US';
+  recognition.lang = "en-US";
   recognition.start();
   recognition.onresult = (e) => {
     input.value = e.results[0][0].transcript;
@@ -130,7 +115,7 @@ input.addEventListener("keypress", function (e) {
 // === Clear Chat ===
 function clearChat() {
   chatbox.innerHTML = "";
-  if (prompt) prompt.style.display = 'block';
+  if (prompt) prompt.style.display = "block";
   localStorage.removeItem("chatHistory");
   document.querySelector("main").classList.remove("chat-started");
   const scrollIcon = document.getElementById("scrollDown");
@@ -139,18 +124,17 @@ function clearChat() {
 
 // === Scroll Control ===
 function scrollToBottom() {
-  chatbox.scrollTo({ top: 0, behavior: 'smooth' });
+  chatbox.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function maybeShowScrollIcon() {
   const chatbox = document.getElementById("chatbox");
   const scrollIcon = document.getElementById("scrollDown");
-  if (chatbox.scrollHeight > chatbox.clientHeight) {
-    scrollIcon.style.display = "block";
-  } else {
-    scrollIcon.style.display = "none";
-  }
+  if (!chatbox || !scrollIcon) return;
+
+  scrollIcon.style.display = chatbox.scrollHeight > chatbox.clientHeight ? "block" : "none";
 }
+
 window.addEventListener("load", maybeShowScrollIcon);
 window.addEventListener("resize", maybeShowScrollIcon);
 
@@ -181,7 +165,7 @@ function displayJobs(data, aiBlock) {
   if (allJobs.length === 0) {
     jobsContainer.innerHTML = "<p>No jobs found for this query.</p>";
   } else {
-    allJobs.forEach(job => {
+    allJobs.forEach((job) => {
       const jobCard = document.createElement("div");
       jobCard.className = "job-card";
       jobCard.innerHTML = `
@@ -195,10 +179,3 @@ function displayJobs(data, aiBlock) {
 
   aiBlock.appendChild(jobsContainer);
 }
-
-// ✅ Outside function: toggle menu
-function toggleMobileMenu() {
-  const menu = document.getElementById("mobileMenu");
-  menu.classList.toggle("show");
-}
-
