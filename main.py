@@ -5,7 +5,7 @@ from flask_cors import CORS
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
@@ -14,7 +14,7 @@ CORS(app)
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Constants
+# Constants for APIs
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
 ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs"
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
@@ -23,7 +23,6 @@ JSEARCH_API_KEY = os.getenv("JSEARCH_API_KEY")
 JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
 
 # Fetch jobs from Remotive
-
 def fetch_remotive_jobs(query):
     try:
         response = requests.get(REMOTIVE_API_URL, params={"search": query})
@@ -39,10 +38,9 @@ def fetch_remotive_jobs(query):
         return []
 
 # Fetch jobs from Adzuna
-
 def fetch_adzuna_jobs(query, location="", job_type=""):
     try:
-        country = "gb"  # Set your target country code
+        country = "gb"
         params = {
             "app_id": ADZUNA_APP_ID,
             "app_key": ADZUNA_APP_KEY,
@@ -62,6 +60,7 @@ def fetch_adzuna_jobs(query, location="", job_type=""):
     except Exception as e:
         print("Adzuna error:", e)
         return []
+
 # Fetch jobs from JSearch (RapidAPI)
 def fetch_jsearch_jobs(query):
     try:
@@ -86,16 +85,18 @@ def fetch_jsearch_jobs(query):
     except Exception as e:
         print("JSearch error:", e)
         return []
-        
-# Home route
+
+# ---------------------------
+# MOBILE-ONLY ROUTES BELOW
+# ---------------------------
+
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index_mobile.html")
 
-# Chat route 
 @app.route("/chat")
 def chat():
-    return render_template("chat.html")
+    return render_template("chat_mobile.html")
 
 # Handle AI chat
 @app.route("/ask", methods=["POST"])
@@ -106,9 +107,11 @@ def ask():
             "role": "system",
             "content": (
                 "You are Jobcus, an AI-powered career advisor and assistant. Your job is to guide users with smart, friendly, and clear career advice. "
+                "You are strictly limited to topics related to: careers, job search, CVs/resumes, interviews, skills development, career growth, workplace concerns, and education. "
+                "If a user asks anything outside these areas (like politics, entertainment, jokes, general trivia, or personal chat), politely explain that you're only able to assist with job, career, or education-related queries. "
                 "You are allowed to reference external job listings, because the Jobcus platform automatically fetches them from APIs like Adzuna and Remotive. "
                 "If a user asks about job openings or where to apply, respond with helpful guidance based on their background, and then clearly inform them that job links will appear below your message. "
-                "Do not say you cannot provide links — Jobcus will display them after your reply. Be confident, supportive, and practical."
+                "Do not say you cannot provide links — Jobcus will display them after your reply. Be confident, supportive, and practical at all times."
             )
         },
         {
@@ -124,22 +127,18 @@ def ask():
         )
         ai_msg = response.choices[0].message.content
 
-        # Check for job-related keywords
         job_keywords = ["job", "apply", "hiring", "vacancy", "openings", "position", "career", "role"]
-        lower_msg = user_msg.lower()
-        suggest_jobs = any(keyword in lower_msg for keyword in job_keywords)
+        suggest_jobs = any(keyword in user_msg.lower() for keyword in job_keywords)
 
         return jsonify({
             "reply": ai_msg,
             "suggestJobs": suggest_jobs
         })
-
     except Exception as e:
         return jsonify({
             "reply": f"⚠️ Server Error: {str(e)}",
             "suggestJobs": False
         })
-
 
 # Jobs API
 @app.route("/jobs", methods=["POST"])
@@ -167,8 +166,8 @@ def get_jobs():
         "adzuna": adzuna_jobs,
         "jsearch": jsearch_jobs
     })
-    
 
-    if __name__ == "__main__":
-        port = int(os.environ.get("PORT", 5000))
-        app.run(host="0.0.0.0", port=port)
+# Run the server
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
