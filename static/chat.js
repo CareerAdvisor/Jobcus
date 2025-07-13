@@ -1,22 +1,22 @@
-// === Chat Suggestions Insertion ===
+/* === Chat Suggestions Insertion === */
 function insertSuggestion(text) {
   document.getElementById("userInput").value = text;
   document.getElementById("userInput").focus();
 }
 
-// === Toggle Mobile Menu ===
+/* === Toggle Mobile Menu === */
 function toggleMobileMenu() {
   const menu = document.getElementById("mobileMenu");
   if (menu) menu.classList.toggle("show");
 }
 
-// === Share Page ===
+/* === Share Page === */
 function sharePage() {
   navigator.clipboard.writeText(window.location.href);
   alert("Link copied!");
 }
 
-// === Chat Form Submission ===
+/* === Chat Form Submission === */
 const form = document.getElementById("inputContainer");
 const input = document.getElementById("userInput");
 const chatbox = document.getElementById("chatbox");
@@ -77,13 +77,13 @@ form.addEventListener("submit", async (e) => {
   })();
 });
 
-// === Auto Resize Textarea ===
+/* === Auto Resize Textarea === */
 function autoResize(textarea) {
   textarea.style.height = "auto";
   textarea.style.height = textarea.scrollHeight + "px";
 }
 
-// === Restore Chat History on Load ===
+/* === Restore Chat History on Load === */
 window.addEventListener("DOMContentLoaded", () => {
   const saved = localStorage.getItem("chatHistory");
   if (saved) {
@@ -94,7 +94,7 @@ window.addEventListener("DOMContentLoaded", () => {
   maybeShowScrollIcon();
 });
 
-// === Voice Input ===
+/* === Voice Input === */
 document.getElementById("mic-button").addEventListener("click", () => {
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   recognition.lang = "en-US";
@@ -104,7 +104,7 @@ document.getElementById("mic-button").addEventListener("click", () => {
   };
 });
 
-// === Enter to Send ===
+/* === Enter to Send === */
 input.addEventListener("keypress", function (e) {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -112,7 +112,7 @@ input.addEventListener("keypress", function (e) {
   }
 });
 
-// === Clear Chat ===
+/* === Clear Chat === */
 function clearChat() {
   chatbox.innerHTML = "";
   if (prompt) prompt.style.display = "block";
@@ -122,7 +122,7 @@ function clearChat() {
   if (scrollIcon) scrollIcon.style.display = "none";
 }
 
-// === Scroll Control ===
+/* === Scroll Control === */
 function scrollToBottom() {
   chatbox.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -138,7 +138,7 @@ function maybeShowScrollIcon() {
 window.addEventListener("load", maybeShowScrollIcon);
 window.addEventListener("resize", maybeShowScrollIcon);
 
-// === Fetch Jobs ===
+/* === Fetch Jobs === */
 async function fetchJobs(query, aiBlock) {
   try {
     const res = await fetch("/jobs", {
