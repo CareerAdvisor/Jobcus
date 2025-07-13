@@ -1,54 +1,34 @@
-/* === Base Resets === */
+/* === style_mobile.css === */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body {
+html, body {
+  height: 100%;
   font-family: 'Segoe UI', sans-serif;
   background-color: #f9fbf9;
   color: #333;
   overflow-x: hidden;
-  line-height: 1.5;
-  font-size: 16px;
-  transition: background-color 0.3s, color 0.3s;
+  overflow-y: auto;
 }
 
-/* === Dark Mode Support === */
-body.dark {
-  background-color: #121212;
-  color: #f0f0f0;
-}
-body.dark .job-card {
-  background-color: #1e1e1e;
-  border-color: #333;
-}
-body.dark .ai-answer {
-  background-color: #1a1a1a;
-}
-body.dark .btn-primary,
-body.dark .cv-check-button {
-  background-color: #333;
-  color: #fff;
-}
-
-/* === Header === */
 header {
+  position: sticky;
+  top: 0;
+  background-color: white;
+  padding: 8px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: #fff;
-  border-bottom: 1px solid #eee;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  z-index: 999;
 }
 
 .logo-img {
-  height: 36px;
-  width: auto;
+  height: 40px;
 }
 
 .hamburger {
@@ -59,195 +39,247 @@ header {
 }
 
 .hamburger div {
-  width: 20px;
+  width: 18px;
   height: 2px;
-  background: #333;
+  background-color: #333;
 }
 
-/* === Mobile Navigation === */
 .mobile-nav {
   display: none;
   flex-direction: column;
   position: absolute;
   top: 60px;
   right: 10px;
-  background: #fff;
-  border: 1px solid #ddd;
-  padding: 10px;
-  z-index: 999;
+  background-color: white;
+  padding: 10px 20px;
+  border: 1px solid #ccc;
+  z-index: 1000;
 }
+
 .mobile-nav.show {
   display: flex;
 }
+
 .mobile-nav a {
-  color: #104879;
-  margin-bottom: 10px;
   text-decoration: none;
-  font-size: 1rem;
+  color: #111827;
+  margin-bottom: 10px;
+  font-size: 0.95rem;
 }
 
-/* === Hero Section === */
 .hero {
+  padding: 40px 16px;
+  text-align: center;
   background-color: #104879;
   color: white;
-  text-align: center;
-  padding: 40px 20px;
 }
 
 .hero h1 {
   font-size: 1.6rem;
-  margin-bottom: 12px;
-}
-.hero p {
-  font-size: 1rem;
-  margin-bottom: 16px;
-}
-.btn-primary {
-  background: white;
-  color: #104879;
-  padding: 10px 20px;
-  border-radius: 9999px;
-  text-decoration: none;
-  font-weight: 600;
+  margin-bottom: 14px;
 }
 
-/* === Section === */
+.hero p {
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+.btn-primary,
+.cv-check-button {
+  background-color: white;
+  color: #104879;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  display: inline-block;
+}
+
 .section {
-  padding: 30px 20px;
+  padding: 30px 16px;
   text-align: center;
 }
+
 .section h2 {
   font-size: 1.3rem;
   margin-bottom: 12px;
 }
+
 .section p {
-  font-size: 1rem;
-  margin-bottom: 16px;
+  font-size: 0.95rem;
+  margin: 0 auto 20px;
+  max-width: 90%;
 }
 
 .features {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   margin-top: 20px;
 }
+
 .feature-box {
-  background: white;
+  background-color: white;
   padding: 16px;
   border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
 }
 
-/* === Chat Page === */
-main {
-  padding: 20px;
-  max-width: 100%;
-  margin: 0 auto;
+body.chat-page {
+  overflow-y: hidden;
 }
+
+main {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 60px);
+  padding: 20px 12px;
+}
+
+.chat-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
 .chatbox {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 12px;
+  margin-bottom: 90px;
   display: flex;
   flex-direction: column-reverse;
-  max-height: 60vh;
-  overflow-y: auto;
-  padding-bottom: 60px;
-}
-.ai-answer {
-  background: #f4f4f4;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  font-size: 1rem;
+  scroll-behavior: smooth;
 }
 
-/* === Input Bar === */
+.chat-entry {
+  margin-bottom: 10px;
+}
+
+.user-question h2 {
+  font-size: 1rem;
+  color: #104879;
+}
+
+.ai-answer {
+  background-color: #f9fbf9;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #333;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.copy-icon {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
 .input-container {
   position: fixed;
-  bottom: 0;
+  bottom: 10px;
   left: 0;
   right: 0;
+  margin: 0 auto;
+  max-width: 600px;
+  background-color: white;
   padding: 12px 16px;
-  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.05);
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
-  border-top: 1px solid #ddd;
   z-index: 1000;
 }
+
 .input-container textarea {
   flex-grow: 1;
   border: none;
   outline: none;
-  resize: none;
   font-size: 1rem;
-  background: transparent;
+  resize: none;
+  background-color: transparent;
+  padding: 8px;
+  line-height: 1.4;
 }
+
+.icon-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .icon-group img {
   height: 22px;
   width: 22px;
+}
+
+.icon-group button {
+  background: none;
+  border: none;
   cursor: pointer;
 }
 
-/* === Job Cards === */
-.job-listings {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.job-card {
-  border: 1px solid #ddd;
-  padding: 14px;
-  border-radius: 10px;
-  background: white;
-}
-.job-card h3 {
-  font-size: 1rem;
-  margin-bottom: 4px;
-  color: #104879;
-}
-.job-card p {
-  font-size: 0.9rem;
-  margin-bottom: 6px;
-}
-.job-card a {
-  color: #0077cc;
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-/* === Accessibility === */
-html {
-  font-size: 100%;
-}
-@media (max-width: 600px) {
-  html {
-    font-size: 90%;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-  }
-}
-
-/* === Footer === */
-.footer-note-static {
-  text-align: center;
-  padding: 20px;
-  font-size: 0.85rem;
-  color: #777;
-  background-color: #f9fbf9;
-  border-top: 1px solid #eee;
-}
-
-/* === Utility === */
 .scroll-down-icon {
   position: fixed;
   bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
   height: 24px;
-  display: none;
   z-index: 1000;
-  cursor: pointer;
+  display: none;
 }
+
+.job-listings {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.job-card {
+  padding: 16px;
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.04);
+  border: 1px solid #ddd;
+}
+
+.job-card h3 {
+  font-size: 1rem;
+  color: #104879;
+  margin-bottom: 6px;
+}
+
+.job-card p {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.job-card a {
+  font-size: 0.9rem;
+  color: #0077cc;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.footer-note-static {
+  text-align: center;
+  font-size: 0.85rem;
+  padding: 16px;
+  color: #777;
+  border-top: 1px solid #eee;
+}
+
+
+/* === chat_mobile.js === */
+// Chat logic, suggestion input, auto-resize, scroll handling, voice, job fetching
+// For brevity, ask if you want me to paste chat_mobile.js now or extract a specific section.
