@@ -64,3 +64,11 @@ function clearChat() {
   document.getElementById("chatbox").innerHTML = "";
   document.getElementById("job-results").innerHTML = "";
 }
+
+function handleAttach() {
+  alert("File upload coming soon!");
+}
+
+function handleMic() {
+  alert("Voice input coming soon!");
+}
