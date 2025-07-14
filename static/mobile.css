@@ -30,7 +30,6 @@ header {
   align-items: center;
   border-bottom: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  height: auto;
 }
 
 .logo-img {
@@ -99,7 +98,7 @@ header {
   }
 }
 
-/* === MAIN CHAT LAYOUT === */
+/* === CHAT === */
 main {
   display: flex;
   flex-direction: column;
@@ -112,7 +111,6 @@ main {
   overflow-y: auto;
 }
 
-/* === CHAT === */
 .chatbox {
   flex-grow: 1;
   overflow-y: auto;
@@ -249,7 +247,7 @@ img {
   display: inline-block;
 }
 
-/* === HERO SECTION (index) === */
+/* === HERO SECTION === */
 .hero {
   padding: 60px 20px;
   text-align: center;
