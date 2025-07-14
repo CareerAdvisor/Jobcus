@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Jobcus{% endblock %}</title>
+
+  <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+  <header class="site-header">
+    <div class="header-left">
+      {% block header_icon %}
+        <img src="/static/icons/pencilchat.svg" class="header-pencil-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()" />
+      {% endblock %}
+    </div>
+
+    <div class="header-center">
+      <a href="/">
+        <img src="/static/jobcus-logo.png" alt="Jobcus" class="logo-img" />
+      </a>
+    </div>
+
+    <div class="header-right">
+      <nav class="desktop-nav">
+        <a href="/chat">Chat</a>
+        <a href="#resume">Resume</a>
+        <a href="#product">Product</a>
+        <a href="#resources">Resources</a>
+        <a href="#about-us">About Us</a>
+      </nav>
+      <div class="hamburger" onclick="toggleMobileMenu()">
+        <div></div><div></div><div></div>
+      </div>
+    </div>
+
+    <div class="mobile-nav" id="mobileMenu">
+      <a href="/chat">Chat</a>
+      <a href="#resume">Resume</a>
+      <a href="#product">Product</a>
+      <a href="#resources">Resources</a>
+      <a href="#about-us">About Us</a>
+    </div>
+  </header>
+
+  <script>
+    function toggleMobileMenu() {
+      document.getElementById("mobileMenu").classList.toggle("show");
+    }
+  </script>
+
+  {% block content %}{% endblock %}
+
+  <footer class="footer-note-static">
+    &copy; 2025 Jobcus – Your AI Career Advisor
+  </footer>
+
+  {% block scripts %}
+    <script src="{{ url_for('static', filename='js/mobile.js') }}"></script>
+  {% endblock %}
+</body>
+</html>
