@@ -55,7 +55,7 @@
 
   {% block content %}{% endblock %}
 
-  {% if not "chat" in request.path %}
+  {% if body_class != 'chat-page' %}
   <footer class="footer-note-static">
     &copy; 2025 Jobcus – Your AI Career Advisor
   </footer>
