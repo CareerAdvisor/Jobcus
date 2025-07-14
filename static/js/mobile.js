@@ -1,183 +1,66 @@
-// === Insert Chat Suggestion ===
-function insertSuggestion(text) {
-  document.getElementById("userInput").value = text;
-  document.getElementById("userInput").focus();
+function handleKey(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    sendMessage();
+  }
 }
 
-// === Toggle Mobile Menu ===
-function toggleMobileMenu() {
-  const menu = document.getElementById("mobileMenu");
-  if (menu) menu.classList.toggle("show");
-}
-
-// === Share Current Page Link ===
-function sharePage() {
-  navigator.clipboard.writeText(window.location.href);
-  alert("Link copied!");
-}
-
-// === Chat Form Submission ===
-const form = document.getElementById("chat-form");
-const input = document.getElementById("userInput");
-const chatbox = document.getElementById("chatbox");
-const prompt = document.getElementById("prompt");
-
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+function sendMessage() {
+  const input = document.getElementById("userInput");
   const message = input.value.trim();
   if (!message) return;
 
-  const res = await fetch("/ask", {
+  appendUserMessage(message);
+  input.value = "";
+  fetch("/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message }),
-  });
-
-  const data = await res.json();
-  input.value = "";
-  if (prompt) prompt.style.display = "none";
-
-  document.getElementById("mainContainer").classList.add("chat-started");
-  document.getElementById("inputContainer").classList.remove("centered-input");
-  document.getElementById("inputContainer").classList.add("chat-started-input");
-
-  const aiBlock = document.createElement("div");
-  aiBlock.className = "chat-entry";
-  const existingEntries = document.querySelectorAll(".chat-entry").length;
-
-  aiBlock.innerHTML = `
-    <div class='user-question'><h2>${message}</h2></div>
-    <div class='ai-answer'>
-      <img src='/static/icons/copy.svg' alt='Copy' class='copy-icon'>
-      <span class="typed-response"></span>
-    </div>
-    ${existingEntries > 0 ? "<hr>" : ""}
-  `;
-  chatbox.prepend(aiBlock);
-
-  const typedSpan = aiBlock.querySelector(".typed-response");
-  const replyText = marked.parse(data.reply);
-  const typingSpeed = 2;
-
-  (async () => {
-    for (let i = 0; i <= replyText.length; i++) {
-      typedSpan.innerHTML = replyText.slice(0, i);
-      await new Promise((res) => setTimeout(res, typingSpeed));
-    }
-
-    aiBlock.querySelector(".copy-icon").onclick = () => navigator.clipboard.writeText(data.reply);
-
-    const existingHistory = localStorage.getItem("chatHistory") || "";
-    const updatedHistory = aiBlock.outerHTML + existingHistory;
-    localStorage.setItem("chatHistory", updatedHistory);
-    maybeShowScrollIcon();
-
-    if (data.suggestJobs) {
-      await fetchJobs(message, aiBlock);
-    }
-  })();
-});
-
-// === Auto Resize for Textarea ===
-function autoResize(textarea) {
-  textarea.style.height = "auto";
-  textarea.style.height = textarea.scrollHeight + "px";
+    body: JSON.stringify({ prompt: message })
+  })
+    .then(res => res.json())
+    .then(data => appendAIMessage(data.answer))
+    .catch(err => appendAIMessage("Sorry, something went wrong."));
 }
 
-// === Restore Chat History ===
-window.addEventListener("DOMContentLoaded", () => {
-  const saved = localStorage.getItem("chatHistory");
-  if (saved) {
-    chatbox.innerHTML = saved;
-    if (prompt) prompt.style.display = "none";
-    document.querySelector("main").classList.add("chat-started");
-  }
-  maybeShowScrollIcon();
-});
-
-// === Voice Input (Mic Button) ===
-document.getElementById("mic-button").addEventListener("click", () => {
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "en-US";
-  recognition.start();
-  recognition.onresult = (e) => {
-    input.value = e.results[0][0].transcript;
-  };
-});
-
-// === Enter to Send ===
-input.addEventListener("keypress", function (e) {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    form.dispatchEvent(new Event("submit"));
-  }
-});
-
-// === Clear Chat History ===
-function clearChat() {
-  chatbox.innerHTML = "";
-  if (prompt) prompt.style.display = "block";
-  localStorage.removeItem("chatHistory");
-  document.querySelector("main").classList.remove("chat-started");
-
-  const scrollIcon = document.getElementById("scrollDown");
-  if (scrollIcon) scrollIcon.style.display = "none";
-}
-
-// === Scroll Controls ===
-function scrollToBottom() {
-  chatbox.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function maybeShowScrollIcon() {
+function appendUserMessage(text) {
   const chatbox = document.getElementById("chatbox");
-  const scrollIcon = document.getElementById("scrollDown");
-  if (!chatbox || !scrollIcon) return;
-  scrollIcon.style.display = chatbox.scrollHeight > chatbox.clientHeight ? "block" : "none";
+  const div = document.createElement("div");
+  div.className = "chat-entry user";
+  div.innerHTML = `<p>${text}</p>`;
+  chatbox.appendChild(div);
+  scrollToBottom();
 }
 
-window.addEventListener("load", maybeShowScrollIcon);
-window.addEventListener("resize", maybeShowScrollIcon);
-
-// === Fetch Jobs API ===
-async function fetchJobs(query, aiBlock) {
-  try {
-    const res = await fetch("/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, location: "", jobType: "" }),
-    });
-    const data = await res.json();
-    displayJobs(data, aiBlock);
-  } catch (err) {
-    console.error("Job fetch error:", err);
-  }
+function appendAIMessage(text) {
+  const chatbox = document.getElementById("chatbox");
+  const div = document.createElement("div");
+  div.className = "chat-entry ai-answer";
+  const copyId = `copy-${Date.now()}`;
+  div.innerHTML = `
+    <div style="display: flex; justify-content: flex-end;">
+      <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
+    </div>
+    <div id="${copyId}" class="markdown">${marked.parse(text)}</div>
+  `;
+  chatbox.appendChild(div);
+  scrollToBottom();
 }
 
-// === Render Job Listings ===
-function displayJobs(data, aiBlock) {
-  const aiAnswerBlock = aiBlock.querySelector(".ai-answer");
-  if (!aiAnswerBlock) return;
+function scrollToBottom() {
+  const chatbox = document.getElementById("chatbox");
+  chatbox.scrollTop = chatbox.scrollHeight;
+}
 
-  const jobsContainer = document.createElement("div");
-  jobsContainer.className = "job-listings";
+function copyToClipboard(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    alert("Copied!");
+  });
+}
 
-  const allJobs = [...(data.remotive || []), ...(data.adzuna || []), ...(data.jsearch || [])];
-
-  if (allJobs.length === 0) {
-    jobsContainer.innerHTML = "<p>No jobs found for this query.</p>";
-  } else {
-    allJobs.forEach((job) => {
-      const jobCard = document.createElement("div");
-      jobCard.className = "job-card";
-      jobCard.innerHTML = `
-        <h3>${job.title}</h3>
-        <p><strong>${job.company}</strong> – ${job.location}</p>
-        <a href="${job.url}" target="_blank">View Job</a>
-      `;
-      jobsContainer.appendChild(jobCard);
-    });
-  }
-
-  aiBlock.appendChild(jobsContainer);
+function clearChat() {
+  document.getElementById("chatbox").innerHTML = "";
+  document.getElementById("job-results").innerHTML = "";
 }
