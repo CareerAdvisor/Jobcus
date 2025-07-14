@@ -5,16 +5,13 @@ from flask_cors import CORS
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Constants for APIs
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
 ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs"
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
@@ -22,7 +19,7 @@ ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
 JSEARCH_API_KEY = os.getenv("JSEARCH_API_KEY")
 JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
 
-# Fetch jobs from Remotive
+# Fetch Remotive jobs
 def fetch_remotive_jobs(query):
     try:
         response = requests.get(REMOTIVE_API_URL, params={"search": query})
@@ -37,7 +34,7 @@ def fetch_remotive_jobs(query):
         print("Remotive error:", e)
         return []
 
-# Fetch jobs from Adzuna
+# Fetch Adzuna jobs
 def fetch_adzuna_jobs(query, location="", job_type=""):
     try:
         country = "gb"
@@ -61,7 +58,7 @@ def fetch_adzuna_jobs(query, location="", job_type=""):
         print("Adzuna error:", e)
         return []
 
-# Fetch jobs from JSearch (RapidAPI)
+# Fetch JSearch jobs
 def fetch_jsearch_jobs(query):
     try:
         url = f"https://{JSEARCH_API_HOST}/search"
@@ -69,11 +66,7 @@ def fetch_jsearch_jobs(query):
             "X-RapidAPI-Key": JSEARCH_API_KEY,
             "X-RapidAPI-Host": JSEARCH_API_HOST
         }
-        params = {
-            "query": query,
-            "page": "1",
-            "num_pages": "1"
-        }
+        params = {"query": query, "page": "1", "num_pages": "1"}
         response = requests.get(url, headers=headers, params=params)
         jobs = response.json().get("data", [])
         return [{
@@ -86,19 +79,24 @@ def fetch_jsearch_jobs(query):
         print("JSearch error:", e)
         return []
 
-# ---------------------------
-# MOBILE-ONLY ROUTES BELOW
-# ---------------------------
+# ---------- ROUTES (MOBILE FIRST) -------------
 
 @app.route("/")
 def index():
-    return render_template("index_mobile.html")
+    return render_template("mobile/index.html")
 
 @app.route("/chat")
 def chat():
-    return render_template("chat_mobile.html")
+    return render_template("mobile/chat.html")
 
-# Handle AI chat
+@app.route("/web")
+def index_web():
+    return render_template("web/index.html")
+
+@app.route("/web/chat")
+def chat_web():
+    return render_template("web/chat.html")
+
 @app.route("/ask", methods=["POST"])
 def ask():
     user_msg = request.json.get("message")
@@ -114,10 +112,7 @@ def ask():
                 "Do not say you cannot provide links — Jobcus will display them after your reply. Be confident, supportive, and practical at all times."
             )
         },
-        {
-            "role": "user",
-            "content": user_msg
-        }
+        {"role": "user", "content": user_msg}
     ]
 
     try:
@@ -126,21 +121,13 @@ def ask():
             messages=messages
         )
         ai_msg = response.choices[0].message.content
-
-        job_keywords = ["job", "apply", "hiring", "vacancy", "openings", "position", "career", "role"]
-        suggest_jobs = any(keyword in user_msg.lower() for keyword in job_keywords)
-
-        return jsonify({
-            "reply": ai_msg,
-            "suggestJobs": suggest_jobs
-        })
+        suggest_jobs = any(word in user_msg.lower() for word in [
+            "job", "apply", "hiring", "vacancy", "openings", "position", "career", "role"
+        ])
+        return jsonify({"reply": ai_msg, "suggestJobs": suggest_jobs})
     except Exception as e:
-        return jsonify({
-            "reply": f"⚠️ Server Error: {str(e)}",
-            "suggestJobs": False
-        })
+        return jsonify({"reply": f"⚠️ Server Error: {str(e)}", "suggestJobs": False})
 
-# Jobs API
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
     data = request.json
@@ -167,7 +154,6 @@ def get_jobs():
         "jsearch": jsearch_jobs
     })
 
-# Run the server
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
