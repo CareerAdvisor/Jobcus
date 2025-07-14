@@ -1,4 +1,4 @@
-{% extends "base_mobile.html" %}
+{% extends "mobile/base.html" %}
 
 {% block title %}Jobcus – AI Career Chat{% endblock %}
 
@@ -13,34 +13,33 @@
 {% endblock %}
 
 {% block content %}
-  <main id="mainContainer">
-    <div class="chat-wrapper">
+<main id="mainContainer">
+  <div class="chat-wrapper">
+    <!-- Chat messages scroll here -->
+    <div class="chatbox" id="chatbox"></div>
 
-      <!-- Chat messages scroll here -->
-      <div class="chatbox" id="chatbox"></div>
+    <!-- Job results inserted dynamically -->
+    <div id="job-results" class="job-results"></div>
+  </div>
 
-      <!-- Job results inserted dynamically -->
-      <div id="job-results" class="job-results"></div>
-    </div>
-
-    <!-- Fixed input bar at the bottom -->
-    <form id="chat-form">
-      <div class="input-container" id="inputContainer">
-        <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)"></textarea>
-        <div class="icon-group">
-          <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
-          <input id="file-upload" type="file" style="display: none;">
-          <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
-          <button type="submit"><img src="/static/icons/enter.svg" alt="Send"></button>
-        </div>
+  <!-- Fixed input bar at the bottom -->
+  <form id="chat-form">
+    <div class="input-container" id="inputContainer">
+      <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)"></textarea>
+      <div class="icon-group">
+        <label for="file-upload"><img src="/static/icons/paperclip.svg" alt="Attach"></label>
+        <input id="file-upload" type="file" style="display: none;">
+        <img src="/static/icons/mic.svg" alt="Mic" id="mic-button">
+        <button type="submit"><img src="/static/icons/enter.svg" alt="Send"></button>
       </div>
-    </form>
+    </div>
+  </form>
 
-    <!-- Floating scroll button -->
-    <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
-  </main>
+  <!-- Floating scroll icon -->
+  <img id="scrollDown" class="scroll-down-icon" src="/static/icons/scrolldown.svg" alt="Scroll Down" onclick="scrollToBottom()">
+</main>
 {% endblock %}
 
 {% block scripts %}
-  <script src="/static/js/chat_mobile.js"></script>
+<script src="/static/js/mobile.js"></script>
 {% endblock %}
