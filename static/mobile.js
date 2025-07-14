@@ -72,3 +72,8 @@ function handleAttach() {
 function handleMic() {
   alert("Voice input coming soon!");
 }
+
+function toggleMobileMenu() {
+  const menu = document.getElementById("mobileMenu");
+  if (menu) menu.classList.toggle("show");
+}
