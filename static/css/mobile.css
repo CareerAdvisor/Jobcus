@@ -1,16 +1,21 @@
-/* === GLOBAL === */
+/* === GLOBAL RESETS === */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body, html {
+html, body {
+  height: 100%;
   font-family: 'Segoe UI', sans-serif;
   background-color: #f9fbf9;
   color: #333;
-  height: 100%;
   overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+body.chat-page {
+  overflow-y: hidden;
 }
 
 /* === HEADER === */
@@ -24,22 +29,28 @@ header {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #e5e7eb;
-  height: 70px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  height: auto;
 }
 
 .logo-img {
   height: 40px;
+  width: auto;
 }
 
-.header-left,
-.header-right {
-  display: flex;
-  align-items: center;
+.header-pencil-icon {
+  height: 20px;
+  width: 20px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
-/* === MOBILE NAV === */
+.header-pencil-icon:hover {
+  transform: scale(1.1);
+}
+
 .hamburger {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 4px;
   cursor: pointer;
@@ -73,73 +84,137 @@ header {
   margin-bottom: 10px;
 }
 
-/* === CHAT === */
-.chatbox {
-  padding: 16px;
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 70px);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 30px 20px;
+  box-sizing: border-box;
   overflow-y: auto;
+  flex-grow: 1;
+}
+
+.chatbox {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-bottom: 120px;
   scroll-behavior: smooth;
-  margin-bottom: 100px;
 }
 
 .chat-entry {
-  padding-bottom: 16px;
-  border-bottom: 1px solid #ddd;
+  margin-bottom: 40px;
 }
 
 .ai-answer {
-  text-align: left;
-  background: none;
-  padding: 0;
+  background-color: transparent;
   font-size: 1rem;
-  color: #333;
   line-height: 1.6;
+  color: #2b2b2b;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 10px;
 }
 
 .copy-icon {
-  float: right;
   width: 18px;
   height: 18px;
+  align-self: flex-end;
   cursor: pointer;
-  margin-top: -2px;
 }
 
-/* === INPUT === */
 .input-container {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: #fff;
-  padding: 16px;
-  border-top: 1px solid #ddd;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #fff;
+  padding: 20px;
   display: flex;
-  flex-direction: row;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  border-top: 1px solid #ddd;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
   z-index: 1000;
 }
 
 .input-container input[type="text"] {
-  flex: 1;
-  padding: 12px 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  flex-grow: 1;
+  border: none;
   outline: none;
+  font-size: 16px;
+  padding: 12px;
+  background-color: transparent;
+  width: 100%;
 }
 
 .icon-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  margin-left: 12px;
 }
 
 .icon-group img {
   height: 24px;
   width: 24px;
+  cursor: pointer;
 }
 
-/* === FOOTER === */
+.icon-group img:hover {
+  transform: scale(1.1);
+  opacity: 0.8;
+}
+
+@media screen and (max-width: 600px) {
+  .input-container {
+    flex-direction: row;
+    padding: 16px;
+    height: 100px;
+  }
+
+  .input-container input[type="text"]::placeholder {
+    font-size: 16px;
+  }
+
+  .logo-img {
+    height: 36px;
+  }
+
+  .header-pencil-icon {
+    height: 20px;
+    width: 20px;
+  }
+}
+
+.scroll-down-icon {
+  position: fixed;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+  height: 24px;
+  z-index: 1000;
+  display: none;
+}
+
 .footer-note-static {
   text-align: center;
   font-size: 0.85rem;
@@ -149,24 +224,8 @@ header {
   border-top: 1px solid #eee;
 }
 
-/* === SCROLL ICON === */
-.scroll-down-icon {
-  position: fixed;
-  bottom: 90px;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 24px;
-  z-index: 999;
-  cursor: pointer;
-}
-
-/* === RESPONSIVE === */
-@media (max-width: 768px) {
-  .desktop-nav {
-    display: none;
-  }
-
-  .hamburger {
-    display: flex;
-  }
+img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
 }
