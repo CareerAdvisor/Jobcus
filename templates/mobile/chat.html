@@ -4,7 +4,7 @@
 {% block body_class %}chat-page{% endblock %}
 
 {% block content %}
-<main id="mainContainer">
+<main id="mainContainer" class="centered">
   <div class="chat-wrapper">
     <div id="chatbox" class="chatbox"></div>
     <div id="job-results" class="job-listings"></div>
@@ -15,8 +15,7 @@
   </div>
 
   <div class="input-container">
-    <input type="text" id="userInput" placeholder="Ask your career question..." onkeydown="handleKey(event)" />
-
+    <input type="text" id="userInput" placeholder="Ask your career question..." onkeydown="handleKey(event)">
     <div class="icon-group">
       <img src="/static/icons/attach.svg" alt="Attach" title="Attach" onclick="handleAttach()" />
       <img src="/static/icons/mic.svg" alt="Mic" title="Speak" onclick="handleMic()" />
