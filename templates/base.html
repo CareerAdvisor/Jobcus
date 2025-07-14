@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Jobcus{% endblock %}</title>
 
-  <link rel="icon" href="/static/icons/favicon.ico" type="image/x-icon" />
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" type="image/x-icon" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -15,13 +15,13 @@
   <header class="site-header">
     <div class="header-left">
       {% block header_icon %}
-        <img src="/static/icons/pencilchat.svg" class="header-pencil-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()" />
+        <img src="{{ url_for('static', filename='icons/pencilchat.svg') }}" class="header-pencil-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()" />
       {% endblock %}
     </div>
 
     <div class="header-center">
       <a href="/">
-        <img src="/static/jobcus-logo.png" alt="Jobcus" class="logo-img" />
+        <img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" class="logo-img" />
       </a>
     </div>
 
@@ -55,9 +55,11 @@
 
   {% block content %}{% endblock %}
 
+  {% if not "chat" in request.path %}
   <footer class="footer-note-static">
     &copy; 2025 Jobcus – Your AI Career Advisor
   </footer>
+  {% endif %}
 
   {% block scripts %}
     <script src="{{ url_for('static', filename='mobile.js') }}"></script>
