@@ -11,35 +11,15 @@
   </div>
 
   <div class="scroll-down-icon" onclick="scrollToBottom()">
-    <img src="/static/icons/scroll-down.svg" alt="Scroll down" />
+    <img src="{{ url_for('static', filename='icons/scroll-down.svg') }}" alt="Scroll down" />
   </div>
 
-  <div class="input-container">
-    <input
-      type="text"
-      id="userInput"
-      placeholder="Ask your career question..."
-      onkeydown="handleKey(event)"
-    />
+  <div class="input-container rounded-top">
+    <input type="text" id="userInput" placeholder="Ask your career question..." onkeydown="handleKey(event)">
     <div class="icon-group">
-      <img
-        src="/static/icons/attach.svg"
-        alt="Attach"
-        title="Attach"
-        onclick="handleAttach()"
-      />
-      <img
-        src="/static/icons/mic.svg"
-        alt="Mic"
-        title="Speak"
-        onclick="handleMic()"
-      />
-      <img
-        src="/static/icons/send.svg"
-        alt="Send"
-        title="Send"
-        onclick="sendMessage()"
-      />
+      <img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach" title="Attach" onclick="handleAttach()" />
+      <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" title="Speak" onclick="handleMic()" />
+      <img src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" title="Send" onclick="sendMessage()" />
     </div>
   </div>
 </main>
