@@ -20,48 +20,49 @@ body.chat-page {
 
 /* === HEADER === */
 header {
+  position: sticky;
+  top: 0;
+  z-index: 999;
   background-color: white;
-  padding: 12px 16px;
+  padding: 12px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #e5e7eb;
-  height: 60px;
-  position: sticky;
-  top: 0;
-  z-index: 999;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  height: auto;
 }
 
 .logo-img {
   height: 40px;
   width: auto;
+  margin-left: 10px;
 }
 
-.header-left {
+.header-center {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
-.header-pencil-icon {
-  height: 20px;
-  width: 20px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.header-pencil-icon:hover {
-  transform: scale(1.1);
-}
-
-.header-right {
+.desktop-nav {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+.desktop-nav a {
+  text-decoration: none;
+  color: #111827;
+  font-weight: 500;
+  font-size: 14px;
 }
 
 .hamburger {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 4px;
   cursor: pointer;
@@ -77,10 +78,10 @@ header {
   display: none;
   flex-direction: column;
   position: absolute;
-  top: 60px;
+  top: 70px;
   right: 10px;
   background-color: white;
-  padding: 10px 16px;
+  padding: 10px 20px;
   border: 1px solid #ccc;
   z-index: 1000;
 }
@@ -93,25 +94,49 @@ header {
   text-decoration: none;
   color: #111827;
   margin-bottom: 10px;
-  font-size: 14px;
 }
 
-/* === HERO === */
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+}
+
 .hero {
-  padding: 40px 16px;
+  padding: 60px 20px;
   text-align: center;
   background-color: #104879;
   color: white;
 }
 
 .hero h1 {
-  font-size: 1.75rem;
-  margin-bottom: 16px;
+  font-size: 2rem;
+  margin-bottom: 20px;
 }
 
 .hero p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+}
+
+.btn-primary,
+.cv-check-button {
+  background-color: #104879;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 40px;
+  font-weight: 600;
+  text-decoration: none;
   font-size: 1rem;
-  margin-bottom: 24px;
+  line-height: 1.4;
+  white-space: normal;
+  display: inline-block;
+  max-width: 100%;
+  text-align: center;
 }
 
 .btn-primary {
@@ -119,92 +144,51 @@ header {
   color: #104879;
   padding: 12px 24px;
   border-radius: 9999px;
-  font-weight: 600;
-  text-decoration: none;
-  font-size: 1rem;
-  display: inline-block;
 }
 
-/* === MAIN CHAT AREA === */
-main {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  padding: 80px 16px 120px;
+.section {
+  padding: 40px 20px;
   text-align: center;
 }
 
-.chatbox {
-  flex-grow: 1;
-  overflow-y: auto;
+.section h2 {
+  font-size: 1.75rem;
+  margin-bottom: 16px;
+}
+
+.section p {
+  max-width: 600px;
+  margin: 0 auto 20px;
+}
+
+.features {
   display: flex;
-  flex-direction: column-reverse;
-  padding: 10px;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  scroll-behavior: smooth;
-  margin-bottom: 90px;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 30px;
 }
 
-.chat-entry {
-  margin-bottom: 10px;
-  padding-bottom: 10px;
+.feature-box {
+  background-color: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  flex: 1;
 }
 
-.ai-answer {
-  background-color: #f9fbf9;
-  padding: 12px;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: #2b2b2b;
-  width: 100%;
-  box-sizing: border-box;
+@media(min-width: 768px) {
+  .hero h1 {
+    font-size: 3rem;
+  }
+  .features {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  .feature-box {
+    width: 30%;
+  }
 }
 
-/* === INPUT CONTAINER === */
-.input-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-top: 1px solid #ddd;
-  background-color: #fff;
-  z-index: 1000;
-  flex-wrap: wrap;
-}
-
-.input-container input[type="text"],
-.input-container textarea {
-  flex-grow: 1;
-  border: none;
-  outline: none;
-  font-size: 16px;
-  padding: 10px;
-  background-color: transparent;
-  resize: none;
-  overflow: hidden;
-}
-
-.input-container .icon-group img {
-  height: 20px;
-  width: 20px;
-}
-
-.input-container button {
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-/* === FOOTER === */
 .footer-note-static {
   text-align: center;
   font-size: 0.85rem;
@@ -212,63 +196,99 @@ main {
   padding: 20px 10px;
   background-color: #f9fbf9;
   border-top: 1px solid #eee;
-  position: relative;
 }
 
-/* === SUGGESTIONS === */
-.search-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin: 10px 0;
-}
-
-.suggestion {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.suggestion:hover {
-  background-color: #eee;
-}
-
-/* === JOB LISTINGS === */
-.job-listings {
+main {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  width: 100%;
+  min-height: calc(100vh - 70px);
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 30px 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  flex-grow: 1;
 }
 
-.job-card {
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 16px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+main.centered {
+  justify-content: center;
 }
 
-.job-card h3 {
+main.chat-started {
+  justify-content: flex-end;
+  padding-top: 50px;
+}
+
+.chatbox {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 20px;
+  margin-bottom: 110px;
+  scroll-behavior: smooth;
+}
+
+.chat-entry {
+  margin-bottom: 5px;
+  padding-bottom: 5px;
+}
+
+.ai-answer {
+  background-color: #f9fbf9;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
   font-size: 1rem;
-  margin-bottom: 6px;
-  color: #104879;
+  line-height: 1.6;
+  color: #2b2b2b;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.job-card p {
-  font-size: 0.9rem;
-  color: #333;
-  margin-bottom: 8px;
+.input-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #fff;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid #ddd;
+  box-sizing: border-box;
+  z-index: 999;
+  flex-wrap: wrap;
 }
 
-.job-card a {
-  color: #0077cc;
-  text-decoration: underline;
-  font-weight: 500;
-  font-size: 0.9rem;
+.input-container input[type="text"] {
+  flex-grow: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  padding: 10px;
+  background-color: transparent;
+  box-shadow: none;
+  caret-color: auto;
 }
+
+.icon-group img {
+  height: 24px;
+  width: 24px;
+}
+
+.input-container button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+/* other styles preserved */
