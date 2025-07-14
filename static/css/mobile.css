@@ -14,7 +14,6 @@ html, body {
   overflow-y: scroll;
 }
 
-/* === BODY CHAT PAGE SCROLL === */
 body.chat-page {
   overflow-y: hidden;
 }
@@ -31,6 +30,7 @@ header {
   align-items: center;
   border-bottom: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  height: auto;
 }
 
 .logo-img {
@@ -116,7 +116,7 @@ main {
 .chatbox {
   flex-grow: 1;
   overflow-y: auto;
-  padding-bottom: 120px;
+  padding-bottom: 160px;
   scroll-behavior: smooth;
 }
 
@@ -167,13 +167,13 @@ main {
 /* === INPUT CONTAINER === */
 .input-container {
   position: fixed;
-  bottom: 0;
+  bottom: 60px;
   left: 0;
   right: 0;
   max-width: 800px;
   margin: 0 auto;
   background-color: #fff;
-  padding: 16px;
+  padding: 16px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -199,7 +199,8 @@ main {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-left: 12px;
+  padding-left: 12px;
+  padding-right: 8px;
 }
 
 .icon-group img {
@@ -216,7 +217,7 @@ main {
 /* === SCROLL DOWN ICON === */
 .scroll-down-icon {
   position: fixed;
-  bottom: 120px;
+  bottom: 130px;
   left: 50%;
   transform: translateX(-50%);
   cursor: pointer;
@@ -227,12 +228,17 @@ main {
 
 /* === FOOTER === */
 .footer-note-static {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   text-align: center;
   font-size: 0.85rem;
   color: #777;
   padding: 20px 10px;
   background-color: #f9fbf9;
   border-top: 1px solid #eee;
+  z-index: 999;
 }
 
 img {
