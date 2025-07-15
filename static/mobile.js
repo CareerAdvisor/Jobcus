@@ -55,6 +55,20 @@ function appendAIMessage(text) {
   scrollToBottom();
 }
 
+function saveChatToStorage() {
+  localStorage.setItem("chatHistory", document.getElementById("chatbox").innerHTML);
+}
+
+function loadChatFromStorage() {
+  const saved = localStorage.getItem("chatHistory");
+  if (saved) {
+    document.getElementById("chatbox").innerHTML = saved;
+  }
+}
+
+// Call on load
+document.addEventListener("DOMContentLoaded", loadChatFromStorage);
+
 function scrollToBottom() {
   const chatbox = document.getElementById("chatbox");
   chatbox.scrollTop = chatbox.scrollHeight;
