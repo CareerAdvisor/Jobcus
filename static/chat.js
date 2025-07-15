@@ -1,113 +1,94 @@
-function handleKey(e) {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    sendMessage();
-  }
+// === Chat Suggestions Insertion ===
+function insertSuggestion(text) {
+  document.getElementById("userInput").value = text;
+  document.getElementById("userInput").focus();
 }
 
-function sendMessage() {
-  const input = document.getElementById("userInput");
+// === Toggle Mobile Menu ===
+const hamburger = document.getElementById("hamburger");
+const mobileMenu = document.getElementById("mobileMenu");
+const menuOverlay = document.getElementById("menuOverlay");
+
+if (hamburger && mobileMenu && menuOverlay) {
+  hamburger.addEventListener("click", () => {
+    mobileMenu.classList.toggle("active");
+    menuOverlay.classList.toggle("active");
+  });
+
+  menuOverlay.addEventListener("click", () => {
+    mobileMenu.classList.remove("active");
+    menuOverlay.classList.remove("active");
+  });
+}
+
+// === Share Page ===
+function sharePage() {
+  navigator.clipboard.writeText(window.location.href);
+  alert("Link copied!");
+}
+
+// === Chat Form Submission ===
+const form = document.getElementById("chat-form");
+const input = document.getElementById("userInput");
+const chatbox = document.getElementById("chatbox");
+const prompt = document.getElementById("prompt");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
   const message = input.value.trim();
   if (!message) return;
 
-  appendUserMessage(message);
   input.value = "";
   autoResize(input);
 
-  fetch("/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message })
-  })
-  .then(res => res.json())
-  .then(data => {
-    appendAIMessage(data.reply);
-    if (data.suggestJobs) fetchJobs(message);
-  })
-  .catch(() => {
-    appendAIMessage("⚠️ An error occurred while getting your response.");
-  });
-}
-
-function fetchJobs(query) {
-  fetch("/jobs", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query })
-  })
-  .then(res => res.json())
-  .then(data => displayJobListings(data))
-  .catch(err => console.error("Job fetch error:", err));
-}
-
-function appendUserMessage(text) {
-  const chatbox = document.getElementById("chatbox");
-  const div = document.createElement("div");
-  div.className = "chat-entry user";
-  div.innerHTML = `<p style="font-size: 1.1rem; font-weight: 600; color: #111;">${text}</p>`;
-  chatbox.appendChild(div);
-  saveChatToStorage();
+  const aiBlock = document.createElement("div");
+  aiBlock.className = "chat-entry ai-answer";
+  const userMsg = document.createElement("div");
+  userMsg.className = "chat-entry user";
+  userMsg.innerHTML = `<p style="font-size: 1.1em;"><strong>${message}</strong></p>`;
+  chatbox.appendChild(userMsg);
+  chatbox.appendChild(aiBlock);
   scrollToBottom();
-}
 
-function appendAIMessage(text) {
-  const chatbox = document.getElementById("chatbox");
-  const div = document.createElement("div");
-  div.className = "chat-entry ai-answer";
-  const copyId = `copy-${Date.now()}`;
-  div.innerHTML = `
+  const res = await fetch("/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+
+  const data = await res.json();
+  const replyText = marked.parse(data.reply);
+  aiBlock.innerHTML = `
     <div style="display: flex; justify-content: flex-end;">
-      <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
+      <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('ai-${Date.now()}')">
     </div>
-    <div id="${copyId}" class="markdown">${marked.parse(text)}</div>
+    <div id="ai-${Date.now()}" class="markdown">${replyText}</div>
   `;
-  chatbox.appendChild(div);
+
+  if (data.suggestJobs) await fetchJobs(message, aiBlock);
+
   saveChatToStorage();
   scrollToBottom();
+});
+
+function autoResize(textarea) {
+  textarea.style.height = "auto";
+  textarea.style.height = textarea.scrollHeight + "px";
 }
 
-function displayJobListings(data) {
-  const container = document.getElementById("job-results");
-  container.innerHTML = ""; // Clear previous
-
-  const allJobs = [...(data.remotive || []), ...(data.adzuna || []), ...(data.jsearch || [])];
-
-  if (!allJobs.length) return;
-
-  allJobs.forEach(job => {
-    const div = document.createElement("div");
-    div.className = "job-card";
-    div.innerHTML = `
-      <h3>${job.title}</h3>
-      <p class="company">${job.company}</p>
-      <p class="location">${job.location}</p>
-      <a href="${job.url}" target="_blank" class="view-link">View Job</a>
-    `;
-    container.appendChild(div);
-  });
-}
+// === On Page Load Restore Chat ===
+window.addEventListener("DOMContentLoaded", () => {
+  const saved = localStorage.getItem("chatHistory");
+  if (saved) {
+    chatbox.innerHTML = saved;
+  }
+});
 
 function saveChatToStorage() {
-  localStorage.setItem("chatHistory", document.getElementById("chatbox").innerHTML);
-  localStorage.setItem("jobResults", document.getElementById("job-results").innerHTML);
+  localStorage.setItem("chatHistory", chatbox.innerHTML);
 }
-
-function loadChatFromStorage() {
-  const chatSaved = localStorage.getItem("chatHistory");
-  const jobSaved = localStorage.getItem("jobResults");
-
-  if (chatSaved) {
-    document.getElementById("chatbox").innerHTML = chatSaved;
-  }
-  if (jobSaved) {
-    document.getElementById("job-results").innerHTML = jobSaved;
-  }
-}
-
-document.addEventListener("DOMContentLoaded", loadChatFromStorage);
 
 function scrollToBottom() {
-  const chatbox = document.getElementById("chatbox");
   chatbox.scrollTop = chatbox.scrollHeight;
 }
 
@@ -115,32 +96,57 @@ function copyToClipboard(id) {
   const el = document.getElementById(id);
   if (!el) return;
   const text = el.innerText;
-  navigator.clipboard.writeText(text).then(() => {
-    alert("Copied!");
-  });
+  navigator.clipboard.writeText(text).then(() => alert("Copied!"));
 }
 
 function clearChat() {
-  document.getElementById("chatbox").innerHTML = "";
+  chatbox.innerHTML = "";
   document.getElementById("job-results").innerHTML = "";
   localStorage.removeItem("chatHistory");
-  localStorage.removeItem("jobResults");
-}
-
-function handleAttach() {
-  alert("File upload coming soon!");
 }
 
 function handleMic() {
   alert("Voice input coming soon!");
 }
 
-function autoResize(textarea) {
-  textarea.style.height = "auto";
-  textarea.style.height = textarea.scrollHeight + "px";
+function handleAttach() {
+  alert("File upload coming soon!");
 }
 
-function toggleMobileMenu() {
-  const menu = document.getElementById("mobileMenu");
-  if (menu) menu.classList.toggle("show");
+async function fetchJobs(query, aiBlock) {
+  try {
+    const res = await fetch("/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query })
+    });
+    const data = await res.json();
+    displayJobs(data, aiBlock);
+  } catch (err) {
+    console.error("Job fetch error:", err);
+  }
+}
+
+function displayJobs(data, aiBlock) {
+  const jobsContainer = document.createElement("div");
+  jobsContainer.className = "job-listings";
+
+  const allJobs = [...(data.remotive || []), ...(data.adzuna || []), ...(data.jsearch || [])];
+
+  if (allJobs.length === 0) return;
+
+  allJobs.forEach(job => {
+    const jobCard = document.createElement("div");
+    jobCard.className = "job-card";
+    jobCard.innerHTML = `
+      <h3>${job.title}</h3>
+      <p><strong>${job.company}</strong><br>${job.location}</p>
+      <a href="${job.url}" target="_blank">View Job</a>
+    `;
+    jobsContainer.appendChild(jobCard);
+  });
+
+  aiBlock.appendChild(jobsContainer);
+  saveChatToStorage();
+  scrollToBottom();
 }
