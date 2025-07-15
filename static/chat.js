@@ -68,22 +68,22 @@ function appendAIMessage(text) {
 
 function displayJobListings(data) {
   const container = document.getElementById("job-results");
-  container.innerHTML = "";
+  container.innerHTML = ""; // Clear previous
 
   const allJobs = [...(data.remotive || []), ...(data.adzuna || []), ...(data.jsearch || [])];
 
-  if (allJobs.length === 0) return;
+  if (!allJobs.length) return;
 
   allJobs.forEach(job => {
-    const card = document.createElement("div");
-    card.className = "job-card";
-    card.innerHTML = `
+    const div = document.createElement("div");
+    div.className = "job-card";
+    div.innerHTML = `
       <h3>${job.title}</h3>
-      <p class="job-company">${job.company || "Unknown Company"}</p>
-      <p class="job-location">${job.location || "Anywhere"}</p>
-      <a href="${job.url}" target="_blank" class="job-link">View Job</a>
+      <p class="company">${job.company}</p>
+      <p class="location">${job.location}</p>
+      <a href="${job.url}" target="_blank" class="view-link">View Job</a>
     `;
-    container.appendChild(card);
+    container.appendChild(div);
   });
 }
 
