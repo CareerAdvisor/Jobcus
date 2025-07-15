@@ -1,53 +1,72 @@
 {% extends "base.html" %}
 
-{% block title %}Jobcus – AI Career Advisor{% endblock %}
+{% block title %}Jobcus – Your AI Career Advisor{% endblock %}
 
 {% block content %}
+
+<!-- 🟦 Hero Section -->
 <section class="hero">
-  <h1 style="font-size: 1.5rem; margin-bottom: 6px; line-height: 1.3;">
-    Your AI Career Advisor
-  </h1>
+  <h1>Your AI Career Advisor</h1>
   <p style="font-size: 2.2rem; font-weight: 700; color: #cfe4ff; line-height: 1.3; margin-bottom: 12px;">
-    Achieve your career goals<br>
-    Effortlessly and confidently.
+    Find your path, land your dream job, and grow your career — smarter.
   </p>
   <p style="font-size: 1rem; line-height: 1.4; margin-bottom: 20px;">
-    We help you write your resume, find jobs, and prepare for interviews fast and smart.
+    Jobcus helps you write better resumes, analyze your skills, explore roles, and prepare for interviews with AI guidance.
   </p>
   <a href="/chat" class="btn-primary">Get Started</a>
 </section>
 
+<!-- 🧠 How It Works -->
 <section class="section">
-  <h2>The new way to get hired</h2>
-  <p>Jobcus uses AI to support your career journey intelligently, every step of the way.</p>
+  <h2>Empower Your Career Journey</h2>
+  <p>We’ve reimagined the job search and career planning experience — powered by AI.</p>
   <div class="features">
     <div class="feature-box">
-      <h3>01 – Personalized Job Matches</h3>
-      <p>Get job listings based on your skills, experience, and interests — no guessing required.</p>
+      <h3>📄 Resume Builder</h3>
+      <p>Create or improve your resume using AI to match real job descriptions.</p>
+      <a href="/resume-builder">Try Resume Builder →</a>
     </div>
     <div class="feature-box">
-      <h3>02 – Smart Resume Builder</h3>
-      <p>Generate a professional resume in minutes, tailored to each job application.</p>
+      <h3>🧭 Career Path Advisor</h3>
+      <p>Not sure what to do next? Discover roles that match your skills, interests, and goals.</p>
+      <a href="/career-paths">Explore Careers →</a>
     </div>
     <div class="feature-box">
-      <h3>03 – Interview Preparation</h3>
-      <p>Practice interview questions and get AI-driven tips to improve your confidence.</p>
+      <h3>📊 Job Insights</h3>
+      <p>Understand hiring trends, top employers, and what skills are in demand.</p>
+      <a href="/job-insights">See Insights →</a>
+    </div>
+    <div class="feature-box">
+      <h3>🧠 Skill Gap Analyzer</h3>
+      <p>Upload your resume or LinkedIn profile to discover missing skills — and how to fill them.</p>
+      <a href="/skill-gap">Analyze Your Skills →</a>
+    </div>
+    <div class="feature-box">
+      <h3>🎤 Interview Coach</h3>
+      <p>Practice common interview questions and get AI feedback to improve.</p>
+      <a href="/interview-coach">Start Coaching →</a>
+    </div>
+    <div class="feature-box">
+      <h3>💼 For Employers</h3>
+      <p>Looking to upskill candidates or find the right fit faster? Jobcus is your HR co-pilot.</p>
+      <a href="/employers">Partner with Us →</a>
     </div>
   </div>
 </section>
 
+<!-- 🎯 Call to Action -->
 <section class="section" style="background-color: #104879;">
-  <h2 style="color: #cfe4ff;">Find Jobs That Match Your Skills</h2>
+  <h2 style="color: #cfe4ff;">Start Your Career Journey Today</h2>
   <p style="max-width: 600px; margin: auto; color: white;">
-    You've got the talent, now let Jobcus guide your way. Get matched to roles that fit your skills and interests, powered by AI.
+    From writing a resume to landing a job, Jobcus is your all-in-one AI-powered career companion.
   </p>
-  <a href="/chat" class="btn-primary" style="margin-top: 20px; display: inline-block;">Get Started Now</a>
+  <a href="/chat" class="btn-primary" style="margin-top: 20px; display: inline-block;">Try AI Career Advisor</a>
 </section>
 
+<!-- 📰 CV Health Check -->
 <section style="text-align: center; padding: 40px 20px;">
-  <h2 style="margin-bottom: 10px;">Are you still thinking of where to start?</h2><br>
-  <a href="#chatbox" class="cv-check-button">
-    Click here to do a health check on your CV
-  </a>
+  <h2 style="margin-bottom: 10px;">Not sure where to begin?</h2>
+  <a href="/resume-builder" class="cv-check-button">Run a CV Health Check →</a>
 </section>
+
 {% endblock %}
