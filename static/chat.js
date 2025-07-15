@@ -22,10 +22,10 @@ function sendMessage() {
   .then(res => res.json())
   .then(data => {
     appendAIMessage(data.reply);
-    if (data.suggestJobs) fetchJobs(message);  // ✅ Required
+    if (data.suggestJobs) fetchJobs(message);
   })
   .catch(() => {
-    appendAIMessage("⚠️ Something went wrong. Please try again.");
+    appendAIMessage("⚠️ An error occurred while getting your response.");
   });
 }
 
@@ -37,37 +37,14 @@ function fetchJobs(query) {
   })
   .then(res => res.json())
   .then(data => displayJobListings(data))
-  .catch(() => appendAIMessage("⚠️ Something went wrong. Please try again."));
-}
-
-function displayJobListings(data) {
-  const container = document.getElementById("job-results");
-  container.innerHTML = "";
-  const allJobs = [...data.remotive, ...data.adzuna, ...data.jsearch];
-
-  if (allJobs.length === 0) {
-    container.innerHTML = "<p>No job listings found.</p>";
-    return;
-  }
-
-  allJobs.forEach(job => {
-    const div = document.createElement("div");
-    div.className = "job-item";
-    div.innerHTML = `
-      <a href="${job.url}" target="_blank">
-        <h4>${job.title}</h4>
-        <p>${job.company} - ${job.location}</p>
-      </a>
-    `;
-    container.appendChild(div);
-  });
+  .catch(err => console.error("Job fetch error:", err));
 }
 
 function appendUserMessage(text) {
   const chatbox = document.getElementById("chatbox");
   const div = document.createElement("div");
   div.className = "chat-entry user";
-  div.innerHTML = `<p>${text}</p>`;
+  div.innerHTML = `<p style="font-size: 1.1rem; font-weight: 600; color: #111;">${text}</p>`;
   chatbox.appendChild(div);
   saveChatToStorage();
   scrollToBottom();
@@ -87,6 +64,27 @@ function appendAIMessage(text) {
   chatbox.appendChild(div);
   saveChatToStorage();
   scrollToBottom();
+}
+
+function displayJobListings(data) {
+  const container = document.getElementById("job-results");
+  container.innerHTML = "";
+
+  const allJobs = [...(data.remotive || []), ...(data.adzuna || []), ...(data.jsearch || [])];
+
+  if (allJobs.length === 0) return;
+
+  allJobs.forEach(job => {
+    const card = document.createElement("div");
+    card.className = "job-card";
+    card.innerHTML = `
+      <h3>${job.title}</h3>
+      <p class="job-company">${job.company || "Unknown Company"}</p>
+      <p class="job-location">${job.location || "Anywhere"}</p>
+      <a href="${job.url}" target="_blank" class="job-link">View Job</a>
+    `;
+    container.appendChild(card);
+  });
 }
 
 function saveChatToStorage() {
