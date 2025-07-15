@@ -420,3 +420,19 @@ textarea#userInput {
   height: 20px;
   cursor: pointer;
 }
+
+/* Default: logo aligned left */
+.header-logo {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex: 1;
+  padding-left: 1rem;
+}
+
+/* On chat page: center the logo */
+.chat-page .header-logo {
+  justify-content: center;
+  padding-left: 0;
+}
+
