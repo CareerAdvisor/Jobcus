@@ -6,32 +6,28 @@
 {% block content %}
 <main id="mainContainer">
   <div class="chat-wrapper">
-    <!-- Chat messages scroll here -->
+    <!-- Chat messages -->
     <div class="chatbox" id="chatbox"></div>
 
-    <!-- Job results inserted dynamically -->
+    <!-- Job results -->
     <div id="job-results" class="job-results"></div>
   </div>
 
-  <!-- Floating action icons -->
-  <img id="scrollDown" class="scroll-down-icon" src="{{ url_for('static', filename='icons/scrolldown.svg') }}" alt="Scroll Down" onclick="scrollToBottom()" />
-
-  <!-- Fixed input bar at the bottom -->
-  <form id="chat-form" onsubmit="handleFormSubmit(event)">
-    <div class="input-container rounded-top" id="inputContainer">
+  <!-- Fixed chat input -->
+  <form id="chat-form" onsubmit="sendMessage(); return false;">
+    <div class="input-container" id="inputContainer">
       <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)"></textarea>
+
       <div class="icon-group">
-        <label for="file-upload">
-          <img src="{{ url_for('static', filename='icons/paperclip.svg') }}" alt="Attach">
-        </label>
-        <input id="file-upload" type="file" style="display: none;" />
-        <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" onclick="handleMic()" />
-        <button type="submit">
-          <img src="{{ url_for('static', filename='icons/enter.svg') }}" alt="Send">
-        </button>
+        <label for="file-upload"><img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach"></label>
+        <input id="file-upload" type="file" style="display: none;">
+        <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" onclick="handleMic()">
+        <img src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" onclick="sendMessage()">
       </div>
     </div>
   </form>
-</main>
 
+  <!-- Scroll down -->
+  <img id="scrollDown" class="scroll-down-icon" src="{{ url_for('static', filename='icons/scroll-down.svg') }}" alt="Scroll Down" onclick="scrollToBottom()">
+</main>
 {% endblock %}
