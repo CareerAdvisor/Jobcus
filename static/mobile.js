@@ -35,6 +35,7 @@ function appendUserMessage(text) {
   div.className = "chat-entry user";
   div.innerHTML = `<p>${text}</p>`;
   chatbox.appendChild(div);
+  saveChatToStorage();
   scrollToBottom();
 }
 
@@ -50,6 +51,7 @@ function appendAIMessage(text) {
     <div id="${copyId}" class="markdown">${marked.parse(text)}</div>
   `;
   chatbox.appendChild(div);
+  saveChatToStorage();
   scrollToBottom();
 }
 
