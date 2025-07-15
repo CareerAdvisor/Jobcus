@@ -60,13 +60,17 @@ form.addEventListener("submit", async (e) => {
   const replyText = marked.parse(data.reply);
   
   const copyId = `ai-${Date.now()}`;
-aiBlock.innerHTML = `
+  aiBlock.innerHTML = `
   <div id="${copyId}" class="markdown">${replyText}</div>
   <div class="response-footer">
-    <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
+    <span class="copy-wrapper">
+      <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
+      <span class="copy-text">Copy</span>
+    </span>
   </div>
   <hr class="response-separator" />
 `;
+
 
   if (data.suggestJobs) await fetchJobs(message, aiBlock);
 
@@ -101,19 +105,19 @@ function copyToClipboard(id) {
   const text = el.innerText;
 
   navigator.clipboard.writeText(text).then(() => {
-    const icon = el.parentElement.parentElement.querySelector(".copy-icon");
+    const wrapper = el.parentElement.querySelector(".copy-wrapper");
+    if (!wrapper) return;
 
-    if (icon) {
-      const copiedMsg = document.createElement("span");
-      copiedMsg.innerText = "Copied!";
-      copiedMsg.className = "copied-msg";
+    // Fade out original copy icon/text
+    wrapper.innerHTML = `<span class="copied-msg">Copied!</span>`;
 
-      icon.replaceWith(copiedMsg);
-
-      setTimeout(() => {
-        copiedMsg.replaceWith(icon);
-      }, 1500);
-    }
+    // Restore after 1.5s
+    setTimeout(() => {
+      wrapper.innerHTML = `
+        <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${id}')">
+        <span class="copy-text">Copy</span>
+      `;
+    }, 1500);
   });
 }
 
