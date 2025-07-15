@@ -492,3 +492,21 @@ main#mainContainer {
 #scrollDown:hover {
   opacity: 1;
 }
+
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.95em;
+}
+
+.markdown th,
+.markdown td {
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown th {
+  background-color: #f0f0f0;
+}
