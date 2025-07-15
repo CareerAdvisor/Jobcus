@@ -31,3 +31,8 @@
   <img id="scrollDown" class="scroll-down-icon" src="{{ url_for('static', filename='icons/scroll-down.svg') }}" alt="Scroll Down" onclick="scrollToBottom()">
 </main>
 {% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+{% endblock %}
