@@ -58,7 +58,7 @@ form.addEventListener("submit", async (e) => {
 
   const data = await res.json();
   const replyText = marked.parse(data.reply);
-  
+
   const copyId = `ai-${Date.now()}`;
   aiBlock.innerHTML = `
   <div id="${copyId}" class="markdown">${replyText}</div>
@@ -71,11 +71,11 @@ form.addEventListener("submit", async (e) => {
   <hr class="response-separator" />
 `;
 
-
   if (data.suggestJobs) await fetchJobs(message, aiBlock);
 
   saveChatToStorage();
   scrollToBottom();
+  maybeShowScrollIcon();
 });
 
 function autoResize(textarea) {
@@ -89,7 +89,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (saved) {
     chatbox.innerHTML = saved;
   }
-  maybeShowScrollIcon();  // 👈 Add this
+  maybeShowScrollIcon();
 });
 
 function saveChatToStorage() {
@@ -104,6 +104,7 @@ function maybeShowScrollIcon() {
   const chatbox = document.getElementById("chatbox");
   const scrollIcon = document.getElementById("scrollDown");
 
+  if (!scrollIcon) return;
   if (chatbox.scrollHeight > chatbox.clientHeight + 20) {
     scrollIcon.style.display = "block";
   } else {
@@ -114,7 +115,7 @@ function maybeShowScrollIcon() {
 function copyToClipboard(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  const text = el.innerText;a
+  const text = el.innerText;
 
   navigator.clipboard.writeText(text).then(() => {
     const wrapper = el.parentElement.querySelector(".copy-wrapper");
