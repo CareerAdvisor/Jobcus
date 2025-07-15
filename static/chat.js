@@ -99,7 +99,22 @@ function copyToClipboard(id) {
   const el = document.getElementById(id);
   if (!el) return;
   const text = el.innerText;
-  navigator.clipboard.writeText(text).then(() => alert("Copied!"));
+
+  navigator.clipboard.writeText(text).then(() => {
+    const icon = el.parentElement.parentElement.querySelector(".copy-icon");
+
+    if (icon) {
+      const copiedMsg = document.createElement("span");
+      copiedMsg.innerText = "Copied!";
+      copiedMsg.className = "copied-msg";
+
+      icon.replaceWith(copiedMsg);
+
+      setTimeout(() => {
+        copiedMsg.replaceWith(icon);
+      }, 1500);
+    }
+  });
 }
 
 function clearChat() {
