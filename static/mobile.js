@@ -12,14 +12,21 @@ function sendMessage() {
 
   appendUserMessage(message);
   input.value = "";
+  autoResize(input);
+
   fetch("/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: message })
+    body: JSON.stringify({ message })
   })
-    .then(res => res.json())
-    .then(data => appendAIMessage(data.answer))
-    .catch(err => appendAIMessage("Sorry, something went wrong."));
+  .then(res => res.json())
+  .then(data => {
+    appendAIMessage(data.reply);
+    if (data.suggestJobs) fetchJobs(message);
+  })
+  .catch(() => {
+    appendAIMessage("⚠️ Something went wrong. Please try again.");
+  });
 }
 
 function appendUserMessage(text) {
