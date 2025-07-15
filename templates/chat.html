@@ -15,17 +15,16 @@
 
   <!-- Fixed chat input -->
   <form id="chat-form" onsubmit="sendMessage(); return false;">
-    <div class="input-container" id="inputContainer">
-      <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)"></textarea>
-
-      <div class="icon-group">
-        <label for="file-upload"><img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach"></label>
-        <input id="file-upload" type="file" style="display: none;">
-        <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" onclick="handleMic()">
-        <img src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" onclick="sendMessage()">
-      </div>
+  <div class="input-container">
+    <textarea id="userInput" placeholder="Ask your career question..." oninput="autoResize(this)"></textarea>
+    <div class="icon-group">
+      <label for="file-upload"><img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach"></label>
+      <input id="file-upload" type="file" style="display: none;">
+      <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" onclick="handleMic()" />
+      <img src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" onclick="sendMessage()" />
     </div>
-  </form>
+  </div>
+</form>
 
   <!-- Scroll down -->
   <img id="scrollDown" class="scroll-down-icon" src="{{ url_for('static', filename='icons/scroll-down.svg') }}" alt="Scroll Down" onclick="scrollToBottom()">
