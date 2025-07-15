@@ -176,6 +176,7 @@ main {
   border-top: 1px solid #ddd;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
   flex-direction: column;
+  align-items: stretch;
 }
 
 .input-container input[type="text"] {
@@ -192,8 +193,7 @@ main {
 .icon-group {
   display: flex;
   justify-ietms: flex-end;
-  align-items: center;
-  gap: 16px;
+  gap: 12px;
   margin-top: 10px
 }
 
@@ -302,4 +302,15 @@ textarea#userInput {
   padding: 10px;
   background-color: transparent;
   font-family: 'Segoe UI', sans-serif;
+}
+
+.input-container textarea {
+  flex-grow: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  padding: 12px;
+  resize: none;
+  width: 100%;
+  box-sizing: border-box;
 }
