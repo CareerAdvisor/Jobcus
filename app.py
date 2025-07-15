@@ -79,23 +79,15 @@ def fetch_jsearch_jobs(query):
         print("JSearch error:", e)
         return []
 
-# ---------- ROUTES (MOBILE FIRST) -------------
+# ---------- ROUTES -------------
 
 @app.route("/")
 def index():
-    return render_template("/index.html")
+    return render_template("index.html")
 
 @app.route("/chat")
 def chat():
-    return render_template("/chat.html")
-
-@app.route("/web")
-def index_web():
-    return render_template("web/index.html")
-
-@app.route("/web/chat")
-def chat_web():
-    return render_template("web/chat.html")
+    return render_template("chat.html")
 
 @app.route("/ask", methods=["POST"])
 def ask():
