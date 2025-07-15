@@ -93,6 +93,34 @@ def index():
 def chat():
     return render_template("chat.html")
 
+@app.route("/resume-builder")
+def chat():
+    return render_template("resume-builder.html")
+
+@app.route("/career-paths")
+def chat():
+    return render_template("career-paths.html")
+
+@app.route("/job-insights")
+def chat():
+    return render_template("job-insights.html")
+
+@app.route("/skill-gap")
+def chat():
+    return render_template("skill-gap.html")
+
+@app.route("/interview-coach")
+def chat():
+    return render_template("interview-coach.html")
+
+@app.route("/resources")
+def chat():
+    return render_template("resources.html")
+
+@app.route("/employers")
+def chat():
+    return render_template("employers.html")
+
 @app.route("/ask", methods=["POST"])
 def ask():
     user_msg = request.json.get("message")
