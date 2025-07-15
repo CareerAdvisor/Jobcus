@@ -408,3 +408,15 @@ textarea#userInput {
   width: 32px;
   height: 32px;
 }
+
+.header-left {
+  display: flex;
+  align-items: center;
+  padding-left: 1rem;
+}
+
+.header-pencil-icon {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
