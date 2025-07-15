@@ -89,12 +89,18 @@ function displayJobListings(data) {
 
 function saveChatToStorage() {
   localStorage.setItem("chatHistory", document.getElementById("chatbox").innerHTML);
+  localStorage.setItem("jobResults", document.getElementById("job-results").innerHTML);
 }
 
 function loadChatFromStorage() {
-  const saved = localStorage.getItem("chatHistory");
-  if (saved) {
-    document.getElementById("chatbox").innerHTML = saved;
+  const chatSaved = localStorage.getItem("chatHistory");
+  const jobSaved = localStorage.getItem("jobResults");
+
+  if (chatSaved) {
+    document.getElementById("chatbox").innerHTML = chatSaved;
+  }
+  if (jobSaved) {
+    document.getElementById("job-results").innerHTML = jobSaved;
   }
 }
 
@@ -118,6 +124,7 @@ function clearChat() {
   document.getElementById("chatbox").innerHTML = "";
   document.getElementById("job-results").innerHTML = "";
   localStorage.removeItem("chatHistory");
+  localStorage.removeItem("jobResults");
 }
 
 function handleAttach() {
