@@ -493,6 +493,7 @@ main#mainContainer {
   opacity: 1;
 }
 
+/* === Markdown Table Styling === */
 .markdown table {
   width: 100%;
   border-collapse: collapse;
