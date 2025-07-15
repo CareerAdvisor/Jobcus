@@ -13,12 +13,6 @@
 
 <body class="{% block body_class %}{% endblock %}">
   <header class="site-header">
-    <div class="header-left">
-      {% block header_icon %}
-        <img src="{{ url_for('static', filename='icons/pencilchat.svg') }}" class="header-pencil-icon" alt="New Chat" title="Start a new chat" onclick="clearChat()" />
-      {% endblock %}
-    </div>
-
     <div class="header-center">
       <a href="/">
         <img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" class="logo-img" />
@@ -64,6 +58,12 @@
   {% block scripts %}
     <script src="{{ url_for('static', filename='chat.js') }}"></script>
   {% endblock %}
-  
+
+  {% if body_class != 'chat-page' %}
+<a href="/chat" class="chat-float-button" title="Chat with Jobcus">
+  <img src="{{ url_for('static', filename='icons/pencilchat.svg') }}" alt="Chat Icon" />
+</a>
+{% endif %}
+
 </body>
 </html>
