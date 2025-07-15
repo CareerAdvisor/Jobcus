@@ -12,6 +12,7 @@ html, body {
   color: #333;
   overflow-x: hidden;
   overflow-y: scroll;
+  margin: 0;
 }
 
 body.chat-page {
@@ -108,7 +109,7 @@ main {
   padding-top: 20px;
   box-sizing: border-box;
   flex-grow: 1;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .chatbox {
@@ -217,13 +218,14 @@ main {
 /* === SCROLL DOWN ICON === */
 .scroll-down-icon {
   position: fixed;
-  bottom: 130px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 100px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
   cursor: pointer;
-  height: 24px;
-  z-index: 1000;
   display: none;
+  z-index: 1000;
+  opacity: 0.8;
 }
 
 /* === FOOTER === */
@@ -460,3 +462,11 @@ textarea#userInput {
   font-size: 0.9em;
   color: #444;
 }
+
+.chat-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
