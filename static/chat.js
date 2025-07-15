@@ -57,11 +57,10 @@ form.addEventListener("submit", async (e) => {
   });
 
   const data = await res.json();
-  const replyText = marked.parse(data.reply);
-
-  const copyId = `ai-${Date.now()}`;
-  aiBlock.innerHTML = `
-  <div id="${copyId}" class="markdown">${replyText}</div>
+  const replyText = marked.parse(data.reply); // Parsed Markdown to HTML
+const copyId = `ai-${Date.now()}`;
+aiBlock.innerHTML = `
+  <div id="${copyId}" class="markdown"></div>
   <div class="response-footer">
     <span class="copy-wrapper">
       <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
@@ -70,6 +69,19 @@ form.addEventListener("submit", async (e) => {
   </div>
   <hr class="response-separator" />
 `;
+
+const targetDiv = document.getElementById(copyId);
+let i = 0;
+
+function typeWriterEffect() {
+  if (i < replyText.length) {
+    targetDiv.innerHTML += replyText[i];
+    i++;
+    scrollToBottom();
+    setTimeout(typeWriterEffect, 5);  // adjust speed here
+  }
+}
+typeWriterEffect();
 
   if (data.suggestJobs) await fetchJobs(message, aiBlock);
 
