@@ -86,6 +86,7 @@ function copyToClipboard(id) {
 function clearChat() {
   document.getElementById("chatbox").innerHTML = "";
   document.getElementById("job-results").innerHTML = "";
+  localStorage.removeItem("chatHistory");
 }
 
 function handleAttach() {
