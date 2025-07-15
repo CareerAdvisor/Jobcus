@@ -160,6 +160,7 @@ main {
   cursor: pointer;
   opacity: 0.6;
   transition: opacity 0.2s ease;
+  margin-left: 8px;
 }
 
 .copy-icon:hover {
@@ -372,11 +373,12 @@ textarea#userInput {
 .response-footer {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   padding-top: 4px;
 }
 
 .response-separator {
   border: none;
   border-top: 1px solid #ddd;
-  margin: 12px 0;
+  margin: 16px 0 12px;
 }
