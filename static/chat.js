@@ -58,9 +58,9 @@ form.addEventListener("submit", async (e) => {
 
   const data = await res.json();
   const replyText = marked.parse(data.reply);
-  const copyId = `ai-${Date.now()}`;
   
-  aiBlock.innerHTML = `
+  const copyId = `ai-${Date.now()}`;
+aiBlock.innerHTML = `
   <div id="${copyId}" class="markdown">${replyText}</div>
   <div class="response-footer">
     <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
