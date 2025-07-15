@@ -155,11 +155,15 @@ main {
 
 /* === COPY ICON === */
 .copy-icon {
-  width: 18px;
-  height: 18px;
-  align-self: flex-end;
+  width: 10px;
+  height: 10px;
   cursor: pointer;
   opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.copy-icon:hover {
+  opacity: 1;
 }
 
 /* === INPUT CONTAINER === */
@@ -363,4 +367,16 @@ textarea#userInput {
 
 #chatbox > div:last-child {
   margin-bottom: 8px;
+}
+
+.response-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.response-separator {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 12px 0;
 }
