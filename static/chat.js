@@ -58,12 +58,15 @@ form.addEventListener("submit", async (e) => {
 
   const data = await res.json();
   const replyText = marked.parse(data.reply);
+  const copyId = `ai-${Date.now()}`;
+  
   aiBlock.innerHTML = `
-    <div style="display: flex; justify-content: flex-end;">
-      <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('ai-${Date.now()}')">
-    </div>
-    <div id="ai-${Date.now()}" class="markdown">${replyText}</div>
-  `;
+  <div id="${copyId}" class="markdown">${replyText}</div>
+  <div class="response-footer">
+    <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
+  </div>
+  <hr class="response-separator" />
+`;
 
   if (data.suggestJobs) await fetchJobs(message, aiBlock);
 
