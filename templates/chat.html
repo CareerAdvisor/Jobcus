@@ -4,23 +4,34 @@
 {% block body_class %}chat-page{% endblock %}
 
 {% block content %}
-<main id="mainContainer" class="centered">
+<main id="mainContainer">
   <div class="chat-wrapper">
-    <div id="chatbox" class="chatbox"></div>
-    <div id="job-results" class="job-listings"></div>
+    <!-- Chat messages scroll here -->
+    <div class="chatbox" id="chatbox"></div>
+
+    <!-- Job results inserted dynamically -->
+    <div id="job-results" class="job-results"></div>
   </div>
 
-  <div class="scroll-down-icon" onclick="scrollToBottom()">
-    <img src="{{ url_for('static', filename='icons/scroll-down.svg') }}" alt="Scroll down" />
-  </div>
+  <!-- Floating action icons -->
+  <img id="scrollDown" class="scroll-down-icon" src="{{ url_for('static', filename='icons/scroll-down.svg') }}" alt="Scroll Down" onclick="scrollToBottom()" />
 
-  <div class="input-container rounded-top">
-    <input type="text" id="userInput" placeholder="Ask your career question..." onkeydown="handleKey(event)" />
-    <div class="icon-group">
-      <img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach" title="Attach" onclick="handleAttach()" />
-      <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" title="Speak" onclick="handleMic()" />
-      <img src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" title="Send" onclick="sendMessage()" />
+  <!-- Fixed input bar at the bottom -->
+  <form id="chat-form" onsubmit="handleFormSubmit(event)">
+    <div class="input-container rounded-top" id="inputContainer">
+      <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)"></textarea>
+      <div class="icon-group">
+        <label for="file-upload">
+          <img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach">
+        </label>
+        <input id="file-upload" type="file" style="display: none;" />
+        <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" onclick="handleMic()" />
+        <button type="submit">
+          <img src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send">
+        </button>
+      </div>
     </div>
-  </div>
+  </form>
 </main>
+
 {% endblock %}
