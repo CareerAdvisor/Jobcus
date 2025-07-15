@@ -106,8 +106,6 @@ def ask():
                 "If a user asks about job openings or where to apply, provide advice tailored to their background, and let them know that job links will appear automatically below your response.\n\n"
                 "Be confident, structured, and professional. No need to over-explain your limitations."
                 )
-
-            )
         },
         {"role": "user", "content": user_msg}
     ]
