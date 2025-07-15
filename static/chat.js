@@ -150,3 +150,12 @@ function displayJobs(data, aiBlock) {
   saveChatToStorage();
   scrollToBottom();
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const sendBtn = document.getElementById("sendButton");
+  if (sendBtn) {
+    sendBtn.addEventListener("click", () => {
+      form.dispatchEvent(new Event("submit"));
+    });
+  }
+});
