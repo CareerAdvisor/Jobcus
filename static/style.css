@@ -496,8 +496,8 @@ main#mainContainer {
 .markdown table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
-  font-size: 0.95em;
+  margin: 16px 0;
+  font-size: 0.95rem;
 }
 
 .markdown th,
@@ -508,5 +508,6 @@ main#mainContainer {
 }
 
 .markdown th {
-  background-color: #f0f0f0;
+  background-color: #f5f5f5;
+  font-weight: 600;
 }
