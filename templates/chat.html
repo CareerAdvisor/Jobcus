@@ -1,39 +1,32 @@
+<!-- chat.html -->
 {% extends "base.html" %}
 
 {% block title %}Chat with Jobcus{% endblock %}
-
-{% set show_footer = false %}
+{% block body_class %}chat-page{% endblock %}
 
 {% block content %}
-
 <main id="mainContainer">
   <div class="chat-wrapper">
-    <!-- Chat messages -->
     <div class="chatbox" id="chatbox"></div>
-
-    <!-- Job results -->
     <div id="job-results" class="job-results"></div>
   </div>
 
-  <!-- Fixed chat input -->
   <form id="chat-form" onsubmit="sendMessage(); return false;">
-  <div class="input-container">
-    <textarea id="userInput" placeholder="Ask your career question..." oninput="autoResize(this)"></textarea>
-    <div class="icon-group">
-      <label for="file-upload"><img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach"></label>
-      <input id="file-upload" type="file" style="display: none;">
-      <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" onclick="handleMic()" />
-      <img src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" onclick="sendMessage()" />
+    <div class="input-container" id="inputContainer">
+      <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)"></textarea>
+      <div class="icon-group">
+        <label for="file-upload"><img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach"></label>
+        <input id="file-upload" type="file" style="display: none;">
+        <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" onclick="handleMic()">
+        <img src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" onclick="sendMessage()">
+      </div>
     </div>
-  </div>
-</form>
+  </form>
 
-  <!-- Scroll down -->
-  <img id="scrollDown" class="scroll-down-icon" src="{{ url_for('static', filename='icons/scrolldown.svg') }}" alt="Scroll Down" onclick="scrollToBottom()">
+  <img id="scrollDown" class="scroll-down-icon" src="{{ url_for('static', filename='icons/scroll-down.svg') }}" alt="Scroll Down" onclick="scrollToBottom()">
 </main>
 {% endblock %}
 
 {% block scripts %}
-  {{ super() }}
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
 {% endblock %}
