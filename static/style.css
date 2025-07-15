@@ -156,8 +156,8 @@ main {
 
 /* === COPY ICON === */
 .copy-icon {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   cursor: pointer;
   opacity: 0.6;
   transition: opacity 0.2s ease;
@@ -459,7 +459,7 @@ textarea#userInput {
 }
 
 .copy-text {
-  font-size: 0.9em;
+  font-size: 0.4em;
   color: #444;
 }
 
