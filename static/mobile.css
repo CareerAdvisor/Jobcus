@@ -165,23 +165,17 @@ main {
 /* === INPUT CONTAINER === */
 .input-container {
   position: fixed;
-  bottom: 60px;
+  bottom: 0;
   left: 0;
   right: 0;
   max-width: 800px;
   margin: 0 auto;
   background-color: #fff;
-  padding: 16px 20px;
+  padding: 12px 16px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
   border-top: 1px solid #ddd;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
-  box-sizing: border-box;
-  z-index: 1000;
-  height: 100px;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
+  flex-direction: column;
 }
 
 .input-container input[type="text"] {
@@ -197,10 +191,10 @@ main {
 /* === ICON GROUP === */
 .icon-group {
   display: flex;
+  justify-ietms: flex-end;
   align-items: center;
-  gap: 10px;
-  padding-left: 12px;
-  padding-right: 8px;
+  gap: 16px;
+  margin-top: 10px
 }
 
 .icon-group img {
@@ -296,4 +290,16 @@ img {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+textarea#userInput {
+  width: 100%;
+  font-size: 1rem;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  padding: 10px;
+  background-color: transparent;
+  font-family: 'Segoe UI', sans-serif;
 }
