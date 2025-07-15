@@ -436,3 +436,8 @@ textarea#userInput {
   padding-left: 0;
 }
 
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
