@@ -16,7 +16,7 @@ html, body {
 }
 
 body.chat-page {
-  overflow-y: hidden;
+  overflow-y: auto;
 }
 
 /* === HEADER === */
@@ -221,11 +221,10 @@ main {
   bottom: 100px;
   right: 20px;
   width: 32px;
-  height: 32px;
-  cursor: pointer;
+  height: 22px;
   display: none;
-  z-index: 1000;
   opacity: 0.8;
+  z-index: 1000;
 }
 
 /* === FOOTER === */
@@ -468,6 +467,7 @@ textarea#userInput {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: auto; /* Allow vertical scrolling */
 }
 
 main#mainContainer {
