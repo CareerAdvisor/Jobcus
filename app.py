@@ -1,5 +1,6 @@
 import os
 import requests
+import traceback
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from openai import OpenAI
@@ -32,6 +33,7 @@ def fetch_remotive_jobs(query):
         } for job in jobs[:5]]
     except Exception as e:
         print("Remotive error:", e)
+        traceback.print_exc()
         return []
 
 # Fetch Adzuna jobs
@@ -56,6 +58,7 @@ def fetch_adzuna_jobs(query, location="", job_type=""):
         } for job in results]
     except Exception as e:
         print("Adzuna error:", e)
+        traceback.print_exc()
         return []
 
 # Fetch JSearch jobs
@@ -77,6 +80,7 @@ def fetch_jsearch_jobs(query):
         } for job in jobs[:5]]
     except Exception as e:
         print("JSearch error:", e)
+        traceback.print_exc()
         return []
 
 # ---------- ROUTES -------------
@@ -118,33 +122,40 @@ def ask():
         ])
         return jsonify({"reply": ai_msg, "suggestJobs": suggest_jobs})
     except Exception as e:
+        print("OpenAI API error:", e)
+        traceback.print_exc()
         return jsonify({"reply": f"⚠️ Server Error: {str(e)}", "suggestJobs": False})
 
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
-    data = request.json
-    query = data.get("query", "")
-    location = data.get("location", "")
-    job_type = data.get("jobType", "").lower()
+    try:
+        data = request.json
+        query = data.get("query", "")
+        location = data.get("location", "")
+        job_type = data.get("jobType", "").lower()
 
-    remotive_jobs = []
-    adzuna_jobs = []
-    jsearch_jobs = []
+        remotive_jobs = []
+        adzuna_jobs = []
+        jsearch_jobs = []
 
-    if job_type == "remote" or job_type == "":
-        remotive_jobs = fetch_remotive_jobs(query)
+        if job_type == "remote" or job_type == "":
+            remotive_jobs = fetch_remotive_jobs(query)
 
-    if job_type in ["onsite", "hybrid", ""]:
-        adzuna_jobs = fetch_adzuna_jobs(query, location, job_type)
+        if job_type in ["onsite", "hybrid", ""]:
+            adzuna_jobs = fetch_adzuna_jobs(query, location, job_type)
 
-    if not remotive_jobs and not adzuna_jobs:
-        jsearch_jobs = fetch_jsearch_jobs(query)
+        if not remotive_jobs and not adzuna_jobs:
+            jsearch_jobs = fetch_jsearch_jobs(query)
 
-    return jsonify({
-        "remotive": remotive_jobs,
-        "adzuna": adzuna_jobs,
-        "jsearch": jsearch_jobs
-    })
+        return jsonify({
+            "remotive": remotive_jobs,
+            "adzuna": adzuna_jobs,
+            "jsearch": jsearch_jobs
+        })
+    except Exception as e:
+        print("/jobs route error:", e)
+        traceback.print_exc()
+        return jsonify({"remotive": [], "adzuna": [], "jsearch": []})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
