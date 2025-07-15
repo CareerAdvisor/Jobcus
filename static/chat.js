@@ -57,11 +57,12 @@ form.addEventListener("submit", async (e) => {
   });
 
 const data = await res.json();  // Step 1: Get response
-const replyText = marked.parse(data.reply); // Step 2: Convert Markdown to HTML
-
+const replyText = marked.parse(data.reply);  // AI reply in HTML
+const rawText = data.reply; // Markdown
 const copyId = `ai-${Date.now()}`;
+
 aiBlock.innerHTML = `
-  <div id="${copyId}" class="markdown">${replyText}</div>
+  <div id="${copyId}" class="markdown"></div>
   <div class="response-footer">
     <span class="copy-wrapper">
       <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
@@ -73,13 +74,19 @@ aiBlock.innerHTML = `
 
 const targetDiv = document.getElementById(copyId);
 let i = 0;
+let buffer = '';
 
 function typeWriterEffect() {
-  if (i < replyText.length) {
-    targetDiv.innerHTML += replyText[i];
+  if (i < rawText.length) {
+    buffer += rawText[i];
+    targetDiv.textContent = buffer;
     i++;
     scrollToBottom();
-    setTimeout(typeWriterEffect, 5);  // adjust speed here
+    setTimeout(typeWriterEffect, 5);
+  } else {
+    // Once typing is done, convert to HTML
+    targetDiv.innerHTML = marked.parse(buffer);
+    saveChatToStorage();
   }
 }
 typeWriterEffect();
