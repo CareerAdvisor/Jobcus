@@ -83,11 +83,11 @@ def fetch_jsearch_jobs(query):
 
 @app.route("/")
 def index():
-    return render_template("mobile/index.html")
+    return render_template("/index.html")
 
 @app.route("/chat")
 def chat():
-    return render_template("mobile/chat.html")
+    return render_template("/chat.html")
 
 @app.route("/web")
 def index_web():
