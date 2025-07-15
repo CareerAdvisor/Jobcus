@@ -35,7 +35,7 @@ const prompt = document.getElementById("prompt");
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const message = input.value.trim();
+  const message = input.value.trim() + "\n\nIf comparing or listing items, please use a markdown table.";
   if (!message) return;
 
   input.value = "";
