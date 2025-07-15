@@ -73,6 +73,11 @@ function handleMic() {
   alert("Voice input coming soon!");
 }
 
+function autoResize(textarea) {
+  textarea.style.height = "auto";
+  textarea.style.height = textarea.scrollHeight + "px";
+}
+
 function toggleMobileMenu() {
   const menu = document.getElementById("mobileMenu");
   if (menu) menu.classList.toggle("show");
