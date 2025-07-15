@@ -55,11 +55,11 @@
 
   {% block content %}{% endblock %}
 
-  {% if body_class != 'chat-page' %}
+ {% if show_footer | default(true) %}
   <footer class="footer-note-static">
     &copy; 2025 Jobcus – Your AI Career Advisor
   </footer>
-  {% endif %}
+{% endif %}
 
   {% block scripts %}
     <script src="{{ url_for('static', filename='mobile.js') }}"></script>
