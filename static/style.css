@@ -314,3 +314,47 @@ textarea#userInput {
   width: 100%;
   box-sizing: border-box;
 }
+
+.job-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.job-card h3 {
+  font-size: 16px;
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.job-card .company,
+.job-card .location {
+  font-size: 14px;
+  color: #666;
+  margin: 2px 0;
+}
+
+.job-card .view-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.job-card .view-link:hover {
+  text-decoration: underline;
+}
+
+/* Fix gap between AI message and job listings */
+#job-results {
+  margin-top: 8px;
+}
+
+.chat-entry.ai-answer {
+  margin-bottom: 6px;
+}
+
