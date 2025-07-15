@@ -355,6 +355,9 @@ textarea#userInput {
 }
 
 .chat-entry.ai-answer {
-  margin-bottom: 6px;
+  margin-bottom: 12px;
 }
 
+#chatbox > div:last-child {
+  margin-bottom: 8px;
+}
