@@ -22,10 +22,44 @@ function sendMessage() {
   .then(res => res.json())
   .then(data => {
     appendAIMessage(data.reply);
-    if (data.suggestJobs) fetchJobs(message);
+    if (data.suggestJobs) fetchJobs(message);  // ✅ Required
   })
   .catch(() => {
     appendAIMessage("⚠️ Something went wrong. Please try again.");
+  });
+}
+
+function fetchJobs(query) {
+  fetch("/jobs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query })
+  })
+  .then(res => res.json())
+  .then(data => displayJobListings(data))
+  .catch(() => appendAIMessage("⚠️ Something went wrong. Please try again."));
+}
+
+function displayJobListings(data) {
+  const container = document.getElementById("job-results");
+  container.innerHTML = "";
+  const allJobs = [...data.remotive, ...data.adzuna, ...data.jsearch];
+
+  if (allJobs.length === 0) {
+    container.innerHTML = "<p>No job listings found.</p>";
+    return;
+  }
+
+  allJobs.forEach(job => {
+    const div = document.createElement("div");
+    div.className = "job-item";
+    div.innerHTML = `
+      <a href="${job.url}" target="_blank">
+        <h4>${job.title}</h4>
+        <p>${job.company} - ${job.location}</p>
+      </a>
+    `;
+    container.appendChild(div);
   });
 }
 
@@ -66,7 +100,6 @@ function loadChatFromStorage() {
   }
 }
 
-// Call on load
 document.addEventListener("DOMContentLoaded", loadChatFromStorage);
 
 function scrollToBottom() {
