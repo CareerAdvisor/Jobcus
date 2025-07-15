@@ -371,8 +371,9 @@ textarea#userInput {
 }
 
 .copied-msg {
-  font-size: 0.75em;
-  color: #666;
+  font-size: 0.85em;      /* Slightly larger for better readability */
+  font-weight: 500;       /* Added for clarity */
+  color: green;           /* You can keep #666 if preferred */
   opacity: 0.8;
   transition: opacity 0.3s;
 }
@@ -440,4 +441,22 @@ textarea#userInput {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.copy-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+  cursor: pointer;
+}
+
+.copy-wrapper:hover {
+  opacity: 1;
+}
+
+.copy-text {
+  font-size: 0.9em;
+  color: #444;
 }
