@@ -56,11 +56,12 @@ form.addEventListener("submit", async (e) => {
     body: JSON.stringify({ message }),
   });
 
-  const data = await res.json();
-  const replyText = marked.parse(data.reply); // Parsed Markdown to HTML
+const data = await res.json();  // Step 1: Get response
+const replyText = marked.parse(data.reply); // Step 2: Convert Markdown to HTML
+
 const copyId = `ai-${Date.now()}`;
 aiBlock.innerHTML = `
-  <div id="${copyId}" class="markdown"></div>
+  <div id="${copyId}" class="markdown">${replyText}</div>
   <div class="response-footer">
     <span class="copy-wrapper">
       <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
