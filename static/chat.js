@@ -89,6 +89,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (saved) {
     chatbox.innerHTML = saved;
   }
+  maybeShowScrollIcon();  // 👈 Add this
 });
 
 function saveChatToStorage() {
@@ -99,10 +100,21 @@ function scrollToBottom() {
   chatbox.scrollTop = chatbox.scrollHeight;
 }
 
+function maybeShowScrollIcon() {
+  const chatbox = document.getElementById("chatbox");
+  const scrollIcon = document.getElementById("scrollDown");
+
+  if (chatbox.scrollHeight > chatbox.clientHeight + 20) {
+    scrollIcon.style.display = "block";
+  } else {
+    scrollIcon.style.display = "none";
+  }
+}
+
 function copyToClipboard(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  const text = el.innerText;
+  const text = el.innerText;a
 
   navigator.clipboard.writeText(text).then(() => {
     const wrapper = el.parentElement.querySelector(".copy-wrapper");
