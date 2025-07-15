@@ -20,7 +20,7 @@
         <label for="file-upload"><img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach"></label>
         <input id="file-upload" type="file" style="display: none;">
         <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" onclick="handleMic()">
-        <img src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" onclick="sendMessage()">
+        <img id="sendButton" src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send">
       </div>
     </div>
   </form>
