@@ -208,6 +208,51 @@ def get_location_data():
         "counts": [l[1] for l in locs]
     })
 
+@app.route("/api/skill-gap", methods=["POST"])
+def skill_gap_api():
+    try:
+        data = request.get_json()
+        goal = data.get("goal", "").strip()
+        skills = data.get("skills", "").strip()
+
+        if not goal or not skills:
+            return jsonify({"error": "Missing required input"}), 400
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a helpful AI assistant that performs skill gap analysis.\n"
+                    "The user will provide their career goal and current skills.\n"
+                    "Your job is to:\n"
+                    "1. Identify the missing skills.\n"
+                    "2. Suggest learning resources for each missing skill.\n"
+                    "Format the result as a list of missing skills and a short learning plan."
+                )
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"My goal is to become a {goal}. My current skills include: {skills}.\n"
+                    "What skills am I missing, and how can I bridge the gap?"
+                )
+            }
+        ]
+
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            temperature=0.6
+        )
+
+        reply = response.choices[0].message.content
+        return jsonify({"result": reply})
+
+    except Exception as e:
+        print("Skill Gap Error:", e)
+        traceback.print_exc()
+        return jsonify({"error": "Server error"}), 500
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
