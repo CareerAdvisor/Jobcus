@@ -630,12 +630,12 @@ main#mainContainer {
 /* === CAREER PAGE ===*/
 .career-hero {
   text-align: center;
-  padding: 3rem 1rem;
+  padding: 3rem 2rem;
   background: linear-gradient(135deg, #104879, #000);
   color: white;
   border-radius: 12px;
-  margin: 2rem auto;
-  max-width: 900px;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   overflow-wrap: break-word;
   word-wrap: break-word;
   hyphens: auto;
@@ -663,7 +663,6 @@ main#mainContainer {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
   margin: 2rem auto;
-  max-width: 1000px;
   padding: 0 1rem;
 }
 
@@ -671,8 +670,6 @@ main#mainContainer {
   background-color: #fff;
   border-radius: 1rem;
   padding: 1.5rem;
-  max-width: 320px;
-  width: 100%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   text-align: center;
 }
