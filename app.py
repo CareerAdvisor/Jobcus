@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from openai import OpenAI
 from dotenv import load_dotenv
+from collections import Counter
 
 load_dotenv()
 
@@ -20,70 +21,85 @@ ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
 JSEARCH_API_KEY = os.getenv("JSEARCH_API_KEY")
 JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
 
-# Fetch Remotive jobs
-def fetch_remotive_jobs(query):
-    try:
-        response = requests.get(REMOTIVE_API_URL, params={"search": query})
-        jobs = response.json().get("jobs", [])
-        return [{
-            "title": job["title"],
-            "company": job["company_name"],
-            "location": job["candidate_required_location"],
-            "url": job["url"]
-        } for job in jobs[:5]]
-    except Exception as e:
-        print("Remotive error:", e)
-        traceback.print_exc()
-        return []
+# --- Job Role List ---
+JOB_TITLES = [
+    "Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"
+]
 
-# Fetch Adzuna jobs
-def fetch_adzuna_jobs(query, location="", job_type=""):
-    try:
-        country = "gb"
+# Fetch Adzuna salary info for multiple titles
+def fetch_salary_data():
+    salary_data = []
+    country = "gb"
+    for title in JOB_TITLES:
         params = {
             "app_id": ADZUNA_APP_ID,
             "app_key": ADZUNA_APP_KEY,
-            "what": query,
-            "where": location,
-            "results_per_page": 5,
-            "content-type": "application/json"
+            "what": title,
+            "results_per_page": 1
         }
-        response = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params=params)
-        results = response.json().get("results", [])
-        return [{
-            "title": job["title"],
-            "company": job["company"].get("display_name"),
-            "location": job["location"].get("display_name"),
-            "url": job["redirect_url"]
-        } for job in results]
-    except Exception as e:
-        print("Adzuna error:", e)
-        traceback.print_exc()
-        return []
+        try:
+            response = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params=params)
+            result = response.json().get("results", [])
+            if result:
+                avg = result[0].get("salary_is_predicted") == "1" and float(result[0].get("salary_min")) + float(result[0].get("salary_max")) / 2 or result[0].get("salary_average")
+                salary_data.append(avg or 0)
+            else:
+                salary_data.append(0)
+        except:
+            salary_data.append(0)
+    return salary_data
 
-# Fetch JSearch jobs
-def fetch_jsearch_jobs(query):
+# Count jobs for each title using Remotive
+def fetch_job_counts():
+    counts = []
+    for title in JOB_TITLES:
+        try:
+            res = requests.get(REMOTIVE_API_URL, params={"search": title})
+            jobs = res.json().get("jobs", [])
+            counts.append(len(jobs))
+        except:
+            counts.append(0)
+    return counts
+
+# Extract common skills from job descriptions
+KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
+
+def fetch_skill_trends():
+    keyword_freq = Counter()
     try:
-        url = f"https://{JSEARCH_API_HOST}/search"
-        headers = {
-            "X-RapidAPI-Key": JSEARCH_API_KEY,
-            "X-RapidAPI-Host": JSEARCH_API_HOST
-        }
-        params = {"query": query, "page": "1", "num_pages": "1"}
-        response = requests.get(url, headers=headers, params=params)
-        jobs = response.json().get("data", [])
-        return [{
-            "title": job.get("job_title"),
-            "company": job.get("employer_name"),
-            "location": job.get("job_city") or job.get("job_country", ""),
-            "url": job.get("job_apply_link")
-        } for job in jobs[:5]]
-    except Exception as e:
-        print("JSearch error:", e)
-        traceback.print_exc()
-        return []
+        res = requests.get(REMOTIVE_API_URL, params={"limit": 50})
+        jobs = res.json().get("jobs", [])
+        for job in jobs:
+            text = (job.get("description") or "").lower()
+            for key in KEYWORDS:
+                if key.lower() in text:
+                    keyword_freq[key] += 1
+    except:
+        pass
+    return keyword_freq
 
-# ---------- ROUTES -------------
+# Top locations from Adzuna
+
+def fetch_location_counts():
+    location_counter = Counter()
+    country = "gb"
+    try:
+        params = {
+            "app_id": ADZUNA_APP_ID,
+            "app_key": ADZUNA_APP_KEY,
+            "results_per_page": 30
+        }
+        res = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params=params)
+        results = res.json().get("results", [])
+        for job in results:
+            loc = job.get("location", {}).get("display_name")
+            if loc:
+                location_counter[loc] += 1
+    except:
+        pass
+    return location_counter.most_common(5)
+
+# ----------- ROUTES -----------
 
 @app.route("/")
 def index():
@@ -126,16 +142,7 @@ def ask():
     user_msg = request.json.get("message")
 
     messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are Jobcus, a helpful and intelligent AI career assistant. Your job is to assist users with all career-related topics — including comparisons between job roles, certifications, tools, fields, and learning paths.\n\n"
-                "Use tables (Markdown or HTML) whenever appropriate to make comparisons clearer. Do not ask the user to specify further unless their request is vague. If you understand the topic, go ahead and respond directly with helpful content.\n\n"
-                "Stay focused on career, education, workplace, or skill development topics. Politely decline only when the request is completely unrelated to careers.\n\n"
-                "If a user asks about job openings or where to apply, provide advice tailored to their background, and let them know that job links will appear automatically below your response.\n\n"
-                "Be confident, structured, and professional. No need to over-explain your limitations."
-            )
-        },
+        {"role": "system", "content": "You are Jobcus, a helpful and intelligent AI career assistant..."},
         {"role": "user", "content": user_msg}
     ]
 
@@ -145,17 +152,10 @@ def ask():
             messages=messages
         )
         ai_msg = response.choices[0].message.content
-
-        suggest_jobs = any(phrase in user_msg.lower() for phrase in [
-            "find jobs", "job listings", "apply for", "job search", "remote jobs", "see job", "get a job", "open positions"
-        ])
-
+        suggest_jobs = any(phrase in user_msg.lower() for phrase in ["find jobs", "apply for", "job search"])
         return jsonify({"reply": ai_msg, "suggestJobs": suggest_jobs})
-
     except Exception as e:
-        print("OpenAI API error:", e)
-        traceback.print_exc()
-        return jsonify({"reply": f"\u26a0\ufe0f Server Error: {str(e)}", "suggestJobs": False})
+        return jsonify({"reply": f"⚠️ Server Error: {str(e)}", "suggestJobs": False})
 
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
@@ -169,52 +169,43 @@ def get_jobs():
         adzuna_jobs = []
         jsearch_jobs = []
 
-        if job_type == "remote" or job_type == "":
+        if job_type in ["remote", ""]:
             remotive_jobs = fetch_remotive_jobs(query)
-
         if job_type in ["onsite", "hybrid", ""]:
             adzuna_jobs = fetch_adzuna_jobs(query, location, job_type)
-
         if not remotive_jobs and not adzuna_jobs:
             jsearch_jobs = fetch_jsearch_jobs(query)
 
-        return jsonify({
-            "remotive": remotive_jobs,
-            "adzuna": adzuna_jobs,
-            "jsearch": jsearch_jobs
-        })
+        return jsonify({"remotive": remotive_jobs, "adzuna": adzuna_jobs, "jsearch": jsearch_jobs})
     except Exception as e:
-        print("/jobs route error:", e)
-        traceback.print_exc()
         return jsonify({"remotive": [], "adzuna": [], "jsearch": []})
 
 # === JOB INSIGHTS API ENDPOINTS ===
+
 @app.route("/api/salary")
 def get_salary_data():
-    return jsonify({
-        "labels": ["Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"],
-        "salaries": [85000, 68000, 90000, 72000, 95000]
-    })
+    salaries = fetch_salary_data()
+    return jsonify({"labels": JOB_TITLES, "salaries": salaries})
 
 @app.route("/api/job-count")
 def get_job_count_data():
-    return jsonify({
-        "labels": ["Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"],
-        "counts": [1200, 800, 950, 600, 500]
-    })
+    counts = fetch_job_counts()
+    return jsonify({"labels": JOB_TITLES, "counts": counts})
 
 @app.route("/api/skills")
 def get_skills_data():
+    freq = fetch_skill_trends()
     return jsonify({
-        "labels": ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"],
-        "frequency": [90, 80, 75, 70, 60]
+        "labels": list(freq.keys()),
+        "frequency": list(freq.values())
     })
 
 @app.route("/api/locations")
 def get_location_data():
+    locs = fetch_location_counts()
     return jsonify({
-        "labels": ["London", "Manchester", "Birmingham", "Leeds", "Glasgow"],
-        "counts": [300, 220, 180, 140, 130]
+        "labels": [l[0] for l in locs],
+        "counts": [l[1] for l in locs]
     })
 
 if __name__ == "__main__":
