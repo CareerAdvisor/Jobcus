@@ -641,9 +641,11 @@ main#mainContainer {
   hyphens: auto;
 }
 
-.career-hero h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+career-hero h1 {
+  word-break: keep-all;
+  white-space: normal;
+  line-height: 1.2;
+  font-size: 2rem; /* adjust if needed for mobile */
 }
 
 .career-hero p {
@@ -660,17 +662,16 @@ main#mainContainer {
 
 .career-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem auto;
-  padding: 0 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.2rem;
+  padding: 1rem;
 }
 
 .career-card {
-  background-color: #fff;
-  border-radius: 1rem;
+  background: #fff;
   padding: 1.5rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   text-align: center;
 }
 
@@ -686,13 +687,13 @@ main#mainContainer {
 }
 
 .career-btn {
+  margin-top: 1rem;
+  display: inline-block;
   background-color: #104879;
-  color: #fff;
+  color: white;
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
   text-decoration: none;
-  font-weight: 600;
-  transition: background-color 0.3s ease;
 }
 
 .career-btn:hover {
