@@ -4,47 +4,59 @@
 {% block title %}Skill Gap Analysis – Jobcus{% endblock %}
 
 {% block content %}
-<section class="skillgap-hero">
-  <h1>🧠 Skill Gap Analysis</h1>
-  <p>Find out what skills you’re missing for your desired role — and how to acquire them.</p>
-</section>
+<div class="skill-gap-container">
+  <section class="skill-gap-hero">
+    <h1>🧩 Skill Gap Analysis</h1>
+    <p>Find out what skills you're missing for your dream job—and how to close the gap.</p>
+  </section>
 
-<section class="skillgap-form">
-  <form id="skillGapForm">
-    <label for="career-goal">🎯 Career Goal</label>
-    <input type="text" id="career-goal" name="career_goal" placeholder="e.g. Data Analyst" required>
+  <section class="skill-gap-form">
+    <form id="skill-gap-form">
+      <label for="goal">Career Goal</label>
+      <input type="text" id="goal" name="goal" placeholder="e.g., Data Scientist" required>
 
-    <label for="current-skills">🛠 Current Skills</label>
-    <input type="text" id="current-skills" name="current_skills" placeholder="e.g. Excel, SQL, Reporting" required>
+      <label for="skills">Your Current Skills</label>
+      <input type="text" id="skills" name="skills" placeholder="e.g., Excel, SQL" required>
 
-    <button type="submit" class="analyze-btn">Analyze Skill Gap</button>
-  </form>
-</section>
+      <button type="submit">Analyze My Gap</button>
+    </form>
+  </section>
 
-<section class="skillgap-results" id="results" style="display:none">
-  <h2>🔍 Results</h2>
-  <div id="missing-skills"></div>
-  <div id="suggested-resources"></div>
-</section>
+  <section class="skill-gap-result">
+    <h2>📋 Your Results</h2>
+    <div id="skill-gap-output">Enter your goal and skills to get AI-powered insights.</div>
+  </section>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-document.getElementById("skillGapForm").addEventListener("submit", async function(e) {
+document.getElementById("skill-gap-form").addEventListener("submit", async function (e) {
   e.preventDefault();
-  const goal = document.getElementById("career-goal").value;
-  const skills = document.getElementById("current-skills").value.split(",").map(s => s.trim());
+  const goal = document.getElementById("goal").value;
+  const skills = document.getElementById("skills").value;
+  const output = document.getElementById("skill-gap-output");
 
-  const res = await fetch("/api/skill-gap", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ career_goal: goal, current_skills: skills })
-  });
+  output.innerHTML = "<em>⏳ Analyzing skill gaps...</em>";
 
-  const data = await res.json();
-  document.getElementById("results").style.display = "block";
-  document.getElementById("missing-skills").innerHTML = `<h3>Missing Skills</h3><ul>${data.missing_skills.map(skill => `<li>${skill}</li>`).join("")}</ul>`;
-  document.getElementById("suggested-resources").innerHTML = `<h3>Suggested Resources</h3><ul>${data.suggestions.map(s => `<li><a href='${s.resource}' target='_blank'>${s.skill}</a></li>`).join("")}</ul>`;
+  try {
+    const response = await fetch("/api/skill-gap", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ goal, skills })
+    });
+
+    const data = await response.json();
+
+    if (data.result) {
+      output.innerHTML = `<pre>${data.result}</pre>`;
+    } else {
+      output.innerHTML = "⚠️ Could not retrieve analysis. Try again.";
+    }
+  } catch (error) {
+    console.error("Skill Gap Fetch Error:", error);
+    output.innerHTML = "⚠️ An error occurred while processing your request.";
+  }
 });
 </script>
 {% endblock %}
