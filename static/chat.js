@@ -31,72 +31,72 @@ function sharePage() {
 const form = document.getElementById("chat-form");
 const input = document.getElementById("userInput");
 const chatbox = document.getElementById("chatbox");
-const prompt = document.getElementById("prompt");
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const message = input.value.trim();
-  if (!message) return;
+if (form && input && chatbox) {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = input.value.trim();
+    if (!message) return;
 
-  input.value = "";
-  autoResize(input);
+    input.value = "";
+    autoResize(input);
 
-  const aiBlock = document.createElement("div");
-  aiBlock.className = "chat-entry ai-answer";
-  const userMsg = document.createElement("div");
-  userMsg.className = "chat-entry user";
-  userMsg.innerHTML = `<p style="font-size: 1.1em;"><strong>${message}</strong></p>`;
-  chatbox.appendChild(userMsg);
-  chatbox.appendChild(aiBlock);
-  scrollToBottom();
-
-  const res = await fetch("/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message }),
-  });
-
-const data = await res.json();  // Step 1: Get response
-const replyText = marked.parse(data.reply);  // AI reply in HTML
-const rawText = data.reply; // Markdown
-const copyId = `ai-${Date.now()}`;
-
-aiBlock.innerHTML = `
-  <div id="${copyId}" class="markdown"></div>
-  <div class="response-footer">
-    <span class="copy-wrapper">
-      <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
-      <span class="copy-text">Copy</span>
-    </span>
-  </div>
-  <hr class="response-separator" />
-`;
-
-const targetDiv = document.getElementById(copyId);
-let i = 0;
-let buffer = '';
-
-function typeWriterEffect() {
-  if (i < rawText.length) {
-    buffer += rawText[i];
-    targetDiv.textContent = buffer;
-    i++;
+    const aiBlock = document.createElement("div");
+    aiBlock.className = "chat-entry ai-answer";
+    const userMsg = document.createElement("div");
+    userMsg.className = "chat-entry user";
+    userMsg.innerHTML = `<p style="font-size: 1.1em;"><strong>${message}</strong></p>`;
+    chatbox.appendChild(userMsg);
+    chatbox.appendChild(aiBlock);
     scrollToBottom();
-    setTimeout(typeWriterEffect, 5);
-  } else {
-    // Once typing is done, convert to HTML
-    targetDiv.innerHTML = marked.parse(buffer);
-    saveChatToStorage();
-  }
+
+    const res = await fetch("/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+
+    const data = await res.json();
+    const rawText = data.reply;
+    const copyId = `ai-${Date.now()}`;
+
+    aiBlock.innerHTML = `
+      <div id="${copyId}" class="markdown"></div>
+      <div class="response-footer">
+        <span class="copy-wrapper">
+          <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
+          <span class="copy-text">Copy</span>
+        </span>
+      </div>
+      <hr class="response-separator" />
+    `;
+
+    const targetDiv = document.getElementById(copyId);
+    let i = 0;
+    let buffer = "";
+
+    function typeWriterEffect() {
+      if (i < rawText.length) {
+        buffer += rawText[i];
+        targetDiv.textContent = buffer;
+        i++;
+        scrollToBottom();
+        setTimeout(typeWriterEffect, 5);
+      } else {
+        targetDiv.innerHTML = marked.parse(buffer);
+        saveChatToStorage();
+      }
+    }
+
+    typeWriterEffect();
+
+    if (data.suggestJobs) await fetchJobs(message, aiBlock);
+
+    saveChatToStorage(); // extra save after job fetch
+    scrollToBottom();
+    maybeShowScrollIcon();
+  });
 }
-typeWriterEffect();
-
-  if (data.suggestJobs) await fetchJobs(message, aiBlock);
-
-  saveChatToStorage();
-  scrollToBottom();
-  maybeShowScrollIcon();
-});
 
 function autoResize(textarea) {
   textarea.style.height = "auto";
