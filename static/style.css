@@ -856,3 +856,99 @@ career-hero h1 {
   border-radius: 8px;
 }
 
+/* Skill Gap Page Styles */
+.skill-gap-container {
+  padding: 1.5rem;
+  max-width: 600px;
+  margin: auto;
+  animation: fadeSlideIn 0.5s ease-in-out;
+}
+
+.skill-gap-container h1 {
+  font-size: 1.75rem;
+  color: #104879;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.skill-gap-container p {
+  color: #666;
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.skill-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: fadeSlideIn 0.6s ease-in-out;
+}
+
+.skill-form input,
+.skill-form textarea,
+.skill-form button {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+.skill-form input:focus,
+.skill-form textarea:focus {
+  outline: none;
+  border-color: #104879;
+  box-shadow: 0 0 5px rgba(16, 72, 121, 0.2);
+}
+
+.skill-form button {
+  background-color: #104879;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-weight: bold;
+}
+
+.skill-form button:hover {
+  background-color: #0d3b66;
+}
+
+.result-box {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f4f9fd;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  animation: fadeSlideIn 0.7s ease-in-out;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+  .skill-gap-container {
+    padding: 1rem;
+  }
+
+  .skill-gap-container h1 {
+    font-size: 1.5rem;
+  }
+
+  .skill-form input,
+  .skill-form textarea,
+  .skill-form button {
+    font-size: 0.95rem;
+  }
+}
+
+
