@@ -67,8 +67,11 @@
 {% endif %}
 
   {% block scripts %}
+  {% if request.path == "/chat" %}
     <script src="{{ url_for('static', filename='chat.js') }}"></script>
+  {% endif %}
   {% endblock %}
+
 
   {% if body_class != 'chat-page' %}
 <a href="/chat" class="chat-float-button" title="Chat with Jobcus">
