@@ -124,36 +124,35 @@ def employers():
 @app.route("/ask", methods=["POST"])
 def ask():
     user_msg = request.json.get("message")
+
     messages = [
         {
             "role": "system",
-            "content": (         
+            "content": (
                 "You are Jobcus, a helpful and intelligent AI career assistant. Your job is to assist users with all career-related topics — including comparisons between job roles, certifications, tools, fields, and learning paths.\n\n"
                 "Use tables (Markdown or HTML) whenever appropriate to make comparisons clearer. Do not ask the user to specify further unless their request is vague. If you understand the topic, go ahead and respond directly with helpful content.\n\n"
                 "Stay focused on career, education, workplace, or skill development topics. Politely decline only when the request is completely unrelated to careers.\n\n"
                 "If a user asks about job openings or where to apply, provide advice tailored to their background, and let them know that job links will appear automatically below your response.\n\n"
                 "Be confident, structured, and professional. No need to over-explain your limitations."
-                )
+            )
         },
         {"role": "user", "content": user_msg}
     ]
 
-    
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=messages
         )
         ai_msg = response.choices[0].message.content
-        # Only show jobs if the user *explicitly* mentions intent to find or apply
+
+        # Only show jobs if the user explicitly requests them
         suggest_jobs = any(phrase in user_msg.lower() for phrase in [
             "find jobs", "job listings", "apply for", "job search", "remote jobs", "see job", "get a job", "open positions"
         ])
 
-    try:
-        ai_msg = get_openai_response(user_input)  # whatever logic you have
-        suggest_jobs = detect_job_intent(user_input)
         return jsonify({"reply": ai_msg, "suggestJobs": suggest_jobs})
+
     except Exception as e:
         print("OpenAI API error:", e)
         traceback.print_exc()
