@@ -9,23 +9,40 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='/style.css') }}" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
-  <header class="site-header">
 
-  <div class="header-left">
-    {% block header_icon %}{% endblock %}
-  </div>
-    
-    <div class="header-logo"> 
-      <a href="/">
-        <img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" class="logo-img" />
-      </a>
-    </div>
+  <div class="page-container">
+    <header class="site-header">
+      <div class="header-left">
+        {% block header_icon %}{% endblock %}
+      </div>
+        
+      <div class="header-logo"> 
+        <a href="/">
+          <img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" class="logo-img" />
+        </a>
+      </div>
 
-    <div class="header-right">
-      <nav class="desktop-nav">
+      <div class="header-right">
+        <nav class="desktop-nav">
+          <a href="/chat">Chat</a>
+          <a href="/resume-builder">Resume</a>
+          <a href="/career-paths">Career Paths</a>
+          <a href="/job-insights">Job Insights</a>
+          <a href="/skill-gap">Skill Gap</a>
+          <a href="/interview-coach">Interview Coach</a>
+          <a href="/resources">Resources</a>
+          <a href="/employers">Employers</a>
+        </nav>
+        <div class="hamburger" onclick="toggleMobileMenu()">
+          <div></div><div></div><div></div>
+        </div>
+      </div>
+
+      <div class="mobile-nav" id="mobileMenu">
         <a href="/chat">Chat</a>
         <a href="/resume-builder">Resume</a>
         <a href="/career-paths">Career Paths</a>
@@ -34,37 +51,23 @@
         <a href="/interview-coach">Interview Coach</a>
         <a href="/resources">Resources</a>
         <a href="/employers">Employers</a>
-      </nav>
-      <div class="hamburger" onclick="toggleMobileMenu()">
-        <div></div><div></div><div></div>
       </div>
-    </div>
+    </header>
 
-    <div class="mobile-nav" id="mobileMenu">
-      <a href="/chat">Chat</a>
-      <a href="/resume-builder">Resume</a>
-      <a href="/career-paths">Career Paths</a>
-      <a href="/job-insights">Job Insights</a>
-      <a href="/skill-gap">Skill Gap</a>
-      <a href="/interview-coach">Interview Coach</a>
-      <a href="/resources">Resources</a>
-      <a href="/employers">Employers</a>
-    </div>
-  </header>
+    <script>
+      function toggleMobileMenu() {
+        document.getElementById("mobileMenu").classList.toggle("show");
+      }
+    </script>
 
-  <script>
-    function toggleMobileMenu() {
-      document.getElementById("mobileMenu").classList.toggle("show");
-    }
-  </script>
+    {% block content %}{% endblock %}
 
-  {% block content %}{% endblock %}
-
- {% if show_footer | default(true) %}
-  <footer class="footer-note-static">
-    &copy; 2025 Jobcus – Your AI Career Advisor
-  </footer>
-{% endif %}
+    {% if show_footer | default(true) %}
+    <footer class="footer-note-static">
+      &copy; 2025 Jobcus – Your AI Career Advisor
+    </footer>
+    {% endif %}
+  </div>
 
   {% block scripts %}
   {% if request.path == "/chat" %}
@@ -72,12 +75,11 @@
   {% endif %}
   {% endblock %}
 
-
   {% if body_class != 'chat-page' %}
-<a href="/chat" class="chat-float-button" title="Chat with Jobcus">
-  <img src="{{ url_for('static', filename='icons/pencilchat.svg') }}" alt="Chat Icon" />
-</a>
-{% endif %}
+  <a href="/chat" class="chat-float-button" title="Chat with Jobcus">
+    <img src="{{ url_for('static', filename='icons/pencilchat.svg') }}" alt="Chat Icon" />
+  </a>
+  {% endif %}
 
 </body>
 </html>
