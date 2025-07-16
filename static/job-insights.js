@@ -1,79 +1,125 @@
-// static/job-insights.js
+// job-insights.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Example data - replace this with real-time fetched data later
-  const salaryData = {
-    labels: ["Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"],
-    salaries: [85000, 68000, 90000, 72000, 95000],
-  };
+  const jobTitles = ["Software Engineer", "Data Analyst", "Project Manager", "Graphic Designer"];
 
-  const jobCountData = {
-    labels: ["Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"],
-    counts: [1200, 800, 950, 600, 500],
-  };
-
-  const skillData = {
-    labels: ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"],
-    frequency: [90, 80, 75, 70, 60],
-  };
-
-  const locationData = {
-    labels: ["London", "Manchester", "Birmingham", "Leeds", "Glasgow"],
-    counts: [300, 220, 180, 140, 130],
-  };
-
-  // Render each chart
-  renderBarChart("salary-chart", salaryData.labels, salaryData.salaries, "Average Salary (£)");
-  renderBarChart("jobcount-chart", jobCountData.labels, jobCountData.counts, "Open Positions");
-  renderBarChart("skill-chart", skillData.labels, skillData.frequency, "Demand Level");
-  renderBarChart("location-chart", locationData.labels, locationData.counts, "Hiring Demand");
+  fetchSalaryData(jobTitles);
+  fetchJobCount(jobTitles);
+  fetchSkillTrends();
+  fetchLocationData("software engineer");
 });
 
-function renderBarChart(canvasId, labels, data, labelText) {
-  const ctx = document.getElementById(canvasId);
-  if (!ctx) return;
+// === 1. Salary Insights ===
+async function fetchSalaryData(titles) {
+  const labels = [];
+  const salaries = [];
 
-  new Chart(ctx, {
+  for (const title of titles) {
+    const response = await fetch(`/api/salary?title=${encodeURIComponent(title)}`);
+    const data = await response.json();
+    labels.push(title);
+    salaries.push(data.average_salary || 0);
+  }
+
+  new Chart(document.getElementById("salary-chart"), {
     type: "bar",
     data: {
-      labels: labels,
-      datasets: [
-        {
-          label: labelText,
-          data: data,
-          backgroundColor: "#104879",
-          borderRadius: 4,
-        },
-      ],
+      labels,
+      datasets: [{
+        label: "Average Salary (GBP)",
+        data: salaries,
+        backgroundColor: "#104879"
+      }]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            color: "#333",
-            precision: 0,
-          },
-        },
-        x: {
-          ticks: {
-            color: "#333",
-          },
-        },
-      },
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+// === 2. Job Count ===
+async function fetchJobCount(titles) {
+  const labels = [];
+  const counts = [];
+
+  for (const title of titles) {
+    const response = await fetch(`/api/job-count?title=${encodeURIComponent(title)}`);
+    const data = await response.json();
+    labels.push(title);
+    counts.push(data.count || 0);
+  }
+
+  new Chart(document.getElementById("jobcount-chart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "Open Positions",
+        data: counts,
+        backgroundColor: "#3f5f95"
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+// === 3. Skill Trends ===
+async function fetchSkillTrends() {
+  const response = await fetch("/api/skills");
+  const data = await response.json();
+
+  const labels = data.skills.map(s => s.name);
+  const freq = data.skills.map(s => s.count);
+
+  new Chart(document.getElementById("skill-chart"), {
+    type: "doughnut",
+    data: {
+      labels,
+      datasets: [{
+        label: "Skill Demand",
+        data: freq,
+        backgroundColor: ["#104879", "#3f5f95", "#6d88b8", "#b5c6e0"]
+      }]
+    },
+    options: {
+      responsive: true,
       plugins: {
         legend: {
-          display: true,
-          labels: {
-            color: "#104879",
-            font: {
-              weight: "bold"
-            }
-          }
+          position: "bottom"
         }
       }
+    }
+  });
+}
+
+// === 4. Location Insights ===
+async function fetchLocationData(title) {
+  const response = await fetch(`/api/locations?title=${encodeURIComponent(title)}`);
+  const data = await response.json();
+
+  const labels = data.locations.map(loc => loc.name);
+  const jobs = data.locations.map(loc => loc.count);
+
+  new Chart(document.getElementById("location-chart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "Jobs by Region",
+        data: jobs,
+        backgroundColor: "#104879"
+      }]
     },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
   });
 }
