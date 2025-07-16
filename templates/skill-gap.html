@@ -11,52 +11,19 @@
   </section>
 
   <section class="skill-gap-form">
-    <form id="skill-gap-form">
-      <label for="goal">Career Goal</label>
-      <input type="text" id="goal" name="goal" placeholder="e.g., Data Scientist" required>
-
-      <label for="skills">Your Current Skills</label>
-      <input type="text" id="skills" name="skills" placeholder="e.g., Excel, SQL" required>
-
+    <form id="skillGapForm">
+      <input type="text" name="goal" id="goal" placeholder="Career Goal (e.g., Data Analyst)" required />
+      <textarea name="skills" id="skills" rows="4" placeholder="Your current skills (e.g., Excel, SQL)" required></textarea>
       <button type="submit">Analyze My Gap</button>
     </form>
   </section>
 
   <section class="skill-gap-result">
-    <h2>📋 Your Results</h2>
-    <div id="skill-gap-output">Enter your goal and skills to get AI-powered insights.</div>
+    <div id="gapResult" class="result-box">Enter your goal and skills to get AI-powered insights.</div>
   </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.getElementById("skill-gap-form").addEventListener("submit", async function (e) {
-  e.preventDefault();
-  const goal = document.getElementById("goal").value;
-  const skills = document.getElementById("skills").value;
-  const output = document.getElementById("skill-gap-output");
-
-  output.innerHTML = "<em>⏳ Analyzing skill gaps...</em>";
-
-  try {
-    const response = await fetch("/api/skill-gap", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ goal, skills })
-    });
-
-    const data = await response.json();
-
-    if (data.result) {
-      output.innerHTML = `<pre>${data.result}</pre>`;
-    } else {
-      output.innerHTML = "⚠️ Could not retrieve analysis. Try again.";
-    }
-  } catch (error) {
-    console.error("Skill Gap Fetch Error:", error);
-    output.innerHTML = "⚠️ An error occurred while processing your request.";
-  }
-});
-</script>
+<script src="{{ url_for('static', filename='skill-gap.js') }}"></script>
 {% endblock %}
