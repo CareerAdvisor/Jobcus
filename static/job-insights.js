@@ -1,11 +1,52 @@
 // job-insights.js
 
-document.addEventListener("DOMContentLoaded", () => {
-  fetchSalaryData();
-  fetchJobCountData();
-  fetchSkillTrends();
-  fetchLocationData();
-});
+// === Utility to Render Bar Charts ===
+function renderBarChart(canvasId, labels, data, labelText) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: labelText,
+        data: data,
+        backgroundColor: "#104879",
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: "#333",
+            precision: 0
+          }
+        },
+        x: {
+          ticks: {
+            color: "#333"
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          labels: {
+            color: "#104879",
+            font: {
+              weight: "bold"
+            }
+          }
+        }
+      }
+    }
+  });
+}
 
 // === 1. Salary Insights ===
 function fetchSalaryData() {
@@ -62,3 +103,11 @@ function fetchLocationData() {
     })
     .catch(err => console.error("Location Data Error:", err));
 }
+
+// === DOM Ready ===
+document.addEventListener("DOMContentLoaded", () => {
+  fetchSalaryData();
+  fetchJobCountData();
+  fetchSkillTrends();
+  fetchLocationData();
+});
