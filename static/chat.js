@@ -194,6 +194,12 @@ function displayJobs(data, aiBlock) {
 
   if (allJobs.length === 0) return;
 
+   // ✅ Insert heading before job cards
+  const heading = document.createElement("p");
+  heading.innerHTML = `<strong>Here are some job opportunities that match your interest:</strong>`;
+  heading.style.marginTop = "16px";
+  jobsContainer.appendChild(heading);
+
   allJobs.forEach(job => {
     const jobCard = document.createElement("div");
     jobCard.className = "job-card";
