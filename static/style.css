@@ -706,7 +706,7 @@ main#mainContainer {
 
 .job-insights-hero {
   text-align: center;
-  background: linear-gradient(to right, #104879, #3f5f95);
+  background: linear-gradient(to right, #104879, #000);
   color: white;
   padding: 3rem 2rem;
   border-radius: 12px;
