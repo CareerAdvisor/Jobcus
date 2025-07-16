@@ -636,6 +636,9 @@ main#mainContainer {
   border-radius: 12px;
   margin: 2rem auto;
   max-width: 900px;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 .career-hero h1 {
