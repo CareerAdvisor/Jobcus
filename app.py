@@ -146,7 +146,6 @@ def ask():
         )
         ai_msg = response.choices[0].message.content
 
-        # Only show jobs if the user explicitly requests them
         suggest_jobs = any(phrase in user_msg.lower() for phrase in [
             "find jobs", "job listings", "apply for", "job search", "remote jobs", "see job", "get a job", "open positions"
         ])
@@ -156,7 +155,7 @@ def ask():
     except Exception as e:
         print("OpenAI API error:", e)
         traceback.print_exc()
-        return jsonify({"reply": f"⚠️ Server Error: {str(e)}", "suggestJobs": False})
+        return jsonify({"reply": f"\u26a0\ufe0f Server Error: {str(e)}", "suggestJobs": False})
 
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
@@ -188,6 +187,35 @@ def get_jobs():
         print("/jobs route error:", e)
         traceback.print_exc()
         return jsonify({"remotive": [], "adzuna": [], "jsearch": []})
+
+# === JOB INSIGHTS API ENDPOINTS ===
+@app.route("/api/salary")
+def get_salary_data():
+    return jsonify({
+        "labels": ["Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"],
+        "salaries": [85000, 68000, 90000, 72000, 95000]
+    })
+
+@app.route("/api/job-count")
+def get_job_count_data():
+    return jsonify({
+        "labels": ["Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"],
+        "counts": [1200, 800, 950, 600, 500]
+    })
+
+@app.route("/api/skills")
+def get_skills_data():
+    return jsonify({
+        "labels": ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"],
+        "frequency": [90, 80, 75, 70, 60]
+    })
+
+@app.route("/api/locations")
+def get_location_data():
+    return jsonify({
+        "labels": ["London", "Manchester", "Birmingham", "Leeds", "Glasgow"],
+        "counts": [300, 220, 180, 140, 130]
+    })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
