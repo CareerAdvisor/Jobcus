@@ -783,3 +783,76 @@ career-hero h1 {
   height: 100% !important;
   display: block;
 }
+
+/* === SKILL GAP === */
+.skill-gap-page {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.skill-gap-page h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #104879;
+}
+
+.skill-gap-page p {
+  color: #555;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.skill-gap-form {
+  background-color: #f9fcfe;
+  border: 1px solid #dde6ed;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+}
+
+.skill-gap-form label {
+  font-weight: bold;
+  margin-top: 1rem;
+  display: block;
+  color: #333;
+}
+
+.skill-gap-form input,
+.skill-gap-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.3rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  resize: vertical;
+}
+
+.skill-gap-form button {
+  margin-top: 1.2rem;
+  background-color: #104879;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.skill-gap-form button:hover {
+  background-color: #0c3964;
+}
+
+#skill-gap-result {
+  background-color: #f1f6fa;
+  border-left: 4px solid #104879;
+  margin-top: 2rem;
+  padding: 1rem;
+  white-space: pre-wrap;
+  font-family: 'Courier New', monospace;
+  color: #333;
+  border-radius: 8px;
+}
+
