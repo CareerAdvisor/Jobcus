@@ -4,32 +4,39 @@
 {% block title %}Job Insights – Jobcus{% endblock %}
 
 {% block content %}
-<section class="insights-hero">
-  <h1>Job Market Insights</h1>
-  <p>Explore real-time career insights based on your field and interests.</p>
-</section>
+<div class="job-insights-page">
+  <section class="job-insights-hero">
+    <h1>📊 Real-Time Job Market Insights</h1>
+    <p>Explore up-to-date salary data, job demand, skill trends, and location opportunities to guide your career decisions.</p>
+  </section>
 
-<div class="insight-section">
-  <h2>💰 Average Salary by Role</h2>
-  <p>Real-time average salary insights across popular job titles.</p>
-  <div id="salaryChart" class="insight-chart">Loading salary data...</div>
-</div>
+  <section class="insight-section" id="salary-insight">
+    <h2>💰 Average Salary by Role</h2>
+    <p>Real-time salary insights across popular job titles in your field.</p>
+    <div id="salary-chart" class="chart-box">Loading chart...</div>
+  </section>
 
-<div class="insight-section">
-  <h2>📊 Job Count per Title</h2>
-  <p>See how many openings are available right now for popular roles.</p>
-  <div id="jobCountChart" class="insight-chart">Loading job count data...</div>
-</div>
+  <section class="insight-section" id="job-count-insight">
+    <h2>📈 Job Count per Title</h2>
+    <p>See how many openings are available right now for in-demand roles.</p>
+    <div id="jobcount-chart" class="chart-box">Loading chart...</div>
+  </section>
 
-<div class="insight-section">
-  <h2>📈 In-Demand Skills</h2>
-  <p>Trending skills employers are looking for across industries.</p>
-  <div id="skillTrendsChart" class="insight-chart">Loading skill trends...</div>
-</div>
+  <section class="insight-section" id="skill-trends">
+    <h2>🧠 In-Demand Skills</h2>
+    <p>Find out which skills employers are actively hiring for across industries.</p>
+    <div id="skill-chart" class="chart-box">Loading trends...</div>
+  </section>
 
-<div class="insight-section">
-  <h2>📍 Top Hiring Locations</h2>
-  <p>Find out which cities and regions are hiring the most.</p>
-  <div id="locationChart" class="insight-chart">Loading location data...</div>
+  <section class="insight-section" id="location-distribution">
+    <h2>📍 Top Hiring Locations</h2>
+    <p>Discover where job opportunities are concentrated geographically.</p>
+    <div id="location-chart" class="chart-box">Loading locations...</div>
+  </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='job-insights.js') }}"></script>
 {% endblock %}
