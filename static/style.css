@@ -542,11 +542,11 @@ main#mainContainer {
     flex-shrink: 0;
   }
 
-/* ==== RESOURCES PAGE STYLE === */
+/* === FIXED RESOURCES PAGE STYLE WITH APPROVED COLOR SCHEME === */
 .resources-hero {
   text-align: center;
   padding: 3rem 1rem;
-  background: linear-gradient(135deg, #E6F4EA, #f9fbf9);
+  background: linear-gradient(135deg, #104879, #e8f0f7); /* Approved blues */
   border-radius: 12px;
   margin: 2rem auto;
   max-width: 900px;
@@ -554,27 +554,28 @@ main#mainContainer {
 
 .resources-hero h1 {
   font-size: 2.5rem;
-  color: #1B5E20;
+  color: #ffffff; /* White text on blue background */
   margin-bottom: 1rem;
 }
 
 .resources-hero p {
   font-size: 1.1rem;
-  color: #555;
+  color: #e0e0e0;
 }
 
 .resource-section {
   max-width: 900px;
   margin: 2rem auto;
   padding: 1rem 2rem;
-  background-color: #fff;
+  background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
 }
 
 .resource-section h2 {
-  color: #1B5E20;
+  color: #104879;
   margin-bottom: 0.5rem;
+  font-size: 1.6rem;
 }
 
 .resource-section p {
@@ -589,7 +590,7 @@ main#mainContainer {
 }
 
 .resource-btn {
-  background-color: #2E7D32;
+  background-color: #104879;
   color: #fff;
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
@@ -599,7 +600,7 @@ main#mainContainer {
 }
 
 .resource-btn:hover {
-  background-color: #1B5E20;
+  background-color: #08325c;
 }
 
 .resource-list {
@@ -612,12 +613,12 @@ main#mainContainer {
 }
 
 .resource-list a {
-  color: #2E7D32;
+  color: #104879;
   text-decoration: none;
   font-weight: 500;
 }
 
 .resource-list a:hover {
   text-decoration: underline;
-  color: #1B5E20;
+  color: #08325c;
 }
