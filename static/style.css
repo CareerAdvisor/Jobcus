@@ -545,7 +545,7 @@ main#mainContainer {
 .resources-hero {
   text-align: center;
   padding: 3rem 1rem;
-  background: linear-gradient(135deg, #0f3e75, #b3d7f7); /* Deeper blues for better contrast */
+  background: linear-gradient(135deg, #0f3e75, #000000); /* Deeper blues for better contrast */
   border-radius: 12px;
   margin: 2rem auto;
   max-width: 900px;
@@ -631,7 +631,7 @@ main#mainContainer {
 .career-hero {
   text-align: center;
   padding: 3rem 1rem;
-  background: linear-gradient(135deg, #104879, #e8f0f7);
+  background: linear-gradient(135deg, #104879, #000);
   color: white;
   border-radius: 12px;
   margin: 2rem auto;
@@ -701,7 +701,7 @@ main#mainContainer {
 .insights-hero {
   text-align: center;
   padding: 3rem 1rem;
-  background: linear-gradient(135deg, #104879, #e6f0ff);
+  background: linear-gradient(135deg, #104879, #000);
   color: white;
   border-radius: 12px;
   margin: 2rem auto;
