@@ -4,40 +4,32 @@
 {% block title %}Job Insights – Jobcus{% endblock %}
 
 {% block content %}
-
 <section class="insights-hero">
   <h1>Job Market Insights</h1>
-  <p>Stay ahead with real-time data on job trends, salaries, and skill demands to make informed career decisions.</p>
+  <p>Explore real-time career insights based on your field and interests.</p>
 </section>
 
-<section class="insight-section">
-  <h2>Top Growing Careers</h2>
-  <ul class="insight-list">
-    <li><strong>Data Analyst:</strong> 35% growth projected by 2028</li>
-    <li><strong>Cybersecurity Specialist:</strong> High demand across sectors</li>
-    <li><strong>Product Manager:</strong> Increasing need in tech startups</li>
-  </ul>
-</section>
+<div class="insight-section">
+  <h2>💰 Average Salary by Role</h2>
+  <p>Real-time average salary insights across popular job titles.</p>
+  <div id="salaryChart" class="insight-chart">Loading salary data...</div>
+</div>
 
-<section class="insight-section">
-  <h2>Average Salary by Industry (UK)</h2>
-  <table class="insight-table">
-    <tr><th>Industry</th><th>Average Salary</th></tr>
-    <tr><td>Technology</td><td>£55,000</td></tr>
-    <tr><td>Healthcare</td><td>£42,000</td></tr>
-    <tr><td>Finance</td><td>£60,000</td></tr>
-  </table>
-</section>
+<div class="insight-section">
+  <h2>📊 Job Count per Title</h2>
+  <p>See how many openings are available right now for popular roles.</p>
+  <div id="jobCountChart" class="insight-chart">Loading job count data...</div>
+</div>
 
-<section class="insight-section">
-  <h2>In-Demand Skills</h2>
-  <div class="skill-tags">
-    <span>Python</span>
-    <span>Cloud Computing</span>
-    <span>Project Management</span>
-    <span>UI/UX Design</span>
-    <span>Data Visualization</span>
-  </div>
-</section>
+<div class="insight-section">
+  <h2>📈 In-Demand Skills</h2>
+  <p>Trending skills employers are looking for across industries.</p>
+  <div id="skillTrendsChart" class="insight-chart">Loading skill trends...</div>
+</div>
 
+<div class="insight-section">
+  <h2>📍 Top Hiring Locations</h2>
+  <p>Find out which cities and regions are hiring the most.</p>
+  <div id="locationChart" class="insight-chart">Loading location data...</div>
+</div>
 {% endblock %}
