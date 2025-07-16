@@ -518,3 +518,9 @@ main#mainContainer {
 .markdown ol:last-child {
   margin-bottom: 0;
 }
+
+.markdown {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
