@@ -2,19 +2,30 @@
 
 // === Utility to Render Bar Charts ===
 function renderBarChart(canvasId, labels, data, labelText) {
-  const ctx = document.getElementById(canvasId);
-  if (!ctx) return;
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) {
+    console.warn(`Canvas not found: ${canvasId}`);
+    return;
+  }
 
-  new Chart(ctx, {
+  // Clear previous chart if needed
+  if (canvas.chartInstance) {
+    canvas.chartInstance.destroy();
+  }
+
+  const ctx = canvas.getContext("2d");
+  canvas.chartInstance = new Chart(ctx, {
     type: "bar",
     data: {
       labels: labels,
-      datasets: [{
-        label: labelText,
-        data: data,
-        backgroundColor: "#104879",
-        borderRadius: 4,
-      }]
+      datasets: [
+        {
+          label: labelText,
+          data: data,
+          backgroundColor: "#104879",
+          borderRadius: 4,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -24,14 +35,14 @@ function renderBarChart(canvasId, labels, data, labelText) {
           beginAtZero: true,
           ticks: {
             color: "#333",
-            precision: 0
-          }
+            precision: 0,
+          },
         },
         x: {
           ticks: {
-            color: "#333"
-          }
-        }
+            color: "#333",
+          },
+        },
       },
       plugins: {
         legend: {
@@ -44,7 +55,7 @@ function renderBarChart(canvasId, labels, data, labelText) {
           }
         }
       }
-    }
+    },
   });
 }
 
