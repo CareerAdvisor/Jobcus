@@ -145,11 +145,13 @@ def ask():
             messages=messages
         )
         ai_msg = response.choices[0].message.content
-        suggest_jobs = any(word in user_msg.lower() for word in [
-            "job", "apply", "hiring", "vacancy", "openings", "position", "career", "role"
+        # Only show jobs if the user *explicitly* mentions intent to find or apply
+        suggest_jobs = any(phrase in user_msg.lower() for phrase in [
+            "find jobs", "job listings", "apply for", "job search", "remote jobs", "see job", "get a job", "open positions"
         ])
+
         return jsonify({"reply": ai_msg, "suggestJobs": suggest_jobs})
-    except Exception as e:
+        except Exception as e:
         print("OpenAI API error:", e)
         traceback.print_exc()
         return jsonify({"reply": f"⚠️ Server Error: {str(e)}", "suggestJobs": False})
