@@ -150,11 +150,14 @@ def ask():
             "find jobs", "job listings", "apply for", "job search", "remote jobs", "see job", "get a job", "open positions"
         ])
 
-        return jsonify({"reply": ai_msg, "suggestJobs": suggest_jobs})
-        except Exception as e:
-        print("OpenAI API error:", e)
-        traceback.print_exc()
-        return jsonify({"reply": f"⚠️ Server Error: {str(e)}", "suggestJobs": False})
+        try:
+    ai_msg = get_openai_response(user_input)  # whatever logic you have
+    suggest_jobs = detect_job_intent(user_input)
+    return jsonify({"reply": ai_msg, "suggestJobs": suggest_jobs})
+except Exception as e:
+    print("OpenAI API error:", e)
+    traceback.print_exc()
+    return jsonify({"reply": f"⚠️ Server Error: {str(e)}", "suggestJobs": False})
 
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
