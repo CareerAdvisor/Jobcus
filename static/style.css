@@ -13,6 +13,8 @@ html, body {
   overflow-x: hidden;
   overflow-y: scroll;
   margin: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 body.chat-page {
@@ -525,16 +527,15 @@ main#mainContainer {
 }
 
 .page-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
 
-footer.footer-note-static {
-  margin-top: auto;
-  text-align: center;
-  padding: 1rem;
-  background-color: #f8f8f8;
-  color: #666;
-}
+  footer.footer-note-static {
+    padding: 1rem;
+    text-align: center;
+    background-color: #f9f9f9;
+    font-size: 0.9rem;
+  }
