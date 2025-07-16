@@ -546,7 +546,7 @@ main#mainContainer {
 .resources-hero {
   text-align: center;
   padding: 3rem 1rem;
-  background: linear-gradient(135deg, #104879, #e8f0f7); /* Approved blues */
+  background: linear-gradient(135deg, #7de4f7, #e8f0f7); /* Approved blues */
   border-radius: 12px;
   margin: 2rem auto;
   max-width: 900px;
