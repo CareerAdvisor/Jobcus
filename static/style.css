@@ -712,6 +712,9 @@ main#mainContainer {
   border-radius: 12px;
   margin-bottom: 3rem;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 .job-insights-hero h1 {
@@ -747,7 +750,11 @@ main#mainContainer {
 }
 
 .chart-box {
-  min-height: 300px;
+  position: relative;
+  width: 100%;
+  height: 300px;
+  max-width: 100%;
+  margin: 0 auto;
   background-color: #f4f9fd;
   border: 1px dashed #ccc;
   border-radius: 10px;
@@ -755,6 +762,13 @@ main#mainContainer {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
   font-size: 1rem;
   color: #969191;
+}
+
+.chart-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
 }
