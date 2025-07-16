@@ -701,11 +701,11 @@ main#mainContainer {
 .insights-hero {
   text-align: center;
   padding: 3rem 1rem;
-  background: linear-gradient(135deg, #104879, #000);
-  color: white;
+  background: linear-gradient(135deg, #104879, #e8f0f7);
   border-radius: 12px;
   margin: 2rem auto;
   max-width: 900px;
+  color: white;
 }
 
 .insights-hero h1 {
@@ -715,65 +715,33 @@ main#mainContainer {
 
 .insights-hero p {
   font-size: 1.1rem;
-  color: #e0e0e0;
+  color: #f0f0f0;
 }
 
 .insight-section {
   max-width: 900px;
   margin: 2rem auto;
-  padding: 1rem 2rem;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+  padding: 2rem;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
   text-align: center;
 }
 
 .insight-section h2 {
   color: #104879;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
-.insight-list {
-  list-style-type: none;
-  padding: 0;
+.insight-section p {
   color: #444;
+  margin-bottom: 1.5rem;
 }
 
-.insight-list li {
-  margin-bottom: 0.75rem;
-  font-size: 1rem;
-}
-
-.insight-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.insight-table th,
-.insight-table td {
-  border: 1px solid #ddd;
-  padding: 10px;
-  text-align: left;
-}
-
-.insight-table th {
-  background-color: #f2f9ff;
-  color: #104879;
-}
-
-.skill-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-top: 1rem;
-}
-
-.skill-tags span {
-  background-color: #104879;
-  color: white;
-  padding: 8px 14px;
-  border-radius: 9999px;
-  font-size: 0.95rem;
+.insight-chart {
+  min-height: 250px;
+  background-color: #f4f9fd;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  padding: 1rem;
 }
