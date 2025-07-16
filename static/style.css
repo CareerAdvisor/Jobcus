@@ -101,7 +101,7 @@ header {
   }
 }
 
-/* === CHAT === */
+/* === CHAT PAGE STYLE === */
 main {
   display: flex;
   flex-direction: column;
@@ -541,3 +541,83 @@ main#mainContainer {
     font-size: 0.9rem;
     flex-shrink: 0;
   }
+
+/* ==== RESOURCES PAGE STYLE === */
+.resources-hero {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: linear-gradient(135deg, #E6F4EA, #f9fbf9);
+  border-radius: 12px;
+  margin: 2rem auto;
+  max-width: 900px;
+}
+
+.resources-hero h1 {
+  font-size: 2.5rem;
+  color: #1B5E20;
+  margin-bottom: 1rem;
+}
+
+.resources-hero p {
+  font-size: 1.1rem;
+  color: #555;
+}
+
+.resource-section {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1rem 2rem;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+.resource-section h2 {
+  color: #1B5E20;
+  margin-bottom: 0.5rem;
+}
+
+.resource-section p {
+  color: #444;
+  margin-bottom: 1rem;
+}
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.resource-btn {
+  background-color: #2E7D32;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.resource-btn:hover {
+  background-color: #1B5E20;
+}
+
+.resource-list {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+
+.resource-list li {
+  margin-bottom: 0.5rem;
+}
+
+.resource-list a {
+  color: #2E7D32;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.resource-list a:hover {
+  text-decoration: underline;
+  color: #1B5E20;
+}
