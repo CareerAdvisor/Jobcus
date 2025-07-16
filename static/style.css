@@ -666,9 +666,11 @@ main#mainContainer {
 
 .career-card {
   background-color: #fff;
-  border-radius: 10px;
+  border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  max-width: 320px;
+  width: 100%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
   text-align: center;
 }
 
@@ -695,6 +697,14 @@ main#mainContainer {
 
 .career-btn:hover {
   background-color: #08325c;
+}
+
+.career-cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1rem;
 }
 
 /* === JOB INSIGHTS PAGE === */
