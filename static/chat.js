@@ -105,11 +105,15 @@ function autoResize(textarea) {
 
 // === On Page Load Restore Chat ===
 window.addEventListener("DOMContentLoaded", () => {
+  const chatbox = document.getElementById("chatbox"); // re-declare it here just in case
+  if (!chatbox) return;  // ✅ skip on non-chat pages
+
   const saved = localStorage.getItem("chatHistory");
   if (saved) {
     chatbox.innerHTML = saved;
   }
-  maybeShowScrollIcon();
+
+  maybeShowScrollIcon(); // only runs if chatbox exists
 });
 
 function saveChatToStorage() {
