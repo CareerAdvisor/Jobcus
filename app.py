@@ -94,23 +94,23 @@ def chat():
     return render_template("chat.html")
 
 @app.route("/resume-builder")
-def resume-builder():
+def resume_builder():
     return render_template("resume-builder.html")
 
 @app.route("/career-paths")
-def career-paths():
+def career_paths():
     return render_template("career-paths.html")
 
 @app.route("/job-insights")
-def job-insights():
+def job_insights():
     return render_template("job-insights.html")
 
 @app.route("/skill-gap")
-def skill-gap():
+def skill_gap():
     return render_template("skill-gap.html")
 
 @app.route("/interview-coach")
-def interview-coach():
+def interview_coach():
     return render_template("interview-coach.html")
 
 @app.route("/resources")
