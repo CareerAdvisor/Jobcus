@@ -999,3 +999,133 @@ career-hero h1 {
   50% { opacity: 1; }
   100% { opacity: 0; }
 }
+
+/* === INTERVIEW COACH PAGE STYLES === */
+
+.interview-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  font-family: 'Segoe UI', sans-serif;
+  color: #1e1e1e;
+}
+
+.interview-hero h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  color: #1a73e8;
+}
+
+.interview-hero p {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  color: #444;
+}
+
+.interview-session {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ai-question-box {
+  background: #f0f7ff;
+  padding: 1rem;
+  border-radius: 10px;
+  border-left: 4px solid #1a73e8;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+#next-question-btn {
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+#next-question-btn:hover {
+  background-color: #155cc1;
+}
+
+#user-response-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  resize: vertical;
+  min-height: 100px;
+  font-size: 1rem;
+}
+
+#user-response-form button {
+  background-color: #34a853;
+  color: white;
+  border: none;
+  margin-top: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+#user-response-form button:hover {
+  background-color: #2a8742;
+}
+
+.result-box,
+.fallback-box {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 1rem;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.6s ease-in-out;
+  line-height: 1.5;
+  color: #333;
+}
+
+/* Optional voice animation */
+.voice-icon.active {
+  animation: pulse 1.5s infinite;
+  color: #e91e63;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Responsive tweaks */
+@media (max-width: 480px) {
+  .interview-hero h1 {
+    font-size: 1.5rem;
+  }
+  .ai-question-box,
+  .result-box,
+  .fallback-box {
+    font-size: 0.95rem;
+  }
+}
+
