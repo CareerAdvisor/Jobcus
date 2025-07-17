@@ -4,6 +4,7 @@
 const history = [];
 
 document.addEventListener("DOMContentLoaded", () => {
+  const roleForm = document.getElementById("interview-role-form");
   const form = document.getElementById("user-response-form");
   const answerInput = document.getElementById("userAnswer");
   const questionBox = document.getElementById("ai-question");
@@ -14,6 +15,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggleHistoryBtn = document.getElementById("toggle-history-btn");
 
   let currentQuestion = "";
+  let previousRole = "";
+  let targetRole = "";
+  let experience = "";
 
   async function getNextQuestion() {
     feedbackBox.style.display = "none";
@@ -24,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch("/api/interview/question", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
+        body: JSON.stringify({ previousRole, targetRole, experience })
       });
 
       const data = await response.json();
@@ -33,6 +37,18 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       questionBox.innerHTML = "⚠️ Error fetching interview question.";
     }
+  }
+
+  if (roleForm) {
+    roleForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      previousRole = document.getElementById("previousRole").value;
+      targetRole = document.getElementById("targetRole").value;
+      experience = document.getElementById("experience").value;
+
+      await getNextQuestion(); // Only start interview after user details are submitted
+    });
   }
 
   form.addEventListener("submit", async (e) => {
@@ -62,7 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
           `</ul>`;
       }
 
-      // Add to history
       history.push({
         question: currentQuestion,
         answer,
@@ -71,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       renderHistory();
-
     } catch (err) {
       feedbackBox.innerHTML = "❌ Error analyzing your answer.";
     }
@@ -99,7 +113,4 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   nextBtn.addEventListener("click", getNextQuestion);
-
-  // Initialize with the first question
-  getNextQuestion();
 });
