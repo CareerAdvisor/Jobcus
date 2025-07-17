@@ -102,6 +102,10 @@ header {
   color: #062c55;
 }
 
+.mobile-nav .dropbtn:hover {
+  color: #ffffff !important;
+}
+
 @media (max-width: 768px) {
   .desktop-nav {
     display: none;
@@ -147,11 +151,17 @@ header {
 }
 
 .dropdown-content a:hover {
-  background-color: #e4efff;
+  background-color: #f0f0f0;
+  color: #104879;
 }
 
 .dropdown:hover .dropdown-content {
   display: flex;
+}
+
+/* Ensure dropdown button text turns white on hover */
+.dropbtn:hover {
+  color: #ffffff !important;
 }
 
 /* === CHAT PAGE STYLE === */
