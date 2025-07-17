@@ -298,38 +298,41 @@ def interview_coach_api():
 def get_interview_question():
     try:
         data = request.get_json()
-        previous_role = data.get("previousRole", "")
-        target_role = data.get("targetRole", "")
-        experience = data.get("experience", "")
+        previous = data.get("previousRole", "").strip()
+        target = data.get("targetRole", "").strip()
+        experience = data.get("experience", "").strip()
+
+        if not previous or not target or not experience:
+            return jsonify({"error": "Missing inputs"}), 400
 
         messages = [
             {
                 "role": "system",
                 "content": (
-                    "You are a professional interview coach. Generate a single, relevant interview question "
-                    "based on the user's past experience, desired role, and experience level."
+                    "You are a virtual interview coach. Ask realistic, job-specific interview questions "
+                    "based on the user's career transition, including their past and target roles, and experience level. "
+                    "Avoid repeating previous questions. Keep it concise and focused on soft and technical skills."
                 )
             },
             {
                 "role": "user",
                 "content": (
-                    f"My previous role was {previous_role}, I want to become a {target_role}, and my experience level is {experience}. "
-                    "Give me an interview question to help me practice."
+                    f"I was a {previous}, applying for a {target} role. My experience level is {experience}.\n"
+                    "Ask me a relevant interview question."
                 )
             }
         ]
 
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=messages
+            messages=messages,
+            temperature=0.7
         )
-
-        question = response.choices[0].message.content.strip()
+        question = response.choices[0].message.content
         return jsonify({"question": question})
-
     except Exception as e:
         print("Interview Question Error:", e)
-        return jsonify({"error": "Error generating interview question"}), 500
+        return jsonify({"error": "Unable to generate question"}), 500
 
 @app.route("/api/interview/feedback", methods=["POST"])
 def get_interview_feedback():
