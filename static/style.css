@@ -557,7 +557,7 @@ textarea#userInput {
   align-items: center;
   justify-content: space-between;
   
-  position: sticky;   /* Makes it stick on scroll */
+  position: fixed;   /* Makes it stick on scroll */
   top: 0;             /* Position from top */
   z-index: 1000;      /* Stay above other content */
   background-color: white; /* Ensure it's not transparent */
