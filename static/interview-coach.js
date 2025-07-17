@@ -1,43 +1,65 @@
 // static/interview-coach.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("interviewForm");
-  const roleInput = document.getElementById("role");
-  const experienceInput = document.getElementById("experience");
-  const switchInput = document.getElementById("careerSwitch");
-  const output = document.getElementById("interviewOutput");
+  const nextBtn = document.getElementById("next-question-btn");
+  const questionBox = document.getElementById("ai-question");
+  const form = document.getElementById("user-response-form");
+  const answerInput = document.getElementById("userAnswer");
+  const feedbackBox = document.getElementById("feedback-box");
+  const suggestionsBox = document.getElementById("suggestions-box");
 
-  form.addEventListener("submit", async function (e) {
-    e.preventDefault();
+  let currentQuestion = "";
 
-    const role = roleInput.value.trim();
-    const experience = experienceInput.value;
-    const isSwitching = switchInput?.checked || false;
-
-    if (!role || !experience) {
-      output.innerHTML = "⚠️ Please provide both target role and experience level.";
-      return;
-    }
-
-    output.innerHTML = "<em>⏳ Generating interview questions and feedback...</em>";
+  nextBtn.addEventListener("click", async () => {
+    questionBox.innerHTML = "<em>🎤 Generating a new interview question...</em>";
+    feedbackBox.style.display = "none";
+    suggestionsBox.style.display = "none";
 
     try {
-      const response = await fetch("/api/interview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, experience, isSwitching })
-      });
-
-      const data = await response.json();
-
-      if (data.result) {
-        output.innerHTML = `<div class='ai-response'><pre>${data.result}</pre></div>`;
+      const res = await fetch("/api/interview-question");
+      const data = await res.json();
+      if (data.question) {
+        currentQuestion = data.question;
+        questionBox.innerHTML = `<strong>Question:</strong> ${data.question}`;
       } else {
-        output.innerHTML = "⚠️ No result returned. Try again.";
+        questionBox.innerHTML = "⚠️ No question received. Try again.";
       }
     } catch (err) {
-      console.error("Interview API Error:", err);
-      output.innerHTML = "❌ Something went wrong. Please try again later.";
+      questionBox.innerHTML = "❌ Error fetching question.";
+    }
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const userAnswer = answerInput.value.trim();
+    if (!userAnswer || !currentQuestion) return;
+
+    feedbackBox.innerHTML = "<em>✍️ Evaluating your answer...</em>";
+    feedbackBox.style.display = "block";
+
+    try {
+      const res = await fetch("/api/interview-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: currentQuestion, answer: userAnswer })
+      });
+      const data = await res.json();
+
+      if (data.feedback) {
+        feedbackBox.innerHTML = `<pre>${data.feedback}</pre>`;
+      } else {
+        feedbackBox.innerHTML = "⚠️ No feedback returned.";
+      }
+
+      if (data.fallback) {
+        suggestionsBox.style.display = "block";
+        suggestionsBox.innerHTML = `<strong>💡 Tip:</strong> ${data.fallback}`;
+      } else {
+        suggestionsBox.style.display = "none";
+      }
+    } catch (err) {
+      console.error("Interview Feedback Error:", err);
+      feedbackBox.innerHTML = "❌ Error evaluating answer.";
     }
   });
 });
