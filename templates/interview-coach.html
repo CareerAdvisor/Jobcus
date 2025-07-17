@@ -7,7 +7,7 @@
 <div class="interview-container">
   <section class="interview-hero">
     <h1>🎤 AI Interview Coach</h1>
-    <p>Get personalized mock questions and preparation tips based on your dream role and experience level.</p>
+    <p>Get personalized mock questions and fallback tips based on your target role, experience level, and whether you’re switching careers.</p>
   </section>
 
   <section class="interview-form-section">
@@ -22,6 +22,11 @@
         <option value="Mid-level">Mid-level</option>
         <option value="Senior">Senior</option>
       </select>
+
+      <label class="switch-career-checkbox">
+        <input type="checkbox" id="careerSwitch" />
+        I'm switching careers to this new role
+      </label>
 
       <button type="submit">Get Interview Tips</button>
     </form>
@@ -42,6 +47,7 @@ document.getElementById("interviewForm").addEventListener("submit", async functi
 
   const role = document.getElementById("role").value.trim();
   const experience = document.getElementById("experience").value;
+  const careerSwitch = document.getElementById("careerSwitch").checked;
   const output = document.getElementById("interviewOutput");
 
   if (!role || !experience) {
@@ -55,7 +61,7 @@ document.getElementById("interviewForm").addEventListener("submit", async functi
     const response = await fetch("/api/interview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role, experience })
+      body: JSON.stringify({ role, experience, switch: careerSwitch })
     });
 
     const data = await response.json();
