@@ -61,17 +61,17 @@
 
     </header>
 
-    <script>
+   <script>
   function toggleMobileMenu() {
     document.getElementById("mobileMenu").classList.toggle("show");
   }
 
-  // Close menu when clicking outside
   document.addEventListener("click", function (event) {
     const menu = document.getElementById("mobileMenu");
     const hamburger = document.querySelector(".hamburger");
+    const isDropdownBtn = event.target.matches(".dropbtn");
 
-    // If menu is open and click is outside the menu and hamburger
+    // Close the mobile menu when clicking outside
     if (
       menu.classList.contains("show") &&
       !menu.contains(event.target) &&
@@ -79,8 +79,22 @@
     ) {
       menu.classList.remove("show");
     }
+
+    // Close other dropdowns if one is opened
+    document.querySelectorAll(".dropdown-content").forEach((dropdown) => {
+      if (!dropdown.contains(event.target) && !dropdown.previousElementSibling.contains(event.target)) {
+        dropdown.style.display = "none";
+      }
+    });
+
+    // Toggle dropdown
+    if (isDropdownBtn) {
+      const dropdownMenu = event.target.nextElementSibling;
+      dropdownMenu.style.display = dropdownMenu.style.display === "flex" ? "none" : "flex";
+    }
   });
 </script>
+
 
     <main>
     {% block content %}{% endblock %}
