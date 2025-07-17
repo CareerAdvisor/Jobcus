@@ -1129,3 +1129,21 @@ career-hero h1 {
   }
 }
 
+.history-box {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: 0.9rem;
+}
+.history-entry {
+  border-bottom: 1px dashed #ccc;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+.history-entry:last-child {
+  border-bottom: none;
+}
