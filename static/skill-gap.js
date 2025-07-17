@@ -17,8 +17,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    resultBox.innerHTML = "<em>⏳ Analyzing your skill gap...</em>";
-    resultBox.style.display = "block";
+    resultBox.classList.remove("show");
+    setTimeout(() => {
+      resultBox.innerHTML = "<em>⏳ Analyzing your skill gap...</em>";
+      resultBox.classList.add("show");
+    }, 200);
 
     try {
       const response = await fetch("/api/skill-gap", {
@@ -29,11 +32,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await response.json();
 
-      if (data.result) {
-        resultBox.innerHTML = `<div class="ai-response"><pre>${data.result}</pre></div>`;
-      } else {
-        resultBox.innerHTML = "⚠️ No result returned. Please try again.";
-      }
+    if (data.result) {
+      resultBox.innerHTML = `<div class="ai-response"><pre>${data.result}</pre></div>`;
+      resultBox.classList.add("show");
+    } else {
+      resultBox.innerHTML = "⚠️ No result returned. Please try again.";
+      resultBox.classList.add("show");
+    }
+
     } catch (err) {
       console.error("Skill Gap Fetch Error:", err);
       resultBox.innerHTML = "❌ Something went wrong. Please try again later.";
