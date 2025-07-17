@@ -129,9 +129,9 @@ def skill_gap():
 def interview_coach():
     return render_template("interview-coach.html")
 
-@app.route("/resources")
-def resources():
-    return render_template("resources.html")
+@app.route("/tips")
+def tips():
+    return render_template("tips.html")
     
 @app.route("/pricing")
 def pricing():
