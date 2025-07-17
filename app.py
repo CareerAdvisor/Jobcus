@@ -132,10 +132,22 @@ def interview_coach():
 @app.route("/resources")
 def resources():
     return render_template("resources.html")
+    
+@app.route("/pricing")
+def pricing():
+    return render_template("pricing.html")
 
 @app.route("/employers")
 def employers():
     return render_template("employers.html")
+
+@app.route("/faq")
+def faq():
+    return render_template("faq.html")
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
 
 @app.route("/ask", methods=["POST"])
 def ask():
