@@ -556,6 +556,13 @@ textarea#userInput {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  
+  position: sticky;   /* Makes it stick on scroll */
+  top: 0;             /* Position from top */
+  z-index: 1000;      /* Stay above other content */
+  background-color: white; /* Ensure it's not transparent */
+  padding: 10px 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); /* Optional subtle shadow */
 }
 
 .copy-wrapper {
