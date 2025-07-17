@@ -112,6 +112,48 @@ header {
   }
 }
 
+/*=== Dropdown Menu Styling ===*/
+.dropdown {
+  position: relative;
+  display: block;
+}
+
+.dropbtn {
+  background: none;
+  border: none;
+  color: #104879;
+  font-size: 16px;
+  padding: 12px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.dropdown-content {
+  display: none;
+  flex-direction: column;
+  background-color: #f9f9f9;
+  padding-left: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.dropdown-content a {
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #333;
+  font-size: 14px;
+}
+
+.dropdown-content a:hover {
+  background-color: #e4efff;
+}
+
+.dropdown:hover .dropdown-content {
+  display: flex;
+}
+
 /* === CHAT PAGE STYLE === */
 main {
   display: flex;
