@@ -1,5 +1,8 @@
 // static/interview-coach.js
 
+// Interview history array
+const history = [];
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("user-response-form");
   const answerInput = document.getElementById("userAnswer");
@@ -7,6 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const feedbackBox = document.getElementById("feedback-box");
   const suggestionsBox = document.getElementById("suggestions-box");
   const nextBtn = document.getElementById("next-question-btn");
+  const historyContainer = document.getElementById("history-container");
+  const toggleHistoryBtn = document.getElementById("toggle-history-btn");
 
   let currentQuestion = "";
 
@@ -56,10 +61,42 @@ document.addEventListener("DOMContentLoaded", () => {
           data.fallbacks.map(tip => `<li>${tip}</li>`).join("") +
           `</ul>`;
       }
+
+      // Add to history
+      history.push({
+        question: currentQuestion,
+        answer,
+        feedback: data.feedback || "",
+        tips: data.fallbacks || []
+      });
+
+      renderHistory();
+
     } catch (err) {
       feedbackBox.innerHTML = "❌ Error analyzing your answer.";
     }
   });
+
+  function renderHistory() {
+    if (!historyContainer) return;
+    historyContainer.innerHTML = history.map((entry, index) => `
+      <div class="history-entry">
+        <h4>Question ${index + 1}</h4>
+        <p><strong>Q:</strong> ${entry.question}</p>
+        <p><strong>Your Answer:</strong> ${entry.answer}</p>
+        <p><strong>Feedback:</strong> ${entry.feedback}</p>
+        ${entry.tips.length ? `<p><strong>Tips:</strong> <ul>${entry.tips.map(t => `<li>${t}</li>`).join("")}</ul></p>` : ""}
+      </div>
+    `).join("");
+  }
+
+  if (toggleHistoryBtn && historyContainer) {
+    toggleHistoryBtn.addEventListener("click", () => {
+      const isVisible = historyContainer.style.display === "block";
+      historyContainer.style.display = isVisible ? "none" : "block";
+      toggleHistoryBtn.textContent = isVisible ? "📜 Show History" : "🙈 Hide History";
+    });
+  }
 
   nextBtn.addEventListener("click", getNextQuestion);
 
