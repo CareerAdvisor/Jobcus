@@ -334,55 +334,6 @@ def get_interview_question():
         print("Interview Question Error:", e)
         return jsonify({"error": "Unable to generate question"}), 500
 
-@app.route("/api/interview/feedback", methods=["POST"])
-def get_interview_feedback():
-    try:
-        data = request.get_json()
-        question = data.get("question", "")
-        answer = data.get("answer", "")
-
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a professional interview coach. Your job is to:\n"
-                    "1. Give constructive feedback on the user's response.\n"
-                    "2. Point out what was done well and what can be improved.\n"
-                    "3. Offer 2-3 fallback suggestions in bullet points.\n"
-                    "Format the response clearly."
-                )
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"Interview Question: {question}\n"
-                    f"My Answer: {answer}\n"
-                    "Please give me feedback and fallback suggestions."
-                )
-            }
-        ]
-
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages
-        )
-
-        reply = response.choices[0].message.content.strip()
-
-        # Separate main feedback and tips if possible
-        parts = reply.split("Fallback Suggestions:")
-        feedback = parts[0].strip()
-        tips = parts[1].strip().split("\n") if len(parts) > 1 else []
-
-        return jsonify({
-            "feedback": feedback,
-            "fallbacks": [tip.lstrip("-• ").strip() for tip in tips if tip.strip()]
-        })
-
-    except Exception as e:
-        print("Interview Feedback Error:", e)
-        return jsonify({"error": "Error generating feedback"}), 500
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
