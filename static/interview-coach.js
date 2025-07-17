@@ -48,6 +48,10 @@ document.addEventListener("DOMContentLoaded", () => {
       experience = document.getElementById("experience").value;
 
       await getNextQuestion(); // Only start interview after user details are submitted
+
+      // ✅ Add these lines to show the session block
+      document.querySelector(".interview-session").style.display = "block";
+      document.getElementById("user-response-form").style.display = "block";
     });
   }
 
