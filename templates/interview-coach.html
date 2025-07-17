@@ -41,19 +41,28 @@
   </section>
 
   <section class="interview-session" style="display: none;">
-    <div id="ai-question" class="ai-question-box">Click Next to begin your interview.</div>
+  <div id="ai-question" class="ai-question-box">
+    Click Next to begin your interview.
+  </div>
 
-    <button id="next-question-btn">🎤 Next Question</button>
+  <form id="user-response-form" style="display: none;">
+    <textarea id="userAnswer" placeholder="Type your response..." required></textarea>
 
-    <form id="user-response-form" style="display: none;">
-      <textarea id="userAnswer" placeholder="Type your response..." required></textarea>
+    <!-- ✅ Modern layout with spacing and responsiveness -->
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+      <button id="next-question-btn" type="button">🎤 Next Question</button>
       <button type="submit">Submit Answer</button>
-    </form>
+      <button id="toggle-history-btn" type="button">📜 Show History</button>
+    </div>
+  </form>
 
-    <section class="interview-history">
-      <button id="toggle-history-btn">📜 Show History</button>
-      <div id="history-container" class="history-box" style="display: none;"></div>
-    </section>
+  <section class="interview-history">
+    <div id="history-container" class="history-box" style="display: none;"></div>
+  </section>
+
+  <div id="suggestions-box" class="fallback-box" style="display: none;"></div>
+  <div id="feedback-box" class="result-box" style="display: none;"></div>
+</section>
 
     <div id="suggestions-box" class="fallback-box" style="display: none;"></div>
     <div id="feedback-box" class="result-box" style="display: none;"></div>
