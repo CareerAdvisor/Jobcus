@@ -261,22 +261,22 @@ def interview_coach_api():
         experience = data.get("experience", "").strip()
 
         if not role or not experience:
-            return jsonify({"error": "Missing input"}), 400
+            return jsonify({"error": "Missing role or experience"}), 400
 
         messages = [
             {
                 "role": "system",
                 "content": (
-                    "You are an AI-powered Interview Coach.\n"
-                    "You provide mock interview questions and tips tailored to the user's job role and experience level."
+                    "You are an AI Interview Coach. Based on the user's target role and experience level, "
+                    "you'll simulate likely interview questions and suggested responses.\n"
+                    "Keep the tone supportive, informative, and prepare users with at least 3 Q&A samples."
                 )
             },
             {
                 "role": "user",
                 "content": (
-                    f"I'm preparing for an interview as a {role}. "
-                    f"My experience level is {experience}. "
-                    "Give me 5 relevant interview questions and tips to answer them."
+                    f"I am preparing for a job interview as a {role}. My experience level is {experience}.\n"
+                    "Please help me practice by suggesting sample questions and how I might answer them."
                 )
             }
         ]
@@ -289,9 +289,8 @@ def interview_coach_api():
 
         reply = response.choices[0].message.content
         return jsonify({"result": reply})
-
     except Exception as e:
-        print("Interview Coach API Error:", e)
+        print("Interview Coach Error:", e)
         traceback.print_exc()
         return jsonify({"error": "Server error"}), 500
 
