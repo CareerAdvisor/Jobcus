@@ -1,4 +1,4 @@
-<!-- interview-coach.html -->
+<!-- templates/interview-coach.html -->
 {% extends "base.html" %}
 
 {% block title %}Interview Coach – Jobcus{% endblock %}
@@ -6,14 +6,20 @@
 {% block content %}
 <div class="interview-container">
   <section class="interview-hero">
-    <h1>🎤 AI Interview Coach</h1>
-    <p>Get personalized mock questions and fallback tips based on your target role, experience level, and whether you’re switching careers.</p>
+    <h1>🎙️ AI Interview Coach</h1>
+    <p>
+      Practice common and role-specific interview questions. Get instant AI feedback,
+      fallback suggestions, and build confidence for your dream role.
+    </p>
   </section>
 
   <section class="interview-form-section">
     <form id="interviewForm">
-      <label for="role">Target Role</label>
-      <input type="text" id="role" name="role" placeholder="e.g., Frontend Developer" required />
+      <label for="formerRole">Your Previous Role</label>
+      <input type="text" id="formerRole" name="formerRole" placeholder="e.g., Customer Support Rep" required />
+
+      <label for="futureRole">Target Role</label>
+      <input type="text" id="futureRole" name="futureRole" placeholder="e.g., UX Designer" required />
 
       <label for="experience">Experience Level</label>
       <select id="experience" name="experience" required>
@@ -23,58 +29,26 @@
         <option value="Senior">Senior</option>
       </select>
 
-      <label class="switch-career-checkbox">
-        <input type="checkbox" id="careerSwitch" />
-        I'm switching careers to this new role
-      </label>
-
-      <button type="submit">Get Interview Tips</button>
+      <button type="submit">🎤 Start Interview</button>
     </form>
   </section>
 
-  <section class="interview-result">
-    <div id="interviewOutput" class="interview-response">
-      Enter your role and experience level to get started.
-    </div>
+  <section class="interview-session" style="display: none;">
+    <div id="ai-question" class="ai-question-box">Click Next to begin your interview.</div>
+
+    <button id="next-question-btn">🎙️ Next Question</button>
+
+    <form id="user-response-form" style="display: none;">
+      <textarea id="userAnswer" placeholder="Type your response..." required></textarea>
+      <button type="submit">Submit Answer</button>
+    </form>
+
+    <div id="suggestions-box" class="fallback-box" style="display: none;"></div>
+    <div id="feedback-box" class="result-box" style="display: none;"></div>
   </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.getElementById("interviewForm").addEventListener("submit", async function (e) {
-  e.preventDefault();
-
-  const role = document.getElementById("role").value.trim();
-  const experience = document.getElementById("experience").value;
-  const careerSwitch = document.getElementById("careerSwitch").checked;
-  const output = document.getElementById("interviewOutput");
-
-  if (!role || !experience) {
-    output.innerHTML = "⚠️ Please provide both role and experience level.";
-    return;
-  }
-
-  output.innerHTML = "<em>⏳ Generating interview questions...</em>";
-
-  try {
-    const response = await fetch("/api/interview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role, experience, switch: careerSwitch })
-    });
-
-    const data = await response.json();
-
-    if (data.result) {
-      output.innerHTML = `<div class='ai-response'><pre>${data.result}</pre></div>`;
-    } else {
-      output.innerHTML = "⚠️ No result returned. Try again.";
-    }
-  } catch (err) {
-    console.error("Interview API Error:", err);
-    output.innerHTML = "❌ Something went wrong. Please try again later.";
-  }
-});
-</script>
+<script src="{{ url_for('static', filename='interview-coach.js') }}"></script>
 {% endblock %}
