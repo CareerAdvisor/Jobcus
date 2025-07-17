@@ -1,10 +1,61 @@
-<!-- Resume-Builder.html -->
+<!-- resume-builder.html -->
 {% extends "base.html" %}
 
 {% block title %}Resume Builder – Jobcus{% endblock %}
 
 {% block content %}
-<div class="resume-builder-container">
+
+<!-- Hero Section -->
+<section class="resume-hero">
+  <div class="resume-hero-text">
+    <h1>Build Your Professional Resume with AI</h1>
+    <p>Create a tailored, ATS-optimized resume with our smart resume builder and analyzer.</p>
+    <a href="#start-builder" class="primary-btn">Start Building</a>
+  </div>
+  <div class="resume-hero-image">
+    <img src="{{ url_for('static', filename='images/resume-preview-banner.png') }}" alt="Resume Preview" />
+  </div>
+</section>
+
+<!-- Step-by-Step Guide -->
+<section class="resume-steps">
+  <h2>How It Works</h2>
+  <div class="step-grid">
+    <div class="step">
+      <h3>1. Enter Your Details</h3>
+      <p>Provide your education, work experience, skills, and accomplishments.</p>
+    </div>
+    <div class="step">
+      <h3>2. Choose a Template</h3>
+      <p>Pick from professionally designed resume templates that suit your industry.</p>
+    </div>
+    <div class="step">
+      <h3>3. Let AI Do the Work</h3>
+      <p>Get personalized content suggestions and instant formatting.</p>
+    </div>
+    <div class="step">
+      <h3>4. Analyze & Optimize</h3>
+      <p>Use the Resume Health Checker to ensure your resume is recruiter-ready.</p>
+    </div>
+    <div class="step">
+      <h3>5. Download & Apply</h3>
+      <p>Export in PDF or DOCX and start applying to jobs with confidence.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Template Gallery -->
+<section class="resume-gallery">
+  <h2>Explore Our Templates</h2>
+  <div class="template-grid">
+    <img src="{{ url_for('static', filename='images/template1.png') }}" alt="Template 1">
+    <img src="{{ url_for('static', filename='images/template2.png') }}" alt="Template 2">
+    <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3">
+  </div>
+</section>
+
+<!-- Resume Builder Form -->
+<section id="start-builder" class="resume-builder-container">
   <h1>📄 Build Your Resume with AI</h1>
   <p class="subheading">Fill out the form below to generate a professional resume tailored to your career goals.</p>
 
@@ -44,7 +95,17 @@
     <div id="resumeOutput" class="resume-preview-box"></div>
     <button id="downloadResumeBtn">⬇️ Download as PDF</button>
   </section>
-</div>
+</section>
+
+<!-- Resume Health Checker -->
+<section class="resume-analyzer">
+  <h2>Resume Health Checker</h2>
+  <p>Paste your resume text below to get a full analysis of strength, readability, keywords, and more.</p>
+  <textarea id="resume-text" rows="8" placeholder="Paste your resume here..."></textarea>
+  <button id="analyze-btn">Analyze Resume</button>
+  <div id="analyzer-result"></div>
+</section>
+
 {% endblock %}
 
 {% block scripts %}
