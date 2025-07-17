@@ -1,50 +1,59 @@
 // static/interview-coach.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  const questionBox = document.getElementById("ai-question");
   const nextBtn = document.getElementById("next-question-btn");
-  const suggestionsBox = document.getElementById("suggestions-box");
   const form = document.getElementById("user-response-form");
-  const answerInput = document.getElementById("userAnswer");
+  const answerBox = document.getElementById("userAnswer");
+  const aiBox = document.getElementById("ai-question");
   const feedbackBox = document.getElementById("feedback-box");
+  const suggestionsBox = document.getElementById("suggestions-box");
+  const toggleVoiceBtn = document.getElementById("toggle-voice-btn");
 
   let currentQuestion = "";
+  let voiceEnabled = true;
+  let interviewHistory = [];
 
-  // Voice playback function
+  // Voice synthesis
   function speakText(text) {
+    if (!voiceEnabled || !("speechSynthesis" in window)) return;
     const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
     utterance.rate = 1;
-    utterance.pitch = 1;
-    speechSynthesis.speak(utterance);
+    window.speechSynthesis.speak(utterance);
   }
 
-  // Fetch a new interview question
+  // Load next question
   nextBtn.addEventListener("click", async () => {
+    aiBox.innerHTML = "⏳ Generating interview question...";
     feedbackBox.style.display = "none";
     suggestionsBox.style.display = "none";
-    questionBox.textContent = "🎤 Loading question...";
+    answerBox.value = "";
 
     try {
-      const response = await fetch("/api/interview-question");
+      const response = await fetch("/api/interview-question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
       const data = await response.json();
-      currentQuestion = data.question || "No question returned.";
 
-      questionBox.textContent = currentQuestion;
-      speakText(currentQuestion); // 👈 Play with voice
+      currentQuestion = data.question;
+      aiBox.innerHTML = currentQuestion;
+      speakText(currentQuestion);
     } catch (err) {
-      console.error("Question Error:", err);
-      questionBox.textContent = "❌ Could not fetch question.";
+      aiBox.innerHTML = "❌ Error fetching question. Try again.";
     }
   });
 
-  // Handle user answer submission
+  // Submit answer
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const answer = answerInput.value.trim();
-    if (!answer || !currentQuestion) return;
+    const answer = answerBox.value.trim();
+    if (!currentQuestion || !answer) return;
 
     feedbackBox.innerHTML = "⏳ Evaluating your response...";
     feedbackBox.style.display = "block";
+    suggestionsBox.style.display = "none";
 
     try {
       const response = await fetch("/api/interview-feedback", {
@@ -52,21 +61,26 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: currentQuestion, answer })
       });
-
       const data = await response.json();
 
-      if (data.feedback) {
-        feedbackBox.innerHTML = `<pre>${data.feedback}</pre>`;
-        speakText(data.feedback); // 👈 Optional: Play feedback too
-      }
+      feedbackBox.innerHTML = `<pre>${data.feedback}</pre>`;
+      suggestionsBox.innerHTML = `<strong>💡 Suggestion:</strong> ${data.fallback || "None."}`;
+      suggestionsBox.style.display = "block";
 
-      if (data.fallback) {
-        suggestionsBox.innerHTML = `<strong>💡 Suggested Tip:</strong><br>${data.fallback}`;
-        suggestionsBox.style.display = "block";
-      }
+      speakText(data.feedback);
+
+      // Save history
+      interviewHistory.push({ question: currentQuestion, answer, feedback: data.feedback });
     } catch (err) {
-      console.error("Feedback Error:", err);
-      feedbackBox.innerHTML = "⚠️ Could not process your answer.";
+      feedbackBox.innerHTML = "❌ Error fetching feedback.";
     }
   });
+
+  // Toggle voice on/off
+  if (toggleVoiceBtn) {
+    toggleVoiceBtn.addEventListener("click", () => {
+      voiceEnabled = !voiceEnabled;
+      toggleVoiceBtn.innerText = voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off";
+    });
+  }
 });
