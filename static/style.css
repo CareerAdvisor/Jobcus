@@ -146,12 +146,12 @@ header {
 .dropdown-content a {
   padding: 8px 12px;
   text-decoration: none;
-  color: #333;
+  color: #104879;
   font-size: 14px;
 }
 
 .dropdown-content a:hover {
-  background-color: #f0f0f0;
+  background-color: #f0f6ff;
   color: #104879;
 }
 
