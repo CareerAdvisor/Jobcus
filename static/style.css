@@ -951,4 +951,10 @@ career-hero h1 {
   }
 }
 
+.result-box pre {
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #333;
+}
 
