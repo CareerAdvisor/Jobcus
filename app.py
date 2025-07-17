@@ -294,6 +294,34 @@ def interview_coach_api():
         traceback.print_exc()
         return jsonify({"error": "Server error"}), 500
 
+@app.route("/api/interview/question", methods=["POST"])
+def get_interview_question():
+    try:
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a virtual interview coach. Ask a realistic interview question "
+                    "tailored to the user's previous role, target job role, and experience level. "
+                    "Return just the question text."
+                )
+            },
+            {
+                "role": "user",
+                "content": "Ask me a new interview question."
+            }
+        ]
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            temperature=0.7
+        )
+        question = response.choices[0].message.content
+        return jsonify({"question": question})
+    except Exception as e:
+        print("Interview Question Error:", e)
+        return jsonify({"error": "Unable to generate question"}), 500
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
