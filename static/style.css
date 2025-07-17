@@ -13,8 +13,6 @@ html, body {
   background-color: #f9fbf9;
   color: #333;
   overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
 .container {
@@ -568,7 +566,7 @@ textarea#userInput {
   z-index: 1000;      /* Stay above other content */
   background-color: white; /* Ensure it's not transparent */
   padding: 10px 20px;
-  width: 100%
+  width: 100%;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); /* Optional subtle shadow */
 }
 
