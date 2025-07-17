@@ -4,14 +4,20 @@
 {% block title %}Interview Coach – Jobcus{% endblock %}
 
 {% block content %}
+
 <div class="interview-container">
-  <section class="interview-hero">
-    <h1>🎧 AI Interview Coach</h1>
-    <p>
-      Practice common and role-specific interview questions. Get instant AI feedback,
-      fallback suggestions, and build confidence for your dream role.
+  
+<section class="interview-hero-with-image">
+  <div class="interview-hero-text">
+    <h1 style="color: #104879;">Your Jobcus Interview Coach</h1>
+    <p style="color: #333;">
+      Practice personalised interview questions and get real-time AI feedback with your virtual coach.
     </p>
-  </section>
+  </div>
+  <div class="interview-hero-image">
+    <img src="{{ url_for('static', filename='images/ai-interview-coach.png') }}" alt="AI Interview Coach" />
+  </div>
+</section>
 
   <section class="interview-form-section">
     <form id="interviewForm">
