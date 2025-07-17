@@ -13,15 +13,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!goal || !skills) {
       resultBox.innerHTML = "⚠️ Please enter both your career goal and current skills.";
-      resultBox.style.display = "block";
+      resultBox.classList.add("show");
       return;
     }
 
+    // Show animated loading dots
+    resultBox.innerHTML = `<span class="typing">Analyzing skill gaps<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>`;
     resultBox.classList.remove("show");
-    setTimeout(() => {
-      resultBox.innerHTML = "<em>⏳ Analyzing your skill gap...</em>";
-      resultBox.classList.add("show");
-    }, 200);
+    void resultBox.offsetWidth; // Force reflow
+    resultBox.classList.add("show");
 
     try {
       const response = await fetch("/api/skill-gap", {
@@ -32,18 +32,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await response.json();
 
-    if (data.result) {
-      resultBox.innerHTML = `<div class="ai-response"><pre>${data.result}</pre></div>`;
-      resultBox.classList.add("show");
-    } else {
-      resultBox.innerHTML = "⚠️ No result returned. Please try again.";
-      resultBox.classList.add("show");
-    }
-
+      if (data.result) {
+        resultBox.innerHTML = `<div class="ai-response"><pre>${data.result}</pre></div>`;
+      } else {
+        resultBox.innerHTML = "⚠️ No result returned. Please try again.";
+      }
     } catch (err) {
       console.error("Skill Gap Fetch Error:", err);
       resultBox.innerHTML = "❌ Something went wrong. Please try again later.";
     }
   });
 });
-
