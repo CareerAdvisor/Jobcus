@@ -1,31 +1,36 @@
 <!-- interview-coach.html -->
-<!-- interview-coach.html -->
 {% extends "base.html" %}
 
 {% block title %}Interview Coach – Jobcus{% endblock %}
 
 {% block content %}
-<div class="interview-coach-container">
-  <section class="coach-hero">
-    <h1>🎤 Interview Coach</h1>
-    <p>Practice answering interview questions and get AI-powered feedback to boost your confidence.</p>
+<div class="interview-container">
+  <section class="interview-hero">
+    <h1>🎤 AI Interview Coach</h1>
+    <p>Get personalized mock questions and preparation tips based on your dream role and experience level.</p>
   </section>
 
-  <section class="coach-form">
+  <section class="interview-form-section">
     <form id="interviewForm">
-      <label for="role">Job Role</label>
-      <input type="text" id="role" name="role" placeholder="e.g., UX Designer" required />
+      <label for="role">Target Role</label>
+      <input type="text" id="role" name="role" placeholder="e.g., Frontend Developer" required />
 
-      <label for="experience">Your Experience</label>
-      <textarea id="experience" name="experience" placeholder="Briefly describe your background or key skills" rows="4" required></textarea>
+      <label for="experience">Experience Level</label>
+      <select id="experience" name="experience" required>
+        <option value="">Select experience level</option>
+        <option value="Entry-level">Entry-level</option>
+        <option value="Mid-level">Mid-level</option>
+        <option value="Senior">Senior</option>
+      </select>
 
-      <button type="submit">Start Interview Practice</button>
+      <button type="submit">Get Interview Tips</button>
     </form>
   </section>
 
-  <section class="coach-results">
-    <h2>📋 AI Feedback</h2>
-    <div id="interviewOutput" class="coach-output">Enter your role and experience to begin practicing interview questions.</div>
+  <section class="interview-result">
+    <div id="interviewOutput" class="interview-response">
+      Enter your role and experience level to get started.
+    </div>
   </section>
 </div>
 {% endblock %}
@@ -34,9 +39,15 @@
 <script>
 document.getElementById("interviewForm").addEventListener("submit", async function (e) {
   e.preventDefault();
-  const role = document.getElementById("role").value;
+
+  const role = document.getElementById("role").value.trim();
   const experience = document.getElementById("experience").value;
   const output = document.getElementById("interviewOutput");
+
+  if (!role || !experience) {
+    output.innerHTML = "⚠️ Please provide both role and experience level.";
+    return;
+  }
 
   output.innerHTML = "<em>⏳ Generating interview questions...</em>";
 
@@ -50,15 +61,14 @@ document.getElementById("interviewForm").addEventListener("submit", async functi
     const data = await response.json();
 
     if (data.result) {
-      output.innerHTML = `<pre>${data.result}</pre>`;
+      output.innerHTML = `<div class='ai-response'><pre>${data.result}</pre></div>`;
     } else {
-      output.innerHTML = "⚠️ No feedback received. Please try again.";
+      output.innerHTML = "⚠️ No result returned. Try again.";
     }
-  } catch (error) {
-    console.error("Interview Coach Error:", error);
-    output.innerHTML = "⚠️ An error occurred while generating your feedback.";
+  } catch (err) {
+    console.error("Interview API Error:", err);
+    output.innerHTML = "❌ Something went wrong. Please try again later.";
   }
 });
 </script>
 {% endblock %}
-
