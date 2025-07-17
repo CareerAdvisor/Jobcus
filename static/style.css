@@ -915,12 +915,18 @@ career-hero h1 {
 }
 
 .result-box {
-  margin-top: 1.5rem;
+  background: #f9fcff;
+  border: 1px solid #dce5ee;
+  border-radius: 12px;
   padding: 1rem;
-  background: #f4f9fd;
-  border: 1px dashed #ccc;
-  border-radius: 8px;
-  animation: fadeSlideIn 0.7s ease-in-out;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 @keyframes fadeSlideIn {
@@ -958,3 +964,20 @@ career-hero h1 {
   color: #333;
 }
 
+.result-box.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.result-box em {
+  color: #666;
+  font-style: italic;
+}
+
+.ai-response pre {
+  white-space: pre-wrap;
+  margin: 0;
+  font-size: 0.95rem;
+  font-family: 'Courier New', monospace;
+  color: #222;
+}
