@@ -4,9 +4,49 @@
 {% block title %}Resume Builder – Jobcus{% endblock %}
 
 {% block content %}
+<div class="resume-builder-container">
+  <h1>📄 Build Your Resume with AI</h1>
+  <p class="subheading">Fill out the form below to generate a professional resume tailored to your career goals.</p>
 
-<section class="section">
-  <h2>Resume Builder</h2>
-  <p>Coming soon: Upload your CV and let Jobcus optimise it.</p>
-</section>
+  <form id="resumeForm">
+    <label>Full Name</label>
+    <input type="text" name="fullName" required>
+
+    <label>Email Address</label>
+    <input type="email" name="email" required>
+
+    <label>Phone Number</label>
+    <input type="tel" name="phone" required>
+
+    <label>Career Objective or Summary</label>
+    <textarea name="summary" rows="3"></textarea>
+
+    <label>Education</label>
+    <textarea name="education" placeholder="e.g., BSc in Computer Science, University of Lagos (2018–2022)"></textarea>
+
+    <label>Work Experience</label>
+    <textarea name="experience" placeholder="List your roles and achievements..."></textarea>
+
+    <label>Skills & Certifications</label>
+    <textarea name="skills" placeholder="e.g., Python, Project Management, CompTIA A+"></textarea>
+
+    <label>Languages</label>
+    <input type="text" name="languages" placeholder="e.g., English, French">
+
+    <label>LinkedIn / Portfolio URL</label>
+    <input type="url" name="portfolio">
+
+    <button type="submit" class="generate-btn">✨ Generate Resume</button>
+  </form>
+
+  <section id="resumePreview" style="display: none;">
+    <h2>🧾 Your AI-Generated Resume</h2>
+    <div id="resumeOutput" class="resume-preview-box"></div>
+    <button id="downloadResumeBtn">⬇️ Download as PDF</button>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
 {% endblock %}
