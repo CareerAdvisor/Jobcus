@@ -1,12 +1,64 @@
 <!-- interview-coach.html -->
+<!-- interview-coach.html -->
 {% extends "base.html" %}
 
 {% block title %}Interview Coach – Jobcus{% endblock %}
 
 {% block content %}
+<div class="interview-coach-container">
+  <section class="coach-hero">
+    <h1>🎤 Interview Coach</h1>
+    <p>Practice answering interview questions and get AI-powered feedback to boost your confidence.</p>
+  </section>
 
-<section class="section">
-  <h2>Interview Coach</h2>
-  <p>Coming soon: Upload your CV and let Jobcus optimise it.</p>
-</section>
+  <section class="coach-form">
+    <form id="interviewForm">
+      <label for="role">Job Role</label>
+      <input type="text" id="role" name="role" placeholder="e.g., UX Designer" required />
+
+      <label for="experience">Your Experience</label>
+      <textarea id="experience" name="experience" placeholder="Briefly describe your background or key skills" rows="4" required></textarea>
+
+      <button type="submit">Start Interview Practice</button>
+    </form>
+  </section>
+
+  <section class="coach-results">
+    <h2>📋 AI Feedback</h2>
+    <div id="interviewOutput" class="coach-output">Enter your role and experience to begin practicing interview questions.</div>
+  </section>
+</div>
 {% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById("interviewForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+  const role = document.getElementById("role").value;
+  const experience = document.getElementById("experience").value;
+  const output = document.getElementById("interviewOutput");
+
+  output.innerHTML = "<em>⏳ Generating interview questions...</em>";
+
+  try {
+    const response = await fetch("/api/interview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role, experience })
+    });
+
+    const data = await response.json();
+
+    if (data.result) {
+      output.innerHTML = `<pre>${data.result}</pre>`;
+    } else {
+      output.innerHTML = "⚠️ No feedback received. Please try again.";
+    }
+  } catch (error) {
+    console.error("Interview Coach Error:", error);
+    output.innerHTML = "⚠️ An error occurred while generating your feedback.";
+  }
+});
+</script>
+{% endblock %}
+
