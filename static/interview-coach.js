@@ -1,88 +1,72 @@
 // static/interview-coach.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("interviewPrepForm");
-  const startBtn = document.getElementById("next-question-btn");
   const questionBox = document.getElementById("ai-question");
+  const nextBtn = document.getElementById("next-question-btn");
   const suggestionsBox = document.getElementById("suggestions-box");
-  const responseForm = document.getElementById("user-response-form");
+  const form = document.getElementById("user-response-form");
+  const answerInput = document.getElementById("userAnswer");
   const feedbackBox = document.getElementById("feedback-box");
-  const roleInput = document.getElementById("role");
-  const targetRoleInput = document.getElementById("targetRole");
-  const experienceInput = document.getElementById("experience");
-  const userAnswer = document.getElementById("userAnswer");
 
   let currentQuestion = "";
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const role = roleInput.value.trim();
-    const target = targetRoleInput.value.trim();
-    const experience = experienceInput.value;
+  // Voice playback function
+  function speakText(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    speechSynthesis.speak(utterance);
+  }
 
-    if (!role || !experience) {
-      questionBox.innerHTML = "⚠️ Please enter your previous and target role along with experience.";
-      return;
-    }
-
-    questionBox.innerHTML = "⏳ Loading personalized questions...";
-
-    try {
-      const res = await fetch("/api/interview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, target, experience })
-      });
-
-      const data = await res.json();
-      currentQuestion = data.question || "Here’s a question to start with.";
-      questionBox.innerHTML = `<strong>🤖 AI:</strong> ${currentQuestion}`;
-      suggestionsBox.innerHTML = "";
-      feedbackBox.style.display = "none";
-    } catch (err) {
-      console.error("Interview Coach API Error:", err);
-      questionBox.innerHTML = "❌ Failed to load question. Try again.";
-    }
-  });
-
-  startBtn.addEventListener("click", async () => {
-    questionBox.innerHTML = "🎤 Generating next question...";
+  // Fetch a new interview question
+  nextBtn.addEventListener("click", async () => {
     feedbackBox.style.display = "none";
     suggestionsBox.style.display = "none";
+    questionBox.textContent = "🎤 Loading question...";
 
     try {
-      const res = await fetch("/api/interview/question", { method: "POST" });
-      const data = await res.json();
-      currentQuestion = data.question;
-      questionBox.innerHTML = `<strong>🤖 AI:</strong> ${currentQuestion}`;
+      const response = await fetch("/api/interview-question");
+      const data = await response.json();
+      currentQuestion = data.question || "No question returned.";
+
+      questionBox.textContent = currentQuestion;
+      speakText(currentQuestion); // 👈 Play with voice
     } catch (err) {
-      questionBox.innerHTML = "❌ Failed to fetch a new question.";
+      console.error("Question Error:", err);
+      questionBox.textContent = "❌ Could not fetch question.";
     }
   });
 
-  responseForm.addEventListener("submit", async (e) => {
+  // Handle user answer submission
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const answer = userAnswer.value.trim();
+    const answer = answerInput.value.trim();
     if (!answer || !currentQuestion) return;
 
+    feedbackBox.innerHTML = "⏳ Evaluating your response...";
     feedbackBox.style.display = "block";
-    feedbackBox.innerHTML = "⏳ Reviewing your answer...";
 
     try {
-      const res = await fetch("/api/interview/feedback", {
+      const response = await fetch("/api/interview-feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: currentQuestion, answer })
       });
-      const data = await res.json();
-      feedbackBox.innerHTML = `<pre>${data.feedback}</pre>`;
+
+      const data = await response.json();
+
+      if (data.feedback) {
+        feedbackBox.innerHTML = `<pre>${data.feedback}</pre>`;
+        speakText(data.feedback); // 👈 Optional: Play feedback too
+      }
 
       if (data.fallback) {
+        suggestionsBox.innerHTML = `<strong>💡 Suggested Tip:</strong><br>${data.fallback}`;
         suggestionsBox.style.display = "block";
-        suggestionsBox.innerHTML = `<strong>💡 Suggestions:</strong><ul>${data.fallback.map(item => `<li>${item}</li>`).join("")}</ul>`;
       }
     } catch (err) {
-      feedbackBox.innerHTML = "❌ Couldn't fetch feedback. Try again.";
+      console.error("Feedback Error:", err);
+      feedbackBox.innerHTML = "⚠️ Could not process your answer.";
     }
   });
 });
