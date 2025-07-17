@@ -6,26 +6,27 @@
 {% block content %}
 
 <div class="interview-container">
-  
-<section class="interview-hero-with-image">
-  <div class="interview-hero-text">
-    <h1 style="color: #104879;">Your Jobcus Interview Coach</h1>
-    <p style="color: #333;">
-      Practice personalised interview questions and get real-time AI feedback with your virtual coach.
-    </p>
-  </div>
-  <div class="interview-hero-image">
-    <img src="{{ url_for('static', filename='images/interview-coach.png') }}" alt="Interview Coach" />
-  </div>
-</section>
 
+  <section class="interview-hero-with-image">
+    <div class="interview-hero-text">
+      <h1 style="color: #104879;">Dav – Your AI Interview Coach</h1>
+      <p style="color: #333;">
+        Practice personalized interview questions and get real-time AI feedback with your virtual coach.
+      </p>
+    </div>
+    <div class="interview-hero-image">
+      <img src="{{ url_for('static', filename='images/interview-coach.png') }}" alt="Interview Coach" />
+    </div>
+  </section>
+
+  <!-- ✅ Corrected ID and field names for form -->
   <section class="interview-form-section">
-    <form id="interviewForm">
-      <label for="formerRole">Your Previous Role</label>
-      <input type="text" id="formerRole" name="formerRole" placeholder="e.g., Customer Support Rep" required />
+    <form id="interview-role-form">
+      <label for="previousRole">Your Previous Role</label>
+      <input type="text" id="previousRole" name="previousRole" placeholder="e.g., Customer Support Rep" required />
 
-      <label for="futureRole">Target Role</label>
-      <input type="text" id="futureRole" name="futureRole" placeholder="e.g., UX Designer" required />
+      <label for="targetRole">Target Role</label>
+      <input type="text" id="targetRole" name="targetRole" placeholder="e.g., UX Designer" required />
 
       <label for="experience">Experience Level</label>
       <select id="experience" name="experience" required>
