@@ -1,86 +1,68 @@
 // static/interview-coach.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  const nextBtn = document.getElementById("next-question-btn");
   const form = document.getElementById("user-response-form");
-  const answerBox = document.getElementById("userAnswer");
-  const aiBox = document.getElementById("ai-question");
+  const answerInput = document.getElementById("userAnswer");
+  const questionBox = document.getElementById("ai-question");
   const feedbackBox = document.getElementById("feedback-box");
   const suggestionsBox = document.getElementById("suggestions-box");
-  const toggleVoiceBtn = document.getElementById("toggle-voice-btn");
+  const nextBtn = document.getElementById("next-question-btn");
 
   let currentQuestion = "";
-  let voiceEnabled = true;
-  let interviewHistory = [];
 
-  // Voice synthesis
-  function speakText(text) {
-    if (!voiceEnabled || !("speechSynthesis" in window)) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
-    utterance.rate = 1;
-    window.speechSynthesis.speak(utterance);
-  }
-
-  // Load next question
-  nextBtn.addEventListener("click", async () => {
-    aiBox.innerHTML = "⏳ Generating interview question...";
+  async function getNextQuestion() {
     feedbackBox.style.display = "none";
     suggestionsBox.style.display = "none";
-    answerBox.value = "";
+    questionBox.innerHTML = "<em>🤖 Generating a new interview question...</em>";
 
     try {
-      const response = await fetch("/api/interview-question", {
+      const response = await fetch("/api/interview/question", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({})
       });
+
       const data = await response.json();
-
-      currentQuestion = data.question;
-      aiBox.innerHTML = currentQuestion;
-      speakText(currentQuestion);
+      currentQuestion = data.question || "Sorry, no question returned.";
+      questionBox.innerHTML = `<strong>🗨️ ${currentQuestion}</strong>`;
     } catch (err) {
-      aiBox.innerHTML = "❌ Error fetching question. Try again.";
+      questionBox.innerHTML = "⚠️ Error fetching interview question.";
     }
-  });
+  }
 
-  // Submit answer
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const answer = answerBox.value.trim();
-    if (!currentQuestion || !answer) return;
+    const answer = answerInput.value.trim();
+    if (!answer) return;
 
-    feedbackBox.innerHTML = "⏳ Evaluating your response...";
+    feedbackBox.innerHTML = "<em>⏳ Analyzing your answer...</em>";
     feedbackBox.style.display = "block";
     suggestionsBox.style.display = "none";
 
     try {
-      const response = await fetch("/api/interview-feedback", {
+      const response = await fetch("/api/interview/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: currentQuestion, answer })
       });
+
       const data = await response.json();
-
-      feedbackBox.innerHTML = `<pre>${data.feedback}</pre>`;
-      suggestionsBox.innerHTML = `<strong>💡 Suggestion:</strong> ${data.fallback || "None."}`;
-      suggestionsBox.style.display = "block";
-
-      speakText(data.feedback);
-
-      // Save history
-      interviewHistory.push({ question: currentQuestion, answer, feedback: data.feedback });
+      if (data.feedback) {
+        feedbackBox.innerHTML = `<div class='ai-response'><pre>${data.feedback}</pre></div>`;
+      }
+      if (data.fallbacks) {
+        suggestionsBox.style.display = "block";
+        suggestionsBox.innerHTML = `<h4>💡 Suggested Tips:</h4><ul>` +
+          data.fallbacks.map(tip => `<li>${tip}</li>`).join("") +
+          `</ul>`;
+      }
     } catch (err) {
-      feedbackBox.innerHTML = "❌ Error fetching feedback.";
+      feedbackBox.innerHTML = "❌ Error analyzing your answer.";
     }
   });
 
-  // Toggle voice on/off
-  if (toggleVoiceBtn) {
-    toggleVoiceBtn.addEventListener("click", () => {
-      voiceEnabled = !voiceEnabled;
-      toggleVoiceBtn.innerText = voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off";
-    });
-  }
+  nextBtn.addEventListener("click", getNextQuestion);
+
+  // Initialize with the first question
+  getNextQuestion();
 });
