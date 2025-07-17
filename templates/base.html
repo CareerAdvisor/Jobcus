@@ -46,10 +46,25 @@
     </header>
 
     <script>
-      function toggleMobileMenu() {
-        document.getElementById("mobileMenu").classList.toggle("show");
-      }
-    </script>
+  function toggleMobileMenu() {
+    document.getElementById("mobileMenu").classList.toggle("show");
+  }
+
+  // Close menu when clicking outside
+  document.addEventListener("click", function (event) {
+    const menu = document.getElementById("mobileMenu");
+    const hamburger = document.querySelector(".hamburger");
+
+    // If menu is open and click is outside the menu and hamburger
+    if (
+      menu.classList.contains("show") &&
+      !menu.contains(event.target) &&
+      !hamburger.contains(event.target)
+    ) {
+      menu.classList.remove("show");
+    }
+  });
+</script>
 
     <main>
     {% block content %}{% endblock %}
