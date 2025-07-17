@@ -253,6 +253,48 @@ def skill_gap_api():
         traceback.print_exc()
         return jsonify({"error": "Server error"}), 500
 
+@app.route("/api/interview", methods=["POST"])
+def interview_coach_api():
+    try:
+        data = request.get_json()
+        role = data.get("role", "").strip()
+        experience = data.get("experience", "").strip()
+
+        if not role or not experience:
+            return jsonify({"error": "Missing input"}), 400
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are an AI-powered Interview Coach.\n"
+                    "You provide mock interview questions and tips tailored to the user's job role and experience level."
+                )
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"I'm preparing for an interview as a {role}. "
+                    f"My experience level is {experience}. "
+                    "Give me 5 relevant interview questions and tips to answer them."
+                )
+            }
+        ]
+
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            temperature=0.7
+        )
+
+        reply = response.choices[0].message.content
+        return jsonify({"result": reply})
+
+    except Exception as e:
+        print("Interview Coach API Error:", e)
+        traceback.print_exc()
+        return jsonify({"error": "Server error"}), 500
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
