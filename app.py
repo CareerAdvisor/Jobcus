@@ -422,6 +422,52 @@ def generate_resume():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/analyze-resume", methods=["POST"])
+def analyze_resume():
+    try:
+        data = request.get_json()
+        resume_text = ""
+
+        # If file uploaded
+        if "pdf" in data:
+            import base64
+            from PyPDF2 import PdfReader
+            from io import BytesIO
+            pdf_bytes = base64.b64decode(data["pdf"])
+            reader = PdfReader(BytesIO(pdf_bytes))
+            resume_text = " ".join(page.extract_text() or "" for page in reader.pages)
+
+        elif "text" in data:
+            resume_text = data["text"]
+
+        if not resume_text.strip():
+            return jsonify({"error": "No resume content found"}), 400
+
+        # --- Step 1: AI Feedback via OpenAI ---
+        ai_prompt = (
+            "You are an ATS resume analyzer. Analyze the following resume text. "
+            "Give insights about formatting, keyword richness, tone, clarity, and structure. "
+            "Be concise, and offer actionable tips. Resume:\n\n" + resume_text
+        )
+
+        ai_response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": ai_prompt}],
+            temperature=0.6
+        ).choices[0].message.content
+
+        # --- Step 2: Keyword Match (Dummy Keywords for now) ---
+        target_keywords = ["Project Management", "Python", "Communication", "Teamwork", "Leadership"]
+        found_keywords = [kw for kw in target_keywords if kw.lower() in resume_text.lower()]
+
+        return jsonify({
+            "analysis": ai_response,
+            "keywords": found_keywords
+        })
+
+    except Exception as e:
+        print("ATS Analyzer Error:", e)
+        return jsonify({"error": "Resume analysis failed"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
