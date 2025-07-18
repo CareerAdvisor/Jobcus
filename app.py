@@ -497,6 +497,44 @@ def employer_inquiry():
         print("Employer Form Error:", e)
         return jsonify({"error": "Internal Server Error"}), 500
 
+@app.route("/api/employer/submit", methods=["POST"])
+def submit_employer_form():
+    try:
+        data = request.get_json()
+        job_title = data.get("jobTitle")
+        company = data.get("company")
+        role_summary = data.get("summary")
+
+        if not job_title or not company:
+            return jsonify({"success": False, "message": "Job title and company are required."}), 400
+
+        prompt = f"""
+        You are a recruitment assistant. Generate a professional job description for the following role:
+
+        Job Title: {job_title}
+        Company: {company}
+        Summary: {role_summary or 'Not provided'}
+
+        The job description should include responsibilities, qualifications, and preferred skills.
+        """
+
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.6
+        )
+        job_description = response.choices[0].message.content
+
+        return jsonify({
+            "success": True,
+            "message": "Job post generated successfully.",
+            "jobDescription": job_description
+        })
+
+    except Exception as e:
+        print("Employer Submission Error:", e)
+        return jsonify({"success": False, "message": "Server error generating job post."}), 500
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
