@@ -15,7 +15,7 @@
     </div>
   </div>
   <div class="resume-hero-image">
-    <img src="{{ url_for('static', filename='images/resume-preview-banner.png') }}" alt="Resume Preview" />
+    <img src="{{ url_for('static', filename='images/resume-preview-banner1.png') }}" alt="Resume Preview" style="max-width: 100%; height: auto; border-radius: 8px;" />
   </div>
 </section>
 
@@ -54,9 +54,9 @@
 <section class="resume-gallery">
   <h2>Explore Our Templates</h2>
   <div class="template-grid">
-    <img src="{{ url_for('static', filename='images/template1..png') }}" alt="Template 1" class="template-img">
-    <img src="{{ url_for('static', filename='images/template2.png') }}" alt="Template 2" class="template-img">
-    <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img">
+    <img src="{{ url_for('static', filename='images/template1.png') }}" alt="Template 1" class="template-img" style="width: 100%; height: auto;">
+    <img src="{{ url_for('static', filename='images//template2.png') }}" alt="Template 2" class="template-img" style="width: 100%; height: auto;">
+    <img src="{{ url_for('static', filename='images//template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
   </div>
 </section>
 
@@ -75,17 +75,26 @@
     <label>Phone Number</label>
     <input type="tel" name="phone" required>
 
-    <label>Career Objective or Summary</label>
+    <label>Professional Summary</label>
     <textarea name="summary" rows="3"></textarea>
 
-    <label>Education</label>
-    <textarea name="education" placeholder="e.g., BSc in Computer Science, University of Lagos (2018–2022)"></textarea>
+    <div id="education-container">
+      <label>Education</label>
+      <textarea name="education[]" placeholder="e.g., BSc in Computer Science, University of Lagos (2018–2022)"></textarea>
+    </div>
+    <button type="button" onclick="addEducationField()">Add More Education</button>
 
-    <label>Work Experience</label>
-    <textarea name="experience" placeholder="List your roles and achievements..."></textarea>
+    <div id="experience-container">
+      <label>Work Experience</label>
+      <textarea name="experience[]" placeholder="List your roles and achievements..."></textarea>
+    </div>
+    <button type="button" onclick="addExperienceField()">Add More Experience</button>
 
-    <label>Skills & Certifications</label>
-    <textarea name="skills" placeholder="e.g., Python, Project Management, CompTIA A+"></textarea>
+    <label>Skills</label>
+    <textarea name="skills" placeholder="e.g., Python, Project Management"></textarea>
+
+    <label>Certifications</label>
+    <textarea name="certifications" placeholder="e.g., CompTIA A+, PMP, AWS Certified"></textarea>
 
     <label>Languages</label>
     <input type="text" name="languages" placeholder="e.g., English, French">
@@ -118,4 +127,21 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
+<script>
+  function addEducationField() {
+    const container = document.getElementById('education-container');
+    const textarea = document.createElement('textarea');
+    textarea.name = 'education[]';
+    textarea.placeholder = 'e.g., MSc in Data Science, University XYZ (2022–2024)';
+    container.appendChild(textarea);
+  }
+
+  function addExperienceField() {
+    const container = document.getElementById('experience-container');
+    const textarea = document.createElement('textarea');
+    textarea.name = 'experience[]';
+    textarea.placeholder = 'e.g., Digital Marketing Specialist at ABC Corp (2020–2023)';
+    container.appendChild(textarea);
+  }
+</script>
 {% endblock %}
