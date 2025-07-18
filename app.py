@@ -123,29 +123,17 @@ def chat():
 def resume_builder():
     return render_template("resume-builder.html")
 
-@app.route("/career-paths")
-def career_paths():
-    return render_template("career-paths.html")
-
-@app.route("/job-insights")
-def job_insights():
-    return render_template("job-insights.html")
+@app.route("/interview-coach")
+def interview_coach():
+    return render_template("interview-coach.html")
 
 @app.route("/skill-gap")
 def skill_gap():
     return render_template("skill-gap.html")
 
-@app.route("/interview-coach")
-def interview_coach():
-    return render_template("interview-coach.html")
-
-@app.route("/tips")
-def tips():
-    return render_template("tips.html")
-    
-@app.route("/pricing")
-def pricing():
-    return render_template("pricing.html")
+@app.route("/job-insights")
+def job_insights():
+    return render_template("job-insights.html")
 
 @app.route("/employers")
 def employers():
