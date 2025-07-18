@@ -1,65 +1,73 @@
-<!-- employer.html -->
-{% extends "base.html" %}
+document.addEventListener('DOMContentLoaded', () => {
+  // === Employer Inquiry Form Submission ===
+  const inquiryForm = document.getElementById('employerInquiryForm');
+  if (inquiryForm) {
+    inquiryForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-{% block title %}Employers – Jobcus{% endblock %}
+      const formData = new FormData(inquiryForm);
+      const payload = {
+        name: formData.get('name'),
+        email: formData.get('email'),
+        company: formData.get('company'),
+        job_roles: formData.get('job_roles'),
+        message: formData.get('message')
+      };
 
-{% block content %}
-<section class="employer-hero">
-  <div class="employer-hero-text">
-    <h1 style="color: #104879;">Hire Smarter with Jobcus</h1>
-    <p style="color: #333;">Use AI to generate compelling job posts and connect with top talent effortlessly.</p>
-  </div>
-</section>
+      const res = await fetch('/api/employer-inquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-<div class="employer-tabs">
-  <button class="tab-btn active" onclick="switchTab('post')">Post a Job with AI</button>
-  <button class="tab-btn" onclick="switchTab('contact')">Contact Us</button>
-</div>
+      const result = await res.json();
+      const status = document.getElementById('inquiryStatus');
+      if (result.success) {
+        status.textContent = "✅ Inquiry submitted successfully!";
+        inquiryForm.reset();
+      } else {
+        status.textContent = `⚠️ ${result.error || "Submission failed."}`;
+      }
+    });
+  }
 
-<div id="post" class="tab-content">
-  <h2>📝 AI Job Description Generator</h2>
-  <form id="jobPostForm">
-    <label>Job Title</label>
-    <input type="text" name="jobTitle" required>
+  // === Employer Job Posting (AI Job Description) ===
+  const jobPostForm = document.getElementById('jobPostForm');
+  if (jobPostForm) {
+    jobPostForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-    <label>Company Name</label>
-    <input type="text" name="company" required>
+      const formData = new FormData(jobPostForm);
+      const payload = {
+        jobTitle: formData.get('jobTitle'),
+        company: formData.get('company'),
+        summary: formData.get('summary')
+      };
 
-    <label>Role Summary <small>(optional)</small></label>
-    <textarea name="summary" rows="3"></textarea>
+      const resultBox = document.getElementById('jobPostResult');
+      resultBox.innerHTML = "⏳ Generating job description...";
 
-    <button type="submit">Generate Job Post</button>
-  </form>
+      try {
+        const res = await fetch('/api/employer/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-  <section id="jobPostPreview" style="display:none; margin-top: 20px;">
-    <h3>📄 Generated Job Description</h3>
-    <div id="jobPostOutput" class="output-box"></div>
-  </section>
-</div>
+        const data = await res.json();
 
-<div id="contact" class="tab-content" style="display:none;">
-  <h2>📩 Contact Our Team</h2>
-  <form id="employerInquiryForm">
-    <label>Full Name</label>
-    <input type="text" name="name" required>
-
-    <label>Email</label>
-    <input type="email" name="email" required>
-
-    <label>Company</label>
-    <input type="text" name="company">
-
-    <label>Job Roles of Interest</label>
-    <input type="text" name="job_roles">
-
-    <label>Message</label>
-    <textarea name="message" rows="4" required></textarea>
-
-    <button type="submit">Send Inquiry</button>
-  </form>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='employer.js') }}"></script>
-{% endblock %}
+        if (data.success) {
+          resultBox.innerHTML = `
+            <h3>📄 AI-Generated Job Description</h3>
+            <div class="job-description-box">${data.jobDescription}</div>
+          `;
+        } else {
+          resultBox.innerHTML = `⚠️ ${data.message}`;
+        }
+      } catch (err) {
+        console.error(err);
+        resultBox.innerHTML = "❌ An error occurred while generating the job post.";
+      }
+    });
+  }
+});
