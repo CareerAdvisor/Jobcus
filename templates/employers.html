@@ -1,12 +1,111 @@
 <!-- employers.html -->
 {% extends "base.html" %}
 
-{% block title %}employers – Jobcus{% endblock %}
+{% block title %}Employers – Jobcus{% endblock %}
 
 {% block content %}
-
-<section class="section">
-  <h2>employers</h2>
-  <p>Coming soon: Upload your CV and let Jobcus optimise it.</p>
+<section class="employer-hero">
+  <div class="container">
+    <div class="employer-hero-content">
+      <h1 style="color: #104879;">Find the Right Talent with Jobcus</h1>
+      <p>Post jobs, analyze candidate resumes, and discover top talent using AI-powered recruitment tools.</p>
+      <a href="#post-job" class="primary-btn">Post a Job</a>
+    </div>
+    <div class="employer-hero-image">
+      <img src="{{ url_for('static', filename='images/employer-banner.png') }}" alt="Hiring" />
+    </div>
+  </div>
 </section>
+
+<section class="employer-benefits">
+  <div class="container">
+    <h2 style="color: #104879;">Why Hire with Jobcus?</h2>
+    <div class="benefits-grid">
+      <div class="benefit">
+        <h3>🎯 Smart Resume Matching</h3>
+        <p>Our AI matches resumes with job descriptions to highlight top candidates automatically.</p>
+      </div>
+      <div class="benefit">
+        <h3>📊 ATS Resume Analyzer</h3>
+        <p>Use our resume analysis tools to evaluate clarity, skills, and formatting instantly.</p>
+      </div>
+      <div class="benefit">
+        <h3>📁 Easy Job Posting</h3>
+        <p>List openings in seconds and reach a pool of career-ready candidates.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="employer-job-form" id="post-job">
+  <div class="container">
+    <h2 style="color: #104879;">Post a Job Opening</h2>
+    <form id="jobPostForm">
+      <label>Company Name</label>
+      <input type="text" name="company" required />
+
+      <label>Job Title</label>
+      <input type="text" name="title" required />
+
+      <label>Job Location</label>
+      <input type="text" name="location" placeholder="e.g., Remote, London, UK" required />
+
+      <label>Job Type</label>
+      <select name="type">
+        <option>Full-time</option>
+        <option>Part-time</option>
+        <option>Remote</option>
+        <option>Contract</option>
+        <option>Internship</option>
+      </select>
+
+      <label>Job Description</label>
+      <textarea name="description" rows="6" required></textarea>
+
+      <label>Preferred Skills</label>
+      <input type="text" name="skills" placeholder="e.g., Python, Communication, Teamwork" />
+
+      <label>Application Email / URL</label>
+      <input type="text" name="apply" placeholder="https://yourcompany.com/careers" required />
+
+      <button type="submit" class="primary-btn">Submit Job</button>
+    </form>
+    <div id="jobPostStatus"></div>
+  </div>
+</section>
+
+<section class="employer-faq">
+  <div class="container">
+    <h2 style="color: #104879;">Frequently Asked Questions</h2>
+    <ul>
+      <li><strong>How does resume matching work?</strong><br/>Our system uses keyword and semantic analysis to rank candidate fit for your job.</li>
+      <li><strong>Can I view applicant resumes?</strong><br/>Yes, once applicants apply, you will receive their resume files for analysis.</li>
+      <li><strong>Is there a cost to post a job?</strong><br/>Currently, job postings are free during our launch period.</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById("jobPostForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    const statusBox = document.getElementById("jobPostStatus");
+    statusBox.innerHTML = "⏳ Submitting...";
+
+    try {
+      const res = await fetch("/api/post-job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      statusBox.innerHTML = result.success ? "✅ Job posted successfully!" : "⚠️ Failed to post job.";
+    } catch (err) {
+      statusBox.innerHTML = "❌ Error submitting job.";
+    }
+  });
+</script>
 {% endblock %}
