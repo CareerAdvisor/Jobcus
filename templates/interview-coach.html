@@ -1,131 +1,66 @@
-<!-- resume-builder.html -->
+<!-- templates/interview-coach.html -->
 {% extends "base.html" %}
 
-{% block title %}Resume Builder – Jobcus{% endblock %}
+{% block title %}Interview Coach – Jobcus{% endblock %}
 
 {% block content %}
 
-<!-- Hero Section -->
 <div class="interview-container">
+
   <section class="interview-hero-with-image">
     <div class="interview-hero-text">
-      <h1 style="color: #104879;">Build Your Professional Resume with AI</h1>
-      <p style="color: #333; margin-bottom: 20px;">
-        Create a tailored, ATS-optimised resume with our smart resume builder and analyser.
+      <h1 style="color: #104879;">Dav – Your AI Interview Coach</h1>
+      <p style="color: #333;">
+        Practice personalized interview questions and get real-time AI feedback with your virtual coach.
       </p>
-      <a href="#start-builder" class="primary-btn">Start Building</a>
     </div>
     <div class="interview-hero-image">
-      <img src="{{ url_for('static', filename='images/resume-preview-banner.png') }}" alt="Resume Preview" style="max-width: 100%; height: auto; border-radius: 8px;" />
+      <img src="{{ url_for('static', filename='images/interview-coach.png') }}" alt="Interview Coach" />
     </div>
+  </section>
+
+  <!-- ✅ Corrected ID and field names for form -->
+  <section class="interview-form-section">
+    <form id="interview-role-form">
+      <label for="previousRole">Your Previous Role</label>
+      <input type="text" id="previousRole" name="previousRole" placeholder="e.g., Customer Support Rep" required />
+
+      <label for="targetRole">Target Role</label>
+      <input type="text" id="targetRole" name="targetRole" placeholder="e.g., UX Designer" required />
+
+      <label for="experience">Experience Level</label>
+      <select id="experience" name="experience" required>
+        <option value="">Select experience level</option>
+        <option value="Entry-level">Entry-level</option>
+        <option value="Mid-level">Mid-level</option>
+        <option value="Senior">Senior</option>
+      </select>
+
+      <button type="submit">🎤 Start Interview</button>
+    </form>
+  </section>
+
+  <section class="interview-session" style="display: none;">
+    <div id="ai-question" class="ai-question-box">Click Next to begin your interview.</div>
+
+    <button id="next-question-btn">🎤 Next Question</button>
+
+    <form id="user-response-form" style="display: none;">
+      <textarea id="userAnswer" placeholder="Type your response..." required></textarea>
+      <button type="submit">Submit Answer</button>
+    </form>
+
+    <section class="interview-history">
+      <button id="toggle-history-btn">📜 Show History</button>
+      <div id="history-container" class="history-box" style="display: none;"></div>
+    </section>
+
+    <div id="suggestions-box" class="fallback-box" style="display: none;"></div>
+    <div id="feedback-box" class="result-box" style="display: none;"></div>
   </section>
 </div>
-
-<!-- Step-by-Step Guide -->
-<section class="resume-steps" style="background: #fff; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; padding: 20px;">
-  <h2 style="color: #104879;">How It Works</h2>
-  <div class="step-grid">
-    <div class="step">
-      <h3>1. Enter Your Details</h3>
-      <p>Provide your education, work experience, skills, and accomplishments.</p>
-      <span class="arrow" style="font-size: 24px;">↓</span>
-    </div>
-    <div class="step">
-      <h3>2. Choose a Template</h3>
-      <p>Pick from professionally designed resume templates that suit your industry.</p>
-      <span class="arrow" style="font-size: 24px;">↓</span>
-    </div>
-    <div class="step">
-      <h3>3. Let AI Do the Work</h3>
-      <p>Get personalised content suggestions and instant formatting.</p>
-      <span class="arrow" style="font-size: 24px;">↓</span>
-    </div>
-    <div class="step">
-      <h3>4. Analyze & Optimize</h3>
-      <p>Use the AI-powered Analyser to ensure your resume is recruiter-ready and job-specific.</p>
-      <span class="arrow" style="font-size: 24px;">↓</span>
-    </div>
-    <div class="step">
-      <h3>5. Download & Apply</h3>
-      <p>Export in PDF or DOCX and start applying to jobs with confidence.</p>
-    </div>
-  </div>
-</section>
-
-<!-- Template Gallery -->
-<section class="resume-gallery">
-  <h2 style="color: #104879;">Explore Our Templates</h2>
-  <div class="template-grid">
-    <img src="{{ url_for('static', filename='images/template1.png') }}" alt="Template 1" class="template-img" style="width: 100%; height: auto;">
-    <img src="{{ url_for('static', filename='images/template2.png') }}" alt="Template 2" class="template-img" style="width: 100%; height: auto;">
-    <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
-  </div>
-</section>
-
-<!-- Resume Builder Form -->
-<section id="start-builder" class="resume-builder-container">
-  <h1 style="color: #104879;">📄 Build Your Resume with AI</h1>
-  <p class="subheading">Fill out the form below to generate a professional resume tailored to your career goals.</p>
-
-  <form id="resumeForm">
-    <label style="margin-top: 20px;">Full Name</label>
-    <input type="text" name="fullName" required>
-
-    <label>Email Address</label>
-    <input type="email" name="email" required>
-
-    <label>Phone Number</label>
-    <input type="tel" name="phone" required>
-
-    <label>Professional Summary</label>
-    <textarea name="summary" rows="3"></textarea>
-
-    <label>Education</label>
-    <textarea name="education[]" placeholder="e.g., BSc in Computer Science, University of Lagos (2018–2022)"></textarea>
-
-    <label>Work Experience</label>
-    <textarea name="experience[]" placeholder="List your roles and achievements..."></textarea>
-
-    <label>Skills</label>
-    <textarea name="skills" placeholder="e.g., Python, Project Management"></textarea>
-
-    <label>Certifications</label>
-    <textarea name="certifications" placeholder="e.g., CompTIA A+, PMP, AWS Certified"></textarea>
-
-    <label>Languages</label>
-    <input type="text" name="languages" placeholder="e.g., English, French">
-
-    <label>LinkedIn / Portfolio URL</label>
-    <input type="url" name="portfolio">
-
-    <button type="submit" class="generate-btn">✨ Generate Resume</button>
-  </form>
-
-  <section id="resumePreview" style="display: none;">
-    <h2>🧾 Your AI-Generated Resume</h2>
-    <div id="resumeOutput" class="resume-preview-box"></div>
-    <button id="downloadResumeBtn">⬇️ Download as PDF</button>
-  </section>
-</section>
-
-<!-- Resume Health & ATS Analyzer -->
-<section class="resume-analyzer">
-  <h2 style="color: #104879;">AI Resume Analyzer</h2>
-  <p>Paste your resume and job description to get a detailed analysis of keyword match, readability, and formatting tips.</p>
-
-  <label>Paste Your Resume</label>
-  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
-
-  <label>Paste Target Job Description</label>
-  <textarea id="job-description" rows="6" placeholder="Paste the job description here..."></textarea>
-
-  <button id="analyze-btn">🔍 Analyze Resume</button>
-
-  <div id="analyzer-result"></div>
-</section>
-
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
+<script src="{{ url_for('static', filename='interview-coach.js') }}"></script>
 {% endblock %}
