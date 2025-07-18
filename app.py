@@ -516,6 +516,7 @@ def submit_employer_form():
 
         The job description should include responsibilities, qualifications, and preferred skills.
         """
+
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
@@ -523,13 +524,16 @@ def submit_employer_form():
         )
         job_description = response.choices[0].message.content
 
-        # Save to Supabase "job_posts" table
-        supabase.table("job_posts").insert({
-            "job_title": job_title,
-            "company": company,
-            "summary": role_summary,
-            "job_description": job_description
-        }).execute()
+        # Optional: save to Supabase (can comment this out for now)
+        try:
+            supabase.table("job_posts").insert({
+                "job_title": job_title,
+                "company": company,
+                "summary": role_summary,
+                "job_description": job_description
+            }).execute()
+        except Exception as db_err:
+            print("Supabase insert skipped/error:", db_err)
 
         return jsonify({
             "success": True,
