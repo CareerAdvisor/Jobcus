@@ -1,72 +1,63 @@
-<!-- employers.html -->
+<!-- employer.html -->
 {% extends "base.html" %}
 
-{% block title %}Hire Talent – Jobcus{% endblock %}
+{% block title %}Employers – Jobcus{% endblock %}
 
 {% block content %}
 <section class="employer-hero">
   <div class="employer-hero-text">
-    <h1 style="color: #104879;">Find Your Next Great Hire</h1>
-    <p style="color: #333;">Post your job openings and get matched with qualified candidates instantly.</p>
+    <h1 style="color: #104879;">Hire Smarter with Jobcus</h1>
+    <p style="color: #333;">Use AI to generate compelling job posts and connect with top talent effortlessly.</p>
   </div>
 </section>
 
-<section class="employer-benefits">
-  <h2>Why Choose Jobcus?</h2>
-  <ul>
-    <li>🎯 Targeted reach to job seekers actively looking in your industry</li>
-    <li>🤖 AI-powered resume screening & ranking</li>
-    <li>📈 Real-time application tracking</li>
-    <li>🔐 Secure employer dashboard</li>
-  </ul>
-</section>
+<div class="employer-tabs">
+  <button class="tab-btn active" onclick="switchTab('post')">Post a Job with AI</button>
+  <button class="tab-btn" onclick="switchTab('contact')">Contact Us</button>
+</div>
 
-<section class="employer-form-section">
-  <h2>Post a Job</h2>
-  <form id="employerForm">
+<div id="post" class="tab-content">
+  <h2>📝 AI Job Description Generator</h2>
+  <form id="jobPostForm">
     <label>Job Title</label>
     <input type="text" name="jobTitle" required>
 
     <label>Company Name</label>
     <input type="text" name="company" required>
 
-    <label>Job Type</label>
-    <select name="jobType" required>
-      <option value="full-time">Full-time</option>
-      <option value="part-time">Part-time</option>
-      <option value="contract">Contract</option>
-      <option value="remote">Remote</option>
-    </select>
+    <label>Role Summary <small>(optional)</small></label>
+    <textarea name="summary" rows="3"></textarea>
 
-    <label>Job Description</label>
-    <textarea name="description" rows="5" required></textarea>
-
-    <label>Required Skills</label>
-    <input type="text" name="skills" placeholder="e.g., Python, Communication, UX" required>
-
-    <label>Application Email or URL</label>
-    <input type="text" name="applicationLink" required>
-
-    <button type="submit" class="primary-btn">Submit Job</button>
+    <button type="submit">Generate Job Post</button>
   </form>
-  <div id="jobPostResult"></div>
-</section>
 
-<section class="employer-faq">
-  <h2>Frequently Asked Questions</h2>
-  <details>
-    <summary>How long does my job post stay active?</summary>
-    <p>Each job post remains live for 30 days by default.</p>
-  </details>
-  <details>
-    <summary>Can I manage multiple jobs?</summary>
-    <p>Yes, create a free employer account to manage all your listings in one dashboard.</p>
-  </details>
-  <details>
-    <summary>Do you support sponsored job listings?</summary>
-    <p>Yes, reach more candidates with promoted jobs. Contact us for pricing.</p>
-  </details>
-</section>
+  <section id="jobPostPreview" style="display:none; margin-top: 20px;">
+    <h3>📄 Generated Job Description</h3>
+    <div id="jobPostOutput" class="output-box"></div>
+  </section>
+</div>
+
+<div id="contact" class="tab-content" style="display:none;">
+  <h2>📩 Contact Our Team</h2>
+  <form id="employerInquiryForm">
+    <label>Full Name</label>
+    <input type="text" name="name" required>
+
+    <label>Email</label>
+    <input type="email" name="email" required>
+
+    <label>Company</label>
+    <input type="text" name="company">
+
+    <label>Job Roles of Interest</label>
+    <input type="text" name="job_roles">
+
+    <label>Message</label>
+    <textarea name="message" rows="4" required></textarea>
+
+    <button type="submit">Send Inquiry</button>
+  </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
