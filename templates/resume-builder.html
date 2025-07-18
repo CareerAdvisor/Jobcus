@@ -11,7 +11,7 @@
     <div class="interview-hero-text">
       <h1 style="color: #104879;">Build Your Professional Resume with AI</h1>
       <p style="color: #333; margin-bottom: 20px;">
-        Create a tailored, ATS-optimized resume with our smart resume builder and analyzer.
+        Create a tailored, ATS-optimised resume with our smart resume builder and analyser.
       </p>
       <a href="#start-builder" class="primary-btn">Start Building</a>
     </div>
@@ -37,12 +37,12 @@
     </div>
     <div class="step">
       <h3>3. Let AI Do the Work</h3>
-      <p>Get personalized content suggestions and instant formatting.</p>
+      <p>Get personalised content suggestions and instant formatting.</p>
       <span class="arrow" style="font-size: 24px;">↓</span>
     </div>
     <div class="step">
       <h3>4. Analyze & Optimize</h3>
-      <p>Use the Resume Health Checker to ensure your resume is recruiter-ready.</p>
+      <p>Use the AI-powered Analyser to ensure your resume is recruiter-ready and job-specific.</p>
       <span class="arrow" style="font-size: 24px;">↓</span>
     </div>
     <div class="step">
@@ -81,11 +81,11 @@
     <textarea name="summary" rows="3"></textarea>
 
     <label>Education</label>
-    <textarea name="education:[]" placeholder="e.g., BSc in Computer Science, University of Lagos (2018–2022)"></textarea>
+    <textarea name="education[]" placeholder="e.g., BSc in Computer Science, University of Lagos (2018–2022)"></textarea>
 
     <label>Work Experience</label>
     <textarea name="experience[]" placeholder="List your roles and achievements..."></textarea>
-   
+
     <label>Skills</label>
     <textarea name="skills" placeholder="e.g., Python, Project Management"></textarea>
 
@@ -108,14 +108,19 @@
   </section>
 </section>
 
-<!-- Resume Health Checker -->
+<!-- Resume Health & ATS Analyzer -->
 <section class="resume-analyzer">
-  <h2 style="color: #104879;">Resume Health Checker</h2>
-  <p>Paste your resume text below or upload your file to get a full analysis of strength, readability, keywords, and more.</p>
-  <textarea id="resume-text" rows="8" placeholder="Paste your resume here..."></textarea>
-  <p>OR</p>
-  <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,.jpeg,.jpg,.png">
-  <button id="analyze-btn">Analyze Resume</button>
+  <h2 style="color: #104879;">AI Resume Analyzer</h2>
+  <p>Paste your resume and job description to get a detailed analysis of keyword match, readability, and formatting tips.</p>
+
+  <label>Paste Your Resume</label>
+  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
+
+  <label>Paste Target Job Description</label>
+  <textarea id="job-description" rows="6" placeholder="Paste the job description here..."></textarea>
+
+  <button id="analyze-btn">🔍 Analyze Resume</button>
+
   <div id="analyzer-result"></div>
 </section>
 
@@ -123,21 +128,4 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
-<script>
-  function addEducationField() {
-    const container = document.getElementById('education-container');
-    const textarea = document.createElement('textarea');
-    textarea.name = 'education[]';
-    textarea.placeholder = 'e.g., MSc in Data Science, University XYZ (2022–2024)';
-    container.appendChild(textarea);
-  }
-
-  function addExperienceField() {
-    const container = document.getElementById('experience-container');
-    const textarea = document.createElement('textarea');
-    textarea.name = 'experience[]';
-    textarea.placeholder = 'e.g., Digital Marketing Specialist at ABC Corp (2020–2023)';
-    container.appendChild(textarea);
-  }
-</script>
 {% endblock %}
