@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function () {
   const form = document.getElementById('resumeForm');
   const previewSection = document.getElementById('resumePreview');
@@ -7,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const analyzeBtn = document.getElementById('analyze-btn');
   const analyzerResult = document.getElementById('analyzer-result');
 
+  // Form submission handler
   form.addEventListener('submit', function (e) {
     e.preventDefault();
 
@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
     previewSection.style.display = 'block';
   });
 
+  // PDF download logic
   downloadBtn.addEventListener('click', function () {
     const opt = {
       margin: 1,
@@ -32,13 +33,35 @@ document.addEventListener('DOMContentLoaded', function () {
     html2pdf().from(output).set(opt).save();
   });
 
+  // Resume analyzer (basic frontend version)
   analyzeBtn.addEventListener('click', function () {
     const resumeText = document.getElementById('resume-text').value;
     if (resumeText.trim() === '') {
       analyzerResult.innerHTML = '<p>Please paste your resume to analyze.</p>';
       return;
     }
-    // Dummy analysis result (can be connected to backend later)
-    analyzerResult.innerHTML = '<p><strong>Analysis Result:</strong> Your resume includes relevant keywords and is easy to read. Consider shortening long paragraphs and using bullet points.</p>';
+
+    analyzerResult.innerHTML = `
+      <p><strong>Analysis Result:</strong> Your resume includes relevant keywords and is easy to read. 
+      Consider shortening long paragraphs and using bullet points for clarity.</p>
+    `;
   });
+
+  // Add extra education field
+  window.addEducationField = function () {
+    const container = document.getElementById('education-container');
+    const textarea = document.createElement('textarea');
+    textarea.name = 'education[]';
+    textarea.placeholder = 'e.g., MSc in Data Science, University XYZ (2022–2024)';
+    container.appendChild(textarea);
+  };
+
+  // Add extra experience field
+  window.addExperienceField = function () {
+    const container = document.getElementById('experience-container');
+    const textarea = document.createElement('textarea');
+    textarea.name = 'experience[]';
+    textarea.placeholder = 'e.g., Digital Marketing Specialist at ABC Corp (2020–2023)';
+    container.appendChild(textarea);
+  };
 });
