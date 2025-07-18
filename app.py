@@ -473,8 +473,6 @@ def analyze_resume():
 def employer_inquiry():
     try:
         data = request.get_json()
-
-        # Extract fields
         name = data.get("name")
         email = data.get("email")
         company = data.get("company")
@@ -484,17 +482,19 @@ def employer_inquiry():
         if not name or not email or not message:
             return jsonify({"error": "Missing required fields"}), 400
 
-        # For now, just print or log the inquiry
-        print(f"[Employer Inquiry] {name} ({email}) from {company}: {job_roles}")
-        print(f"Message: {message}")
-
-        # Optional: Send email notification (e.g., via SendGrid, SMTP, etc.)
-        # send_employer_email(name, email, company, job_roles, message)
+        # Store to Supabase "employer_inquiries" table
+        response = supabase.table("employer_inquiries").insert({
+            "name": name,
+            "email": email,
+            "company": company,
+            "job_roles": job_roles,
+            "message": message
+        }).execute()
 
         return jsonify({"success": True})
 
     except Exception as e:
-        print("Employer Form Error:", e)
+        print("Employer Inquiry Error:", e)
         return jsonify({"error": "Internal Server Error"}), 500
 
 @app.route("/api/employer/submit", methods=["POST"])
@@ -508,6 +508,7 @@ def submit_employer_form():
         if not job_title or not company:
             return jsonify({"success": False, "message": "Job title and company are required."}), 400
 
+        # Generate job description via OpenAI
         prompt = f"""
         You are a recruitment assistant. Generate a professional job description for the following role:
 
@@ -517,13 +518,20 @@ def submit_employer_form():
 
         The job description should include responsibilities, qualifications, and preferred skills.
         """
-
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.6
         )
         job_description = response.choices[0].message.content
+
+        # Save to Supabase "job_posts" table
+        supabase.table("job_posts").insert({
+            "job_title": job_title,
+            "company": company,
+            "summary": role_summary,
+            "job_description": job_description
+        }).execute()
 
         return jsonify({
             "success": True,
