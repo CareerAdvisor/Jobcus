@@ -469,6 +469,34 @@ def analyze_resume():
         print("ATS Analyzer Error:", e)
         return jsonify({"error": "Resume analysis failed"}), 500
 
+@app.route("/api/employer-inquiry", methods=["POST"])
+def employer_inquiry():
+    try:
+        data = request.get_json()
+
+        # Extract fields
+        name = data.get("name")
+        email = data.get("email")
+        company = data.get("company")
+        job_roles = data.get("job_roles")
+        message = data.get("message")
+
+        if not name or not email or not message:
+            return jsonify({"error": "Missing required fields"}), 400
+
+        # For now, just print or log the inquiry
+        print(f"[Employer Inquiry] {name} ({email}) from {company}: {job_roles}")
+        print(f"Message: {message}")
+
+        # Optional: Send email notification (e.g., via SendGrid, SMTP, etc.)
+        # send_employer_email(name, email, company, job_roles, message)
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print("Employer Form Error:", e)
+        return jsonify({"error": "Internal Server Error"}), 500
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
