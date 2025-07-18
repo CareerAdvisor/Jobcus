@@ -1,73 +1,60 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // === Employer Inquiry Form Submission ===
-  const inquiryForm = document.getElementById('employerInquiryForm');
-  if (inquiryForm) {
-    inquiryForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+<!-- employers.html -->
+{% extends "base.html" %}
 
-      const formData = new FormData(inquiryForm);
-      const payload = {
-        name: formData.get('name'),
-        email: formData.get('email'),
-        company: formData.get('company'),
-        job_roles: formData.get('job_roles'),
-        message: formData.get('message')
-      };
+{% block title %}Employers – Jobcus{% endblock %}
 
-      const res = await fetch('/api/employer-inquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+{% block content %}
+<section class="employer-hero">
+  <div class="employer-hero-text">
+    <h1 style="color: #104879;">Hire Smarter with Jobcus</h1>
+    <p>Connect with top talent, generate job posts instantly, and streamline your recruitment process.</p>
+  </div>
+  <div class="employer-hero-image">
+    <img src="{{ url_for('static', filename='images/employer-hero.png') }}" alt="Employers" style="max-width: 100%; border-radius: 10px;">
+  </div>
+</section>
 
-      const result = await res.json();
-      const status = document.getElementById('inquiryStatus');
-      if (result.success) {
-        status.textContent = "✅ Inquiry submitted successfully!";
-        inquiryForm.reset();
-      } else {
-        status.textContent = `⚠️ ${result.error || "Submission failed."}`;
-      }
-    });
-  }
+<section class="employer-section" style="margin-top: 40px;">
+  <h2 style="color: #104879;">🤝 Employer Inquiry Form</h2>
+  <form id="employer-inquiry-form">
+    <label>Name</label>
+    <input type="text" name="name" required>
 
-  // === Employer Job Posting (AI Job Description) ===
-  const jobPostForm = document.getElementById('jobPostForm');
-  if (jobPostForm) {
-    jobPostForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    <label>Email</label>
+    <input type="email" name="email" required>
 
-      const formData = new FormData(jobPostForm);
-      const payload = {
-        jobTitle: formData.get('jobTitle'),
-        company: formData.get('company'),
-        summary: formData.get('summary')
-      };
+    <label>Company</label>
+    <input type="text" name="company">
 
-      const resultBox = document.getElementById('jobPostResult');
-      resultBox.innerHTML = "⏳ Generating job description...";
+    <label>Job Roles You're Hiring For</label>
+    <input type="text" name="job_roles">
 
-      try {
-        const res = await fetch('/api/employer/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+    <label>Message</label>
+    <textarea name="message" rows="4" required></textarea>
 
-        const data = await res.json();
+    <button type="submit" class="primary-btn">Submit Inquiry</button>
+    <div id="inquiry-response"></div>
+  </form>
+</section>
 
-        if (data.success) {
-          resultBox.innerHTML = `
-            <h3>📄 AI-Generated Job Description</h3>
-            <div class="job-description-box">${data.jobDescription}</div>
-          `;
-        } else {
-          resultBox.innerHTML = `⚠️ ${data.message}`;
-        }
-      } catch (err) {
-        console.error(err);
-        resultBox.innerHTML = "❌ An error occurred while generating the job post.";
-      }
-    });
-  }
-});
+<section class="employer-section" style="margin-top: 60px;">
+  <h2 style="color: #104879;">📝 AI-Powered Job Post Generator</h2>
+  <form id="job-post-form">
+    <label>Job Title</label>
+    <input type="text" name="jobTitle" required>
+
+    <label>Company Name</label>
+    <input type="text" name="company" required>
+
+    <label>Summary (Optional)</label>
+    <textarea name="summary" rows="3"></textarea>
+
+    <button type="submit" class="primary-btn">Generate Job Description</button>
+  </form>
+  <div id="job-description-output" style="margin-top: 20px; background: #f9f9f9; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='employers.js') }}"></script>
+{% endblock %}
