@@ -1128,7 +1128,6 @@ career-hero h1 {
 .interview-container {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 2rem 1rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
   background-color: #fefefe;
@@ -1138,7 +1137,7 @@ career-hero h1 {
 
 .interview-hero-full {
   width: 100%;
-  margin-top: 50px; /* adjust if header is fixed */
+  margin-top: 40px; /* adjust if header is fixed */
   overflow: hidden;
 }
 
@@ -1575,7 +1574,7 @@ button[type="submit"]:hover {
   padding: 0;
   margin: 0;
   overflow: hidden;
-  margin-top: 50px;
+  margin-top: 40px;
 }
 
 .employer-hero-full img {
