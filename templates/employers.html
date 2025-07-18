@@ -4,92 +4,71 @@
 {% block title %}Hire Talent – Jobcus{% endblock %}
 
 {% block content %}
-
-<!-- Hero Section -->
 <section class="employer-hero">
   <div class="employer-hero-text">
-    <h1 style="color:#104879;">Hire Top Talent Faster with Jobcus</h1>
-    <p>Post jobs, track applicants, and access AI resume screening with ease.</p>
+    <h1 style="color: #104879;">Find Your Next Great Hire</h1>
+    <p style="color: #333;">Post your job openings and get matched with qualified candidates instantly.</p>
   </div>
 </section>
 
-<!-- Why Employers Use Jobcus -->
-<section class="employer-benefits" style="background:#fff; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-  <h2 style="color:#104879;">Why Employers Love Jobcus</h2>
+<section class="employer-benefits">
+  <h2>Why Choose Jobcus?</h2>
   <ul>
-    <li>🎯 AI-powered resume screening</li>
-    <li>💼 Easy job posting & tracking</li>
-    <li>🔍 Access a pool of top job seekers</li>
-    <li>📊 Advanced analytics & insights</li>
+    <li>🎯 Targeted reach to job seekers actively looking in your industry</li>
+    <li>🤖 AI-powered resume screening & ranking</li>
+    <li>📈 Real-time application tracking</li>
+    <li>🔐 Secure employer dashboard</li>
   </ul>
 </section>
 
-<!-- Job Posting Form -->
-<section class="post-job-form">
-  <h2 style="color:#104879;">Post a Job</h2>
-  <form id="employerJobForm">
+<section class="employer-form-section">
+  <h2>Post a Job</h2>
+  <form id="employerForm">
     <label>Job Title</label>
-    <input type="text" name="title" required>
+    <input type="text" name="jobTitle" required>
 
     <label>Company Name</label>
     <input type="text" name="company" required>
 
-    <label>Location</label>
-    <input type="text" name="location" required>
-
     <label>Job Type</label>
-    <select name="type">
-      <option>Full-time</option>
-      <option>Part-time</option>
-      <option>Contract</option>
-      <option>Remote</option>
+    <select name="jobType" required>
+      <option value="full-time">Full-time</option>
+      <option value="part-time">Part-time</option>
+      <option value="contract">Contract</option>
+      <option value="remote">Remote</option>
     </select>
 
     <label>Job Description</label>
-    <textarea name="description" rows="5"></textarea>
+    <textarea name="description" rows="5" required></textarea>
 
     <label>Required Skills</label>
-    <input type="text" name="skills" placeholder="e.g., Python, React, Project Management">
+    <input type="text" name="skills" placeholder="e.g., Python, Communication, UX" required>
 
-    <button type="submit">📤 Submit Job</button>
+    <label>Application Email or URL</label>
+    <input type="text" name="applicationLink" required>
+
+    <button type="submit" class="primary-btn">Submit Job</button>
   </form>
-  <div id="job-submit-result"></div>
+  <div id="jobPostResult"></div>
 </section>
 
-<!-- Employer FAQ -->
 <section class="employer-faq">
-  <h2 style="color:#104879;">Frequently Asked Questions</h2>
-  <ul>
-    <li><strong>How does resume screening work?</strong> – Our AI evaluates resumes based on relevance, tone, and keywords.</li>
-    <li><strong>Is there a fee to post jobs?</strong> – Currently, job posting is free during our beta period.</li>
-    <li><strong>Can I track applicants?</strong> – Yes, you will soon have a dashboard to view applicants and their AI match scores.</li>
-  </ul>
+  <h2>Frequently Asked Questions</h2>
+  <details>
+    <summary>How long does my job post stay active?</summary>
+    <p>Each job post remains live for 30 days by default.</p>
+  </details>
+  <details>
+    <summary>Can I manage multiple jobs?</summary>
+    <p>Yes, create a free employer account to manage all your listings in one dashboard.</p>
+  </details>
+  <details>
+    <summary>Do you support sponsored job listings?</summary>
+    <p>Yes, reach more candidates with promoted jobs. Contact us for pricing.</p>
+  </details>
 </section>
-
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.getElementById('employerJobForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const formData = new FormData(this);
-  const data = Object.fromEntries(formData.entries());
-
-  const resultBox = document.getElementById("job-submit-result");
-  resultBox.innerHTML = "Submitting...";
-
-  try {
-    const res = await fetch("/api/post-job", {
-      method: "POST",
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const json = await res.json();
-    resultBox.innerHTML = `<p style='color:green;'>✅ ${json.message}</p>`;
-  } catch (err) {
-    console.error(err);
-    resultBox.innerHTML = "<p style='color:red;'>⚠️ Failed to post job.</p>";
-  }
-});
-</script>
+<script src="{{ url_for('static', filename='employer.js') }}"></script>
 {% endblock %}
