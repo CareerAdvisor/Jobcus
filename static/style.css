@@ -1137,8 +1137,9 @@ career-hero h1 {
 
 .interview-hero-full {
   width: 100%;
-  margin-top: 40px; /* adjust if header is fixed */
+  margin-top: 30px; /* adjust if header is fixed */
   overflow: hidden;
+  Margin-bottom: 30px;
 }
 
 .interview-hero-full img {
