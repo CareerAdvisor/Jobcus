@@ -13,24 +13,30 @@
 
   <!-- ✅ Corrected ID and field names for form -->
   <section class="interview-form-section">
-    <form id="interview-role-form">
-      <label for="previousRole">Your Previous Role</label>
-      <input type="text" id="previousRole" name="previousRole" placeholder="e.g., Customer Support Rep" required />
+  <!-- Call to Action -->
+  <p style="margin-bottom: 16px; font-weight: 500; color: #104879;">
+    Let’s tailor your interview simulation based on your background and career goal.
+  </p>
 
-      <label for="targetRole">Target Role</label>
-      <input type="text" id="targetRole" name="targetRole" placeholder="e.g., UX Designer" required />
+  <form id="interview-role-form">
+    <label for="previousRole">Your Previous Role</label>
+    <input type="text" id="previousRole" name="previousRole" placeholder="e.g., Customer Support Rep" required />
 
-      <label for="experience">Experience Level</label>
-      <select id="experience" name="experience" required>
-        <option value="">Select experience level</option>
-        <option value="Entry-level">Entry-level</option>
-        <option value="Mid-level">Mid-level</option>
-        <option value="Senior">Senior</option>
-      </select>
+    <label for="targetRole">Target Role</label>
+    <input type="text" id="targetRole" name="targetRole" placeholder="e.g., UX Designer" required />
 
-      <button type="submit">🎤 Start Interview</button>
-    </form>
-  </section>
+    <label for="experience">Experience Level</label>
+    <select id="experience" name="experience" required>
+      <option value="">Select experience level</option>
+      <option value="Entry-level">Entry-level</option>
+      <option value="Mid-level">Mid-level</option>
+      <option value="Senior">Senior</option>
+    </select>
+
+    <button type="submit">🎤 Start Interview</button>
+  </form>
+</section>
+
 
   <section class="interview-session" style="display: none;">
   <div id="ai-question" class="ai-question-box">
