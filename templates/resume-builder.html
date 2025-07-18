@@ -6,22 +6,24 @@
 {% block content %}
 
 <!-- Hero Section -->
-<section class="resume-hero">
-  <div class="resume-hero-text">
-    <div class="hero-heading-box">
-      <h1 class="hero-title">Build Your Professional Resume with AI</h1>
-      <p class="hero-sub">Create a tailored, ATS-optimized resume with our smart resume builder and analyzer.</p>
+<div class="interview-container">
+  <section class="interview-hero-with-image">
+    <div class="interview-hero-text">
+      <h1 style="color: #104879;">Build Your Professional Resume with AI</h1>
+      <p style="color: #333;">
+        Create a tailored, ATS-optimized resume with our smart resume builder and analyzer.
+      </p>
       <a href="#start-builder" class="primary-btn">Start Building</a>
     </div>
-  </div>
-  <div class="resume-hero-image">
-    <img src="{{ url_for('static', filename='images/resume-preview-banner1.png') }}" alt="Resume Preview" style="max-width: 100%; height: auto; border-radius: 8px;" />
-  </div>
-</section>
+    <div class="interview-hero-image">
+      <img src="{{ url_for('static', filename='images/resume-preview-banner1.png') }}" alt="Resume Preview" style="max-width: 100%; height: auto; border-radius: 8px;" />
+    </div>
+  </section>
+</div>
 
 <!-- Step-by-Step Guide -->
-<section class="resume-steps">
-  <h2>How It Works</h2>
+<section class="resume-steps" style="background: #fff; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; padding: 20px;">
+  <h2 style="color: #104879;">How It Works</h2>
   <div class="step-grid">
     <div class="step">
       <h3>1. Enter Your Details</h3>
@@ -52,17 +54,17 @@
 
 <!-- Template Gallery -->
 <section class="resume-gallery">
-  <h2>Explore Our Templates</h2>
+  <h2 style="color: #104879;">Explore Our Templates</h2>
   <div class="template-grid">
     <img src="{{ url_for('static', filename='images/template1.png') }}" alt="Template 1" class="template-img" style="width: 100%; height: auto;">
-    <img src="{{ url_for('static', filename='images//template2.png') }}" alt="Template 2" class="template-img" style="width: 100%; height: auto;">
-    <img src="{{ url_for('static', filename='images//template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
+    <img src="{{ url_for('static', filename='images/template2.png') }}" alt="Template 2" class="template-img" style="width: 100%; height: auto;">
+    <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
   </div>
 </section>
 
 <!-- Resume Builder Form -->
 <section id="start-builder" class="resume-builder-container">
-  <h1>📄 Build Your Resume with AI</h1>
+  <h1 style="color: #104879;">📄 Build Your Resume with AI</h1>
   <p class="subheading">Fill out the form below to generate a professional resume tailored to your career goals.</p>
 
   <form id="resumeForm">
@@ -114,7 +116,7 @@
 
 <!-- Resume Health Checker -->
 <section class="resume-analyzer">
-  <h2>Resume Health Checker</h2>
+  <h2 style="color: #104879;">Resume Health Checker</h2>
   <p>Paste your resume text below or upload your file to get a full analysis of strength, readability, keywords, and more.</p>
   <textarea id="resume-text" rows="8" placeholder="Paste your resume here..."></textarea>
   <p>OR</p>
@@ -145,3 +147,4 @@
   }
 </script>
 {% endblock %}
+ 
