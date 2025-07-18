@@ -1,40 +1,37 @@
 // static/employer.js
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("employer-form");
-  const status = document.getElementById("form-status");
+document.addEventListener('DOMContentLoaded', function () {
+  const employerForm = document.getElementById('employer-form');
+  const successMsg = document.getElementById('success-message');
 
-  form.addEventListener("submit", async function (e) {
+  employerForm.addEventListener('submit', async function (e) {
     e.preventDefault();
-    status.innerHTML = "⏳ Sending...";
-    status.style.color = "#333";
 
-    const formData = new FormData(form);
-    const payload = {};
+    const formData = new FormData(employerForm);
+    const data = {};
 
     formData.forEach((value, key) => {
-      payload[key] = value;
+      data[key] = value;
     });
 
     try {
-      const response = await fetch("/api/employer-inquiry", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const res = await fetch('/api/employer/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
       });
 
-      const data = await response.json();
+      const result = await res.json();
 
-      if (response.ok) {
-        status.innerHTML = "✅ Message sent successfully!";
-        status.style.color = "green";
-        form.reset();
+      if (res.ok && result.success) {
+        successMsg.innerHTML = `<p style="color: green;">✅ ${result.message}</p>`;
+        employerForm.reset();
       } else {
-        throw new Error(data.error || "Something went wrong.");
+        successMsg.innerHTML = `<p style="color: red;">❌ ${result.message || 'Something went wrong.'}</p>`;
       }
+
     } catch (err) {
-      console.error(err);
-      status.innerHTML = "❌ Failed to send message. Please try again.";
-      status.style.color = "red";
+      console.error('Submission error:', err);
+      successMsg.innerHTML = `<p style="color: red;">⚠️ Error submitting form. Please try again later.</p>`;
     }
   });
 });
