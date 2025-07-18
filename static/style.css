@@ -1548,6 +1548,20 @@ button[type="submit"]:hover {
 
 /* employers.css */
 
+.employer-hero-full {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.employer-hero-full img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
 .employer-hero {
   display: flex;
   flex-wrap: wrap;
