@@ -1,3 +1,4 @@
+<!-- resume-builder.html -->
 {% extends "base.html" %}
 
 {% block title %}Resume Builder – Jobcus{% endblock %}
@@ -24,33 +25,30 @@
 <section class="resume-steps" style="background: #fff; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; padding: 20px;">
   <h2 style="color: #104879;">How It Works</h2>
   <div class="step-grid">
-    {% for step in [
-      "Enter Your Details",
-      "Choose a Template",
-      "Let AI Do the Work",
-      "Analyse & Optimise",
-      "Download & Apply"
-    ] %}
-      <div class="step">
-        <h3>{{ loop.index }}. {{ step }}</h3>
-        <p>
-          {% if loop.index == 1 %}
-            Provide your education, work experience, skills, and accomplishments.
-          {% elif loop.index == 2 %}
-            Pick from professionally designed resume templates that suit your industry.
-          {% elif loop.index == 3 %}
-            Get personalised content suggestions and instant formatting.
-          {% elif loop.index == 4 %}
-            Use the Resume Health Checker to ensure your resume is recruiter-ready.
-          {% elif loop.index == 5 %}
-            Export in PDF or DOCX and start applying to jobs with confidence.
-          {% endif %}
-        </p>
-        {% if not loop.last %}
-          <span class="arrow" style="font-size: 24px;">↓</span>
-        {% endif %}
-      </div>
-    {% endfor %}
+    <div class="step">
+      <h3>1. Enter Your Details</h3>
+      <p>Provide your education, work experience, skills, and accomplishments.</p>
+      <span class="arrow" style="font-size: 24px;">↓</span>
+    </div>
+    <div class="step">
+      <h3>2. Choose a Template</h3>
+      <p>Pick from professionally designed resume templates that suit your industry.</p>
+      <span class="arrow" style="font-size: 24px;">↓</span>
+    </div>
+    <div class="step">
+      <h3>3. Let AI Do the Work</h3>
+      <p>Get personalised content suggestions and instant formatting.</p>
+      <span class="arrow" style="font-size: 24px;">↓</span>
+    </div>
+    <div class="step">
+      <h3>4. Analyze & Optimize</h3>
+      <p>Use the AI-powered Analyser to ensure your resume is recruiter-ready and job-specific.</p>
+      <span class="arrow" style="font-size: 24px;">↓</span>
+    </div>
+    <div class="step">
+      <h3>5. Download & Apply</h3>
+      <p>Export in PDF or DOCX and start applying to jobs with confidence.</p>
+    </div>
   </div>
 </section>
 
@@ -84,10 +82,10 @@
 
     <label>Education</label>
     <textarea name="education[]" placeholder="e.g., BSc in Computer Science, University of Lagos (2018–2022)"></textarea>
-  
+
     <label>Work Experience</label>
     <textarea name="experience[]" placeholder="List your roles and achievements..."></textarea>
-  
+
     <label>Skills</label>
     <textarea name="skills" placeholder="e.g., Python, Project Management"></textarea>
 
@@ -110,21 +108,24 @@
   </section>
 </section>
 
-<!-- Resume Health Checker -->
+<!-- Resume Health & ATS Analyzer -->
 <section class="resume-analyzer">
-  <h2 style="color: #104879;">Resume Health Checker</h2>
-  <p>Paste your resume text below or upload your file to get a full analysis of strength, readability, keywords, and more.</p>
-  <textarea id="resume-text" rows="8" placeholder="Paste your resume here..."></textarea>
-  <p>OR</p>
-  <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,.jpeg,.jpg,.png">
-  <button id="analyze-btn">Analyze Resume</button>
+  <h2 style="color: #104879;">AI Resume Analyzer</h2>
+  <p>Paste your resume and job description to get a detailed analysis of keyword match, readability, and formatting tips.</p>
+
+  <label>Paste Your Resume</label>
+  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
+
+  <label>Paste Target Job Description</label>
+  <textarea id="job-description" rows="6" placeholder="Paste the job description here..."></textarea>
+
+  <button id="analyze-btn">🔍 Analyze Resume</button>
+
   <div id="analyzer-result"></div>
 </section>
 
 {% endblock %}
 
 {% block scripts %}
-<!-- External Script References -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
 {% endblock %}
