@@ -1516,3 +1516,32 @@ button[type="submit"]:hover {
 .highlight {
   color: #ef8d02; /* Mild orange (lighter version of #ffc107) */
 }
+
+/* Spinner animation */
+.spinner {
+  border: 5px solid #ccc;
+  border-top: 5px solid #104879;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Fade-in animation for results */
+.fade-in {
+  animation: fadeIn 0.7s ease-in-out forwards;
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
