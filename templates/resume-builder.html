@@ -39,8 +39,18 @@
   <img 
     src="{{ url_for('static', filename='images/how-it-works-guide.png') }}" 
     alt="How It Works Guide" 
-    style="max-width: 100%; height: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-radius: 10px;" 
-  />
+    style="max-width: 100%; height: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-radius: 10px;"/>
+</section>
+
+<!-- Resume Health & ATS Analyzer -->
+<section class="resume-analyzer">
+  <h2 style="color: #104879;">AI Resume Analyzer</h2>
+  <p>Paste your resume and job description to get a detailed analysis of keyword match, readability, and formatting tips.</p>
+
+  <label>Paste Your Resume</label>
+  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
+  <button id="analyze-btn">🔍 Analyze Resume</button>
+  <div id="analyzer-result"></div>
 </section>
 
 <!-- Template Gallery -->
@@ -51,19 +61,6 @@
     <img src="{{ url_for('static', filename='images/template2.png') }}" alt="Template 2" class="template-img" style="width: 100%; height: auto;">
     <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
   </div>
-</section>
-
-<!-- Resume Health & ATS Analyzer -->
-<section class="resume-analyzer">
-  <h2 style="color: #104879;">AI Resume Analyzer</h2>
-  <p>Paste your resume and job description to get a detailed analysis of keyword match, readability, and formatting tips.</p>
-
-  <label>Paste Your Resume</label>
-  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
-
-  <button id="analyze-btn">🔍 Analyze Resume</button>
-
-  <div id="analyzer-result"></div>
 </section>
 
 <!-- Resume Builder Form -->
