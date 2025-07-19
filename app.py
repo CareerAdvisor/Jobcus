@@ -471,29 +471,35 @@ def analyze_resume():
 def employer_inquiry():
     try:
         data = request.get_json()
-        company = data.get("company")
+	    company = data.get("company")
         name = data.get("name")
         email = data.get("email")
-        phone = data.get("phone")
+	    phone = data.get("phone")
         job_roles = data.get("job_roles")
         message = data.get("message")
-
+        
         if not name or not email or not message:
             return jsonify({"error": "Missing required fields"}), 400
 
-        # Store to Supabase "employer_inquiries" table
+        # ✅ Log the payload for debugging
+        print("Employer Inquiry Payload:", data)
+
+        # ✅ Insert all fields including phone
         response = supabase.table("employer_inquiries").insert({
             "name": name,
             "email": email,
             "company": company,
             "job_roles": job_roles,
-            "message": message
+            "message": message,
+            "phone": phone
         }).execute()
 
         return jsonify({"success": True})
 
     except Exception as e:
         print("Employer Inquiry Error:", e)
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Internal Server Error"}), 500
 
 @app.route("/api/employer/submit", methods=["POST"])
