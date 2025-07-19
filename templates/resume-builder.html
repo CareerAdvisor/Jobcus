@@ -1,3 +1,4 @@
+
 <!-- resume-builder.html -->
 {% extends "base.html" %}
 
@@ -50,7 +51,10 @@
   <label for="resume-text" style="font-weight: bold;">Paste Your Resume</label>
   <textarea id="resume-text" rows="6" placeholder="Paste your resume here..." style="width: 100%; padding: 10px; margin-bottom: 20px;"></textarea>
 
-   <button id="analyze-btn" style="background-color: #104879; color: #fff; padding: 10px 20px; border: none; border-radius: 5px;">🔍 Analyze Resume</button>
+  <label for="resume-upload" style="font-weight: bold;">or Upload Resume File (PDF, DOCX, TXT)</label>
+  <input type="file" id="resume-upload" accept=".pdf,.doc,.docx,.txt" style="display: block; margin: 10px 0 20px;" />
+
+  <button id="analyze-btn" style="background-color: #104879; color: #fff; padding: 10px 20px; border: none; border-radius: 5px;">🔍 Analyze Resume</button>
 
   <div id="analyzer-result" style="margin-top: 20px;"></div>
 </section>
@@ -107,6 +111,7 @@
   <section id="resumePreview" style="display: none; margin-top: 40px;">
     <h2>🧾 Your AI-Generated Resume</h2>
     <div id="resumeOutput" class="resume-preview-box"></div>
+    <button id="downloadResumeBtn">⬇️ Download as PDF</button>
   </section>
 </section>
 
