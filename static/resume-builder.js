@@ -1,4 +1,3 @@
-
 document.getElementById('resumeForm').addEventListener('submit', async function (e) {
   e.preventDefault();
   const form = e.target;
@@ -39,13 +38,4 @@ document.getElementById('resumeForm').addEventListener('submit', async function 
   } catch (err) {
     output.innerHTML = '<p style="color:red;">❌ Server Error: ' + err.message + '</p>';
   }
-});
-
-document.getElementById('downloadResumeBtn').addEventListener('click', function () {
-  const resumeHtml = document.getElementById('resumeOutput').innerHTML;
-  const blob = new Blob([resumeHtml], { type: 'text/html' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'resume.html';
-  link.click();
 });
