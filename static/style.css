@@ -532,7 +532,7 @@ textarea#userInput {
 .header-left {
   display: flex;
   align-items: center;
-  padding-left: 1rem;
+  padding-left: 10px;
 }
 
 .header-pencil-icon {
@@ -547,7 +547,7 @@ textarea#userInput {
   justify-content: flex-start;
   align-items: center;
   flex: 1;
-  padding-left: 1rem;
+  padding-left: 10px;
 }
 
 /* On chat page: center the logo */
