@@ -1741,6 +1741,10 @@ form textarea {
   line-height: 1.5;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 @media (max-width: 768px) {
   .container,
   main,
