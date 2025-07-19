@@ -4,8 +4,6 @@ document.getElementById('resumeForm').addEventListener('submit', async function 
   const form = e.target;
   const formData = {
     fullName: form.fullName.value,
-    email: form.email.value,
-    phone: form.phone.value,
     summary: form.summary.value,
     education: form.education.value,
     experience: form.experience.value,
@@ -15,11 +13,8 @@ document.getElementById('resumeForm').addEventListener('submit', async function 
     portfolio: form.portfolio.value
   };
 
-  const preview = document.getElementById('resumePreview');
-  const output = document.getElementById('resumeOutput');
-  const scoreBox = document.getElementById('resumeScore');
+  const output = document.getElementById('resumePreview');
   output.innerHTML = '<p>⏳ Generating your resume...</p>';
-  preview.style.display = 'block';
 
   try {
     const res = await fetch('/generate-resume', {
@@ -30,22 +25,10 @@ document.getElementById('resumeForm').addEventListener('submit', async function 
     const data = await res.json();
     if (data.formatted_resume) {
       output.innerHTML = data.formatted_resume;
-      const resumeLength = data.formatted_resume.split(' ').length;
-      const score = Math.min(100, Math.floor(resumeLength / 5 + 60));
-      scoreBox.innerHTML = `<h3>📈 Resume Score: ${score}/100</h3>`;
     } else {
-      output.innerHTML = '<p style="color:red;">❌ Could not generate resume.</p>';
+      output.innerHTML = '<p style="color:red;">❌ Failed to generate resume.</p>';
     }
   } catch (err) {
-    output.innerHTML = '<p style="color:red;">❌ Server Error: ' + err.message + '</p>';
+    output.innerHTML = '<p style="color:red;">❌ Error: ' + err.message + '</p>';
   }
-});
-
-document.getElementById('downloadResumeBtn').addEventListener('click', function () {
-  const resumeHtml = document.getElementById('resumeOutput').innerHTML;
-  const blob = new Blob([resumeHtml], { type: 'text/html' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'resume.html';
-  link.click();
 });
