@@ -1,65 +1,75 @@
+<!-- Add this inside your <script> or in employers.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.7.0/docx.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
 document.addEventListener("DOMContentLoaded", function () {
-  const inquiryForm = document.getElementById("employer-inquiry-form");
   const jobPostForm = document.getElementById("job-post-form");
   const output = document.getElementById("job-description-output");
+  const downloadOptions = document.getElementById("download-options");
 
-  // ============================
-  // 📨 Employer Inquiry Handler
-  // ============================
-  if (inquiryForm) {
-    inquiryForm.addEventListener("submit", async function (e) {
-      e.preventDefault();
+  const txtBtn = document.getElementById("download-txt");
+  const docxBtn = document.getElementById("download-docx");
+  const pdfBtn = document.getElementById("download-pdf");
 
-      const formData = new FormData(inquiryForm);
-      const payload = Object.fromEntries(formData.entries());
+  let generatedText = "";
 
-      try {
-        const response = await fetch("/api/employer-inquiry", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+  jobPostForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const formData = new FormData(jobPostForm);
+    const payload = Object.fromEntries(formData.entries());
 
-        const result = await response.json();
-
-        document.getElementById("inquiry-response").innerText = result.success
-          ? "✅ Inquiry submitted!"
-          : "❌ Submission failed.";
-      } catch (error) {
-        console.error("Employer Inquiry Error:", error);
-        document.getElementById("inquiry-response").innerText = "❌ Something went wrong.";
-      }
+    const response = await fetch("/api/employer/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-  }
 
-  // =====================================
-  // 🤖 AI-Powered Job Post Generator
-  // =====================================
-  if (jobPostForm) {
-    jobPostForm.addEventListener("submit", async function (e) {
-      e.preventDefault();
+const result = await response.json();
+const output = document.getElementById("job-description-output");
+const downloadOptions = document.getElementById("download-options");
 
-      const formData = new FormData(jobPostForm);
-      const payload = Object.fromEntries(formData.entries());
+if (result.success) {
+  generatedText = result.jobDescription;
+  output.innerHTML = `<h3>Generated Description:</h3><p>${generatedText.replace(/\n/g, "<br>")}</p>`;
+  downloadOptions.style.display = "flex"; // show download buttons
+} else {
+  output.innerText = "❌ Error generating job post.";
+  downloadOptions.style.display = "none";
+}
 
-      try {
-        const response = await fetch("/api/employer/submit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+  // Download .txt
+  txtBtn.addEventListener("click", () => {
+    const blob = new Blob([generatedText], { type: "text/plain;charset=utf-8" });
+    saveAs(blob, "job_description.txt");
+  });
 
-        const result = await response.json();
-
-        if (result.success) {
-          output.innerHTML = `<h3>Generated Description:</h3><p>${result.jobDescription.replace(/\n/g, "<br>")}</p>`;
-        } else {
-          output.innerText = "❌ Error generating job post.";
-        }
-      } catch (error) {
-        console.error("Job Post Generation Error:", error);
-        output.innerText = "❌ Something went wrong.";
-      }
+  // Download .docx using docx.js
+  docxBtn.addEventListener("click", () => {
+    const doc = new window.docx.Document({
+      sections: [{
+        properties: {},
+        children: [
+          new window.docx.Paragraph({
+            children: generatedText.split("\n").map(line => new window.docx.Paragraph(line))
+          })
+        ]
+      }]
     });
-  }
+
+    window.docx.Packer.toBlob(doc).then(blob => {
+      saveAs(blob, "job_description.docx");
+    });
+  });
+
+  // Download .pdf using jsPDF
+  pdfBtn.addEventListener("click", () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const lines = doc.splitTextToSize(generatedText, 180);
+    doc.text(lines, 10, 20);
+    doc.save("job_description.pdf");
+  });
 });
+</script>
