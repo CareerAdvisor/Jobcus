@@ -1741,3 +1741,11 @@ form textarea {
   line-height: 1.5;
 }
 
+@media (max-width: 768px) {
+  .container,
+  main,
+  .input-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
