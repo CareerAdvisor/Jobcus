@@ -935,37 +935,42 @@ career-hero h1 {
 }
 
 .skill-gap-form label {
-  font-weight: bold;
-  margin-top: 1rem;
   display: block;
-  color: #333;
+  margin-bottom: 8px;
+  color: #104879;
+  font-weight: bold;
+  transition: color 0.3s;
 }
 
 .skill-gap-form input,
 .skill-gap-form textarea {
   width: 100%;
-  padding: 0.75rem;
-  margin-top: 0.3rem;
+  padding: 12px;
   border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
-  resize: vertical;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  transition: border-color 0.3s ease;
+}
+
+.skill-gap-form input:focus,
+.skill-gap-form textarea:focus {
+  border-color: #104879;
+  outline: none;
 }
 
 .skill-gap-form button {
-  margin-top: 1.2rem;
   background-color: #104879;
   color: white;
+  padding: 12px 24px;
   border: none;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
   border-radius: 8px;
+  font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.3s ease;
 }
 
 .skill-gap-form button:hover {
-  background-color: #0c3964;
+  background-color: #08365e;
 }
 
 #skill-gap-result {
@@ -979,12 +984,78 @@ career-hero h1 {
   border-radius: 8px;
 }
 
+.skill-gap-result .result-box {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  min-height: 100px;
+  color: #104879;
+  font-size: 1rem;
+  animation: fadeIn 1.5s ease-in-out;
+}
+
+.skill-gap-hero {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: fadeInUp 1s ease-in-out;
+}
+
+.skill-gap-hero img {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto 20px;
+  display: block;
+}
+
+.skill-gap-hero h1 {
+  color: #104879;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.skill-gap-hero p {
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.skill-gap-form {
+  background-color: #ffc957;
+  padding: 30px;
+  border-radius: 12px;
+  margin-bottom: 40px;
+  animation: fadeIn 1.2s ease-in-out;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Skill Gap Page Styles */
 .skill-gap-container {
-  padding: 1.5rem;
-  max-width: 600px;
-  margin: auto;
-  animation: fadeSlideIn 0.5s ease-in-out;
+  background-color: #f9fcfe;
+  padding: 40px 20px;
+  border-radius: 16px;
+  max-width: 960px;
+  margin: 40px auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
 .skill-gap-container h1 {
