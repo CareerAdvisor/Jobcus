@@ -1,0 +1,60 @@
+<!-- resume-builder.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume Builder – Jobcus</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Hero Section -->
+<section style="padding: 30px; text-align: center;">
+  <h1 style="color: #104879;">Get Hired Faster with an Optimized Resume</h1>
+  <p>Create an ATS-friendly resume using AI tools. Paste or upload your resume for instant analysis.</p>
+  <a href="#resume-analyzer" class="primary-btn" style="background-color: #104879; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Analyze My Resume</a>
+</section>
+
+<!-- Resume Analyzer -->
+<section id="resume-analyzer" style="padding: 30px;">
+  <h2 style="color: #104879;">AI Resume Analyzer</h2>
+  <label>Paste Your Resume</label><br>
+  <textarea id="resume-text" rows="6" style="width: 100%; margin-bottom: 10px;"></textarea><br>
+
+  <label>or Upload Resume File (PDF, DOCX, TXT)</label><br>
+  <input type="file" id="resume-upload" accept=".pdf,.doc,.docx,.txt"><br><br>
+
+  <button id="analyze-btn" style="background-color: #104879; color: white; padding: 10px 20px; border: none;">Analyze Resume</button>
+
+  <div id="analyzer-result" style="margin-top: 20px;"></div>
+</section>
+
+<!-- Resume Builder -->
+<section id="start-builder" style="padding: 30px;">
+  <h2 style="color: #104879;">Build Your Resume with AI</h2>
+  <form id="resumeForm" style="display: flex; flex-direction: column; gap: 12px;">
+    <input type="text" name="fullName" placeholder="Full Name" required>
+    <input type="email" name="email" placeholder="Email Address" required>
+    <input type="tel" name="phone" placeholder="Phone Number" required>
+    <textarea name="summary" placeholder="Professional Summary"></textarea>
+    <textarea name="education[]" placeholder="Education (e.g. BSc in Computer Science, 2018–2022)"></textarea>
+    <textarea name="experience[]" placeholder="Work Experience"></textarea>
+    <textarea name="skills" placeholder="Skills"></textarea>
+    <textarea name="certifications" placeholder="Certifications"></textarea>
+    <input type="text" name="languages" placeholder="Languages">
+    <input type="url" name="portfolio" placeholder="LinkedIn / Portfolio URL">
+
+    <button type="submit" style="background-color: #104879; color: white; padding: 10px;">Generate Resume</button>
+  </form>
+
+  <div id="resumePreview" style="margin-top: 30px; display: none;">
+    <h3>Your AI-Generated Resume</h3>
+    <div id="resumeOutput" style="border: 1px solid #ccc; padding: 20px; background: #f9f9f9;"></div>
+    <button id="downloadResumeBtn" style="margin-top: 10px; padding: 8px;">Download as HTML</button>
+  </div>
+</section>
+
+<script src="final-resume-builder.js"></script>
+</body>
+</html>
