@@ -1,59 +1,51 @@
-document.getElementById('analyze-btn').addEventListener('click', async function () {
-  const resultContainer = document.getElementById('analyzer-result');
-  const textArea = document.getElementById('resume-text');
-  const fileInput = document.getElementById('resumeFile');
 
-  // Show spinner
-  resultContainer.innerHTML = `
-    <div class="spinner"></div>
-    <p style="text-align: center;">⏳ Analyzing your resume...</p>
-  `;
+document.getElementById('resumeForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const form = e.target;
+  const formData = {
+    fullName: form.fullName.value,
+    email: form.email.value,
+    phone: form.phone.value,
+    summary: form.summary.value,
+    education: form.education.value,
+    experience: form.experience.value,
+    skills: form.skills.value,
+    certifications: form.certifications.value,
+    languages: form.languages.value,
+    portfolio: form.portfolio.value
+  };
 
-  let resumeText = textArea.value.trim();
+  const preview = document.getElementById('resumePreview');
+  const output = document.getElementById('resumeOutput');
+  const scoreBox = document.getElementById('resumeScore');
+  output.innerHTML = '<p>⏳ Generating your resume...</p>';
+  preview.style.display = 'block';
 
-  if (!resumeText && fileInput.files.length > 0) {
-    const file = fileInput.files[0];
-    if (file.type.includes('pdf')) {
-      const reader = new FileReader();
-      reader.onload = async function (e) {
-        const base64PDF = e.target.result.split(',')[1];
-        sendToAnalyzer({ pdf: base64PDF });
-      };
-      reader.readAsDataURL(file);
-      return;
+  try {
+    const res = await fetch('/generate-resume', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+    const data = await res.json();
+    if (data.formatted_resume) {
+      output.innerHTML = data.formatted_resume;
+      const resumeLength = data.formatted_resume.split(' ').length;
+      const score = Math.min(100, Math.floor(resumeLength / 5 + 60));
+      scoreBox.innerHTML = `<h3>📈 Resume Score: ${score}/100</h3>`;
     } else {
-      resumeText = await file.text();
+      output.innerHTML = '<p style="color:red;">❌ Could not generate resume.</p>';
     }
+  } catch (err) {
+    output.innerHTML = '<p style="color:red;">❌ Server Error: ' + err.message + '</p>';
   }
+});
 
-  if (!resumeText) {
-    resultContainer.innerHTML = '<p style="color:red;">Please paste your resume or upload a file.</p>';
-    return;
-  }
-
-  sendToAnalyzer({ text: resumeText });
-
-  async function sendToAnalyzer(payload) {
-    try {
-      const res = await fetch('/api/analyze-resume', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      resultContainer.innerHTML = `
-        <div class="fade-in">
-          <h3>✅ AI Feedback</h3>
-          <p>${data.analysis}</p>
-          <h3>📊 ATS Keyword Match</h3>
-          <ul>
-            ${data.keywords.map(k => `<li>${k}</li>`).join('')}
-          </ul>
-        </div>
-      `;
-    } catch (err) {
-      console.error(err);
-      resultContainer.innerHTML = "<p style='color:red;'>⚠️ Error analyzing resume. Please try again.</p>";
-    }
-  }
+document.getElementById('downloadResumeBtn').addEventListener('click', function () {
+  const resumeHtml = document.getElementById('resumeOutput').innerHTML;
+  const blob = new Blob([resumeHtml], { type: 'text/html' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'resume.html';
+  link.click();
 });
