@@ -471,13 +471,13 @@ def analyze_resume():
 def employer_inquiry():
     try:
         data = request.get_json()
-	company = data.get("company")
         name = data.get("name")
         email = data.get("email")
-	phone = data.get("phone")
+        company = data.get("company")
         job_roles = data.get("job_roles")
         message = data.get("message")
-        
+        phone = data.get("phone")  # ✅ Add this line
+
         if not name or not email or not message:
             return jsonify({"error": "Missing required fields"}), 400
 
