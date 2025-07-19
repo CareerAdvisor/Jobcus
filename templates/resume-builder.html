@@ -1,4 +1,3 @@
-
 <!-- resume-builder.html -->
 {% extends "base.html" %}
 
@@ -43,18 +42,17 @@
     style="max-width: 100%; height: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-radius: 10px;"/>
 </section>
 
-<!-- Resume Health & ATS Analyzer -->
 <section id="start-builder" class="resume-analyzer" style="padding: 40px 20px;">
-  <h2 style="color: #104879;">AI Resume Analyzer</h2> </br>
-  <p>Paste your resume or upload your file to get a detailed analysis of keyword match, readability, and formatting tips.</p></br>
+  <h2 style="color: #104879;">AI Resume Analyzer</h2>
+  <p>Paste your resume or upload your file to get a detailed analysis.</p>
 
-  <label for="resume-text" style="font-weight: bold;">Paste Your Resume</label>
-  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..." style="width: 100%; padding: 10px; margin-bottom: 20px;"></textarea>
+  <label>Paste Your Resume</label>
+  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..." style="width: 100%; padding: 10px;"></textarea>
 
-  <label for="resume-upload" style="font-weight: bold;">or Upload Resume File (PDF, DOCX, TXT)</label>
-  <input type="file" id="resume-upload" accept=".pdf,.doc,.docx,.txt" style="display: block; margin: 10px 0 20px;" />
+  <label>Upload Resume File (PDF, DOCX, TXT)</label>
+  <input type="file" id="resume-upload" accept=".pdf,.doc,.docx,.txt" style="margin: 10px 0;" />
 
-  <button id="analyze-btn" style="background-color: #104879; color: #fff; padding: 10px 20px; border: none; border-radius: 5px;">🔍 Analyze Resume</button>
+  <button id="analyze-btn" style="background-color: #104879; color: #fff; padding: 10px 20px; border: none;">🔍 Analyze Resume</button>
 
   <div id="analyzer-result" style="margin-top: 20px;"></div>
 </section>
