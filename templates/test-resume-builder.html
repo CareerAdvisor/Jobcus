@@ -1,0 +1,84 @@
+
+<!-- test-resume-builder.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Resume Builder</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #resumePreview { margin-top: 20px; border: 1px solid #ccc; padding: 20px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+  <h1>AI Resume Builder Test</h1>
+
+  <form id="resumeForm">
+    <label>Full Name</label>
+    <input type="text" name="fullName" required><br><br>
+
+    <label>Summary</label>
+    <textarea name="summary" required></textarea><br><br>
+
+    <label>Education</label>
+    <textarea name="education" required></textarea><br><br>
+
+    <label>Experience</label>
+    <textarea name="experience" required></textarea><br><br>
+
+    <label>Skills</label>
+    <textarea name="skills" required></textarea><br><br>
+
+    <label>Certifications</label>
+    <textarea name="certifications"></textarea><br><br>
+
+    <label>Languages</label>
+    <input type="text" name="languages"><br><br>
+
+    <label>Portfolio</label>
+    <input type="url" name="portfolio"><br><br>
+
+    <button type="submit">Generate Resume</button>
+  </form>
+
+  <div id="resumePreview"></div>
+
+  <script>
+    document.getElementById('resumeForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const form = e.target;
+      const formData = {
+        fullName: form.fullName.value,
+        summary: form.summary.value,
+        education: form.education.value,
+        experience: form.experience.value,
+        skills: form.skills.value,
+        certifications: form.certifications.value,
+        languages: form.languages.value,
+        portfolio: form.portfolio.value
+      };
+
+      const output = document.getElementById('resumePreview');
+      output.innerHTML = '<p>⏳ Generating your resume...</p>';
+
+      try {
+        const res = await fetch('/generate-resume', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        const data = await res.json();
+        if (data.formatted_resume) {
+          output.innerHTML = data.formatted_resume;
+        } else {
+          output.innerHTML = '<p style="color:red;">❌ Failed to generate resume.</p>';
+        }
+      } catch (err) {
+        output.innerHTML = '<p style="color:red;">❌ Error: ' + err.message + '</p>';
+      }
+    });
+  </script>
+
+</body>
+</html>
