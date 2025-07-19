@@ -26,19 +26,18 @@ document.addEventListener("DOMContentLoaded", function () {
       body: JSON.stringify(payload),
     });
 
-    const result = await response.json();
+const result = await response.json();
+const output = document.getElementById("job-description-output");
+const downloadOptions = document.getElementById("download-options");
 
-    if (result.success) {
-      generatedText = result.jobDescription;
-      output.innerHTML = `<h3>Generated Description:</h3><p>${generatedText.replace(/\n/g, "<br>")}</p>`;
-      downloadOptions.style.display = "flex";
-      downloadOptions.style.gap = "10px";
-      downloadOptions.style.flexWrap = "wrap";
-    } else {
-      output.innerText = "❌ Error generating job post.";
-      downloadOptions.style.display = "none";
-    }
-  });
+if (result.success) {
+  generatedText = result.jobDescription;
+  output.innerHTML = `<h3>Generated Description:</h3><p>${generatedText.replace(/\n/g, "<br>")}</p>`;
+  downloadOptions.style.display = "flex"; // show download buttons
+} else {
+  output.innerText = "❌ Error generating job post.";
+  downloadOptions.style.display = "none";
+}
 
   // Download .txt
   txtBtn.addEventListener("click", () => {
