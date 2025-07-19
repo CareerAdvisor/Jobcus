@@ -42,20 +42,14 @@
     style="max-width: 100%; height: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-radius: 10px;"/>
 </section>
 
-<section id="start-builder" class="resume-analyzer" style="padding: 40px 20px;">
-  <h2 style="color: #104879;">AI Resume Analyzer</h2>
-  <p>Paste your resume or upload your file to get a detailed analysis.</p>
-
-  <label>Paste Your Resume</label>
-  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..." style="width: 100%; padding: 10px;"></textarea>
-
-  <label>Upload Resume File (PDF, DOCX, TXT)</label>
-  <input type="file" id="resume-upload" accept=".pdf,.doc,.docx,.txt" style="margin: 10px 0;" />
-
-  <button id="analyze-btn" style="background-color: #104879; color: #fff; padding: 10px 20px; border: none;">🔍 Analyze Resume</button>
-
-  <div id="analyzer-result" style="margin-top: 20px;"></div>
-</section>
+  <!-- Resume Analyzer -->
+  <section id="resume-analyzer" style="padding: 40px;">
+    <h2>🔍 AI Resume Analyzer</h2>
+    <textarea id="resume-text" placeholder="Paste your resume text here..."></textarea>
+    <input type="file" id="resumeFile" accept=".pdf,.txt,.docx" />
+    <button id="analyze-btn">Analyze Resume</button>
+    <div id="analyzer-result"></div>
+  </section>
 
 <!-- Template Gallery -->
 <section class="resume-gallery">
@@ -67,51 +61,45 @@
   </div>
 </section>
 
-<!-- Resume Builder Form -->
-<section id="start-builder" class="resume-builder-container" style="padding: 40px 20px; max-width: 800px; margin: 0 auto;">
-  <h1 style="color: #104879;">📄 Build Your Resume with AI</h1>
-  <p class="subheading">Fill out the form below to generate a professional resume tailored to your career goals.</p>
+<h1>🛠 Resume Builder & Analyzer</h1>
 
-  <form id="resumeForm" style="display: flex; flex-direction: column; gap: 16px;">
-    <label>Full Name</label>
-    <input type="text" name="fullName" required>
+  <!-- Resume Builder -->
+  <section id="builder-section">
+    <h2>📄 Resume Builder</h2>
+    <form id="resumeForm">
+      <label>Full Name</label>
+      <input type="text" name="fullName" required>
 
-    <label>Email Address</label>
-    <input type="email" name="email" required>
+      <label>Summary</label>
+      <textarea name="summary" required></textarea>
 
-    <label>Phone Number</label>
-    <input type="tel" name="phone" required>
+      <label>Education</label>
+      <textarea name="education" required></textarea>
 
-    <label>Professional Summary</label>
-    <textarea name="summary" rows="3"></textarea>
+      <label>Experience</label>
+      <textarea name="experience" required></textarea>
 
-    <label>Education</label>
-    <textarea name="education[]" placeholder="e.g., BSc in Computer Science, University of Lagos (2018–2022)"></textarea>
+      <label>Skills</label>
+      <textarea name="skills" required></textarea>
 
-    <label>Work Experience</label>
-    <textarea name="experience[]" placeholder="List your roles and achievements..."></textarea>
+      <label>Certifications</label>
+      <textarea name="certifications"></textarea>
 
-    <label>Skills</label>
-    <textarea name="skills" placeholder="e.g., Python, Project Management"></textarea>
+      <label>Languages</label>
+      <input type="text" name="languages">
 
-    <label>Certifications</label>
-    <textarea name="certifications" placeholder="e.g., CompTIA A+, PMP, AWS Certified"></textarea>
+      <label>Portfolio</label>
+      <input type="url" name="portfolio">
 
-    <label>Languages</label>
-    <input type="text" name="languages" placeholder="e.g., English, French">
+      <button type="submit">✨ Generate Resume</button>
+    </form>
 
-    <label>LinkedIn / Portfolio URL</label>
-    <input type="url" name="portfolio">
-
-    <button type="submit" class="generate-btn">✨ Generate Resume</button>
-  </form>
-
-  <section id="resumePreview" style="display: none; margin-top: 40px;">
-    <h2>🧾 Your AI-Generated Resume</h2>
-    <div id="resumeOutput" class="resume-preview-box"></div>
-    <button id="downloadResumeBtn">⬇️ Download as PDF</button>
+    <div id="resumePreview" class="resume-output" style="display:none;">
+      <h3>🧾 Your AI Resume</h3>
+      <div id="resumeOutput"></div>
+      <button id="downloadResumeBtn">⬇️ Download Resume as HTML</button>
+    </div>
   </section>
-</section>
 
 {% endblock %}
 
