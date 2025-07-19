@@ -25,16 +25,16 @@
     </ul>
 
     <a href="#start-builder" class="primary-btn" style="background-color: #104879; padding: 12px 24px; color: white; border-radius: 6px; text-decoration: none; font-weight: 600;">
-      ANALYZE MY RESUME
+    ANALYZE MY RESUME
     </a>
 
     <div style="margin-top: 20px;">
-      <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
+    <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
     </div>
-  </section>
-</div>
+    </section>
+    </div>
 
-<!-- Step-by-Step Guide -->
+  <!-- Step-by-Step Guide -->
 <section class="resume-steps" style="text-align: center; background: #fff; padding: 30px 20px;">
   <img 
     src="{{ url_for('static', filename='images/how-it-works-guide.png') }}" 
@@ -43,15 +43,21 @@
 </section>
 
 <!-- Resume Health & ATS Analyzer -->
-<section class="resume-analyzer">
+<section id="start-builder" class="resume-analyzer" style="padding: 40px 20px;">
   <h2 style="color: #104879;">AI Resume Analyzer</h2>
-  <p>Paste your resume and job description to get a detailed analysis of keyword match, readability, and formatting tips.</p>
+  <p>Paste your resume or upload your file to get a detailed analysis of keyword match, readability, and formatting tips.</p>
 
-  <label>Paste Your Resume</label>
-  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
-  <button id="analyze-btn">🔍 Analyze Resume</button>
-  <div id="analyzer-result"></div>
+  <label for="resume-text" style="font-weight: bold;">Paste Your Resume</label>
+  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..." style="width: 100%; padding: 10px; margin-bottom: 20px;"></textarea>
+
+  <label for="resume-upload" style="font-weight: bold;">or Upload Resume File (PDF, DOCX, TXT)</label>
+  <input type="file" id="resume-upload" accept=".pdf,.doc,.docx,.txt" style="display: block; margin: 10px 0 20px;" />
+
+  <button id="analyze-btn" style="background-color: #104879; color: #fff; padding: 10px 20px; border: none; border-radius: 5px;">🔍 Analyze Resume</button>
+
+  <div id="analyzer-result" style="margin-top: 20px;"></div>
 </section>
+
 
 <!-- Template Gallery -->
 <section class="resume-gallery">
@@ -64,12 +70,12 @@
 </section>
 
 <!-- Resume Builder Form -->
-<section id="start-builder" class="resume-builder-container">
+<section id="start-builder" class="resume-builder-container" style="padding: 40px 20px; max-width: 800px; margin: 0 auto;">
   <h1 style="color: #104879;">📄 Build Your Resume with AI</h1>
   <p class="subheading">Fill out the form below to generate a professional resume tailored to your career goals.</p>
 
-  <form id="resumeForm">
-    <label style="margin-top: 20px;">Full Name</label>
+  <form id="resumeForm" style="display: flex; flex-direction: column; gap: 16px;">
+    <label>Full Name</label>
     <input type="text" name="fullName" required>
 
     <label>Email Address</label>
@@ -102,7 +108,7 @@
     <button type="submit" class="generate-btn">✨ Generate Resume</button>
   </form>
 
-  <section id="resumePreview" style="display: none;">
+  <section id="resumePreview" style="display: none; margin-top: 40px;">
     <h2>🧾 Your AI-Generated Resume</h2>
     <div id="resumeOutput" class="resume-preview-box"></div>
     <button id="downloadResumeBtn">⬇️ Download as PDF</button>
