@@ -1,110 +1,122 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Resume Builder & Analyzer</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f5f7fa;
-    }
-    h1, h2 {
-      color: #104879;
-    }
-    textarea, input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      margin-bottom: 15px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #104879;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0d3c67;
-    }
-    section {
-      background: #fff;
-      border: 1px solid #ddd;
-      padding: 25px;
-      border-radius: 8px;
-      margin-bottom: 40px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    }
-    .resume-output {
-      margin-top: 20px;
-      border: 1px solid #aaa;
-      padding: 20px;
-      border-radius: 8px;
-      background: #f9f9f9;
-    }
-  </style>
-</head>
-<body>
 
-  <h1>🛠 Resume Builder & Analyzer</h1>
+<!-- resume-builder.html -->
+{% extends "base.html" %}
 
-  <!-- Resume Builder -->
-  <section id="builder-section">
-    <h2>📄 Resume Builder</h2>
-    <form id="resumeForm">
-      <label>Full Name</label>
-      <input type="text" name="fullName" required>
+{% block title %}Resume Builder – Jobcus{% endblock %}
 
-      <label>Summary</label>
-      <textarea name="summary" required></textarea>
+{% block content %}
 
-      <label>Education</label>
-      <textarea name="education" required></textarea>
+<!-- Hero Section -->
+<div class="interview-container" style="padding: 30px 10px; background: #fff;">
+  <section class="interview-hero-with-image" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+    <h5 style="color: #6B7280; font-weight: 600; font-size: 14px; letter-spacing: 1px;">AI RESUME BUILDER</h5>
 
-      <label>Experience</label>
-      <textarea name="experience" required></textarea>
+    <h1 style="font-size: 28px; font-weight: 700; color: #000; margin: 10px 0;">
+      Get Hired 2x Faster <br>with an <span style="color: #ee9e12;">Optimized Resume</span>
+    </h1>
 
-      <label>Skills</label>
-      <textarea name="skills" required></textarea>
+    <p style="max-width: 400px; color: #333; font-size: 16px; margin: 10px 0 20px;">
+      Improve your resume with AI suggestions<br>and a recruiter-friendly format.
+    </p>
 
-      <label>Certifications</label>
-      <textarea name="certifications"></textarea>
+    <ul style="list-style: none; padding: 0; margin-bottom: 15px; color: #000;">
+      <li style="margin-bottom: 8px;">✅ ATS Resume Templates</li>
+      <li style="margin-bottom: 8px;">✅ Resume Score</li>
+      <li>✅ One Click Optimizer</li>
+    </ul>
 
-      <label>Languages</label>
-      <input type="text" name="languages">
+    <a href="#start-builder" class="primary-btn" style="background-color: #104879; padding: 12px 24px; color: white; border-radius: 6px; text-decoration: none; font-weight: 600;">
+    ANALYZE MY RESUME
+    </a>
 
-      <label>Portfolio</label>
-      <input type="url" name="portfolio">
-
-      <button type="submit">✨ Generate Resume</button>
-    </form>
-
-    <div id="resumePreview" class="resume-output" style="display:none;">
-      <h3>🧾 Your AI Resume</h3>
-      <div id="resumeOutput"></div>
-      <button id="downloadResumeBtn">⬇️ Download Resume as HTML</button>
+    <div style="margin-top: 20px;">
+    <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
     </div>
+    </section>
+    </div>
+
+  <!-- Step-by-Step Guide -->
+<section class="resume-steps" style="text-align: center; background: #fff; padding: 30px 20px;">
+  <img 
+    src="{{ url_for('static', filename='images/how-it-works-guide.png') }}" 
+    alt="How It Works Guide" 
+    style="max-width: 100%; height: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-radius: 10px;"/>
+</section>
+
+<!-- Resume Health & ATS Analyzer -->
+<section id="start-builder" class="resume-analyzer" style="padding: 40px 20px;">
+  <h2 style="color: #104879;">AI Resume Analyzer</h2> </br>
+  <p>Paste your resume or upload your file to get a detailed analysis of keyword match, readability, and formatting tips.</p></br>
+
+  <label for="resume-text" style="font-weight: bold;">Paste Your Resume</label>
+  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..." style="width: 100%; padding: 10px; margin-bottom: 20px;"></textarea>
+
+  <label for="resume-upload" style="font-weight: bold;">or Upload Resume File (PDF, DOCX, TXT)</label>
+  <input type="file" id="resume-upload" accept=".pdf,.doc,.docx,.txt" style="display: block; margin: 10px 0 20px;" />
+
+  <button id="analyze-btn" style="background-color: #104879; color: #fff; padding: 10px 20px; border: none; border-radius: 5px;">🔍 Analyze Resume</button>
+
+  <div id="analyzer-result" style="margin-top: 20px;"></div>
+</section>
+
+<!-- Template Gallery -->
+<section class="resume-gallery">
+  <h2 style="color: #104879;">Explore Our Templates</h2>
+  <div class="template-grid">
+    <img src="{{ url_for('static', filename='images/template1.png') }}" alt="Template 1" class="template-img" style="width: 100%; height: auto;">
+    <img src="{{ url_for('static', filename='images/template2.png') }}" alt="Template 2" class="template-img" style="width: 100%; height: auto;">
+    <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
+  </div>
+</section>
+
+<!-- Resume Builder Form -->
+<section id="start-builder" class="resume-builder-container" style="padding: 40px 20px; max-width: 800px; margin: 0 auto;">
+  <h1 style="color: #104879;">📄 Build Your Resume with AI</h1>
+  <p class="subheading">Fill out the form below to generate a professional resume tailored to your career goals.</p>
+
+  <form id="resumeForm" style="display: flex; flex-direction: column; gap: 16px;">
+    <label>Full Name</label>
+    <input type="text" name="fullName" required>
+
+    <label>Email Address</label>
+    <input type="email" name="email" required>
+
+    <label>Phone Number</label>
+    <input type="tel" name="phone" required>
+
+    <label>Professional Summary</label>
+    <textarea name="summary" rows="3"></textarea>
+
+    <label>Education</label>
+    <textarea name="education[]" placeholder="e.g., BSc in Computer Science, University of Lagos (2018–2022)"></textarea>
+
+    <label>Work Experience</label>
+    <textarea name="experience[]" placeholder="List your roles and achievements..."></textarea>
+
+    <label>Skills</label>
+    <textarea name="skills" placeholder="e.g., Python, Project Management"></textarea>
+
+    <label>Certifications</label>
+    <textarea name="certifications" placeholder="e.g., CompTIA A+, PMP, AWS Certified"></textarea>
+
+    <label>Languages</label>
+    <input type="text" name="languages" placeholder="e.g., English, French">
+
+    <label>LinkedIn / Portfolio URL</label>
+    <input type="url" name="portfolio">
+
+    <button type="submit" class="generate-btn">✨ Generate Resume</button>
+  </form>
+
+  <section id="resumePreview" style="display: none; margin-top: 40px;">
+    <h2>🧾 Your AI-Generated Resume</h2>
+    <div id="resumeOutput" class="resume-preview-box"></div>
+    <button id="downloadResumeBtn">⬇️ Download as PDF</button>
   </section>
+</section>
 
-  <!-- Resume Analyzer -->
-  <section id="analyzer-section">
-    <h2>🔍 Resume Analyzer</h2>
-    <p>Paste or upload your resume to get keyword analysis and formatting tips.</p>
+{% endblock %}
 
-    <label>Paste Resume Text</label>
-    <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
-
-    <label>Or Upload Resume File</label>
-    <input type="file" id="resumeFile" accept=".pdf,.txt,.doc,.docx"/>
-
-    <button id="analyze-btn">Analyze Resume</button>
-
-    <div id="analyzer-result" class="resume-output"></div>
-  </section>
-
-  <script src="resume-tool.js"></script>
-</body>
-</html>
+{% block scripts %}
+<script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
+{% endblock %}
