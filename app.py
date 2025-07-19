@@ -471,10 +471,10 @@ def analyze_resume():
 def employer_inquiry():
     try:
         data = request.get_json()
-	    company = data.get("company")
+	company = data.get("company")
         name = data.get("name")
         email = data.get("email")
-	    phone = data.get("phone")
+	phone = data.get("phone")
         job_roles = data.get("job_roles")
         message = data.get("message")
         
