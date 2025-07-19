@@ -1,3 +1,4 @@
+
 <!-- resume-builder.html -->
 {% extends "base.html" %}
 
@@ -9,7 +10,7 @@
 <div class="interview-container" style="padding: 30px 10px; background: #fff;">
   <section class="interview-hero-with-image" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
     <h5 style="color: #6B7280; font-weight: 600; font-size: 14px; letter-spacing: 1px;">AI RESUME BUILDER</h5>
-    
+
     <h1 style="font-size: 28px; font-weight: 700; color: #000; margin: 10px 0;">
       Get Hired 2x Faster <br>with an <span style="color: #ee9e12;">Optimized Resume</span>
     </h1>
@@ -25,16 +26,16 @@
     </ul>
 
     <a href="#start-builder" class="primary-btn" style="background-color: #104879; padding: 12px 24px; color: white; border-radius: 6px; text-decoration: none; font-weight: 600;">
-      ANALYZE MY RESUME
+    ANALYZE MY RESUME
     </a>
 
     <div style="margin-top: 20px;">
-      <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
+    <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
     </div>
-  </section>
-</div>
+    </section>
+    </div>
 
-<!-- Step-by-Step Guide -->
+  <!-- Step-by-Step Guide -->
 <section class="resume-steps" style="text-align: center; background: #fff; padding: 30px 20px;">
   <img 
     src="{{ url_for('static', filename='images/how-it-works-guide.png') }}" 
@@ -43,7 +44,7 @@
 </section>
 
 <!-- Resume Health & ATS Analyzer -->
-<section id="ats-analyzer" class="resume-analyzer" style="padding: 40px 20px;">
+<section id="start-builder" class="resume-analyzer" style="padding: 40px 20px;">
   <h2 style="color: #104879;">AI Resume Analyzer</h2> </br>
   <p>Paste your resume or upload your file to get a detailed analysis of keyword match, readability, and formatting tips.</p></br>
 
@@ -56,6 +57,16 @@
   <button id="analyze-btn" style="background-color: #104879; color: #fff; padding: 10px 20px; border: none; border-radius: 5px;">🔍 Analyze Resume</button>
 
   <div id="analyzer-result" style="margin-top: 20px;"></div>
+</section>
+
+<!-- Template Gallery -->
+<section class="resume-gallery">
+  <h2 style="color: #104879;">Explore Our Templates</h2>
+  <div class="template-grid">
+    <img src="{{ url_for('static', filename='images/template1.png') }}" alt="Template 1" class="template-img" style="width: 100%; height: auto;">
+    <img src="{{ url_for('static', filename='images/template2.png') }}" alt="Template 2" class="template-img" style="width: 100%; height: auto;">
+    <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
+  </div>
 </section>
 
 <!-- Resume Builder Form -->
@@ -77,10 +88,10 @@
     <textarea name="summary" rows="3"></textarea>
 
     <label>Education</label>
-    <textarea name="education" placeholder="e.g., BSc in Computer Science, University of Lagos (2018–2022)"></textarea>
+    <textarea name="education[]" placeholder="e.g., BSc in Computer Science, University of Lagos (2018–2022)"></textarea>
 
     <label>Work Experience</label>
-    <textarea name="experience" placeholder="List your roles and achievements..."></textarea>
+    <textarea name="experience[]" placeholder="List your roles and achievements..."></textarea>
 
     <label>Skills</label>
     <textarea name="skills" placeholder="e.g., Python, Project Management"></textarea>
@@ -107,46 +118,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.getElementById('resumeForm').addEventListener('submit', async function (e) {
-  e.preventDefault();
-
-  const form = e.target;
-  const data = {
-    fullName: form.fullName.value,
-    email: form.email.value,
-    phone: form.phone.value,
-    summary: form.summary.value,
-    education: form.education.value,
-    experience: form.experience.value,
-    skills: form.skills.value,
-    certifications: form.certifications.value,
-    languages: form.languages.value,
-    portfolio: form.portfolio.value
-  };
-
-  const preview = document.getElementById('resumePreview');
-  const output = document.getElementById('resumeOutput');
-  preview.style.display = 'block';
-  output.innerHTML = `<div class="spinner"></div><p>Generating your resume...</p>`;
-
-  try {
-    const res = await fetch('/generate-resume', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-
-    if (result.formatted_resume) {
-      output.innerHTML = result.formatted_resume;
-    } else {
-      output.innerHTML = '<p style="color:red;">❌ Failed to generate resume. Please try again.</p>';
-    }
-  } catch (err) {
-    console.error(err);
-    output.innerHTML = '<p style="color:red;">❌ Server error. Please try again later.</p>';
-  }
-});
-</script>
+<script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
 {% endblock %}
