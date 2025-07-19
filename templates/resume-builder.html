@@ -6,7 +6,7 @@
 {% block content %}
 
 <!-- Hero Section -->
-<div class="interview-container" style="padding: 20px 20px; background: #fff;">
+<div class="interview-container" style="padding: 30px 10px; background: #fff;">
   <section class="interview-hero-with-image" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
     <h5 style="color: #6B7280; font-weight: 600; font-size: 14px; letter-spacing: 1px;">AI RESUME BUILDER</h5>
     
@@ -18,7 +18,7 @@
       Improve your resume with AI suggestions<br>and a recruiter-friendly format.
     </p>
 
-    <ul style="list-style: none; padding: 0; margin-bottom: 20px; color: #000;">
+    <ul style="list-style: none; padding: 0; margin-bottom: 15px; color: #000;">
       <li style="margin-bottom: 8px;">✅ ATS Resume Templates</li>
       <li style="margin-bottom: 8px;">✅ Resume Score</li>
       <li>✅ One Click Optimizer</li>
@@ -33,19 +33,6 @@
     </div>
   </section>
 </div>
-
-<!-- Resume Health & ATS Analyzer -->
-<section class="resume-analyzer">
-  <h2 style="color: #104879;">AI Resume Analyzer</h2>
-  <p>Paste your resume and job description to get a detailed analysis of keyword match, readability, and formatting tips.</p>
-
-  <label>Paste Your Resume</label>
-  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
-
-  <button id="analyze-btn">🔍 Analyze Resume</button>
-
-  <div id="analyzer-result"></div>
-</section>
 
 <!-- Step-by-Step Guide -->
 <section class="resume-steps" style="text-align: center; background: #fff; padding: 30px 20px;">
@@ -64,6 +51,19 @@
     <img src="{{ url_for('static', filename='images/template2.png') }}" alt="Template 2" class="template-img" style="width: 100%; height: auto;">
     <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
   </div>
+</section>
+
+<!-- Resume Health & ATS Analyzer -->
+<section class="resume-analyzer">
+  <h2 style="color: #104879;">AI Resume Analyzer</h2>
+  <p>Paste your resume and job description to get a detailed analysis of keyword match, readability, and formatting tips.</p>
+
+  <label>Paste Your Resume</label>
+  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
+
+  <button id="analyze-btn">🔍 Analyze Resume</button>
+
+  <div id="analyzer-result"></div>
 </section>
 
 <!-- Resume Builder Form -->
