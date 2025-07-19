@@ -6,7 +6,6 @@
 {% block content %}
 
 <!-- Hero Section -->
-<!-- Hero Section -->
 <div class="interview-container" style="padding: 40px 20px; background: #fff;">
   <section class="interview-hero-with-image" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
     <h5 style="color: #6B7280; font-weight: 600; font-size: 14px; letter-spacing: 1px;">AI RESUME BUILDER</h5>
@@ -36,34 +35,12 @@
 </div>
 
 <!-- Step-by-Step Guide -->
-<section class="resume-steps" style="background: #fff; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; padding: 20px;">
-  <h2 style="color: #104879;">How It Works</h2>
-  <div class="step-grid">
-    <div class="step">
-      <h3>1. Enter Your Details</h3>
-      <p>Provide your education, work experience, skills, and accomplishments.</p>
-      <span class="arrow" style="font-size: 24px;">↓</span>
-    </div>
-    <div class="step">
-      <h3>2. Choose a Template</h3>
-      <p>Pick from professionally designed resume templates that suit your industry.</p>
-      <span class="arrow" style="font-size: 24px;">↓</span>
-    </div>
-    <div class="step">
-      <h3>3. Let AI Do the Work</h3>
-      <p>Get personalised content suggestions and instant formatting.</p>
-      <span class="arrow" style="font-size: 24px;">↓</span>
-    </div>
-    <div class="step">
-      <h3>4. Analyze & Optimize</h3>
-      <p>Use the AI-powered Analyser to ensure your resume is recruiter-ready and job-specific.</p>
-      <span class="arrow" style="font-size: 24px;">↓</span>
-    </div>
-    <div class="step">
-      <h3>5. Download & Apply</h3>
-      <p>Export in PDF or DOCX and start applying to jobs with confidence.</p>
-    </div>
-  </div>
+<section class="resume-steps" style="text-align: center; background: #fff; padding: 30px 20px;">
+  <img 
+    src="{{ url_for('static', filename='images/how-it-works-guide.png') }}" 
+    alt="How It Works Guide" 
+    style="max-width: 100%; height: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-radius: 10px;" 
+  />
 </section>
 
 <!-- Template Gallery -->
