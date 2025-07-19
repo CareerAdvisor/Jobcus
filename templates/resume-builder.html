@@ -1,22 +1,57 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Resume Builder & Analyzer Test</title>
+  <title>Resume Builder & Analyzer</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h1, h2 { color: #104879; }
-    textarea, input, button { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; }
-    button { background: #104879; color: #fff; border: none; border-radius: 5px; }
-    section { border: 1px solid #ccc; padding: 20px; border-radius: 10px; margin-bottom: 40px; }
-    .resume-output { margin-top: 20px; border: 1px solid #aaa; padding: 20px; border-radius: 8px; background: #f9f9f9; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f7fa;
+    }
+    h1, h2 {
+      color: #104879;
+    }
+    textarea, input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #104879;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0d3c67;
+    }
+    section {
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 25px;
+      border-radius: 8px;
+      margin-bottom: 40px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+    .resume-output {
+      margin-top: 20px;
+      border: 1px solid #aaa;
+      padding: 20px;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
   </style>
 </head>
 <body>
 
   <h1>🛠 Resume Builder & Analyzer</h1>
 
+  <!-- Resume Builder -->
   <section id="builder-section">
     <h2>📄 Resume Builder</h2>
     <form id="resumeForm">
@@ -54,9 +89,11 @@
     </div>
   </section>
 
+  <!-- Resume Analyzer -->
   <section id="analyzer-section">
     <h2>🔍 Resume Analyzer</h2>
-    <p>Paste or upload your resume to get keyword analysis and tips.</p>
+    <p>Paste or upload your resume to get keyword analysis and formatting tips.</p>
+
     <label>Paste Resume Text</label>
     <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
 
@@ -68,6 +105,6 @@
     <div id="analyzer-result" class="resume-output"></div>
   </section>
 
-  <script src="final-resume-script.js"></script>
+  <script src="resume-tool.js"></script>
 </body>
 </html>
