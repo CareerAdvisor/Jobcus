@@ -6,7 +6,7 @@
 {% block content %}
 
 <!-- Hero Section -->
-<div class="interview-container" style="padding: 40px 20px; background: #fff;">
+<div class="interview-container" style="padding: 20px 20px; background: #fff;">
   <section class="interview-hero-with-image" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
     <h5 style="color: #6B7280; font-weight: 600; font-size: 14px; letter-spacing: 1px;">AI RESUME BUILDER</h5>
     
@@ -28,11 +28,24 @@
       ANALYZE MY RESUME
     </a>
 
-    <div style="margin-top: 30px;">
+    <div style="margin-top: 20px;">
       <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
     </div>
   </section>
 </div>
+
+<!-- Resume Health & ATS Analyzer -->
+<section class="resume-analyzer">
+  <h2 style="color: #104879;">AI Resume Analyzer</h2>
+  <p>Paste your resume and job description to get a detailed analysis of keyword match, readability, and formatting tips.</p>
+
+  <label>Paste Your Resume</label>
+  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
+
+  <button id="analyze-btn">🔍 Analyze Resume</button>
+
+  <div id="analyzer-result"></div>
+</section>
 
 <!-- Step-by-Step Guide -->
 <section class="resume-steps" style="text-align: center; background: #fff; padding: 30px 20px;">
@@ -97,22 +110,6 @@
     <div id="resumeOutput" class="resume-preview-box"></div>
     <button id="downloadResumeBtn">⬇️ Download as PDF</button>
   </section>
-</section>
-
-<!-- Resume Health & ATS Analyzer -->
-<section class="resume-analyzer">
-  <h2 style="color: #104879;">AI Resume Analyzer</h2>
-  <p>Paste your resume and job description to get a detailed analysis of keyword match, readability, and formatting tips.</p>
-
-  <label>Paste Your Resume</label>
-  <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
-
-  <label>Paste Target Job Description</label>
-  <textarea id="job-description" rows="6" placeholder="Paste the job description here..."></textarea>
-
-  <button id="analyze-btn">🔍 Analyze Resume</button>
-
-  <div id="analyzer-result"></div>
 </section>
 
 {% endblock %}
