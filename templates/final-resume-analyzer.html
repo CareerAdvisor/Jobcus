@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Resume Builder & Analyzer Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1, h2 { color: #104879; }
+    textarea, input, button { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; }
+    button { background: #104879; color: #fff; border: none; border-radius: 5px; }
+    section { border: 1px solid #ccc; padding: 20px; border-radius: 10px; margin-bottom: 40px; }
+    .resume-output { margin-top: 20px; border: 1px solid #aaa; padding: 20px; border-radius: 8px; background: #f9f9f9; }
+  </style>
+</head>
+<body>
+
+  <h1>🛠 Resume Builder & Analyzer</h1>
+
+  <section id="builder-section">
+    <h2>📄 Resume Builder</h2>
+    <form id="resumeForm">
+      <label>Full Name</label>
+      <input type="text" name="fullName" required>
+
+      <label>Summary</label>
+      <textarea name="summary" required></textarea>
+
+      <label>Education</label>
+      <textarea name="education" required></textarea>
+
+      <label>Experience</label>
+      <textarea name="experience" required></textarea>
+
+      <label>Skills</label>
+      <textarea name="skills" required></textarea>
+
+      <label>Certifications</label>
+      <textarea name="certifications"></textarea>
+
+      <label>Languages</label>
+      <input type="text" name="languages">
+
+      <label>Portfolio</label>
+      <input type="url" name="portfolio">
+
+      <button type="submit">✨ Generate Resume</button>
+    </form>
+
+    <div id="resumePreview" class="resume-output" style="display:none;">
+      <h3>🧾 Your AI Resume</h3>
+      <div id="resumeOutput"></div>
+      <button id="downloadResumeBtn">⬇️ Download Resume as HTML</button>
+    </div>
+  </section>
+
+  <section id="analyzer-section">
+    <h2>🔍 Resume Analyzer</h2>
+    <p>Paste or upload your resume to get keyword analysis and tips.</p>
+    <label>Paste Resume Text</label>
+    <textarea id="resume-text" rows="6" placeholder="Paste your resume here..."></textarea>
+
+    <label>Or Upload Resume File</label>
+    <input type="file" id="resumeFile" accept=".pdf,.txt,.doc,.docx"/>
+
+    <button id="analyze-btn">Analyze Resume</button>
+
+    <div id="analyzer-result" class="resume-output"></div>
+  </section>
+
+  <script src="final-resume-script.js"></script>
+</body>
+</html>
