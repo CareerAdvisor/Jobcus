@@ -4,18 +4,23 @@
 {% block title %}Employers – Jobcus{% endblock %}
 
 {% block content %}
+
+<!-- 🌟 Hero Banner -->
 <section class="employer-hero-full">
   <img src="{{ url_for('static', filename='images/employer-hero.png') }}" alt="Hire Smarter with Jobcus">
 </section>
 
-<!-- Employer Inquiry Section -->
-<section class="employer-section" style="background-color: #f2f7fc; padding: 20px 20px; border-radius: 8px;"> 
+<!-- 🤝 Employer Inquiry Form -->
+<section class="employer-section" style="background-color: #f2f7fc; padding: 20px; border-radius: 8px;">
   <h2 style="color: #104879;">🤝 Employer Inquiry Form</h2>
-  <p style="color: #333;">Tell us who you're looking to hire and how we can assist your recruitment process.</p>
+  <p style="color: #333;">
+    Tell us who you're looking to hire and how we can assist your recruitment process.
+  </p>
+
   <form id="employer-inquiry-form">
     <label>Company</label>
     <input type="text" name="company">
-    
+
     <label>Name</label>
     <input type="text" name="name" required>
 
@@ -36,10 +41,13 @@
   </form>
 </section>
 
-<!-- AI Job Post Generator Section -->
-<section class="employer-section" style="background-color: #ffc957; padding: 20px 20px; border-radius: 8px;">
+<!-- 🤖 AI Job Post Generator -->
+<section class="employer-section" style="background-color: #ffc957; padding: 20px; border-radius: 8px;">
   <h2 style="color: #104879;">📝 AI-Powered Job Post Generator</h2>
-  <p style="color: #333; margin-bottom: 20px;">Instantly create a professional job description with the help of AI.</p>
+  <p style="color: #333; margin-bottom: 20px;">
+    Instantly create a professional job description with the help of AI.
+  </p>
+
   <form id="job-post-form">
     <label>Job Title</label>
     <input type="text" name="jobTitle" required>
@@ -52,22 +60,26 @@
 
     <button type="submit" class="primary-btn">Generate Job Description</button>
   </form>
-  <div id="job-description-output" style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);"></div>
+
+  <!-- Output Box -->
+  <div id="job-description-output"
+       style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+  </div>
+
+  <!-- Download Buttons (optional, hidden until content is generated) -->
+  <div id="download-options" style="margin-top: 12px; display: none;">
+    <button id="download-txt" class="primary-btn">⬇️ Download .txt</button>
+    <button id="download-docx" class="primary-btn">⬇️ Download .docx</button>
+    <button id="download-pdf" class="primary-btn">⬇️ Download .pdf</button>
+  </div>
 </section>
-
-<div id="job-description-output" style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);"></div>
-
-<div id="job-description-output" style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);"></div>
-
-<!-- Download Buttons -->
-<div id="download-options" style="margin-top: 12px; display: none;">
-  <button id="download-txt" class="primary-btn">⬇️ Download .txt</button>
-  <button id="download-docx" class="primary-btn">⬇️ Download .docx</button>
-  <button id="download-pdf" class="primary-btn">⬇️ Download .pdf</button>
-</div>
 
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='employers.js') }}"></script>
+<!-- Optionally include these if using download options -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.7.0/docx.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 {% endblock %}
