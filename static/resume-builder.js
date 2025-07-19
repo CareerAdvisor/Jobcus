@@ -1,51 +1,54 @@
 
-document.getElementById('resumeForm').addEventListener('submit', async function (e) {
-  e.preventDefault();
-  const form = e.target;
-  const formData = {
-    fullName: form.fullName.value,
-    email: form.email.value,
-    phone: form.phone.value,
-    summary: form.summary.value,
-    education: form.education.value,
-    experience: form.experience.value,
-    skills: form.skills.value,
-    certifications: form.certifications.value,
-    languages: form.languages.value,
-    portfolio: form.portfolio.value
-  };
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("resumeForm");
+  const output = document.getElementById("resumeOutput");
+  const previewSection = document.getElementById("resumePreview");
+  const downloadBtn = document.getElementById("downloadResumeBtn");
 
-  const preview = document.getElementById('resumePreview');
-  const output = document.getElementById('resumeOutput');
-  const scoreBox = document.getElementById('resumeScore');
-  output.innerHTML = '<p>⏳ Generating your resume...</p>';
-  preview.style.display = 'block';
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  try {
-    const res = await fetch('/generate-resume', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
-    const data = await res.json();
-    if (data.formatted_resume) {
-      output.innerHTML = data.formatted_resume;
-      const resumeLength = data.formatted_resume.split(' ').length;
-      const score = Math.min(100, Math.floor(resumeLength / 5 + 60));
-      scoreBox.innerHTML = `<h3>📈 Resume Score: ${score}/100</h3>`;
-    } else {
-      output.innerHTML = '<p style="color:red;">❌ Could not generate resume.</p>';
+    const formData = {
+      fullName: form.querySelector('[name="fullName"]').value,
+      email: form.querySelector('[name="email"]').value,
+      phone: form.querySelector('[name="phone"]').value,
+      summary: form.querySelector('[name="summary"]').value,
+      education: Array.from(form.querySelectorAll('[name="education[]"]')).map(e => e.value).join('\n'),
+      experience: Array.from(form.querySelectorAll('[name="experience[]"]')).map(e => e.value).join('\n'),
+      skills: form.querySelector('[name="skills"]').value,
+      certifications: form.querySelector('[name="certifications"]').value,
+      languages: form.querySelector('[name="languages"]').value,
+      portfolio: form.querySelector('[name="portfolio"]').value,
+    };
+
+    try {
+      const res = await fetch("/generate-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+      if (data.formatted_resume) {
+        output.innerHTML = data.formatted_resume;
+        previewSection.style.display = "block";
+      } else {
+        output.innerHTML = "<p style='color:red;'>❌ Failed to generate resume.</p>";
+      }
+    } catch (error) {
+      console.error(error);
+      output.innerHTML = "<p style='color:red;'>⚠️ Error: Unable to generate resume.</p>";
     }
-  } catch (err) {
-    output.innerHTML = '<p style="color:red;">❌ Server Error: ' + err.message + '</p>';
-  }
-});
+  });
 
-document.getElementById('downloadResumeBtn').addEventListener('click', function () {
-  const resumeHtml = document.getElementById('resumeOutput').innerHTML;
-  const blob = new Blob([resumeHtml], { type: 'text/html' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'resume.html';
-  link.click();
+  downloadBtn.addEventListener("click", () => {
+    const resumeHTML = output.innerHTML;
+    const blob = new Blob([resumeHTML], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "resume.html";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
 });
