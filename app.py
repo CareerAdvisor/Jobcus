@@ -393,33 +393,6 @@ def get_interview_feedback():
         print("Interview Feedback Error:", e)
         return jsonify({"error": "Error generating feedback"}), 500
 
-@app.route("/generate-resume", methods=["POST"])
-def generate_resume():
-    data = request.json  # or request.form if using form-data
-
-    prompt = f"""
-    Create a professional, modern UK resume in HTML format using the following data:
-    Full Name: {data.get('fullName')}
-    Summary: {data.get('summary')}
-    Education: {data.get('education')}
-    Experience: {data.get('experience')}
-    Skills: {data.get('skills')}
-    Certifications: {data.get('certifications')}
-    Languages: {data.get('languages')}
-    LinkedIn/Portfolio: {data.get('portfolio')}
-    """
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
-        )
-        ai_response = response.choices[0].message.content
-        return jsonify({"formatted_resume": ai_response})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 @app.route("/api/analyze-resume", methods=["POST"])
 def analyze_resume():
     try:
@@ -466,6 +439,33 @@ def analyze_resume():
     except Exception as e:
         print("ATS Analyzer Error:", e)
         return jsonify({"error": "Resume analysis failed"}), 500
+
+@app.route("/generate-resume", methods=["POST"])
+def generate_resume():
+    data = request.json  # or request.form if using form-data
+
+    prompt = f"""
+    Create a professional, modern UK resume in HTML format using the following data:
+    Full Name: {data.get('fullName')}
+    Summary: {data.get('summary')}
+    Education: {data.get('education')}
+    Experience: {data.get('experience')}
+    Skills: {data.get('skills')}
+    Certifications: {data.get('certifications')}
+    Languages: {data.get('languages')}
+    LinkedIn/Portfolio: {data.get('portfolio')}
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7
+        )
+        ai_response = response.choices[0].message.content
+        return jsonify({"formatted_resume": ai_response})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/employer-inquiry", methods=["POST"])
 def employer_inquiry():
