@@ -470,37 +470,24 @@ def generate_resume():
 @app.route("/api/employer-inquiry", methods=["POST"])
 def employer_inquiry():
     try:
-        data = request.get_json()
-        name = data.get("name")
-        email = data.get("email")
-        company = data.get("company")
-        job_roles = data.get("job_roles")
-        message = data.get("message")
-        phone = data.get("phone")  # ✅ Add this line
-
-        if not name or not email or not message:
-            return jsonify({"error": "Missing required fields"}), 400
-
-        # ✅ Log the payload for debugging
+        data = request.json
         print("Employer Inquiry Payload:", data)
 
-        # ✅ Insert all fields including phone
         response = supabase.table("employer_inquiries").insert({
-            "name": name,
-            "email": email,
-            "company": company,
-            "job_roles": job_roles,
-            "message": message,
-            "phone": phone
+            "company": data.get("company"),
+            "name": data.get("name"),
+            "email": data.get("email"),
+            "phone": data.get("phone"),
+            "job_roles": data.get("job_roles"),
+            "message": data.get("message")
         }).execute()
 
-        return jsonify({"success": True})
+        print("Employer Inquiry Response:", response)
+        return jsonify({"success": True, "message": "Inquiry submitted"}), 200
 
     except Exception as e:
-        print("Employer Inquiry Error:", e)
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": "Internal Server Error"}), 500
+        print("Employer Inquiry Error:", str(e))  # <--- This is important
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/api/employer/submit", methods=["POST"])
 def submit_employer_form():
