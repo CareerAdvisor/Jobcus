@@ -24,24 +24,24 @@
       <li>✅ One Click Optimizer</li>
     </ul>
 
-    <a href="#start-builder" class="primary-btn" style="background-color: #104879; padding: 12px 24px; color: white; border-radius: 6px; text-decoration: none; font-weight: 600;">
+    <a href="#resume-analyzer" class="primary-btn" style="background-color: #104879; padding: 12px 24px; color: white; border-radius: 6px; text-decoration: none; font-weight: 600;">
     ANALYZE MY RESUME
     </a>
 
     <div style="margin-top: 20px; margin-bottom: 20px;">
-    <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
+      <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
     </div>
-    </section>
-    </div>
-  
-  <!-- Resume Analyzer -->
-<section id="resume-analyzer" style="padding: 40px;"></br>
-	<h2>🔍 AI Resume Analyzer</h2>
-	<p>Paste or upload your resume to get keyword analysis and formatting tips.</p>	
-	<textarea id="resume-text" placeholder="Paste your resume text here..."></textarea>
-   	<input type="file" id="resumeFile" accept=".pdf,.txt,.docx" />
-	<button id="analyze-btn">Analyze Resume</button>
-	<div id="analyzer-result"></div>
+  </section>
+</div>
+
+<!-- Resume Analyzer -->
+<section id="resume-analyzer" style="padding: 40px;">
+  <h2>🔍 AI Resume Analyzer</h2>
+  <p>Paste or upload your resume to get keyword analysis, a score, and formatting tips.</p>
+  <textarea id="resume-text" placeholder="Paste your resume text here..."></textarea>
+  <input type="file" id="resumeFile" accept=".pdf,.txt,.docx" />
+  <button id="analyze-btn">Analyze Resume</button>
+  <div id="analyzer-result"></div>
 </section>
 
 <!-- Template Gallery -->
@@ -54,24 +54,24 @@
   </div>
 </section>
 
-  <!-- Resume Builder -->
-  <section id="resume-builder" style="padding: 40px;">
-    <h2>📄 Build Your Resume with AI</h2>
-    <form id="resumeForm">
-      <input name="fullName" placeholder="Full Name" required />
-      <textarea name="summary" placeholder="Professional Summary"></textarea>
-      <textarea name="education" placeholder="Education"></textarea>
-      <textarea name="experience" placeholder="Work Experience"></textarea>
-      <textarea name="skills" placeholder="Skills"></textarea>
-      <textarea name="certifications" placeholder="Certifications"></textarea>
-      <input name="languages" placeholder="Languages" />
-      <input name="portfolio" placeholder="LinkedIn or Portfolio" />
-      <button type="submit">✨ Generate Resume</button>
-    </form>
+<!-- Resume Builder -->
+<section id="resume-builder" style="padding: 40px;">
+  <h2>📄 Build Your Resume with AI</h2>
+  <form id="resumeForm">
+    <input name="fullName" placeholder="Full Name" required />
+    <textarea name="summary" placeholder="Professional Summary"></textarea>
+    <textarea name="education" placeholder="Education"></textarea>
+    <textarea name="experience" placeholder="Work Experience"></textarea>
+    <textarea name="skills" placeholder="Skills"></textarea>
+    <textarea name="certifications" placeholder="Certifications"></textarea>
+    <input name="languages" placeholder="Languages" />
+    <input name="portfolio" placeholder="LinkedIn or Portfolio" />
+    <button type="submit">✨ Generate Resume</button>
+  </form>
 
-    <div id="resumeOutput" style="margin-top: 40px;"></div>
-    <button id="downloadResumeBtn" style="display: none;">⬇️ Download as PDF</button>
-  </section>
+  <div id="resumeOutput" style="margin-top: 40px;"></div>
+  <button id="downloadResumeBtn" style="display: none;">⬇️ Download as PDF</button>
+</section>
 
 {% endblock %}
 
