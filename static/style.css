@@ -1534,6 +1534,26 @@ button[type="submit"]:hover {
   border-radius: 4px;
 }
 
+.resume-box {
+  border: 1px solid #ccc;
+  padding: 20px;
+  max-width: 794px;
+  background: white;
+  margin: 20px auto;
+  font-family: 'Arial', sans-serif;
+}
+
+.resume-box h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.resume-box hr {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 12px 0;
+}
+
 /* Resume Builder Form */
 .resume-builder-container {
   background: #ffffff;
@@ -1632,7 +1652,7 @@ button[type="submit"]:hover {
 
 /* Resume Output Styles */
 #resumeOutput {
-  font-family: 'Georgia', serif;
+  font-family: 'Arial', 'Times New Roman', serif;
   text-align: left;
   font-size: 12pt;
   line-height: 1.6;
@@ -1667,12 +1687,12 @@ button[type="submit"]:hover {
 
 #resumeOutput p {
   font-size: 12pt;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 #resumeOutput ul {
   padding-left: 20px;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 #resumeOutput li {
@@ -1680,7 +1700,7 @@ button[type="submit"]:hover {
 }
 
 #resumeOutput .education-entry {
-  margin-bottom: 20px;
+  margin-bottom: 6px;
 }
 
 #resumeOutput .education-entry h3 {
@@ -1696,6 +1716,7 @@ button[type="submit"]:hover {
     font-size: 12pt;
     margin-bottom: 4pt;
   }
+
   #resumeOutput .divider {
     border-bottom: 1px solid lightgrey;
     margin: 4pt 0 12pt 0;
@@ -1734,6 +1755,31 @@ button[type="submit"]:hover {
 .highlight {
   color: #ef8d02; /* Mild orange (lighter version of #ffc107) */
 }
+
+#resumeOutput .skills-section ul {
+  column-count: 2;
+  column-gap: 40px;
+  list-style-type: disc;
+  padding-left: 20px;
+}
+
+@media (max-width: 600px) {
+  #resumeOutput .skills-section ul {
+    column-count: 1;
+  }
+}
+
+/* Section spacing for readability */
+#resumeOutput section {
+  margin-bottom: 20px;
+}
+
+/* Two-column layout for skills */
+#resumeOutput .skills-section ul {
+  column-count: 2;
+  column-gap: 40px;
+  list-style-type: disc;
+  padding-left: 20px;
 
 /* Spinner animation */
 .spinner {
@@ -1908,26 +1954,6 @@ button {
 
 .hidden {
   display: none;
-}
-
-.resume-box {
-  border: 1px solid #ccc;
-  padding: 20px;
-  max-width: 794px;
-  background: white;
-  margin: 20px auto;
-  font-family: 'Arial', sans-serif;
-}
-
-.resume-box h2 {
-  font-size: 20px;
-  margin-bottom: 10px;
-}
-
-.resume-box hr {
-  border: none;
-  border-top: 1px solid #ccc;
-  margin: 12px 0;
 }
 
 @media (max-width: 768px) {
