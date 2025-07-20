@@ -1,13 +1,11 @@
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("resumeForm");
   const resumeOutput = document.getElementById("resumeOutput");
-  const resumePreview = document.getElementById("resumePreview");
   const downloadBtn = document.getElementById("downloadResumeBtn");
   const optimizePopup = document.getElementById("optimize-popup");
 
   let optimizeWithAI = true;
 
-  // Handle AI optimization popup
   document.getElementById("acceptOptimize").onclick = () => {
     optimizeWithAI = true;
     optimizePopup.classList.add("hidden");
@@ -20,7 +18,6 @@ document.addEventListener("DOMContentLoaded", function () {
     form.dispatchEvent(new Event("submit"));
   };
 
-  // Form submission handler
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -37,32 +34,55 @@ document.addEventListener("DOMContentLoaded", function () {
     const result = await response.json();
 
     if (result.formatted_resume) {
-      resumeOutput.innerHTML = result.formatted_resume;
+      const cleaned = cleanAIText(result.formatted_resume);
+      resumeOutput.innerHTML = cleaned;
       downloadBtn.style.display = "block";
+      document.getElementById("resumeDownloadOptions").style.display = "block";
       window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
     } else {
       resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume. Please try again.</p>`;
     }
   });
 
-  // Trigger popup once before generating
   form.addEventListener("submit", function (e) {
     if (optimizePopup.classList.contains("hidden")) return;
     e.preventDefault();
     optimizePopup.classList.remove("hidden");
   });
 
-  // Download as PDF
-  downloadBtn.onclick = () => {
-    const content = resumeOutput.innerHTML;
-    const win = window.open('', '', 'height=842,width=595');
-    win.document.write('<html><head><title>Resume</title>');
-    win.document.write('</head><body>');
-    win.document.write(content);
-    win.document.write('</body></html>');
-    win.document.close();
-    win.print();
+  // ✨ Enhanced download logic
+  window.downloadResume = function (type) {
+    const resumeHtml = resumeOutput.innerHTML;
+    const cleanedHtml = cleanAIText(resumeHtml);
+
+    const blob = {
+      pdf: new Blob([cleanedHtml], { type: "application/pdf" }),
+      doc: new Blob([cleanedHtml], { type: "application/msword" }),
+      txt: new Blob([stripHtmlTags(cleanedHtml)], { type: "text/plain" }),
+    }[type];
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Resume.${type}`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
+
+  function cleanAIText(content) {
+    return content
+      .replace(/Certainly!.*?resume in HTML format.*?\n/i, "")
+      .replace(/```html|```/g, "")
+      .replace(/This HTML resume is structured.*?section\./is, "")
+      .replace(/Here is a professional.*?```html/i, "")
+      .trim();
+  }
+
+  function stripHtmlTags(html) {
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return div.textContent || div.innerText || "";
+  }
 
   // Resume Analyzer
   document.getElementById("analyze-btn").addEventListener("click", async () => {
