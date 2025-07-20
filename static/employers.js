@@ -85,17 +85,26 @@ document.addEventListener("DOMContentLoaded", function () {
   // 📄 Download .docx
   // ----------------------------
   document.getElementById("download-docx").addEventListener("click", async () => {
-    if (!window.docx) {
-      alert("DOCX library failed to load – please refresh the page.");
-      return;
-    }
-    const { Document, Packer, Paragraph } = window.docx;
-    const doc = new Document({
-      sections: [{ children: [new Paragraph(window.generatedJobDescription || "No content")] }],
-    });
-    const blob = await Packer.toBlob(doc);
-    saveAs(blob, "job-description.docx");
+  if (!window.docx) {
+    alert("DOCX library failed to load – please refresh.");
+    return;
+  }
+
+  const { Document, Packer, Paragraph } = window.docx;
+  const doc = new Document({
+    sections: [{
+      children: [new Paragraph(window.generatedJobDescription || "No content")]
+    }]
   });
+
+  const blob = await Packer.toBlob(doc);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "job-description.docx";
+  a.click();
+  URL.revokeObjectURL(url);
+});
 
   // ----------------------------
   // 📄 Download .pdf
