@@ -9,25 +9,20 @@
 <div class="interview-container" style="padding: 30px 10px; background: #fff;">
   <section class="interview-hero-with-image" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
     <h5 style="color: #6B7280; font-weight: 600; font-size: 14px; letter-spacing: 1px;">AI RESUME BUILDER</h5>
-
     <h1 style="font-size: 28px; font-weight: 700; color: #104879; margin: 10px 0;">
       Get Hired 2x Faster <br>with an <span style="color: #ee9e12;">Optimized Resume</span>
     </h1>
-
     <p style="max-width: 400px; color: #333; font-size: 16px; margin: 10px 0 20px;">
       Improve your resume with AI suggestions<br>and a recruiter-friendly format.
     </p>
-
     <ul style="list-style: none; padding: 0; margin-bottom: 15px; color: #000;">
       <li style="margin-bottom: 8px;">✅ ATS Resume Templates</li>
       <li style="margin-bottom: 8px;">✅ Resume Score</li>
       <li>✅ One Click Optimizer</li>
     </ul>
-
     <a href="#resume-analyzer" class="primary-btn" style="background-color: #104879; padding: 12px 24px; color: white; border-radius: 6px; text-decoration: none; font-weight: 600;">
-    ANALYZE MY RESUME
+      ANALYZE MY RESUME
     </a>
-
     <div style="margin-top: 20px; margin-bottom: 20px;">
       <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
     </div>
@@ -42,6 +37,7 @@
   <input type="file" id="resumeFile" accept=".pdf,.txt,.docx" />
   <button id="analyze-btn">Analyze Resume</button>
   <div id="analyzer-result"></div>
+  <canvas id="scoreChart" style="max-width: 500px; margin-top: 30px;"></canvas>
 </section>
 
 <!-- Template Gallery -->
@@ -57,8 +53,8 @@
 <!-- Resume Builder -->
 <section id="resume-builder" style="padding: 20px;">
   <h2>📄 Build Your Resume with AI</h2>
-  <form id="resumeForm" method="POST"
-    <input name="fullName" placeholder="Full Name" required />
+  <form id="resumeForm" method="POST" action="javascript:void(0);">
+    <input name="fullName" id="fullName" placeholder="Full Name" required />
     <textarea name="summary" placeholder="Professional Summary"></textarea>
     <textarea name="education" placeholder="Education"></textarea>
     <textarea name="experience" placeholder="Work Experience"></textarea>
@@ -73,8 +69,16 @@
   <button id="downloadResumeBtn" style="display: none;">⬇️ Download as PDF</button>
 </section>
 
+<!-- Optimization Popup -->
+<div id="optimize-popup" class="popup hidden" style="position: fixed; top: 30%; left: 50%; transform: translateX(-50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; z-index: 999;">
+  <p>Would you like AI to optimize your resume content?</p>
+  <button id="acceptOptimize">Yes, optimize it</button>
+  <button id="declineOptimize">No, just use my content</button>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
 {% endblock %}
