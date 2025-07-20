@@ -29,14 +29,15 @@
   </section>
 </div>
 
-<!-- Resume Analyzer -->
-<section id="resume-analyzer" style="padding: 40px;">
-  <h2>🔍 AI Resume Analyzer</h2>
-  <p>Paste or upload your resume to get keyword analysis, a score, and formatting tips.</p>
-  <textarea id="resume-text" placeholder="Paste your resume text here..."></textarea>
-  <input type="file" id="resumeFile" accept=".pdf,.txt,.docx" />
-  <button id="analyze-btn">Analyze Resume</button>
-  <div id="analyzer-result" style="margin-top: 20px; font-family: Arial, sans-serif; font-size: 12pt;"></div>
+ <!-- Resume Analyzer -->
+  <div class="resume-analyzer">
+    <h3>📊 Resume Analyzer</h3>
+    <textarea id="resume-text" rows="6" placeholder="Paste your resume text here..."></textarea>
+    <p style="text-align:center">OR</p>
+    <input type="file" id="resumeFile" accept=".txt,.doc,.docx,.pdf" />
+    <button id="analyze-btn">🔍 Analyze Resume</button>
+    <div id="analyzer-result"></div>
+  </div>
 </section>
 
 <!-- Template Gallery -->
@@ -49,17 +50,7 @@
   </div>
 </section>
 
-<!-- Resume Builder -->
-
-<!-- AI Optimization Popup -->
-<div id="optimize-popup" class="popup hidden"
-     style="position: fixed; top: 30%; left: 50%; transform: translateX(-50%);
-            background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; z-index: 999;">
-  <p>Would you like AI to optimize your resume content?</p>
-  <button id="acceptOptimize">Yes, optimize it</button>
-  <button id="declineOptimize">No, just use my content</button>
-</div>
-
+<!-- resume-builder.html -->
 <section id="resume-builder" style="padding: 20px;">
   <h2>📄 Build Your Resume with AI</h2>
   <form id="resumeForm" method="POST" action="javascript:void(0);">
@@ -72,29 +63,27 @@
     <textarea name="skills" placeholder="Skills"></textarea>
     <textarea name="certifications" placeholder="Certifications"></textarea>
     <input name="portfolio" placeholder="LinkedIn or Portfolio" />
-    <button type="submit">✨ Generate Resume</button>
+    <button id="triggerOptimizePopup" type="button" class="generate-btn">✨ Generate Resume</button>
   </form>
 
+  <!-- AI Optimization Popup -->
+  <div id="optimize-popup" class="popup hidden"
+       style="position: fixed; top: 30%; left: 50%; transform: translateX(-50%);
+              background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; z-index: 999;">
+    <p>Would you like AI to optimize your resume content?</p>
+    <button id="acceptOptimize">Yes, optimize it</button>
+    <button id="declineOptimize">No, just use my content</button>
+  </div>
+
   <!-- Output Section -->
-<div id="resumeOutput" class="resume-container"></div>
+  <div id="resumeOutput" class="resume-container"></div>
 
-<!-- Download Buttons -->
-<div id="resumeDownloadOptions" style="display: none; margin-top: 2rem;">
-  <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
-  <button onclick="downloadResume('doc')">⬇️ Download Word</button>
-  <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
-</div>
-</section>
-
-<!-- Output Section -->
-<div id="resumeOutput" class="resume-container"></div>
-
-<!-- Download Buttons -->
-<div id="resumeDownloadOptions" style="display: none; margin-top: 1rem;">
-  <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
-  <button onclick="downloadResume('doc')">⬇️ Download Word</button>
-  <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
-</div>
+  <!-- Download Buttons -->
+  <div id="resumeDownloadOptions" style="display: none; margin-top: 2rem;">
+    <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
+    <button onclick="downloadResume('doc')">⬇️ Download Word</button>
+    <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
+  </div>
 
 {% endblock %}
 
