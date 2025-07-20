@@ -121,3 +121,4 @@ document.getElementById("download-pdf").addEventListener("click", () => {
   doc.text(window.generatedJobDescription || "No content", 10, 10);
   doc.save("job-description.pdf");
 });
+});
