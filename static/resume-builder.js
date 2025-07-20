@@ -55,37 +55,61 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   // Resume Analyzer
-  document.getElementById("analyze-btn").addEventListener("click", async () => {
-    const textArea = document.getElementById("resume-text").value.trim();
-    const file = document.getElementById("resumeFile").files[0];
-    const resultContainer = document.getElementById("analyzer-result");
+document.getElementById("analyze-btn").addEventListener("click", async () => {
+  const textArea = document.getElementById("resume-text").value.trim();
+  const file = document.getElementById("resumeFile").files[0];
+  const resultContainer = document.getElementById("analyzer-result");
 
-    let resumeText = textArea;
-    if (!resumeText && file) {
-      resumeText = await file.text();
-    }
+  let resumeText = textArea;
+  if (!resumeText && file) {
+    resumeText = await file.text();
+  }
 
-    if (!resumeText) {
-      resultContainer.innerHTML = "<p style='color:red;'>Please paste your resume or upload a file.</p>";
-      return;
-    }
+  if (!resumeText) {
+    resultContainer.innerHTML = "<p style='color:red;'>Please paste your resume or upload a file.</p>";
+    return;
+  }
 
-    resultContainer.innerHTML = "⏳ Analyzing...";
+  resultContainer.innerHTML = "⏳ Analyzing...";
 
-    try {
-      const res = await fetch("/api/analyze-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: resumeText })
-      });
-      const data = await res.json();
-      resultContainer.innerHTML = `
-        <h3>✅ Resume Score: ${data.score}/100</h3>
-        <h4>Recommendations:</h4>
-        <ul>${data.suggestions.map(item => `<li>${item}</li>`).join("")}</ul>
-      `;
-    } catch (err) {
-      resultContainer.innerHTML = "<p style='color:red;'>⚠️ Could not analyze resume.</p>";
-    }
-  });
+  try {
+    const res = await fetch("/api/analyze-resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: resumeText })
+    });
+    const data = await res.json();
+
+    // Display text result
+    resultContainer.innerHTML = `
+      <h3>✅ Resume Score: ${data.score || 'N/A'}/100</h3>
+      <h4>Recommendations:</h4>
+      <ul>${data.suggestions?.map(item => `<li>${item}</li>`).join("") || "<li>No suggestions returned</li>"}</ul>
+    `;
+
+    // Draw chart
+    const ctx = document.getElementById("scoreChart").getContext("2d");
+    new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Score", "Remaining"],
+        datasets: [{
+          label: "Resume Score",
+          data: [data.score || 0, 100 - (data.score || 0)],
+          backgroundColor: ["#4CAF50", "#ddd"],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+
+  } catch (err) {
+    resultContainer.innerHTML = "<p style='color:red;'>⚠️ Could not analyze resume.</p>";
+    console.error(err);
+  }
 });
