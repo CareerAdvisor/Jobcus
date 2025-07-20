@@ -1824,7 +1824,7 @@ button[type="submit"]:hover {
   height: auto;
   display: block;
   max-width: 100%
-  object-fit; contain;
+  object-fit: contain;
 }
 
 .employer-hero {
@@ -1891,17 +1891,6 @@ form textarea {
   font-size: 1rem;
 }
 
-.primary-btn {
-  margin-top: 20px;
-  padding: 12px 24px;
-  font-size: 1rem;
-  background-color: #104879;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
 .primary-btn:hover {
   background-color: #0d3c6e;
 }
@@ -1952,9 +1941,6 @@ button {
   cursor: pointer;
 }
 
-.hidden {
-  display: none;
-}
 /* Output box */
 .job-output-box {
   margin-top: 20px;
