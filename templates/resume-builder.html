@@ -64,24 +64,21 @@
   <h2>📄 Build Your Resume with AI</h2>
   <form id="resumeForm" method="POST" action="javascript:void(0);">
     <input name="fullName" id="fullName" placeholder="Full Name" required />
-    <input name="title" id="title" placeholder="Your Title (e.g. Project Manager)" required />
-    <input name="email" id="email" placeholder="Email Address" required />
-    <input name="phone" id="phone" placeholder="Phone Number" required />
-
+    <input name="title" id="title" placeholder="Job Title(s) e.g. IT Support | Project Manager" required />
+    <input name="contact" id="contact" placeholder="City, Phone Number, Email" required />
     <textarea name="summary" placeholder="Professional Summary"></textarea>
     <textarea name="education" placeholder="Education"></textarea>
     <textarea name="experience" placeholder="Work Experience"></textarea>
     <textarea name="skills" placeholder="Skills"></textarea>
     <textarea name="certifications" placeholder="Certifications"></textarea>
-    <input name="languages" placeholder="Languages" />
     <input name="portfolio" placeholder="LinkedIn or Portfolio" />
     <button type="submit">✨ Generate Resume</button>
   </form>
 
-  <div id="resumeOutput" style="margin-top: 40px; font-family: Arial, sans-serif; font-size: 12pt;">
-    <!-- Resume output will be injected here with specific formatting -->
-  </div>
-  <button id="downloadResumeBtn" style="display: none; margin-top: 10px;">⬇️ Download as PDF</button>
+  <div id="resumeOutput" style="margin-top: 40px;"></div>
+  <button id="downloadResumeBtn" style="display: none;">⬇️ Download as PDF</button>
+  <button id="downloadWordBtn" style="display: none;">⬇️ Download as Word</button>
+  <button id="downloadTextBtn" style="display: none;">⬇️ Download as Text</button>
 </section>
 {% endblock %}
 
