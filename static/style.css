@@ -1592,6 +1592,45 @@ button[type="submit"]:hover {
   border: 1px solid #ccc;
 }
 
+#resumeOutput h1 {
+    font-size: 30pt;
+    margin-bottom: 2pt;
+  }
+  #resumeOutput h2 {
+    font-size: 14pt;
+    margin-top: 12pt;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 2pt;
+  }
+  #resumeOutput p {
+    margin: 4pt 0;
+  }
+  #resumeOutput .contact-info {
+    font-size: 12pt;
+    margin-bottom: 4pt;
+  }
+  #resumeOutput .divider {
+    border-bottom: 1px solid lightgrey;
+    margin: 4pt 0 12pt 0;
+  }
+  #analyzer-result ul {
+    padding-left: 20px;
+  }
+  #analyzer-result li {
+    margin-bottom: 6px;
+  }
+  .comparison-section {
+    margin-top: 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .comparison-section h4 {
+    margin-bottom: 5px;
+    color: #104879;
+  }
+
 #analyze-btn {
   margin-top: 1rem;
   background-color: #104879;
