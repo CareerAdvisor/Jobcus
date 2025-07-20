@@ -1814,17 +1814,18 @@ button[type="submit"]:hover {
 
 .employer-hero-full {
   width: 100%;
-  padding: 40;
+  padding-top: 20;
   margin: 0;
   overflow: hidden;
   margin-top: 40px;
+
 }
 
 .employer-hero-full img {
   width: 100%;
   height: auto;
   display: block;
-  object-fit: cover;
+  max-width: 100%
 }
 
 .employer-hero {
