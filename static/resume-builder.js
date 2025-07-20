@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const resumeOutput = document.getElementById("resumeOutput");
   const downloadBtn = document.getElementById("downloadResumeBtn");
   const optimizePopup = document.getElementById("optimize-popup");
+  const downloadOptions = document.getElementById("resumeDownloadOptions");
 
   let optimizeWithAI = true;
 
@@ -23,6 +24,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!optimizePopup.classList.contains("hidden")) return;
 
+    // Show processing message
+    resumeOutput.innerHTML = "<p>⏳ Generating resume, please wait...</p>";
+
     const data = Object.fromEntries(new FormData(form).entries());
 
     const response = await fetch("/generate-resume", {
@@ -37,7 +41,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const cleaned = cleanAIText(result.formatted_resume);
       resumeOutput.innerHTML = cleaned;
       downloadBtn.style.display = "block";
-      document.getElementById("resumeDownloadOptions").style.display = "block";
+      if (downloadOptions) downloadOptions.style.display = "block";
       window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
     } else {
       resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume. Please try again.</p>`;
@@ -75,6 +79,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/```html|```/g, "")
       .replace(/This HTML resume is structured.*?section\./is, "")
       .replace(/Here is a professional.*?```html/i, "")
+      .replace(/```\n*This HTML code organizes.*?customize it as needed\./is, "")
       .trim();
   }
 
