@@ -1,101 +1,91 @@
-document.getElementById("resumeForm").addEventListener("submit", async function (e) {
-  e.preventDefault();
-  const form = e.target;
-  const payload = {
-    fullName: form.fullName.value,
-    summary: form.summary.value,
-    education: form.education.value,
-    experience: form.experience.value,
-    skills: form.skills.value,
-    certifications: form.certifications.value,
-    languages: form.languages.value,
-    portfolio: form.portfolio.value,
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("resumeForm");
+  const resumeOutput = document.getElementById("resumeOutput");
+  const resumePreview = document.getElementById("resumePreview");
+  const downloadBtn = document.getElementById("downloadResumeBtn");
+  const optimizePopup = document.getElementById("optimize-popup");
+
+  let optimizeWithAI = true;
+
+  document.getElementById("acceptOptimize").onclick = () => {
+    optimizeWithAI = true;
+    optimizePopup.classList.add("hidden");
+    form.dispatchEvent(new Event("submit"));
+  };
+  document.getElementById("declineOptimize").onclick = () => {
+    optimizeWithAI = false;
+    optimizePopup.classList.add("hidden");
+    form.dispatchEvent(new Event("submit"));
   };
 
-  const res = await fetch("/generate-resume", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    if (!optimizePopup.classList.contains("hidden")) return;
+
+    const data = Object.fromEntries(new FormData(form));
+    const response = await fetch("/generate-resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+    resumeOutput.innerHTML = result.formatted_resume;
+    resumePreview.style.display = "block";
   });
 
-  const data = await res.json();
-  const output = document.getElementById("resumeOutput");
+  // Trigger popup before resume is generated
+  form.addEventListener("submit", function (e) {
+    if (optimizePopup.classList.contains("hidden")) return;
+    e.preventDefault();
+    optimizePopup.classList.remove("hidden");
+  });
 
-  if (data.formatted_resume) {
-    output.innerHTML = `<iframe id="resumePreview" style="width: 100%; height: 700px; border: 1px solid #ccc;"></iframe>`;
-    const iframe = document.getElementById("resumePreview").contentWindow.document;
-    iframe.open();
-    iframe.write(data.formatted_resume);
-    iframe.close();
+  // Resume Download as PDF
+  downloadBtn.onclick = () => {
+    const content = resumeOutput.innerHTML;
+    const win = window.open('', '', 'height=842,width=595');
+    win.document.write('<html><head><title>Resume</title>');
+    win.document.write('</head><body>');
+    win.document.write(content);
+    win.document.write('</body></html>');
+    win.document.close();
+    win.print();
+  };
 
-    document.getElementById("downloadResumeBtn").style.display = "inline-block";
-    document.getElementById("downloadResumeBtn").onclick = function () {
-      const doc = document.getElementById("resumePreview").contentWindow;
-      const blob = new Blob([doc.documentElement.outerHTML], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "Resume.html";
-      link.click();
-    };
-  } else {
-    output.innerHTML = "<p style='color:red;'>Failed to generate resume</p>";
-  }
-});
+  // Resume Analyzer
+  document.getElementById("analyze-btn").addEventListener("click", async () => {
+    const textArea = document.getElementById("resume-text").value.trim();
+    const file = document.getElementById("resumeFile").files[0];
+    const resultContainer = document.getElementById("analyzer-result");
 
-// Resume Analyzer
-document.getElementById("analyze-btn").addEventListener("click", async function () {
-  const resultContainer = document.getElementById("analyzer-result");
-  const textArea = document.getElementById("resume-text");
-  const fileInput = document.getElementById("resumeFile");
-
-  resultContainer.innerHTML = `<p>⏳ Analyzing...</p>`;
-
-  let resumeText = textArea.value.trim();
-
-  if (!resumeText && fileInput.files.length > 0) {
-    const file = fileInput.files[0];
-    if (file.type.includes("pdf")) {
-      const reader = new FileReader();
-      reader.onload = async function (e) {
-        const base64PDF = e.target.result.split(",")[1];
-        sendToAnalyzer({ pdf: base64PDF });
-      };
-      reader.readAsDataURL(file);
-      return;
-    } else {
+    let resumeText = textArea;
+    if (!resumeText && file) {
       resumeText = await file.text();
     }
-  }
 
-  if (!resumeText) {
-    resultContainer.innerHTML = "<p style='color:red;'>Paste your resume or upload a file</p>";
-    return;
-  }
+    if (!resumeText) {
+      resultContainer.innerHTML = "<p style='color:red;'>Please paste your resume or upload a file.</p>";
+      return;
+    }
 
-  sendToAnalyzer({ text: resumeText });
+    resultContainer.innerHTML = "⏳ Analyzing...";
 
-  async function sendToAnalyzer(payload) {
     try {
       const res = await fetch("/api/analyze-resume", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ text: resumeText })
       });
       const data = await res.json();
-
       resultContainer.innerHTML = `
-        <div>
-          <h3>✅ Score: ${data.score || "N/A"}</h3>
-          <p><strong>Suggestions:</strong></p>
-          <p>${data.analysis.replace(/\n/g, "<br>")}</p>
-          <p><strong>Recommended Keywords:</strong></p>
-          <ul>${(data.keywords || []).map(k => `<li>${k}</li>`).join("")}</ul>
-        </div>
+        <h3>✅ Resume Score: ${data.score}/100</h3>
+        <h4>Recommendations:</h4>
+        <ul>${data.suggestions.map(item => `<li>${item}</li>`).join("")}</ul>
       `;
     } catch (err) {
-      resultContainer.innerHTML = "<p style='color:red;'>Error analyzing resume.</p>";
-      console.error(err);
+      resultContainer.innerHTML = "<p style='color:red;'>⚠️ Could not analyze resume.</p>";
     }
-  }
+  });
 });
