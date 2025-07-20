@@ -6,7 +6,7 @@
 {% block content %}
 
 <!-- Hero Section -->
-<div class="interview-container" style="padding: 30px 10px; background: #fff;">
+<div class="interview-container" style="padding: 0px 0px; background: #fff;">
   <section class="interview-hero-with-image" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
     <h5 style="color: #6B7280; font-weight: 600; font-size: 14px; letter-spacing: 1px;">AI RESUME BUILDER</h5>
     <h1 style="font-size: 28px; font-weight: 700; color: #104879; margin: 10px 0;">
@@ -29,14 +29,15 @@
   </section>
 </div>
 
-<!-- Resume Analyzer Section -->
-<section class="resume-analyzer">
-  <h2>🧠 Resume Analyzer</h2>
-  <textarea id="resume-text" rows="8" placeholder="Paste your resume text here..."></textarea>
-  <p style="margin: 10px 0; text-align: center;">OR</p>
-  <input type="file" id="resumeFile" accept=".txt,.doc,.docx,.pdf" />
-  <button id="analyze-btn">📊 Analyze Resume</button>
-  <div id="analyzer-result" style="margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 6px; border: 1px solid #ccc;"></div>
+<!-- Resume Analyzer -->
+  <div class="resume-analyzer">
+    <h2>📊 Resume Health Checker</h2>
+    <textarea id="resume-text" rows="6" placeholder="Paste your resume text here..."></textarea>
+    <p style="margin: 10px 0;">OR upload a file</p>
+    <input type="file" id="resumeFile" accept=".txt,.pdf,.doc,.docx" />
+    <button id="analyze-btn">📈 Analyze Resume</button>
+    <div id="analyzer-result" class="comparison-section"></div>
+  </div>
 </section>
 
 <!-- Template Gallery -->
@@ -48,7 +49,6 @@
     <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
   </div>
 </section>
-
 
 <!-- Resume Builder Page -->
 <section id="resume-builder" style="padding: 20px;">
@@ -63,8 +63,17 @@
     <textarea name="skills" placeholder="Skills"></textarea>
     <textarea name="certifications" placeholder="Certifications"></textarea>
     <input name="portfolio" placeholder="LinkedIn or Portfolio" />
-    <button type="submit" id="generateBtn">✨ Generate Resume</button>
+    <button type="submit" class="generate-btn">✨ Generate Resume</button>
   </form>
+
+  <!-- AI Optimization Popup -->
+  <div id="optimize-popup" class="popup hidden"
+       style="position: fixed; top: 30%; left: 50%; transform: translateX(-50%);
+              background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; z-index: 999;">
+    <p>Would you like AI to optimize your resume content?</p>
+    <button id="acceptOptimize" class="primary-btn">Yes, optimize it</button>
+    <button id="declineOptimize" class="primary-btn">No, just use my content</button>
+  </div>
 
   <!-- Output Section -->
   <div id="resumeOutput" class="resume-container"></div>
@@ -75,16 +84,6 @@
     <button onclick="downloadResume('doc')">⬇️ Download Word</button>
     <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
   </div>
-</section>
-
-<!-- AI Optimization Popup -->
-<div id="optimize-popup" class="popup hidden"
-     style="position: fixed; top: 30%; left: 50%; transform: translateX(-50%);
-            background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; z-index: 999;">
-  <p>Would you like AI to optimize your resume content?</p>
-  <button id="acceptOptimize" class="primary-btn" style="margin-bottom: 10px;">Yes, optimize it</button>
-  <button id="declineOptimize" class="primary-btn">No, just use my content</button>
-</div>
 
 {% endblock %}
 
