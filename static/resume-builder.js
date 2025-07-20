@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("resumeForm");
   const resumeOutput = document.getElementById("resumeOutput");
-  const downloadBtn = document.getElementById("downloadResumeBtn");
   const optimizePopup = document.getElementById("optimize-popup");
   const downloadOptions = document.getElementById("resumeDownloadOptions");
 
@@ -40,8 +39,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (result.formatted_resume) {
       const cleaned = cleanAIText(result.formatted_resume);
       resumeOutput.innerHTML = cleaned;
-      downloadBtn.style.display = "block";
-      if (downloadOptions) downloadOptions.style.display = "block";
+      
+    if (downloadOptions) downloadOptions.style.display = "block";
       window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
     } else {
       resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume. Please try again.</p>`;
