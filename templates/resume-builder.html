@@ -33,19 +33,12 @@
     </div>
     </section>
     </div>
-
-  <!-- Step-by-Step Guide -->
-<section class="resume-steps" style="text-align: center; background: #fff; padding: 30px 20px;">
-  <img 
-    src="{{ url_for('static', filename='images/how-it-works-guide.png') }}" 
-    alt="How It Works Guide" 
-    style="max-width: 100%; height: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-radius: 10px;"/>
-</section>
   
   <!-- Resume Analyzer -->
 <section id="resume-analyzer" style="padding: 40px;"></br>
 	<h2>🔍 AI Resume Analyzer</h2>
-	<p>Paste or upload your resume to get keyword analysis and formatting tips.</p>	<textarea id="resume-text" placeholder="Paste your resume text here..."></textarea>
+	<p>Paste or upload your resume to get keyword analysis and formatting tips.</p>	
+	<textarea id="resume-text" placeholder="Paste your resume text here..."></textarea>
    	<input type="file" id="resumeFile" accept=".pdf,.txt,.docx" />
 	<button id="analyze-btn">Analyze Resume</button>
 	<div id="analyzer-result"></div>
