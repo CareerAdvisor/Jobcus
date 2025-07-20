@@ -3,66 +3,88 @@ document.addEventListener("DOMContentLoaded", function () {
   const resumeOutput = document.getElementById("resumeOutput");
   const optimizePopup = document.getElementById("optimize-popup");
   const downloadOptions = document.getElementById("resumeDownloadOptions");
+  const acceptBtn = document.getElementById("acceptOptimize");
+  const declineBtn = document.getElementById("declineOptimize");
 
   let optimizeWithAI = true;
+  let pendingSubmit = false;
 
-  document.getElementById("acceptOptimize").onclick = () => {
+  // Show popup on form submit
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    pendingSubmit = true;
+    optimizePopup.classList.remove("hidden");
+  });
+
+  acceptBtn.onclick = () => {
     optimizeWithAI = true;
     optimizePopup.classList.add("hidden");
-    form.dispatchEvent(new Event("submit"));
+    if (pendingSubmit) processResume();
   };
 
-  document.getElementById("declineOptimize").onclick = () => {
+  declineBtn.onclick = () => {
     optimizeWithAI = false;
     optimizePopup.classList.add("hidden");
-    form.dispatchEvent(new Event("submit"));
+    if (pendingSubmit) processResume();
   };
 
-  form.addEventListener("submit", async function (e) {
-    e.preventDefault();
-
-    if (!optimizePopup.classList.contains("hidden")) return;
-
-    // Show processing message
+  async function processResume() {
+    pendingSubmit = false;
     resumeOutput.innerHTML = "<p>⏳ Generating resume, please wait...</p>";
 
     const data = Object.fromEntries(new FormData(form).entries());
 
-    const response = await fetch("/generate-resume", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
+    try {
+      const response = await fetch("/generate-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (result.formatted_resume) {
-      const cleaned = cleanAIText(result.formatted_resume);
-      resumeOutput.innerHTML = cleaned;
-      
-    if (downloadOptions) downloadOptions.style.display = "block";
-      window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
-    } else {
-      resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume. Please try again.</p>`;
+      if (result.formatted_resume) {
+        const cleaned = cleanAIText(result.formatted_resume);
+        resumeOutput.innerHTML = wrapResumeInContainer(cleaned);
+        if (downloadOptions) downloadOptions.style.display = "block";
+        window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
+      } else {
+        resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume. Please try again.</p>`;
+      }
+    } catch (error) {
+      console.error("Resume generation failed:", error);
+      resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume. Please check your connection or try again.</p>`;
     }
-  });
+  }
 
-  form.addEventListener("submit", function (e) {
-    if (optimizePopup.classList.contains("hidden")) return;
-    e.preventDefault();
-    optimizePopup.classList.remove("hidden");
-  });
+  function wrapResumeInContainer(content) {
+    return `
+      <div class="resume-container">
+        ${content.replace(
+          /<h1>(.*?)<\/h1>/,
+          (_, name) => `
+            <h1 style="margin-bottom: 0;">${name}</h1>
+            <p class="resume-title-line" style="margin-top: 2px;">${form.title.value}</p>
+            <p class="resume-title-line">${form.contact.value}</p>
+          `
+        )}
+      </div>`;
+  }
 
-  // ✨ Enhanced download logic
   window.downloadResume = function (type) {
     const resumeHtml = resumeOutput.innerHTML;
     const cleanedHtml = cleanAIText(resumeHtml);
 
-    const blob = {
-      pdf: new Blob([cleanedHtml], { type: "application/pdf" }),
-      doc: new Blob([cleanedHtml], { type: "application/msword" }),
-      txt: new Blob([stripHtmlTags(cleanedHtml)], { type: "text/plain" }),
-    }[type];
+    let blob;
+    if (type === 'txt') {
+      blob = new Blob([stripHtmlTags(cleanedHtml)], { type: "text/plain" });
+    } else if (type === 'doc') {
+      const docContent = `<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>${cleanedHtml}</body></html>`;
+      blob = new Blob([docContent], { type: "application/msword" });
+    } else {
+      const htmlContent = `<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>${cleanedHtml}</body></html>`;
+      blob = new Blob([htmlContent], { type: "application/pdf" });
+    }
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
