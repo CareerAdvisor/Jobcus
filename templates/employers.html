@@ -62,16 +62,17 @@
   </form>
 
   <!-- Output Box -->
-  <div id="job-description-output"
-       style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
-  </div>
+<div id="job-description-output" class="job-output-box">
+  <!-- Spinner goes here while loading -->
+</div>
 
-  <!-- Download Buttons (optional, hidden until content is generated) -->
-  <div id="download-options" style="margin-top: 12px; display: none;">
-    <button id="download-txt" class="primary-btn">⬇️ Download .txt</button>
-    <button id="download-docx" class="primary-btn">⬇️ Download .docx</button>
-    <button id="download-pdf" class="primary-btn">⬇️ Download .pdf</button>
-  </div>
+<!-- Download Buttons -->
+<div id="download-options" class="download-buttons hidden">
+  <button id="download-txt" class="primary-btn">⬇️ Download .txt</button>
+  <button id="download-docx" class="primary-btn">⬇️ Download .docx</button>
+  <button id="download-pdf" class="primary-btn">⬇️ Download .pdf</button>
+</div>
+
 </section>
 
 {% endblock %}
