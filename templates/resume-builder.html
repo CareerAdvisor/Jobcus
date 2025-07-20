@@ -50,7 +50,8 @@
   </div>
 </section>
 
-<!-- resume-builder.html -->
+
+<!-- Resume Builder Page -->
 <section id="resume-builder" style="padding: 20px;">
   <h2>📄 Build Your Resume with AI</h2>
   <form id="resumeForm" method="POST" action="javascript:void(0);">
@@ -63,17 +64,8 @@
     <textarea name="skills" placeholder="Skills"></textarea>
     <textarea name="certifications" placeholder="Certifications"></textarea>
     <input name="portfolio" placeholder="LinkedIn or Portfolio" />
-    <button id="triggerOptimizePopup" type="button" class="generate-btn">✨ Generate Resume</button>
+    <button type="submit" id="generateBtn">✨ Generate Resume</button>
   </form>
-
-  <!-- AI Optimization Popup -->
-  <div id="optimize-popup" class="popup hidden"
-       style="position: fixed; top: 30%; left: 50%; transform: translateX(-50%);
-              background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; z-index: 999;">
-    <p>Would you like AI to optimize your resume content?</p>
-    <button id="acceptOptimize">Yes, optimize it</button>
-    <button id="declineOptimize">No, just use my content</button>
-  </div>
 
   <!-- Output Section -->
   <div id="resumeOutput" class="resume-container"></div>
@@ -84,6 +76,16 @@
     <button onclick="downloadResume('doc')">⬇️ Download Word</button>
     <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
   </div>
+</section>
+
+<!-- AI Optimization Popup -->
+<div id="optimize-popup" class="popup hidden"
+     style="position: fixed; top: 30%; left: 50%; transform: translateX(-50%);
+            background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ccc; z-index: 999;">
+  <p>Would you like AI to optimize your resume content?</p>
+  <button id="acceptOptimize" class="primary-btn" style="margin-bottom: 10px;">Yes, optimize it</button>
+  <button id="declineOptimize" class="primary-btn">No, just use my content</button>
+</div>
 
 {% endblock %}
 
