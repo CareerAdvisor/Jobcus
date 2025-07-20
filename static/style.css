@@ -1814,11 +1814,9 @@ button[type="submit"]:hover {
 
 .employer-hero-full {
   width: 100%;
-  padding-top: 50;
+  padding-top: 80;
   margin: 0;
-  overflow: hidden;
-  margin-top: 40px;
-
+  margin: 0 auto;
 }
 
 .employer-hero-full img {
@@ -1826,6 +1824,7 @@ button[type="submit"]:hover {
   height: auto;
   display: block;
   max-width: 100%
+  object-fit; contain;
 }
 
 .employer-hero {
