@@ -1467,7 +1467,6 @@ button[type="submit"]:hover {
   padding-bottom: 10px;
 }
 
-
 /* RESUME BUILDER Styles */
 .resume-hero {
   display: flex;
@@ -1743,6 +1742,58 @@ form textarea {
 
 html {
   scroll-behavior: smooth;
+}
+
+input[type="text"], input[type="url"], textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 15px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background: #104879;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.popup {
+  background: #fff;
+  border: 1px solid #999;
+  padding: 20px;
+  max-width: 400px;
+  margin: 0 auto 20px;
+  text-align: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.resume-box {
+  border: 1px solid #ccc;
+  padding: 20px;
+  max-width: 794px;
+  background: white;
+  margin: 20px auto;
+  font-family: 'Arial', sans-serif;
+}
+
+.resume-box h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.resume-box hr {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 12px 0;
 }
 
 @media (max-width: 768px) {
