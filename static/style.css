@@ -1883,10 +1883,12 @@ form label {
 
 form input[type="text"],
 form input[type="email"],
+form input[type="url"]
 form textarea {
   width: 100%;
   padding: 10px;
   margin-top: 5px;
+  margin-bottom: 15px;
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 1rem;
@@ -1904,18 +1906,6 @@ form textarea {
 
 html {
   scroll-behavior: smooth;
-}
-
-input[type="text"], 
-input[type="email"], 
-input[type="url"], 
-textarea {
-  width: 100%;
-  padding: 10px;
-  font-size: 15px;
-  margin-bottom: 15px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
 }
 
 button {
