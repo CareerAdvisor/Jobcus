@@ -1906,7 +1906,10 @@ html {
   scroll-behavior: smooth;
 }
 
-input[type="text"], input[type="url"], textarea {
+input[type="text"], 
+input[type="email"], 
+input[type="url"], 
+textarea {
   width: 100%;
   padding: 10px;
   font-size: 15px;
