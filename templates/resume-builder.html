@@ -30,14 +30,13 @@
 </div>
 
 <!-- Resume Analyzer -->
-<section id="resume-analyzer" style="padding: 20px;">
+<section id="resume-analyzer" style="padding: 40px;">
   <h2>🔍 AI Resume Analyzer</h2>
   <p>Paste or upload your resume to get keyword analysis, a score, and formatting tips.</p>
   <textarea id="resume-text" placeholder="Paste your resume text here..."></textarea>
   <input type="file" id="resumeFile" accept=".pdf,.txt,.docx" />
   <button id="analyze-btn">Analyze Resume</button>
-  <div id="analyzer-result"></div>
-  <canvas id="scoreChart" style="max-width: 500px; margin-top: 30px;"></canvas>
+  <div id="analyzer-result" style="margin-top: 20px; font-family: Arial, sans-serif; font-size: 12pt;"></div>
 </section>
 
 <!-- Template Gallery -->
@@ -65,6 +64,10 @@
   <h2>📄 Build Your Resume with AI</h2>
   <form id="resumeForm" method="POST" action="javascript:void(0);">
     <input name="fullName" id="fullName" placeholder="Full Name" required />
+    <input name="title" id="title" placeholder="Your Title (e.g. Project Manager)" required />
+    <input name="email" id="email" placeholder="Email Address" required />
+    <input name="phone" id="phone" placeholder="Phone Number" required />
+
     <textarea name="summary" placeholder="Professional Summary"></textarea>
     <textarea name="education" placeholder="Education"></textarea>
     <textarea name="experience" placeholder="Work Experience"></textarea>
@@ -75,10 +78,11 @@
     <button type="submit">✨ Generate Resume</button>
   </form>
 
-  <div id="resumeOutput" style="margin-top: 40px;"></div>
-  <button id="downloadResumeBtn" style="display: none;">⬇️ Download as PDF</button>
-</secti
-
+  <div id="resumeOutput" style="margin-top: 40px; font-family: Arial, sans-serif; font-size: 12pt;">
+    <!-- Resume output will be injected here with specific formatting -->
+  </div>
+  <button id="downloadResumeBtn" style="display: none; margin-top: 10px;">⬇️ Download as PDF</button>
+</section>
 {% endblock %}
 
 {% block scripts %}
