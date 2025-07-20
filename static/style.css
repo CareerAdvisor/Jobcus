@@ -1592,19 +1592,36 @@ button[type="submit"]:hover {
   border: 1px solid #ccc;
 }
 
+#resumeOutput {
+  font-family: 'Georgia', serif;
+  text-align: left;
+  font-size: 12pt;
+  line-height: 1.6;
+  padding: 30px;
+  color: #000;
+}
+
 #resumeOutput h1 {
-    font-size: 30pt;
-    margin-bottom: 2pt;
-  }
-  #resumeOutput h2 {
-    font-size: 14pt;
-    margin-top: 12pt;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 2pt;
-  }
-  #resumeOutput p {
-    margin: 4pt 0;
-  }
+  font-size: 30pt;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+#resumeOutput h2 {
+  font-size: 14pt;
+  color: #104879;
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 2px;
+  border-bottom: 2px solid #c0c0c0;
+  padding-bottom: 4px;
+}
+
+#resumeOutput p, #resumeOutput li {
+  font-size: 12pt;
+  margin-bottom: 2px;
+}
+
   #resumeOutput .contact-info {
     font-size: 12pt;
     margin-bottom: 4pt;
