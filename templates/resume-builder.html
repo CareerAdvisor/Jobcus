@@ -76,12 +76,13 @@
   </form>
 
   <!-- Updated Resume Output Section -->
-<div id="resumeOutput" class="resume-preview-box"></div>
-<div class="download-buttons">
-  <button id="downloadResumeBtn">⬇️ Download as PDF</button>
-  <button id="downloadDocBtn">⬇️ Download as .DOC</button>
-  <button id="downloadTxtBtn">⬇️ Download as .TXT</button>
+<button id="downloadResumeBtn">⬇️ Download</button>
+<div id="resumeDownloadOptions" style="display: none;">
+  <button onclick="downloadResume('pdf')">Download PDF</button>
+  <button onclick="downloadResume('doc')">Download Word</button>
+  <button onclick="downloadResume('txt')">Download Text</button>
 </div>
+
 </section>
 {% endblock %}
 
