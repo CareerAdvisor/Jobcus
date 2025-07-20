@@ -75,10 +75,13 @@
     <button type="submit">✨ Generate Resume</button>
   </form>
 
-  <div id="resumeOutput" style="margin-top: 40px;"></div>
-  <button id="downloadResumeBtn" style="display: none;">⬇️ Download as PDF</button>
-  <button id="downloadWordBtn" style="display: none;">⬇️ Download as Word</button>
-  <button id="downloadTextBtn" style="display: none;">⬇️ Download as Text</button>
+  <!-- Updated Resume Output Section -->
+<div id="resumeOutput" class="resume-preview-box"></div>
+<div class="download-buttons">
+  <button id="downloadResumeBtn">⬇️ Download as PDF</button>
+  <button id="downloadDocBtn">⬇️ Download as .DOC</button>
+  <button id="downloadTxtBtn">⬇️ Download as .TXT</button>
+</div>
 </section>
 {% endblock %}
 
