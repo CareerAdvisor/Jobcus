@@ -44,13 +44,15 @@ if (jobPostForm) {
     const output = document.getElementById("job-description-output");
     const downloadOptions = document.getElementById("download-options");
 
-    // Show processing spinner
-    output.innerHTML = `
-      <div style="display: flex; align-items: center;">
-        <div class="spinner"></div>
-        <span style="font-weight: bold; color: #104879;">Generating job description...</span>
-      </div>
-    `;
+    // Show branded Jobcus AI loading bar
+output.innerHTML = `
+  <div class="ai-loading-box">
+    <div class="ai-loading-title">🤖 Jobcus AI is thinking...</div>
+    <div class="loading-bar">
+      <div class="loading-progress"></div>
+    </div>
+  </div>
+`;
     downloadOptions.classList.add("hidden"); // Hide download buttons
 
     try {
