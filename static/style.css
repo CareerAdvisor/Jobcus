@@ -12,7 +12,6 @@ html, body {
   font-family: 'Segoe UI', sans-serif;
   background-color: #f9fbf9;
   color: #333;
-  overflow-x: hidden;
 }
 
 .container {
