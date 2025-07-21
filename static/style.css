@@ -996,7 +996,6 @@ career-hero h1 {
 
 .skill-gap-hero {
   text-align: center;
-  margin-bottom: 10px;
   animation: fadeInUp 1s ease-in-out;
 }
 
@@ -1021,7 +1020,7 @@ career-hero h1 {
 
 .skill-gap-form {
   background-color: #ffc957;
-  padding: 30px;
+  padding: 20px;
   border-radius: 12px;
   margin-bottom: 40px;
   animation: fadeIn 1.2s ease-in-out;
