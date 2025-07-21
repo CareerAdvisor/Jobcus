@@ -123,4 +123,3 @@ document.addEventListener("DOMContentLoaded", function () {
       resultContainer.innerHTML = "<p style='color:red;'>⚠️ Could not analyze resume.</p>";
     }
   });
-});
