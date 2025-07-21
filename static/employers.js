@@ -83,27 +83,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // ----------------------------
-  // 📄 Download .docx
-  // ----------------------------
-  document.getElementById("download-docx").addEventListener("click", async () => {
-  const docxLib = window.docx || window["docx"];
-  if (!docxLib || !docxLib.Document) {
-    alert("❌ DOCX library failed to load – please refresh.");
-    return;
-  }
-
-  const { Document, Packer, Paragraph } = docxLib;
-  const doc = new Document({
-    sections: [{
-      children: [new Paragraph(window.generatedJobDescription || "No content")]
-    }]
-  });
-
-  const blob = await Packer.toBlob(doc);
-  saveAs(blob, "job-description.docx");
-});
-
-  // ----------------------------
   // 📄 Download .pdf
   // ----------------------------
   document.getElementById("download-pdf").addEventListener("click", () => {
