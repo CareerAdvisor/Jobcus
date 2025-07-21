@@ -17,28 +17,50 @@
     Tell us who you're looking to hire and how we can assist your recruitment process.
   </p>
 
-  <form id="employer-inquiry-form">
-    <label>Company</label>
-    <input type="text" name="company">
+  <form id="job-post-form">
+  <label>Job Title</label>
+  <input type="text" name="jobTitle" required>
 
-    <label>Name</label>
-    <input type="text" name="name" required>
+  <label>Company Name</label>
+  <input type="text" name="company" required>
 
-    <label>Email</label>
-    <input type="email" name="email" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-top: 5px; margin-bottom: 5px;">
+  <label>Location</label>
+  <input type="text" name="location" placeholder="e.g. New York, NY" required>
 
-    <label>Phone</label>
-    <input type="text" name="phone" required>
+  <label>Employment Type</label>
+  <select name="employmentType" required>
+    <option value="">Select Employment Type</option>
+    <option value="Full-time">Full-time</option>
+    <option value="Part-time">Part-time</option>
+    <option value="Contract">Contract</option>
+    <option value="Hybrid">Hybrid</option>
+    <option value="Remote">Remote</option>
+  </select>
 
-    <label>Job Roles You're Hiring For</label>
-    <input type="text" name="job_roles">
+  <label>Salary Range</label>
+  <input type="text" name="salaryRange" placeholder="e.g. $45,000 – $60,000/year">
 
-    <label>Message</label>
-    <textarea name="message" rows="4" required></textarea>
+  <label>Department</label>
+  <input type="text" name="department" placeholder="e.g. IT Department">
 
-    <button type="submit" class="primary-btn">Submit Inquiry</button>
-    <div id="inquiry-response"></div>
-  </form>
+  <label>Reports To</label>
+  <input type="text" name="reportsTo" placeholder="e.g. Head of IT">
+
+  <label>Benefits</label>
+  <textarea name="benefits" rows="3" placeholder="e.g. Health Insurance, Paid Time Off, Remote Work Option"></textarea>
+
+  <label>Application Email or Link</label>
+  <input type="text" name="applicationEmail" placeholder="e.g. careers@company.com or https://company.com/apply" required>
+
+  <label>Application Deadline</label>
+  <input type="date" name="applicationDeadline">
+
+  <label>Summary (Optional)</label>
+  <textarea name="summary" rows="3" placeholder="Short intro or mission statement"></textarea>
+
+  <button type="submit" class="primary-btn">✨ Generate Job Description</button>
+</form>
+
 </section>
 
 <!-- 🤖 AI Job Post Generator -->
