@@ -74,10 +74,10 @@
     <input name="portfolio" placeholder="LinkedIn or Portfolio" />
     <button type="submit">✨ Generate Resume</button>
   </form>
+</section>
 
   <!-- Output Section -->
 <div id="resumeOutput" class="resume-container"></div>
-</section>
 
 <!-- Download Buttons -->
 <div id="resumeDownloadOptions" style="display: none; margin-top: 1rem;">
@@ -89,6 +89,11 @@
 {% endblock %}
 
 {% block scripts %}
+  <!-- 3rd-party libs must come first -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.7.0/docx.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
 {% endblock %}
