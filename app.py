@@ -452,7 +452,6 @@ def generate_resume():
     Experience: {data.get('experience')}
     Skills: {data.get('skills')}
     Certifications: {data.get('certifications')}
-    Languages: {data.get('languages')}
     LinkedIn/Portfolio: {data.get('portfolio')}
     """
 
@@ -506,9 +505,17 @@ def submit_employer_form():
 
         Job Title: {job_title}
         Company: {company}
-        Summary: {role_summary or 'Not provided'}
+        Location: {location}
+        Employment Type: {employmentType}
+        Salary Range: {salaryRange}
+        Department: {department}
+        Reports To: {reportsTo}
+        Benefits: {benefits}
+        Application Deadline: {applicationDeadline}
+        Application Email/Link: {applicationEmail}
+        Summary: {summary}
 
-        The job description should include responsibilities, qualifications, and preferred skills.
+        Include sections for About the Company, Job Summary, Key Responsibilities, Required Qualifications, Preferred Skills, and How to Apply.
         """
 
         response = client.chat.completions.create(
