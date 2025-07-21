@@ -1002,7 +1002,7 @@ career-hero h1 {
 
 .skill-gap-hero img {
   width: 100%;
-  max-width: 480px;
+  max-width: 100%;
   margin: 0 auto 20px;
   display: block;
 }
