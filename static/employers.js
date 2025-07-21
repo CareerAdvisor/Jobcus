@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+  window.docx = window.docx || window["docx"];
   const inquiryForm = document.getElementById("employer-inquiry-form");
   const jobPostForm = document.getElementById("job-post-form");
   const output = document.getElementById("job-description-output");
@@ -85,12 +86,13 @@ document.addEventListener("DOMContentLoaded", function () {
   // 📄 Download .docx
   // ----------------------------
   document.getElementById("download-docx").addEventListener("click", async () => {
-  if (!window.docx) {
-    alert("DOCX library failed to load – please refresh.");
+  const docxLib = window.docx || window["docx"];
+  if (!docxLib || !docxLib.Document) {
+    alert("❌ DOCX library failed to load – please refresh.");
     return;
   }
 
-  const { Document, Packer, Paragraph } = window.docx;
+  const { Document, Packer, Paragraph } = docxLib;
   const doc = new Document({
     sections: [{
       children: [new Paragraph(window.generatedJobDescription || "No content")]
@@ -98,12 +100,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   const blob = await Packer.toBlob(doc);
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "job-description.docx";
-  a.click();
-  URL.revokeObjectURL(url);
+  saveAs(blob, "job-description.docx");
 });
 
   // ----------------------------
