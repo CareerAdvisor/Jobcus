@@ -17,6 +17,39 @@
     Tell us who you're looking to hire and how we can assist your recruitment process.
   </p>
 
+  <form id="employer-inquiry-form">
+    <label>Company</label>
+    <input type="text" name="company">
+
+    <label>Name</label>
+    <input type="text" name="name" required>
+
+    <label>Email</label>
+    <input type="email" name="email" required>
+
+    <label>Phone</label>
+    <input type="text" name="phone" required>
+
+    <label>Job Roles You're Hiring For</label>
+    <input type="text" name="job_roles">
+
+    <label>Message</label>
+    <textarea name="message" rows="4" required></textarea>
+
+    <button type="submit" class="primary-btn">Submit Inquiry</button>
+    <div id="inquiry-response"></div>
+  </form>
+</section>
+
+</section>
+
+<!-- 🤖 AI Job Post Generator -->
+<section class="employer-section" style="background-color: #ffc957; padding: 20px; border-radius: 8px;">
+  <h2 style="color: #104879;">📝 AI-Powered Job Post Generator</h2>
+  <p style="color: #333; margin-bottom: 20px;">
+    Instantly create a professional job description with the help of AI.
+  </p>
+
   <form id="job-post-form">
   <label>Job Title</label>
   <input type="text" name="jobTitle" required>
@@ -59,39 +92,6 @@
   <textarea name="summary" rows="3" placeholder="Short intro or mission statement"></textarea>
 
   <button type="submit" class="primary-btn">✨ Generate Job Description</button>
-</form>
-
-</section>
-
-<!-- 🤖 AI Job Post Generator -->
-<section class="employer-section" style="background-color: #ffc957; padding: 20px; border-radius: 8px;">
-  <h2 style="color: #104879;">📝 AI-Powered Job Post Generator</h2>
-  <p style="color: #333; margin-bottom: 20px;">
-    Instantly create a professional job description with the help of AI.
-  </p>
-
-  <form id="jobPostForm">
-  <input name="jobTitle" placeholder="Job Title e.g. IT Technician" required />
-  <input name="company" placeholder="Company Name e.g. Techkord" required />
-  <input name="location" placeholder="Location e.g. New York, NY" required />
-  
-  <select name="employmentType" required>
-    <option value="">Select Employment Type</option>
-    <option value="Full-time">Full-time</option>
-    <option value="Part-time">Part-time</option>
-    <option value="Contract">Contract</option>
-    <option value="Hybrid">Hybrid</option>
-    <option value="Remote">Remote</option>
-  </select>
-
-  <input name="salaryRange" placeholder="Salary Range e.g. $45,000 – $60,000/year" />
-  <input name="department" placeholder="Department e.g. IT Department" />
-  <input name="reportsTo" placeholder="Reports To e.g. Head of IT" />
-  <textarea name="benefits" placeholder="List of Benefits"></textarea>
-  <input name="applicationEmail" placeholder="Application Email or Link" required />
-  <input name="applicationDeadline" type="date" placeholder="Application Deadline" />
-  
-  <button type="submit">✨ Generate Job Post</button>
 </form>
 
   <!-- Output Box -->
