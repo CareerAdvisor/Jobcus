@@ -48,18 +48,29 @@
     Instantly create a professional job description with the help of AI.
   </p>
 
-  <form id="job-post-form">
-    <label>Job Title</label>
-    <input type="text" name="jobTitle" required>
+  <form id="jobPostForm">
+  <input name="jobTitle" placeholder="Job Title e.g. IT Technician" required />
+  <input name="company" placeholder="Company Name e.g. Techkord" required />
+  <input name="location" placeholder="Location e.g. New York, NY" required />
+  
+  <select name="employmentType" required>
+    <option value="">Select Employment Type</option>
+    <option value="Full-time">Full-time</option>
+    <option value="Part-time">Part-time</option>
+    <option value="Contract">Contract</option>
+    <option value="Hybrid">Hybrid</option>
+    <option value="Remote">Remote</option>
+  </select>
 
-    <label>Company Name</label>
-    <input type="text" name="company" required>
-
-    <label>Summary (Optional)</label>
-    <textarea name="summary" rows="3"></textarea>
-
-    <button type="submit" class="primary-btn">Generate Job Description</button>
-  </form>
+  <input name="salaryRange" placeholder="Salary Range e.g. $45,000 – $60,000/year" />
+  <input name="department" placeholder="Department e.g. IT Department" />
+  <input name="reportsTo" placeholder="Reports To e.g. Head of IT" />
+  <textarea name="benefits" placeholder="List of Benefits"></textarea>
+  <input name="applicationEmail" placeholder="Application Email or Link" required />
+  <input name="applicationDeadline" type="date" placeholder="Application Deadline" />
+  
+  <button type="submit">✨ Generate Job Post</button>
+</form>
 
   <!-- Output Box -->
  <div id="job-description-output" style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
