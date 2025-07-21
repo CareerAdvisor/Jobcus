@@ -3,96 +3,66 @@ document.addEventListener("DOMContentLoaded", function () {
   const resumeOutput = document.getElementById("resumeOutput");
   const optimizePopup = document.getElementById("optimize-popup");
   const downloadOptions = document.getElementById("resumeDownloadOptions");
-  const acceptBtn = document.getElementById("acceptOptimize");
-  const declineBtn = document.getElementById("declineOptimize");
 
   let optimizeWithAI = true;
-  let pendingSubmit = false;
+  let shouldBuild = false;
 
-  // Show popup on form submit
+  // 1. First click shows the popup
   form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    pendingSubmit = true;
-    optimizePopup.classList.remove("hidden");
+    if (!shouldBuild) {
+      e.preventDefault();
+      optimizePopup.classList.remove("hidden");
+      return;
+    }
+    // reset state after decision
+    shouldBuild = false;
   });
 
-  acceptBtn.onclick = () => {
+  // 2. User accepts optimization
+  document.getElementById("acceptOptimize").onclick = () => {
     optimizeWithAI = true;
     optimizePopup.classList.add("hidden");
-    if (pendingSubmit) processResume();
+    shouldBuild = true;
+    form.dispatchEvent(new Event("submit"));
   };
 
-  declineBtn.onclick = () => {
+  // 3. User declines optimization
+  document.getElementById("declineOptimize").onclick = () => {
     optimizeWithAI = false;
     optimizePopup.classList.add("hidden");
-    if (pendingSubmit) processResume();
+    shouldBuild = true;
+    form.dispatchEvent(new Event("submit"));
   };
 
-  async function processResume() {
-    pendingSubmit = false;
+  // 4. Main submit logic
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    // Only run after popup interaction
+    if (!shouldBuild) return;
+
     resumeOutput.innerHTML = "<p>⏳ Generating resume, please wait...</p>";
 
     const data = Object.fromEntries(new FormData(form).entries());
+    data.optimize = optimizeWithAI;
 
-    try {
-      const response = await fetch("/generate-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+    const response = await fetch("/generate-resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
 
-      const result = await response.json();
+    const result = await response.json();
 
-      if (result.formatted_resume) {
-        const cleaned = cleanAIText(result.formatted_resume);
-        resumeOutput.innerHTML = wrapResumeInContainer(cleaned);
-        if (downloadOptions) downloadOptions.style.display = "block";
-        window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
-      } else {
-        resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume. Please try again.</p>`;
-      }
-    } catch (error) {
-      console.error("Resume generation failed:", error);
-      resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume. Please check your connection or try again.</p>`;
-    }
-  }
-
-  function wrapResumeInContainer(content) {
-    return `
-      <div class="resume-container">
-        ${content.replace(
-          /<h1>(.*?)<\/h1>/,
-          (_, name) => `
-            <h1 style="margin-bottom: 0;">${name}</h1>
-            <p class="resume-title-line" style="margin-top: 2px;">${form.title.value}</p>
-            <p class="resume-title-line">${form.contact.value}</p>
-          `
-        )}
-      </div>`;
-  }
-
-  window.downloadResume = function (type) {
-    const resumeHtml = resumeOutput.innerHTML;
-    const cleanedHtml = cleanAIText(resumeHtml);
-
-    let blob;
-    if (type === 'txt') {
-      blob = new Blob([stripHtmlTags(cleanedHtml)], { type: "text/plain" });
-    } else if (type === 'doc') {
-      const docContent = `<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>${cleanedHtml}</body></html>`;
-      blob = new Blob([docContent], { type: "application/msword" });
+    if (result.formatted_resume) {
+      const cleaned = cleanAIText(result.formatted_resume);
+      resumeOutput.innerHTML = cleaned;
+      if (downloadOptions) downloadOptions.style.display = "block";
+      window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
     } else {
-      const htmlContent = `<!DOCTYPE html><html><head><meta charset='utf-8'></head><body>${cleanedHtml}</body></html>`;
-      blob = new Blob([htmlContent], { type: "application/pdf" });
+      resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume. Please try again.</p>`;
     }
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Resume.${type}`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  });
 
   function cleanAIText(content) {
     return content
@@ -103,6 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/```\n*This HTML code organizes.*?customize it as needed\./is, "")
       .trim();
   }
+});
 
   function stripHtmlTags(html) {
     const div = document.createElement("div");
