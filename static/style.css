@@ -1966,9 +1966,15 @@ button {
 .download-buttons {
   margin-top: 12px;
   display: flex;
-  gap: 10px;
+  flex-direction: column; /* Stack buttons vertically */
+  gap: 12px; /* Add spacing between them */
 }
 
+  .download-buttons .primary-btn {
+  width: 90%;
+  max-width: 300px;
+}
+  
 /* Utility class to hide elements */
 .hidden {
   display: none !important;
