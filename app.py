@@ -540,7 +540,6 @@ Include sections for About the Company, Job Summary, Key Responsibilities, Requi
                 "salary_range": salaryRange,
                 "application_deadline": applicationDeadline,
                 "application_email": applicationEmail,
-                "job_description": job_description
             }).execute()
 
         except Exception as db_err:
