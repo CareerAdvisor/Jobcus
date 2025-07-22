@@ -12,6 +12,7 @@ html, body {
   font-family: 'Segoe UI', sans-serif;
   background-color: #f9fbf9;
   color: #333;
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 .container {
@@ -1664,8 +1665,10 @@ button[type="submit"]:hover {
   line-height: 1.6;
   padding: 25px;
   color: #000;
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
+  overflow-x: auto;
+  box-sizing: border-box;
 }
 
 #resumeOutput h1 {
@@ -1801,6 +1804,32 @@ button[type="submit"]:hover {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+  @media (min-width: 640px) and (max-width: 1024px) {
+  .resume-hero {
+    flex-direction: row;
+    text-align: left;
+  }
+
+  .resume-hero-text {
+    max-width: 60%;
+  }
+
+  .template-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .template-grid img {
+    width: 120px;
+  }
+
+  .resume-container {
+    width: 90%;
+    padding: 20px;
   }
 }
 
