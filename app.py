@@ -506,18 +506,18 @@ def submit_employer_form():
         Job Title: {job_title}
         Company: {company}
         Location: {location}
-        Employment Type: {employmentType}
-        Salary Range: {salaryRange}
+        Employment Type: {employment_type}
+        Salary: {salary_range}
         Department: {department}
-        Reports To: {reportsTo}
+        Reports To: {reports_to}
         Benefits: {benefits}
-        Application Deadline: {applicationDeadline}
-        Application Email/Link: {applicationEmail}
+        Application Email or Link: {application_email}
+        Application Deadline: {application_deadline}
         Summary: {summary}
-
+        
         Include sections for About the Company, Job Summary, Key Responsibilities, Required Qualifications, Preferred Skills, and How to Apply.
         """
-
+        
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
