@@ -492,40 +492,50 @@ def employer_inquiry():
 def submit_employer_form():
     try:
         data = request.get_json()
+
         job_title = data.get("jobTitle")
         company = data.get("company")
         role_summary = data.get("summary")
+        location = data.get("location")
+        employmentType = data.get("employmentType")
+        salaryRange = data.get("salaryRange")
+        department = data.get("department")
+        reportsTo = data.get("reportsTo")
+        benefits = data.get("benefits")
+        applicationDeadline = data.get("applicationDeadline")
+        applicationEmail = data.get("applicationEmail")
 
         if not job_title or not company:
             return jsonify({"success": False, "message": "Job title and company are required."}), 400
 
-        # Generate job description via OpenAI
+        # Prompt with inserted fields
         prompt = f"""
-        You are a recruitment assistant. Generate a professional job description for the following role:
+You are a recruitment assistant. Generate a professional job description for the following role:
 
-        Job Title: {job_title}
-        Company: {company}
-        Location: {location}
-        Employment Type: {employment_type}
-        Salary: {salary_range}
-        Department: {department}
-        Reports To: {reports_to}
-        Benefits: {benefits}
-        Application Email or Link: {application_email}
-        Application Deadline: {application_deadline}
-        Summary: {summary}
-        
-        Include sections for About the Company, Job Summary, Key Responsibilities, Required Qualifications, Preferred Skills, and How to Apply.
-        """
-        
+Job Title: {job_title}
+Company: {company}
+Location: {location}
+Employment Type: {employmentType}
+Salary Range: {salaryRange}
+Department: {department}
+Reports To: {reportsTo}
+Benefits: {benefits}
+Application Deadline: {applicationDeadline}
+Application Email/Link: {applicationEmail}
+Summary: {role_summary}
+
+Include sections for About the Company, Job Summary, Key Responsibilities, Required Qualifications, Preferred Skills, and How to Apply.
+"""
+
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.6
         )
+
         job_description = response.choices[0].message.content
 
-        # Optional: save to Supabase (can comment this out for now)
+        # Optional: Save to Supabase
         try:
             supabase.table("job_posts").insert({
                 "job_title": job_title,
