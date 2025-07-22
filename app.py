@@ -499,9 +499,6 @@ def submit_employer_form():
         location = data.get("location")
         employmentType = data.get("employmentType")
         salaryRange = data.get("salaryRange")
-        department = data.get("department")
-        reportsTo = data.get("reportsTo")
-        benefits = data.get("benefits")
         applicationDeadline = data.get("applicationDeadline")
         applicationEmail = data.get("applicationEmail")
 
@@ -517,9 +514,6 @@ Company: {company}
 Location: {location}
 Employment Type: {employmentType}
 Salary Range: {salaryRange}
-Department: {department}
-Reports To: {reportsTo}
-Benefits: {benefits}
 Application Deadline: {applicationDeadline}
 Application Email/Link: {applicationEmail}
 Summary: {role_summary}
