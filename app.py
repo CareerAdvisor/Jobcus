@@ -532,11 +532,17 @@ Include sections for About the Company, Job Summary, Key Responsibilities, Requi
         # Optional: Save to Supabase
         try:
             supabase.table("job_posts").insert({
-                "job_title": job_title,
+               "job_title": job_title,
                 "company": company,
                 "summary": role_summary,
+                "location": location,
+                "employment_type": employmentType,
+                "salary_range": salaryRange,
+                "application_deadline": applicationDeadline,
+                "application_email": applicationEmail,
                 "job_description": job_description
             }).execute()
+
         except Exception as db_err:
             print("Supabase insert skipped/error:", db_err)
 
