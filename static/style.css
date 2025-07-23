@@ -2052,6 +2052,8 @@ button {
   display: flex;
   flex-direction: column; /* Stack buttons vertically */
   gap: 12px; /* Add spacing between them */
+  padding: 10px 16px
+  cursor: pointer;
 }
 
   .download-buttons .primary-btn {
