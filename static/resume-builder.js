@@ -1,132 +1,84 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("resumeForm");
-  const resumeOutput = document.getElementById("resumeOutput");
-  const optimizePopup = document.getElementById("optimize-popup");
-  const downloadOptions = document.getElementById("resumeDownloadOptions");
-  const acceptBtn = document.getElementById("acceptOptimize");
-  const declineBtn = document.getElementById("declineOptimize");
+  // === EMPLOYER INQUIRY FORM ===
+  const employerForm = document.getElementById("employer-inquiry-form");
+  const responseBox = document.getElementById("inquiry-response");
 
-  let optimizeWithAI = true;
-  let shouldBuild = false;
+  if (employerForm && responseBox) {
+    employerForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      responseBox.innerHTML = "⏳ Submitting inquiry...";
 
-  // Ensure popup elements exist before assigning
-  if (acceptBtn && declineBtn && optimizePopup) {
-    // Click on "Generate Resume" triggers popup
-    form.addEventListener("submit", function (e) {
-      if (!shouldBuild) {
-        e.preventDefault();
-        optimizePopup.classList.remove("hidden");
-        return;
-      }
-
-      // Reset after popup interaction
-      shouldBuild = false;
-    });
-
-    // Accept AI optimization
-    acceptBtn.onclick = () => {
-      optimizeWithAI = true;
-      optimizePopup.classList.add("hidden");
-      shouldBuild = true;
-      form.dispatchEvent(new Event("submit"));
-    };
-
-    // Decline AI optimization
-    declineBtn.onclick = () => {
-      optimizeWithAI = false;
-      optimizePopup.classList.add("hidden");
-      shouldBuild = true;
-      form.dispatchEvent(new Event("submit"));
-    };
-  }
-
-  // Main resume generation logic (after popup)
-  form.addEventListener("submit", async function (e) {
-    e.preventDefault();
-    if (!shouldBuild) return;
-
-    resumeOutput.innerHTML = "<p>⏳ Generating resume, please wait...</p>";
-
-    const data = Object.fromEntries(new FormData(form).entries());
-    data.optimize = optimizeWithAI;
-
-    try {
-      const response = await fetch("/generate-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-
-      const result = await response.json();
-
-      if (result.formatted_resume) {
-        const cleaned = cleanAIText(result.formatted_resume);
-        resumeOutput.innerHTML = cleaned;
-        if (downloadOptions) downloadOptions.style.display = "block";
-        window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
-      } else {
-        resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume. Please try again.</p>`;
-      }
-    } catch (error) {
-      console.error("Resume generation failed:", error);
-      resumeOutput.innerHTML = `<p style="color:red;">⚠️ Something went wrong.</p>`;
-    }
-  });
-
-  function cleanAIText(content) {
-    return content
-      .replace(/Certainly!.*?resume in HTML format.*?\n/i, "")
-      .replace(/```html|```/g, "")
-      .replace(/This HTML resume is structured.*?section\./is, "")
-      .replace(/Here is a professional.*?```html/i, "")
-      .replace(/```\n*This HTML code organizes.*?customize it as needed\./is, "")
-      .trim();
-  }
-
-  // Resume Analyzer (NO popup)
-  const analyzeBtn = document.getElementById("analyze-btn");
-  if (analyzeBtn) {
-    analyzeBtn.addEventListener("click", async () => {
-      const textArea = document.getElementById("resume-text").value.trim();
-      const file = document.getElementById("resumeFile").files[0];
-      const resultContainer = document.getElementById("analyzer-result");
-
-      let resumeText = textArea;
-      if (!resumeText && file) {
-        resumeText = await file.text();
-      }
-
-      if (!resumeText) {
-        resultContainer.innerHTML = "<p style='color:red;'>Please paste your resume or upload a file.</p>";
-        return;
-      }
-
-      resultContainer.innerHTML = "⏳ Analyzing...";
+      const formData = new FormData(employerForm);
+      const data = Object.fromEntries(formData.entries());
 
       try {
-        const res = await fetch("/api/analyze-resume", {
+        const res = await fetch("/api/employer-inquiry", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: resumeText })
+          body: JSON.stringify(data),
         });
 
-        const data = await res.json();
-
-        if (data.error) {
-          resultContainer.innerHTML = `<p style='color:red;'>${data.error}</p>`;
-          return;
-        }
-
-        resultContainer.innerHTML = `
-          <h3>✅ Resume Score: ${data.score || 'N/A'}/100</h3>
-          <h4>Recommendations:</h4>
-          <ul>${(data.suggestions || data.keywords || []).map(item => `<li>${item}</li>`).join("")}</ul>
-          <p>${data.analysis || ''}</p>
-        `;
+        const result = await res.json();
+        responseBox.innerHTML = result.message
+          ? `<p style="color:green;">✅ ${result.message}</p>`
+          : `<p style="color:green;">✅ Inquiry submitted successfully!</p>`;
       } catch (err) {
         console.error(err);
-        resultContainer.innerHTML = "<p style='color:red;'>⚠️ Could not analyze resume.</p>";
+        responseBox.innerHTML = `<p style="color:red;">❌ Submission failed. Please try again.</p>`;
       }
+    });
+  }
+
+  // === JOB POST GENERATOR ===
+  const jobForm = document.getElementById("job-post-form");
+  const outputBox = document.getElementById("job-description-output");
+  const downloadOptions = document.getElementById("download-options");
+
+  if (jobForm && outputBox && downloadOptions) {
+    jobForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      outputBox.innerHTML = '<div class="spinner"></div>';
+      downloadOptions.classList.add("hidden");
+
+      const formData = new FormData(jobForm);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const res = await fetch("/api/generate-job-description", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        const result = await res.json();
+
+        if (result.description) {
+          outputBox.innerHTML = `<div class="fade-in">${result.description}</div>`;
+          downloadOptions.classList.remove("hidden");
+        } else {
+          outputBox.innerHTML = `<p style="color:red;">❌ Failed to generate job description.</p>`;
+        }
+      } catch (err) {
+        console.error(err);
+        outputBox.innerHTML = `<p style="color:red;">⚠️ Could not generate job description. Try again.</p>`;
+      }
+    });
+
+    // === DOWNLOAD TXT ===
+    document.getElementById("download-txt")?.addEventListener("click", () => {
+      const text = outputBox.innerText;
+      const blob = new Blob([text], { type: "text/plain" });
+      saveAs(blob, "job-description.txt");
+    });
+
+    // === DOWNLOAD PDF ===
+    document.getElementById("download-pdf")?.addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const text = outputBox.innerText;
+      const lines = doc.splitTextToSize(text, 180); // wrap lines
+      doc.text(lines, 10, 10);
+      doc.save("job-description.pdf");
     });
   }
 });
