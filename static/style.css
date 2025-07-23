@@ -1867,6 +1867,21 @@ button[type="submit"]:hover {
     margin-bottom: 10px;
   }
 
+  @media (max-width: 768px) {
+  #resumeOutput,
+  .resume-container {
+    padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  #resume-analyzer,
+  #resume-builder {
+    padding: 1rem;
+  }
+}
+
 /* Fade-in animation for results */
 .fade-in {
   animation: fadeIn 0.7s ease-in-out forwards;
