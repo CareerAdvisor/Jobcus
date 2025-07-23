@@ -1897,9 +1897,9 @@ button[type="submit"]:hover {
 /* employers.css */
 
 .employer-hero-full {
-  width: 100%;
+  width: 100vw;
   padding-top: 80px;
-  margin: 0;
+  max-width: 100%
   margin: 0 auto;
   Margin-top: 60px;
   animation: fadeInUp 1s ease-in-out;
