@@ -399,22 +399,38 @@ def analyze_resume():
         data = request.get_json()
         resume_text = ""
 
-        # If file uploaded
-        if "pdf" in data:
-            import base64
-            from PyPDF2 import PdfReader
-            from io import BytesIO
-            pdf_bytes = base64.b64decode(data["pdf"])
-            reader = PdfReader(BytesIO(pdf_bytes))
-            resume_text = " ".join(page.extract_text() or "" for page in reader.pages)
+        if not data:
+            return jsonify({"error": "Invalid request format"}), 400
 
-        elif "text" in data:
-            resume_text = data["text"]
+        # Handle PDF input
+        if "pdf" in data and data["pdf"]:
+            try:
+                import base64
+                from PyPDF2 import PdfReader
+                from io import BytesIO
 
-        if not resume_text.strip():
+                pdf_bytes = base64.b64decode(data["pdf"])
+                reader = PdfReader(BytesIO(pdf_bytes))
+                resume_text = " ".join((page.extract_text() or "") for page in reader.pages)
+
+                if not resume_text.strip():
+                    return jsonify({"error": "PDF content is empty"}), 400
+
+            except Exception as pdf_err:
+                print("PDF Decode Error:", pdf_err)
+                return jsonify({"error": "Unable to extract text from PDF"}), 400
+
+        # Handle plain text input
+        elif "text" in data and data["text"]:
+            resume_text = data["text"].strip()
+
+        else:
+            return jsonify({"error": "No resume data provided"}), 400
+
+        if not resume_text:
             return jsonify({"error": "No resume content found"}), 400
 
-        # --- Step 1: AI Feedback via OpenAI ---
+        # --- Step 1: AI Feedback ---
         ai_prompt = (
             "You are an ATS resume analyzer. Analyze the following resume text. "
             "Give insights about formatting, keyword richness, tone, clarity, and structure. "
@@ -427,7 +443,7 @@ def analyze_resume():
             temperature=0.6
         ).choices[0].message.content
 
-        # --- Step 2: Keyword Match (Dummy Keywords for now) ---
+        # --- Step 2: Keyword Match ---
         target_keywords = ["Project Management", "Python", "Communication", "Teamwork", "Leadership"]
         found_keywords = [kw for kw in target_keywords if kw.lower() in resume_text.lower()]
 
