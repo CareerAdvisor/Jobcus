@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("resumeForm");
   const resumeOutput = document.getElementById("resumeOutput");
@@ -8,7 +7,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let optimizeWithAI = true;
   let shouldBuild = false;
 
-  if (!form || !popup || !acceptBtn || !declineBtn || !resumeOutput) {
+  if (!form || !resumeOutput) {
     console.warn("Missing required elements for resume builder.");
     return;
   }
@@ -21,20 +20,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     shouldBuild = false;
   });
-
-  acceptBtn.onclick = () => {
-    optimizeWithAI = true;
-    popup.classList.add("hidden");
-    shouldBuild = true;
-    form.dispatchEvent(new Event("submit"));
-  };
-
-  declineBtn.onclick = () => {
-    optimizeWithAI = false;
-    popup.classList.add("hidden");
-    shouldBuild = true;
-    form.dispatchEvent(new Event("submit"));
-  };
 
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
