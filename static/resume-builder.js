@@ -1,8 +1,10 @@
+
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("resumeForm");
   const popup = document.getElementById("optimize-popup");
   const resumeOutput = document.getElementById("resumeOutput");
   const downloadOptions = document.getElementById("resumeDownloadOptions");
+  const optimizedDownloadOptions = document.getElementById("optimizedDownloadOptions");
   const acceptBtn = document.getElementById("acceptOptimize");
   const declineBtn = document.getElementById("declineOptimize");
 
@@ -58,6 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const cleaned = cleanAIText(result.formatted_resume);
         resumeOutput.innerHTML = cleaned;
         if (downloadOptions) downloadOptions.style.display = "block";
+        if (optimizedDownloadOptions) optimizedDownloadOptions.style.display = "block";
         window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
       } else {
         resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume.</p>`;
@@ -71,7 +74,8 @@ document.addEventListener("DOMContentLoaded", function () {
   function cleanAIText(content) {
     return content
       .replace(/```html|```/g, "")
-      .replace(/(?:Certainly!|Here's a resume|This HTML).*?\n/gi, "")
+      .replace(/(?:Certainly!|Here's a resume|This HTML).*?
+/gi, "")
       .trim();
   }
 
@@ -89,6 +93,25 @@ document.addEventListener("DOMContentLoaded", function () {
     } else if (format === "doc") {
       const blob = new Blob([text], { type: "application/msword" });
       saveAs(blob, "resume.doc");
+    }
+  };
+
+  window.downloadOptimizedResume = function (format) {
+    const container = document.getElementById("resumeOutput");
+    const content = container.innerText || "Optimized resume content";
+
+    if (format === "txt") {
+      const blob = new Blob([content], { type: "text/plain" });
+      saveAs(blob, "resume-optimized.txt");
+    } else if (format === "doc") {
+      const blob = new Blob([content], { type: "application/msword" });
+      saveAs(blob, "resume-optimized.doc");
+    } else if (format === "pdf") {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const lines = doc.splitTextToSize(content, 180);
+      doc.text(lines, 10, 10);
+      doc.save("resume-optimized.pdf");
     }
   };
 
@@ -135,10 +158,8 @@ document.addEventListener("DOMContentLoaded", function () {
       const result = await response.json();
       if (result.error) throw new Error(result.error);
 
-      // Show analysis
       analyzerResult.innerHTML = marked.parse(result.analysis || "No analysis returned.");
 
-      // Show keywords
       if (result.keywords && Array.isArray(result.keywords)) {
         result.keywords.forEach(kw => {
           const li = document.createElement("li");
@@ -147,10 +168,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       }
 
-      // Show score
       const score = Math.min(100, result.keywords.length * 20);
-      scoreBar.style.width = `${score}%`;
-      scoreBar.innerText = `${score}%`;
+      scoreBar.style.width = `${score}%`; scoreBar.innerText = `${score}%`;
     } catch (err) {
       console.error("Analyzer error:", err);
       analyzerResult.innerHTML = `<p style="color:red;">❌ Failed to analyze resume. Please try again.</p>`;
