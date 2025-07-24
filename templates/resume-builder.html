@@ -49,7 +49,6 @@
   </div>
 </section>
 
-<!-- Resume Builder -->
 <section id="resume-builder" style="padding: 20px;">
   <h2>📄 Build Your Resume with AI</h2>
   <form id="resumeForm" method="POST" action="javascript:void(0);">
@@ -64,18 +63,18 @@
     <input name="portfolio" placeholder="LinkedIn or Portfolio" />
     <button type="submit">✨ Generate Resume</button>
   </form>
-  <div id="resumeOutput" class="resume-container" style="margin-top: 20px;"></div>
+    <!-- Output Section -->
+<div id="resumeOutput" class="resume-container"></div>
 </section>
 
-<!-- Optimization Popup -->
-<div id="optimize-popup" class="popup hidden" style="padding: 20px; background: #f9f9f9; border-radius: 6px; max-width: 400px; margin: 20px auto;">
+<div id="optimize-popup" class="popup hidden">
   <p>Would you like AI to optimize your resume before building?</p>
   <button id="acceptOptimize">Yes, Optimize</button>
   <button id="declineOptimize">No, Continue</button>
 </div>
 
 <!-- Download Buttons -->
-<div id="resumeDownloadOptions" style="display: none; margin-top: 1rem; text-align: center;">
+<div id="resumeDownloadOptions" style="display: none; margin-top: 1rem;">
   <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
   <button onclick="downloadResume('doc')">⬇️ Download Word</button>
   <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
@@ -84,10 +83,11 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- 3rd-party libs -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.7.0/docx.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <!-- 3rd-party libs must come first -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.7.0/docx.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
 {% endblock %}
