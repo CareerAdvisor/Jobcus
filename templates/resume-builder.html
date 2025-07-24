@@ -29,13 +29,22 @@
   </section>
 </div>
 
-<!-- Resume Analyzer -->
 <section id="resume-analyzer" style="padding: 40px;">
   <h2>🔍 AI Resume Analyzer</h2>
   <p>Paste or upload your resume to get keyword analysis, a score, and formatting tips.</p>
   <textarea id="resume-text" placeholder="Paste your resume text here..."></textarea>
   <input type="file" id="resumeFile" accept=".pdf,.txt,.docx" />
   <button id="analyze-btn">Analyze Resume</button>
+
+  <!-- 🎯 Visual Resume Score -->
+  <div id="score-visual" style="margin-top: 20px; width: 100%; background: #e5e7eb; height: 20px; border-radius: 8px; overflow: hidden; display: none;">
+    <div id="score-bar" style="height: 100%; width: 0; background: #2563eb; color: #fff; font-size: 12px; text-align: center; line-height: 20px;"></div>
+  </div>
+
+  <!-- 🧠 Keyword Match Display -->
+  <div id="keyword-match" style="margin-top: 10px; font-size: 14px; color: #333;"></div>
+
+  <!-- 🧾 Analyzer Output -->
   <div id="analyzer-result" style="margin-top: 20px; font-family: Arial, sans-serif; font-size: 12pt;"></div>
 </section>
 
