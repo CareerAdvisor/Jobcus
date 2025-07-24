@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
     e.preventDefault();
     if (!shouldBuild) return;
 
-     builderResumeOutput.innerHTML = "⏳ Generating resume...";
+    builderResumeOutput.innerHTML = "⏳ Generating resume...";
     const data = Object.fromEntries(new FormData(form).entries());
     data.optimize = optimizeWithAI;
 
@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
       builderResumeOutput.innerHTML = `<p style="color:red;">⚠️ Server error. Try again.</p>`;
     }
   });
-  
+
   // Clean AI Response
   function cleanAIText(content) {
     return content
@@ -69,9 +69,16 @@ document.addEventListener("DOMContentLoaded", function () {
     if (format === "txt") {
       const blob = new Blob([text], { type: "text/plain" });
       saveAs(blob, `${filename}.txt`);
-    } else if (format === "doc") {
-      const blob = new Blob([text], { type: "application/msword" });
-      saveAs(blob, `${filename}.doc`);
+    } else if (format === "docx") {
+      const { Document, Packer, Paragraph, TextRun } = window.docx;
+      const doc = new Document();
+      const lines = text.split('\n').map(line =>
+        new Paragraph({ children: [new TextRun({ text: line })] })
+      );
+      doc.addSection({ children: lines });
+      Packer.toBlob(doc).then(blob => {
+        saveAs(blob, `${filename}.docx`);
+      });
     } else if (format === "pdf") {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -174,40 +181,39 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function sendAnalysis(pdf = null, text = "") {
-  try {
-    const response = await fetch("/api/analyze-resume", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(pdf ? { pdf } : { text })
-    });
-
-    const result = await response.json();
-    if (result.error) throw new Error(result.error);
-
-    analyzerResult.innerHTML = marked.parse(result.analysis || "No analysis returned.");
-
-    // ✅ Insert here to pre-fill optimizer textarea after PDF is analyzed
-    if (text && document.getElementById("resume-text")) {
-      document.getElementById("resume-text").value = text;
-    }
-
-    if (result.keywords && Array.isArray(result.keywords)) {
-      result.keywords.forEach(kw => {
-        const li = document.createElement("li");
-        li.innerText = kw;
-        keywordList.appendChild(li);
+    try {
+      const response = await fetch("/api/analyze-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pdf ? { pdf } : { text })
       });
+
+      const result = await response.json();
+      if (result.error) throw new Error(result.error);
+
+      analyzerResult.innerHTML = marked.parse(result.analysis || "No analysis returned.");
+
+      if (text && document.getElementById("resume-text")) {
+        document.getElementById("resume-text").value = text;
+      }
+
+      if (result.keywords && Array.isArray(result.keywords)) {
+        result.keywords.forEach(kw => {
+          const li = document.createElement("li");
+          li.innerText = kw;
+          keywordList.appendChild(li);
+        });
+      }
+
+      const score = Math.min(100, result.keywords.length * 20);
+      scoreBar.style.width = `${score}%`;
+      scoreBar.innerText = `${score}%`;
+
+      const cta = document.getElementById("post-analysis-cta");
+      if (cta) cta.style.display = "block";
+    } catch (err) {
+      console.error("Analyzer error:", err);
+      analyzerResult.innerHTML = `<p style="color:red;">❌ Failed to analyze resume. Please try again.</p>`;
     }
-
-    const score = Math.min(100, result.keywords.length * 20);
-    scoreBar.style.width = `${score}%`;
-    scoreBar.innerText = `${score}%`;
-
-    const cta = document.getElementById("post-analysis-cta");
-    if (cta) cta.style.display = "block";
-  } catch (err) {
-    console.error("Analyzer error:", err);
-    analyzerResult.innerHTML = `<p style="color:red;">❌ Failed to analyze resume. Please try again.</p>`;
   }
-}
 });
