@@ -1,4 +1,3 @@
-<script>
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("resumeForm");
   const builderResumeOutput = document.getElementById("builderResumeOutput");
@@ -197,4 +196,3 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 });
-</script>
