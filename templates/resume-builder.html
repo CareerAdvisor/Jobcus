@@ -6,23 +6,29 @@
 {% block content %}
 
 <!-- Hero Section -->
-<div class="interview-container" style="padding: 30px 10px; width: 100%; background: #fff;">
+<div class="interview-container" style="padding: 30px 10px; width: 100%; background: #104879;">
   <section class="interview-hero-with-image" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-    <h5 style="color: #6B7280; font-weight: 600; font-size: 14px; letter-spacing: 1px;">AI RESUME BUILDER</h5>
-    <h1 style="font-size: 28px; font-weight: 700; color: #104879; margin: 10px 0;">
-      Get Hired 2x Faster <br>with an <span style="color: #ee9e12;">Optimized Resume</span>
+    <h5 style="color: #ffc957; font-weight: 600; font-size: 14px; letter-spacing: 1px;">AI RESUME BUILDER</h5>
+    
+    <h1 style="font-size: 28px; font-weight: 700; color: white; margin: 10px 0;">
+      Get Hired 2x Faster <br>with an <span style="color: #ffc957;">Optimized Resume</span>
     </h1>
-    <p style="max-width: 400px; color: #333; font-size: 16px; margin: 10px 0 20px;">
+    
+    <p style="max-width: 420px; color: white; font-size: 16px; margin: 10px 0 20px;">
       Improve your resume with AI suggestions<br>and a recruiter-friendly format.
     </p>
-    <ul style="list-style: none; padding: 0; margin-bottom: 15px; color: #000;">
+    
+    <ul style="list-style: none; padding: 0; margin-bottom: 15px; color: #ffc957;">
       <li style="margin-bottom: 8px;">✅ ATS Resume Templates</li>
       <li style="margin-bottom: 8px;">✅ Resume Score</li>
       <li>✅ One Click Optimizer</li>
     </ul>
-    <a href="#resume-analyzer" class="primary-btn" style="background-color: #104879; padding: 12px 24px; color: white; border-radius: 6px; text-decoration: none; font-weight: 600;">
+    
+    <a href="#resume-analyzer" class="primary-btn"
+       style="background-color: #ffc957; padding: 12px 24px; color: #104879; border-radius: 6px; text-decoration: none; font-weight: 600;">
       ANALYZE MY RESUME
     </a>
+    
     <div style="margin-top: 20px; margin-bottom: 20px;">
       <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
     </div>
@@ -95,28 +101,51 @@
 
 </section>
 
-<!-- Resume Builder -->
-<section id="resume-builder" style="padding: 20px;">
-  <h2>📄 Build Your Resume with AI</h2>
+<!-- 🧠 AI Resume Builder -->
+<section id="resume-builder" style="background-color: #ffc957; padding: 20px; border-radius: 8px;">
+  <h2 style="color: #104879;">📄 Build Your Resume with AI</h2>
+  <p style="color: #333; margin-bottom: 20px;">
+    Quickly generate a professional resume with the power of AI. Fill in your details and let us handle the formatting.
+  </p>
+
   <form id="resumeForm" method="POST" action="javascript:void(0);">
-    <input name="fullName" id="fullName" placeholder="Full Name" required />
-    <input name="title" id="title" placeholder="Job Title(s) e.g. IT Support | Project Manager" required />
+    <label for="fullName">Full Name</label>
+    <input name="fullName" id="fullName" placeholder="John Doe" required />
+
+    <label for="title">Job Title(s)</label>
+    <input name="title" id="title" placeholder="e.g. IT Support | Project Manager" required />
+
+    <label for="contact">Contact Info</label>
     <input name="contact" id="contact" placeholder="City | Phone Number | Email" required />
-    <textarea name="summary" placeholder="Professional Summary"></textarea>
-    <textarea name="education" placeholder="Education"></textarea>
-    <textarea name="experience" placeholder="Work Experience"></textarea>
-    <textarea name="skills" placeholder="Skills"></textarea>
-    <textarea name="certifications" placeholder="Certifications"></textarea>
-    <input name="portfolio" placeholder="LinkedIn or Portfolio" />
-    <button type="submit">✨ Generate Resume</button>
+
+    <label for="summary">Professional Summary</label>
+    <textarea name="summary" placeholder="Tell us about your background"></textarea>
+
+    <label for="education">Education</label>
+    <textarea name="education" placeholder="List your academic background"></textarea>
+
+    <label for="experience">Work Experience</label>
+    <textarea name="experience" placeholder="Include your relevant job roles"></textarea>
+
+    <label for="skills">Skills</label>
+    <textarea name="skills" placeholder="List your top skills"></textarea>
+
+    <label for="certifications">Certifications</label>
+    <textarea name="certifications" placeholder="Any relevant licenses or certifications?"></textarea>
+
+    <label for="portfolio">LinkedIn or Portfolio</label>
+    <input name="portfolio" placeholder="Link to your profile or personal website" />
+
+    <button type="submit" style="background-color: #104879; color: white; padding: 10px 20px; margin-top: 10px; border-radius: 5px;">✨ Generate Resume</button>
   </form>
+
   <div id="builderResumeOutput" class="resume-container" style="margin-top: 30px;"></div>
 </section>
 
 <!-- Download Buttons -->
 <div id="resumeDownloadOptions" style="display: none; margin-top: 1rem; text-align: center;">
   <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
-  <button onclick="downloadResume('doc')">⬇️ Download Word</button>
+  <button onclick="downloadResume('docx')">⬇️ Download Word (.docx)</button>
   <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
 </div>
 
@@ -124,8 +153,6 @@
 <section class="resume-gallery">
   <h2 style="color: #104879;">Explore Our Templates</h2>
   <div class="template-grid">
-    <img src="{{ url_for('static', filename='images/template1.png') }}" alt="Template 1" class="template-img" style="width: 100%; height: auto;">
-    <img src="{{ url_for('static', filename='images/template2.png') }}" alt="Template 2" class="template-img" style="width: 100%; height: auto;">
     <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
   </div>
 </section>
