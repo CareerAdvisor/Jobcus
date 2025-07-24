@@ -6,8 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const downloadOptions = document.getElementById("resumeDownloadOptions");
   const acceptBtn = document.getElementById("acceptOptimize");
   const declineBtn = document.getElementById("declineOptimize");
-  const optimizedDownloads = document.getElementById("optimizedDownloadOptions");
-  const optimizeBtn = document.getElementById("optimizeResume");
+  const optimizedDownloadOptions = document.getElementById("optimizedDownloadOptions");
 
   let optimizeWithAI = true;
   let shouldBuild = false;
@@ -61,6 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const cleaned = cleanAIText(result.formatted_resume);
         resumeOutput.innerHTML = cleaned;
         if (downloadOptions) downloadOptions.style.display = "block";
+        if (optimizedDownloadOptions) optimizedDownloadOptions.style.display = "block";
         window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
       } else {
         resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume.</p>`;
@@ -114,46 +114,46 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
+  const optimizeBtn = document.getElementById("optimizeResume");
   if (optimizeBtn) {
     optimizeBtn.addEventListener("click", async () => {
-      const resumeText = document.getElementById("resume-text");
-      const text = resumeText?.value?.trim();
-      if (!text) {
-        alert("Please paste your resume or upload a file first.");
+      const resumeText = document.getElementById("resume-text")?.value.trim();
+
+      if (!resumeText) {
+        alert("Please paste your resume text above first.");
         return;
       }
 
-      resumeOutput.innerHTML = "✨ Optimizing your resume...";
+      resumeOutput.innerHTML = "⏳ Optimizing your resume...";
 
       try {
         const response = await fetch("/generate-resume", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            fullName: "Optimized Candidate",
-            summary: "",
+            fullName: "Candidate",
+            summary: resumeText,
             education: "",
-            experience: text,
+            experience: "",
             skills: "",
             certifications: "",
             portfolio: "",
             optimize: true
-          }),
+          })
         });
 
         const result = await response.json();
-
         if (result.formatted_resume) {
           const cleaned = cleanAIText(result.formatted_resume);
           resumeOutput.innerHTML = cleaned;
-          if (optimizedDownloads) optimizedDownloads.style.display = "block";
+          if (optimizedDownloadOptions) optimizedDownloadOptions.style.display = "block";
           window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
         } else {
-          resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to optimize resume.</p>`;
+          resumeOutput.innerHTML = `<p style="color:red;">❌ Optimization failed.</p>`;
         }
-      } catch (err) {
-        console.error("Optimization error:", err);
-        resumeOutput.innerHTML = `<p style="color:red;">⚠️ Optimization failed. Try again.</p>`;
+      } catch (error) {
+        console.error(error);
+        resumeOutput.innerHTML = `<p style="color:red;">⚠️ Optimization error. Try again.</p>`;
       }
     });
   }
@@ -202,7 +202,6 @@ document.addEventListener("DOMContentLoaded", function () {
       if (result.error) throw new Error(result.error);
 
       analyzerResult.innerHTML = marked.parse(result.analysis || "No analysis returned.");
-
       if (result.keywords && Array.isArray(result.keywords)) {
         result.keywords.forEach(kw => {
           const li = document.createElement("li");
@@ -214,6 +213,10 @@ document.addEventListener("DOMContentLoaded", function () {
       const score = Math.min(100, result.keywords.length * 20);
       scoreBar.style.width = `${score}%`;
       scoreBar.innerText = `${score}%`;
+
+      const cta = document.getElementById("post-analysis-cta");
+      if (cta) cta.style.display = "block";
+
     } catch (err) {
       console.error("Analyzer error:", err);
       analyzerResult.innerHTML = `<p style="color:red;">❌ Failed to analyze resume. Please try again.</p>`;
