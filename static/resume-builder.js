@@ -174,34 +174,40 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function sendAnalysis(pdf = null, text = "") {
-    try {
-      const response = await fetch("/api/analyze-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(pdf ? { pdf } : { text })
-      });
+  try {
+    const response = await fetch("/api/analyze-resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(pdf ? { pdf } : { text })
+    });
 
-      const result = await response.json();
-      if (result.error) throw new Error(result.error);
+    const result = await response.json();
+    if (result.error) throw new Error(result.error);
 
-      analyzerResult.innerHTML = marked.parse(result.analysis || "No analysis returned.");
-      if (result.keywords && Array.isArray(result.keywords)) {
-        result.keywords.forEach(kw => {
-          const li = document.createElement("li");
-          li.innerText = kw;
-          keywordList.appendChild(li);
-        });
-      }
+    analyzerResult.innerHTML = marked.parse(result.analysis || "No analysis returned.");
 
-      const score = Math.min(100, result.keywords.length * 20);
-      scoreBar.style.width = `${score}%`;
-      scoreBar.innerText = `${score}%`;
-
-      const cta = document.getElementById("post-analysis-cta");
-      if (cta) cta.style.display = "block";
-    } catch (err) {
-      console.error("Analyzer error:", err);
-      analyzerResult.innerHTML = `<p style="color:red;">❌ Failed to analyze resume. Please try again.</p>`;
+    // ✅ Insert here to pre-fill optimizer textarea after PDF is analyzed
+    if (text && document.getElementById("resume-text")) {
+      document.getElementById("resume-text").value = text;
     }
+
+    if (result.keywords && Array.isArray(result.keywords)) {
+      result.keywords.forEach(kw => {
+        const li = document.createElement("li");
+        li.innerText = kw;
+        keywordList.appendChild(li);
+      });
+    }
+
+    const score = Math.min(100, result.keywords.length * 20);
+    scoreBar.style.width = `${score}%`;
+    scoreBar.innerText = `${score}%`;
+
+    const cta = document.getElementById("post-analysis-cta");
+    if (cta) cta.style.display = "block";
+  } catch (err) {
+    console.error("Analyzer error:", err);
+    analyzerResult.innerHTML = `<p style="color:red;">❌ Failed to analyze resume. Please try again.</p>`;
   }
+}
 });
