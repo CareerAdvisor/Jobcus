@@ -1,22 +1,25 @@
+<script>
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("resumeForm");
-  const resumeOutput = document.getElementById("resumeOutput");
+  const builderResumeOutput = document.getElementById("builderResumeOutput");
+  const analyzerResumeOutput = document.getElementById("analyzerResumeOutput");
   const downloadOptions = document.getElementById("resumeDownloadOptions");
   const optimizedDownloadOptions = document.getElementById("optimizedDownloadOptions");
 
   let optimizeWithAI = true;
   let shouldBuild = true;
 
-  if (!form || !resumeOutput) {
+  if (!form || !builderResumeOutput || !analyzerResumeOutput) {
     console.warn("Missing required elements for resume builder.");
     return;
   }
 
+  // ==== Resume Builder Submit ====
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     if (!shouldBuild) return;
 
-    resumeOutput.innerHTML = "⏳ Generating resume...";
+    builderResumeOutput.innerHTML = "⏳ Generating resume...";
     const data = Object.fromEntries(new FormData(form).entries());
     data.optimize = optimizeWithAI;
 
@@ -28,21 +31,21 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       const result = await response.json();
-
       if (result.formatted_resume) {
         const cleaned = cleanAIText(result.formatted_resume);
-        resumeOutput.innerHTML = cleaned;
+        builderResumeOutput.innerHTML = cleaned;
         if (downloadOptions) downloadOptions.style.display = "block";
-        window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
+        window.scrollTo({ top: builderResumeOutput.offsetTop, behavior: "smooth" });
       } else {
-        resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume.</p>`;
+        builderResumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume.</p>`;
       }
     } catch (error) {
       console.error(error);
-      resumeOutput.innerHTML = `<p style="color:red;">⚠️ Server error. Try again.</p>`;
+      builderResumeOutput.innerHTML = `<p style="color:red;">⚠️ Server error. Try again.</p>`;
     }
   });
 
+  // Clean AI Response
   function cleanAIText(content) {
     return content
       .replace(/```html|```/g, "")
@@ -50,54 +53,43 @@ document.addEventListener("DOMContentLoaded", function () {
       .trim();
   }
 
+  // ==== Download Resume Builder ====
   window.downloadResume = function (format) {
-    const container = document.getElementById("resumeOutput");
-    const text = container.innerText || "Your resume content here";
-
-    if (format === "txt") {
-      const blob = new Blob([text], { type: "text/plain" });
-      saveAs(blob, "resume.txt");
-    } else if (format === "doc") {
-      const blob = new Blob([text], { type: "application/msword" });
-      saveAs(blob, "resume.doc");
-    } else if (format === "pdf") {
-      const element = container.cloneNode(true);
-      element.style.fontFamily = 'Arial, sans-serif';
-      element.style.padding = '20px';
-      html2pdf().set({
-        margin: 0.5,
-        filename: 'resume.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-      }).from(element).save();
-    }
+    const text = builderResumeOutput.innerText || "Your resume content here";
+    downloadHelper(format, text, "resume");
   };
 
+  // ==== Download Optimized Resume ====
   window.downloadOptimizedResume = function (format) {
-    const container = document.getElementById("resumeOutput");
-    const text = container.innerText || "Optimized resume content";
-
-    if (format === "txt") {
-      const blob = new Blob([text], { type: "text/plain" });
-      saveAs(blob, "resume-optimized.txt");
-    } else if (format === "doc") {
-      const blob = new Blob([text], { type: "application/msword" });
-      saveAs(blob, "resume-optimized.doc");
-    } else if (format === "pdf") {
-      const element = container.cloneNode(true);
-      element.style.fontFamily = 'Arial, sans-serif';
-      element.style.padding = '20px';
-      html2pdf().set({
-        margin: 0.5,
-        filename: 'resume-optimized.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-      }).from(element).save();
-    }
+    const content = analyzerResumeOutput.innerText || "Optimized resume content";
+    downloadHelper(format, content, "resume-optimized");
   };
 
+  function downloadHelper(format, text, filename) {
+    if (format === "txt") {
+      const blob = new Blob([text], { type: "text/plain" });
+      saveAs(blob, `${filename}.txt`);
+    } else if (format === "doc") {
+      const blob = new Blob([text], { type: "application/msword" });
+      saveAs(blob, `${filename}.doc`);
+    } else if (format === "pdf") {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const lines = doc.splitTextToSize(text, 180);
+      let y = 10;
+      lines.forEach((line, index) => {
+        if (y > 280) {
+          doc.addPage();
+          y = 10;
+        }
+        doc.text(line, 10, y);
+        y += 8;
+      });
+      doc.save(`${filename}.pdf`);
+    }
+  }
+
+  // ==== Resume Optimizer from Analyzer ====
   const optimizeBtn = document.getElementById("optimizeResume");
   if (optimizeBtn) {
     optimizeBtn.addEventListener("click", async () => {
@@ -107,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      resumeOutput.innerHTML = "⏳ Optimizing your resume...";
+      analyzerResumeOutput.innerHTML = "⏳ Optimizing your resume...";
       try {
         const response = await fetch("/generate-resume", {
           method: "POST",
@@ -127,20 +119,21 @@ document.addEventListener("DOMContentLoaded", function () {
         const result = await response.json();
         if (result.formatted_resume) {
           const cleaned = cleanAIText(result.formatted_resume);
-          resumeOutput.innerHTML = cleaned;
+          analyzerResumeOutput.innerHTML = cleaned;
+          analyzerResumeOutput.style.display = "block";
           if (optimizedDownloadOptions) optimizedDownloadOptions.style.display = "block";
-          window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
+          window.scrollTo({ top: analyzerResumeOutput.offsetTop, behavior: "smooth" });
         } else {
-          resumeOutput.innerHTML = `<p style="color:red;">❌ Optimization failed.</p>`;
+          analyzerResumeOutput.innerHTML = `<p style="color:red;">❌ Optimization failed.</p>`;
         }
       } catch (error) {
         console.error(error);
-        resumeOutput.innerHTML = `<p style="color:red;">⚠️ Optimization error. Try again.</p>`;
+        analyzerResumeOutput.innerHTML = `<p style="color:red;">⚠️ Optimization error. Try again.</p>`;
       }
     });
   }
 
-  // ===== RESUME ANALYZER =====
+  // ==== Resume Analyzer Logic ====
   const analyzeBtn = document.getElementById("analyze-btn");
   const resumeText = document.getElementById("resume-text");
   const resumeFile = document.getElementById("resumeFile");
@@ -204,3 +197,4 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 });
+</script>
