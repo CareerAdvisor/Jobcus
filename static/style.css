@@ -2018,6 +2018,15 @@ button[type="submit"]:hover {
   background-color: #0d3a66;
 }
 
+  form#resumeForm input,
+form#resumeForm textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+  padding: 10px;
+  font-size: 14px;
+}
+  
 /* employers.css */
 .employer-hero-full {
   width: 100%;
