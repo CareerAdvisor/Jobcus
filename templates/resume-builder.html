@@ -69,21 +69,25 @@
     <!-- Analysis will be injected here -->
   </div>
 
-  <!-- Call to Action After Analysis -->
-  <div id="post-analysis-cta" style="display:none; margin-top: 30px; padding: 20px; background: #fefce8; border-left: 4px solid #facc15; border-radius: 6px;">
-    <p style="margin: 0 0 10px; font-weight: 500;">🎯 A score above <strong>75%</strong> significantly increases your chances of being contacted by recruiters.</p>
-    <p style="margin: 0 0 15px;">Want to improve your score instantly?</p>
-    <button id="optimizeResume" class="primary-btn" style="background-color: #104879; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; font-size: 14px;">
-      ✨ Optimize My Resume
-    </button>
-  </div>
+<!-- Call to Action After Analysis -->
+<div id="post-analysis-cta" style="display:none; margin-top: 30px; padding: 20px; background: #fefce8; border-left: 4px solid #facc15; border-radius: 6px;">
+  <p style="margin: 0 0 10px; font-weight: 500;">🎯 A score above <strong>75%</strong> significantly increases your chances of being contacted by recruiters.</p>
+  <p style="margin: 0 0 15px;">Want to improve your score instantly?</p>
+  <button id="optimizeResume" class="primary-btn" style="background-color: #104879; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; font-size: 14px;">
+    ✨ Optimize My Resume
+  </button>
+</div>
 
-  <!-- Optimized Resume Download Buttons -->
-  <div id="optimizedDownloadOptions" style="display: none; margin-top: 20px; text-align: left; padding: 5px 5px;">
-    <button onclick="downloadOptimizedResume('pdf')">⬇️ Download Optimized PDF</button></br>
-    <button onclick="downloadOptimizedResume('doc')">⬇️ Download Optimized Word</button></br>
-    <button onclick="downloadOptimizedResume('txt')">⬇️ Download Optimized TXT</button>
-  </div>
+<!-- Optimized Resume Output -->
+<div id="resumeOutput" class="resume-container" style="margin-top: 30px;"></div>
+
+<!-- Optimized Resume Download Buttons -->
+<div id="optimizedDownloadOptions" style="display: none; margin-top: 20px; text-align: center;">
+  <button onclick="downloadOptimizedResume('pdf')">⬇️ Download Optimized PDF</button><br>
+  <button onclick="downloadOptimizedResume('doc')">⬇️ Download Optimized Word</button><br>
+  <button onclick="downloadOptimizedResume('txt')">⬇️ Download Optimized TXT</button>
+</div>
+
 </section>
 
 <!-- Resume Builder -->
