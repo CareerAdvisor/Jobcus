@@ -29,23 +29,28 @@
   </section>
 </div>
 
-<section id="resume-analyzer" style="padding: 40px;">
-  <h2>🔍 AI Resume Analyzer</h2>
-  <p>Paste or upload your resume to get keyword analysis, a score, and formatting tips.</p>
-  <textarea id="resume-text" placeholder="Paste your resume text here..."></textarea>
-  <input type="file" id="resumeFile" accept=".pdf,.txt,.docx" />
-  <button id="analyze-btn">Analyze Resume</button>
+<!-- Resume Analyzer -->
+<section id="resume-analyzer" style="padding: 40px; background: #f9fafb;">
+  <h2 style="color: #104879;">🔍 AI Resume Analyzer</h2>
+  <p style="color: #444;">Paste or upload your resume to get keyword insights, score, and formatting suggestions.</p>
 
-  <!-- 🎯 Visual Resume Score -->
-  <div id="score-visual" style="margin-top: 20px; width: 100%; background: #e5e7eb; height: 20px; border-radius: 8px; overflow: hidden; display: none;">
-    <div id="score-bar" style="height: 100%; width: 0; background: #2563eb; color: #fff; font-size: 12px; text-align: center; line-height: 20px;"></div>
+  <textarea id="resume-text" placeholder="Paste your resume text here..." style="width: 100%; padding: 10px; margin: 10px 0;"></textarea>
+  <input type="file" id="resumeFile" accept=".pdf,.txt,.docx" style="margin-bottom: 10px;" />
+  <button id="analyze-btn" class="primary-btn" style="background-color: #104879; color: white; padding: 10px 20px; border: none; border-radius: 6px;">Analyze Resume</button>
+
+  <!-- Score Bar -->
+  <div id="score-visual" style="margin-top: 30px; background: #e5e7eb; border-radius: 12px; overflow: hidden; height: 24px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);">
+    <div id="score-bar" style="height: 100%; width: 0%; background: linear-gradient(to right, #f87171, #facc15, #4ade80); color: #fff; text-align: center; line-height: 24px; font-weight: bold; transition: width 1s ease-in-out;">0%</div>
   </div>
 
-  <!-- 🧠 Keyword Match Display -->
-  <div id="keyword-match" style="margin-top: 10px; font-size: 14px; color: #333;"></div>
+  <!-- Keyword Matches -->
+  <div id="keyword-match" style="margin-top: 25px; background: #f1f5f9; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <h4 style="color: #104879; font-weight: 600;">🎯 Matched Keywords</h4>
+    <ul id="keyword-list" style="list-style: none; padding-left: 0; margin: 0;"></ul>
+  </div>
 
-  <!-- 🧾 Analyzer Output -->
-  <div id="analyzer-result" style="margin-top: 20px; font-family: Arial, sans-serif; font-size: 12pt;"></div>
+  <!-- Analyzer Results -->
+  <div id="analyzer-result" style="margin-top: 30px; background: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;"></div>
 </section>
 
 <!-- Template Gallery -->
