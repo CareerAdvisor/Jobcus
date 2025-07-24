@@ -1,11 +1,8 @@
 
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("resumeForm");
-  const popup = document.getElementById("optimize-popup");
   const resumeOutput = document.getElementById("resumeOutput");
   const downloadOptions = document.getElementById("resumeDownloadOptions");
-  const acceptBtn = document.getElementById("acceptOptimize");
-  const declineBtn = document.getElementById("declineOptimize");
   const optimizedDownloadOptions = document.getElementById("optimizedDownloadOptions");
 
   let optimizeWithAI = true;
