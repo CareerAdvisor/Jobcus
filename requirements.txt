@@ -5,3 +5,4 @@ gunicorn
 requests
 python-dotenv
 supabase
+PyPDF2>=3.0.0
