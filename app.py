@@ -7,6 +7,11 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from collections import Counter
 
+# ✅ Add PyPDF2 for PDF parsing
+from PyPDF2 import PdfReader
+from io import BytesIO
+import base64
+
 # Load environment variables
 load_dotenv()
 
@@ -23,7 +28,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# API Keys and Endpoints
+# Constants
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
 ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs"
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
@@ -31,10 +36,10 @@ ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
 JSEARCH_API_KEY = os.getenv("JSEARCH_API_KEY")
 JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
 
-# --- Job Role List ---
-JOB_TITLES = [
-    "Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"
-]
+JOB_TITLES = ["Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"]
+KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
+
+# ... Other functions remain the same
 
 # Fetch Adzuna salary info for multiple titles
 def fetch_salary_data():
@@ -402,13 +407,9 @@ def analyze_resume():
         if not data:
             return jsonify({"error": "Invalid request format"}), 400
 
-        # Handle PDF input
+        # ✅ Handle PDF input
         if "pdf" in data and data["pdf"]:
             try:
-                import base64
-                from PyPDF2 import PdfReader
-                from io import BytesIO
-
                 pdf_bytes = base64.b64decode(data["pdf"])
                 reader = PdfReader(BytesIO(pdf_bytes))
                 resume_text = " ".join((page.extract_text() or "") for page in reader.pages)
@@ -420,10 +421,8 @@ def analyze_resume():
                 print("PDF Decode Error:", pdf_err)
                 return jsonify({"error": "Unable to extract text from PDF"}), 400
 
-        # Handle plain text input
         elif "text" in data and data["text"]:
             resume_text = data["text"].strip()
-
         else:
             return jsonify({"error": "No resume data provided"}), 400
 
@@ -455,6 +454,7 @@ def analyze_resume():
     except Exception as e:
         print("ATS Analyzer Error:", e)
         return jsonify({"error": "Resume analysis failed"}), 500
+        
 
 @app.route("/generate-resume", methods=["POST"])
 def generate_resume():
