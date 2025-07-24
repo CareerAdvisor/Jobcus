@@ -1,11 +1,13 @@
+
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("resumeForm");
   const popup = document.getElementById("optimize-popup");
   const resumeOutput = document.getElementById("resumeOutput");
   const downloadOptions = document.getElementById("resumeDownloadOptions");
-  const optimizedDownloadOptions = document.getElementById("optimizedDownloadOptions");
   const acceptBtn = document.getElementById("acceptOptimize");
   const declineBtn = document.getElementById("declineOptimize");
+  const optimizedDownloads = document.getElementById("optimizedDownloadOptions");
+  const optimizeBtn = document.getElementById("optimizeResume");
 
   let optimizeWithAI = true;
   let shouldBuild = false;
@@ -59,7 +61,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const cleaned = cleanAIText(result.formatted_resume);
         resumeOutput.innerHTML = cleaned;
         if (downloadOptions) downloadOptions.style.display = "block";
-        if (optimizedDownloadOptions) optimizedDownloadOptions.style.display = "block";
         window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
       } else {
         resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume.</p>`;
@@ -73,7 +74,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function cleanAIText(content) {
     return content
       .replace(/```html|```/g, "")
-      .replace(/(?:Certainly!|Here\'s a resume|This HTML).*?\n/gi, "")
+      .replace(/(?:Certainly!|Here's a resume|This HTML).*?\n/gi, "")
       .trim();
   }
 
@@ -112,6 +113,50 @@ document.addEventListener("DOMContentLoaded", function () {
       doc.save("resume-optimized.pdf");
     }
   };
+
+  if (optimizeBtn) {
+    optimizeBtn.addEventListener("click", async () => {
+      const resumeText = document.getElementById("resume-text");
+      const text = resumeText?.value?.trim();
+      if (!text) {
+        alert("Please paste your resume or upload a file first.");
+        return;
+      }
+
+      resumeOutput.innerHTML = "✨ Optimizing your resume...";
+
+      try {
+        const response = await fetch("/generate-resume", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fullName: "Optimized Candidate",
+            summary: "",
+            education: "",
+            experience: text,
+            skills: "",
+            certifications: "",
+            portfolio: "",
+            optimize: true
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.formatted_resume) {
+          const cleaned = cleanAIText(result.formatted_resume);
+          resumeOutput.innerHTML = cleaned;
+          if (optimizedDownloads) optimizedDownloads.style.display = "block";
+          window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
+        } else {
+          resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to optimize resume.</p>`;
+        }
+      } catch (err) {
+        console.error("Optimization error:", err);
+        resumeOutput.innerHTML = `<p style="color:red;">⚠️ Optimization failed. Try again.</p>`;
+      }
+    });
+  }
 
   // ===== RESUME ANALYZER =====
   const analyzeBtn = document.getElementById("analyze-btn");
@@ -169,9 +214,6 @@ document.addEventListener("DOMContentLoaded", function () {
       const score = Math.min(100, result.keywords.length * 20);
       scoreBar.style.width = `${score}%`;
       scoreBar.innerText = `${score}%`;
-
-      const cta = document.getElementById("post-analysis-cta");
-      if (cta) cta.style.display = "block";
     } catch (err) {
       console.error("Analyzer error:", err);
       analyzerResult.innerHTML = `<p style="color:red;">❌ Failed to analyze resume. Please try again.</p>`;
