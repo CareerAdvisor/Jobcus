@@ -80,19 +80,9 @@
 
   <!-- Optimized Resume Download Buttons -->
   <div id="optimizedDownloadOptions" style="display: none; margin-top: 20px; text-align: center;">
-    <button onclick="downloadOptimizedResume('pdf')">⬇️ Download Optimized PDF</button>
-    <button onclick="downloadOptimizedResume('doc')">⬇️ Download Optimized Word</button>
+    <button onclick="downloadOptimizedResume('pdf')">⬇️ Download Optimized PDF</button></br>
+    <button onclick="downloadOptimizedResume('doc')">⬇️ Download Optimized Word</button></br>
     <button onclick="downloadOptimizedResume('txt')">⬇️ Download Optimized TXT</button>
-  </div>
-</section>
-
-<!-- Template Gallery -->
-<section class="resume-gallery">
-  <h2 style="color: #104879;">Explore Our Templates</h2>
-  <div class="template-grid">
-    <img src="{{ url_for('static', filename='images/template1.png') }}" alt="Template 1" class="template-img" style="width: 100%; height: auto;">
-    <img src="{{ url_for('static', filename='images/template2.png') }}" alt="Template 2" class="template-img" style="width: 100%; height: auto;">
-    <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
   </div>
 </section>
 
@@ -114,19 +104,22 @@
   <div id="resumeOutput" class="resume-container" style="margin-top: 20px;"></div>
 </section>
 
-<!-- Optimization Popup -->
-<div id="optimize-popup" class="popup hidden" style="padding: 20px; background: #f9f9f9; border-radius: 6px; max-width: 400px; margin: 20px auto;">
-  <p>Would you like AI to optimize your resume before building?</p>
-  <button id="acceptOptimize">Yes, Optimize</button>
-  <button id="declineOptimize">No, Continue</button>
-</div>
-
 <!-- Download Buttons -->
 <div id="resumeDownloadOptions" style="display: none; margin-top: 1rem; text-align: center;">
-  <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
-  <button onclick="downloadResume('doc')">⬇️ Download Word</button>
+  <button onclick="downloadResume('pdf')">⬇️ Download PDF</button></br>
+  <button onclick="downloadResume('doc')">⬇️ Download Word</button></br>
   <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
 </div>
+
+<!-- Template Gallery -->
+<section class="resume-gallery">
+  <h2 style="color: #104879;">Explore Our Templates</h2>
+  <div class="template-grid">
+    <img src="{{ url_for('static', filename='images/template1.png') }}" alt="Template 1" class="template-img" style="width: 100%; height: auto;">
+    <img src="{{ url_for('static', filename='images/template2.png') }}" alt="Template 2" class="template-img" style="width: 100%; height: auto;">
+    <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
+  </div>
+</section>
 
 {% endblock %}
 
