@@ -9,12 +9,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='/style.css') }}" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
   <div class="page-container">
-   <header class="site-header">  
+    <header class="site-header">  
       <div class="header-left">
         {% block header_icon %}{% endblock %}
       </div>
@@ -32,7 +31,6 @@
       </div>
 
       <div class="mobile-nav" id="mobileMenu">
-
         <a href="/resume-builder">Resume Builder</a>
         <a href="/interview-coach">Interview Coach</a>
         <a href="/skill-gap">Skill Gap Analysis</a>
@@ -43,50 +41,47 @@
           <div class="dropdown-content">
             <a href="/chat">Jobcus AI</a>
             <a href="/job-insights">Job Insights</a>
-           </div>
+          </div>
         </div>
+
         <a href="/employers">Partner with Us</a>
         <a href="/faq">FAQs</a>
-        </div>
-        </header>
+      </div>
+    </header>
 
-   <script>
-  function toggleMobileMenu() {
-    document.getElementById("mobileMenu").classList.toggle("show");
-  }
-
-  document.addEventListener("click", function (event) {
-    const menu = document.getElementById("mobileMenu");
-    const hamburger = document.querySelector(".hamburger");
-    const isDropdownBtn = event.target.matches(".dropbtn");
-
-    // Close the mobile menu when clicking outside
-    if (
-      menu.classList.contains("show") &&
-      !menu.contains(event.target) &&
-      !hamburger.contains(event.target)
-    ) {
-      menu.classList.remove("show");
-    }
-
-    // Close other dropdowns if one is opened
-    document.querySelectorAll(".dropdown-content").forEach((dropdown) => {
-      if (!dropdown.contains(event.target) && !dropdown.previousElementSibling.contains(event.target)) {
-        dropdown.style.display = "none";
+    <script>
+      function toggleMobileMenu() {
+        document.getElementById("mobileMenu").classList.toggle("show");
       }
-    });
 
-    // Toggle dropdown
-    if (isDropdownBtn) {
-      const dropdownMenu = event.target.nextElementSibling;
-      dropdownMenu.style.display = dropdownMenu.style.display === "flex" ? "none" : "flex";
-    }
-  });
-</script>
+      document.addEventListener("click", function (event) {
+        const menu = document.getElementById("mobileMenu");
+        const hamburger = document.querySelector(".hamburger");
+        const isDropdownBtn = event.target.matches(".dropbtn");
 
+        if (
+          menu.classList.contains("show") &&
+          !menu.contains(event.target) &&
+          !hamburger.contains(event.target)
+        ) {
+          menu.classList.remove("show");
+        }
+
+        document.querySelectorAll(".dropdown-content").forEach((dropdown) => {
+          if (!dropdown.contains(event.target) && !dropdown.previousElementSibling.contains(event.target)) {
+            dropdown.style.display = "none";
+          }
+        });
+
+        if (isDropdownBtn) {
+          const dropdownMenu = event.target.nextElementSibling;
+          dropdownMenu.style.display = dropdownMenu.style.display === "flex" ? "none" : "flex";
+        }
+      });
+    </script>
 
     <main>
-    {% block content %}{% endblock %}
+      {% block content %}{% endblock %}
     </main>
     
     {% if show_footer | default(true) %}
@@ -97,9 +92,9 @@
   </div>
 
   {% block scripts %}
-  {% if request.path == "/chat" %}
-    <script src="{{ url_for('static', filename='chat.js') }}"></script>
-  {% endif %}
+    {% if request.path == "/chat" %}
+      <script src="{{ url_for('static', filename='chat.js') }}"></script>
+    {% endif %}
   {% endblock %}
 
   {% if body_class != 'chat-page' %}
@@ -108,5 +103,11 @@
   </a>
   {% endif %}
 
+  <!-- 📄 DOCX Export Support -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <!-- 🧾 PDF Export Support -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>
