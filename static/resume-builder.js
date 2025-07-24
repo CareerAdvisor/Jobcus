@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("resumeForm");
   const popup = document.getElementById("optimize-popup");
@@ -74,8 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function cleanAIText(content) {
     return content
       .replace(/```html|```/g, "")
-      .replace(/(?:Certainly!|Here's a resume|This HTML).*?
-/gi, "")
+      .replace(/(?:Certainly!|Here\'s a resume|This HTML).*?\n/gi, "")
       .trim();
   }
 
@@ -169,7 +167,11 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       const score = Math.min(100, result.keywords.length * 20);
-      scoreBar.style.width = `${score}%`; scoreBar.innerText = `${score}%`;
+      scoreBar.style.width = `${score}%`;
+      scoreBar.innerText = `${score}%`;
+
+      const cta = document.getElementById("post-analysis-cta");
+      if (cta) cta.style.display = "block";
     } catch (err) {
       console.error("Analyzer error:", err);
       analyzerResult.innerHTML = `<p style="color:red;">❌ Failed to analyze resume. Please try again.</p>`;
