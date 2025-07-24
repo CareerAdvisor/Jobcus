@@ -110,13 +110,13 @@
 
   <form id="resumeForm" method="POST" action="javascript:void(0);">
     <label for="fullName">Full Name</label>
-    <input class="input-full" name="fullName" id="fullName" placeholder="John Doe" required />
+    <textarea name="fullName" id="fullName" placeholder="John Doe" required />
 
     <label for="title">Job Title(s)</label>
-    <input name="title" id="title" placeholder="e.g. IT Support | Project Manager" required />
+    <textarea name="title" id="title" placeholder="e.g. IT Support | Project Manager" required />
 
     <label for="contact">Contact Info</label>
-    <input name="contact" id="contact" placeholder="City | Phone Number | Email" required />
+    <textarea name="contact" id="contact" placeholder="City | Phone Number | Email" required />
 
     <label for="summary">Professional Summary</label>
     <textarea name="summary" placeholder="Tell us about your background"></textarea>
@@ -134,7 +134,7 @@
     <textarea name="certifications" placeholder="Any relevant licenses or certifications?"></textarea>
 
     <label for="portfolio">LinkedIn or Portfolio</label>
-    <input name="portfolio" placeholder="Link to your profile or personal website" />
+    <textarea name="portfolio" placeholder="Link to your profile or personal website" />
 
     <button type="submit" style="background-color: #104879; color: white; padding: 10px 20px; margin-top: 10px; border-radius: 5px;">✨ Generate Resume</button>
   </form>
