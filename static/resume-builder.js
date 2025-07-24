@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("resumeForm");
   const builderResumeOutput = document.getElementById("builderResumeOutput");
   const analyzerResumeOutput = document.getElementById("analyzerResumeOutput");
+  const optimizedLoading = document.getElementById("optimizedLoading");
   const downloadOptions = document.getElementById("resumeDownloadOptions");
   const optimizedDownloadOptions = document.getElementById("optimizedDownloadOptions");
 
@@ -18,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
     e.preventDefault();
     if (!shouldBuild) return;
 
-    builderResumeOutput.innerHTML = "⏳ Generating resume...";
+     builderResumeOutput.innerHTML = "⏳ Generating resume...";
     const data = Object.fromEntries(new FormData(form).entries());
     data.optimize = optimizeWithAI;
 
@@ -43,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
       builderResumeOutput.innerHTML = `<p style="color:red;">⚠️ Server error. Try again.</p>`;
     }
   });
-
+  
   // Clean AI Response
   function cleanAIText(content) {
     return content
@@ -76,7 +77,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const doc = new jsPDF({ unit: "mm", format: "a4" });
       const lines = doc.splitTextToSize(text, 180);
       let y = 10;
-      lines.forEach((line, index) => {
+      lines.forEach((line) => {
         if (y > 280) {
           doc.addPage();
           y = 10;
@@ -98,7 +99,10 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      analyzerResumeOutput.innerHTML = "⏳ Optimizing your resume...";
+      optimizedLoading.style.display = "block";
+      analyzerResumeOutput.innerHTML = "";
+      analyzerResumeOutput.style.display = "none";
+
       try {
         const response = await fetch("/generate-resume", {
           method: "POST",
@@ -116,6 +120,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         const result = await response.json();
+        optimizedLoading.style.display = "none";
+
         if (result.formatted_resume) {
           const cleaned = cleanAIText(result.formatted_resume);
           analyzerResumeOutput.innerHTML = cleaned;
@@ -124,10 +130,13 @@ document.addEventListener("DOMContentLoaded", function () {
           window.scrollTo({ top: analyzerResumeOutput.offsetTop, behavior: "smooth" });
         } else {
           analyzerResumeOutput.innerHTML = `<p style="color:red;">❌ Optimization failed.</p>`;
+          analyzerResumeOutput.style.display = "block";
         }
       } catch (error) {
         console.error(error);
+        optimizedLoading.style.display = "none";
         analyzerResumeOutput.innerHTML = `<p style="color:red;">⚠️ Optimization error. Try again.</p>`;
+        analyzerResumeOutput.style.display = "block";
       }
     });
   }
