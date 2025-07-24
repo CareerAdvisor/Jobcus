@@ -2021,6 +2021,9 @@ button[type="submit"]:hover {
 .input-full {
   width: 100%;
   box-sizing: border-box;
+  margin-bottom: 12px;
+  padding: 10px;
+  font-size: 14px;
 }
   
 /* employers.css */
