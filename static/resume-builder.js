@@ -1,5 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
-  // === RESUME BUILDER ===
+document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("resumeForm");
   const popup = document.getElementById("optimize-popup");
   const resumeOutput = document.getElementById("resumeOutput");
@@ -7,67 +6,76 @@ document.addEventListener("DOMContentLoaded", function () {
   const acceptBtn = document.getElementById("acceptOptimize");
   const declineBtn = document.getElementById("declineOptimize");
 
+  const analyzeBtn = document.getElementById("analyze-btn");
+  const textInput = document.getElementById("resume-text");
+  const fileInput = document.getElementById("resumeFile");
+  const resultBox = document.getElementById("analyzer-result");
+  const scoreVisual = document.getElementById("score-visual");
+  const scoreBar = document.getElementById("score-bar");
+  const keywordMatch = document.getElementById("keyword-match");
+
   let optimizeWithAI = true;
   let shouldBuild = false;
 
-  if (form && popup && acceptBtn && declineBtn && resumeOutput) {
-    // STEP 1: Intercept form submit and show popup first
-    form.addEventListener("submit", function (e) {
-      if (!shouldBuild) {
-        e.preventDefault();
-        popup.classList.remove("hidden");
-        return;
-      }
-      shouldBuild = false;
-    });
-
-    // STEP 2: Popup decision
-    acceptBtn.onclick = () => {
-      optimizeWithAI = true;
-      popup.classList.add("hidden");
-      shouldBuild = true;
-      form.dispatchEvent(new Event("submit"));
-    };
-
-    declineBtn.onclick = () => {
-      optimizeWithAI = false;
-      popup.classList.add("hidden");
-      shouldBuild = true;
-      form.dispatchEvent(new Event("submit"));
-    };
-
-    // STEP 3: Actual form submission
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
-      if (!shouldBuild) return;
-
-      resumeOutput.innerHTML = "⏳ Generating resume...";
-      const data = Object.fromEntries(new FormData(form).entries());
-      data.optimize = optimizeWithAI;
-
-      try {
-        const response = await fetch("/generate-resume", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-
-        const result = await response.json();
-
-        if (result.formatted_resume) {
-          const cleaned = cleanAIText(result.formatted_resume);
-          resumeOutput.innerHTML = cleaned;
-          if (downloadOptions) downloadOptions.style.display = "block";
-          window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
-        } else {
-          resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume.</p>`;
-        }
-      } catch (error) {
-        console.error(error);
-        resumeOutput.innerHTML = `<p style="color:red;">⚠️ Server error. Try again.</p>`;
-      }
-    });
+  if (!form || !popup || !acceptBtn || !declineBtn || !resumeOutput) {
+    console.warn("Missing required elements for resume builder.");
+    return;
   }
+
+  // === Resume Builder ===
+  form.addEventListener("submit", function (e) {
+    if (!shouldBuild) {
+      e.preventDefault();
+      popup.classList.remove("hidden"); // Show popup
+      return;
+    }
+    shouldBuild = false; // reset after popup decision
+  });
+
+  acceptBtn.onclick = () => {
+    optimizeWithAI = true;
+    popup.classList.add("hidden");
+    shouldBuild = true;
+    form.dispatchEvent(new Event("submit"));
+  };
+
+  declineBtn.onclick = () => {
+    optimizeWithAI = false;
+    popup.classList.add("hidden");
+    shouldBuild = true;
+    form.dispatchEvent(new Event("submit"));
+  };
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    if (!shouldBuild) return;
+
+    resumeOutput.innerHTML = "⏳ Generating resume...";
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.optimize = optimizeWithAI;
+
+    try {
+      const response = await fetch("/generate-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (result.formatted_resume) {
+        const cleaned = cleanAIText(result.formatted_resume);
+        resumeOutput.innerHTML = cleaned;
+        if (downloadOptions) downloadOptions.style.display = "block";
+        window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
+      } else {
+        resumeOutput.innerHTML = `<p style='color:red;'>❌ Failed to generate resume.</p>`;
+      }
+    } catch (error) {
+      console.error(error);
+      resumeOutput.innerHTML = `<p style='color:red;'>⚠️ Server error. Try again.</p>`;
+    }
+  });
 
   function cleanAIText(content) {
     return content
@@ -76,9 +84,8 @@ document.addEventListener("DOMContentLoaded", function () {
       .trim();
   }
 
-  // === DOWNLOAD FUNCTIONALITY ===
   window.downloadResume = function (format) {
-    const text = resumeOutput?.innerText || "Your resume content here";
+    const text = resumeOutput.innerText || "Your resume content here";
     if (format === "txt") {
       const blob = new Blob([text], { type: "text/plain" });
       saveAs(blob, "resume.txt");
@@ -94,18 +101,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
-  // === RESUME ANALYZER ===
-  const analyzeBtn = document.getElementById("analyze-btn");
-  const textInput = document.getElementById("resume-text");
-  const fileInput = document.getElementById("resumeFile");
-  const resultBox = document.getElementById("analyzer-result");
-
+  // === Resume Analyzer ===
   if (analyzeBtn && textInput && fileInput && resultBox) {
     analyzeBtn.addEventListener("click", async () => {
       resultBox.innerHTML = "⏳ Analyzing resume...";
       const text = textInput.value.trim();
       const file = fileInput.files[0];
-
       let payload = {};
 
       if (text) {
@@ -139,16 +140,32 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
 
-        const suggestions = data.suggestions || data.keywords || [];
-        const score = data.score || "N/A";
-        const tips = data.analysis || "";
+        // Score Bar Logic
+        if (scoreVisual && scoreBar) {
+          const score = Math.min(data.score || 0, 100);
+          scoreVisual.style.display = "block";
+          scoreBar.style.width = score + "%";
+          scoreBar.textContent = score + "%";
 
-        resultBox.innerHTML = `
-          <h3>✅ Resume Score: ${score}/100</h3>
-          <h4>Recommendations & Keywords:</h4>
-          <ul>${suggestions.map(item => `<li>${item}</li>`).join("")}</ul>
-          <p>${tips}</p>
-        `;
+          if (score >= 75) {
+            scoreBar.style.backgroundColor = "#16a34a";
+          } else if (score >= 50) {
+            scoreBar.style.backgroundColor = "#facc15";
+          } else {
+            scoreBar.style.backgroundColor = "#dc2626";
+          }
+        }
+
+        if (data.keywords && data.keywords.length) {
+          keywordMatch.innerHTML = `
+            <p><strong>Matched Keywords:</strong></p>
+            <ul style="padding-left: 20px;">
+              ${data.keywords.map(kw => `<li>${kw}</li>`).join("")}
+            </ul>
+          `;
+        }
+
+        resultBox.innerHTML = `<p>${data.analysis}</p>`;
       } catch (err) {
         console.error("Analyzer error:", err);
         resultBox.innerHTML = "<p style='color:red;'>⚠️ Could not analyze resume. Try again.</p>";
