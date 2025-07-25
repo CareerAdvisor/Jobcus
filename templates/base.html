@@ -89,16 +89,17 @@
       &copy; 2025 Jobcus – Your AI Career Advisor
     </footer>
     {% endif %}
-  </div>
+    </div>
 
-  {% block scripts %}
+    {% block scripts %}
     {% if request.path == "/chat" %}
       <script src="{{ url_for('static', filename='chat.js') }}"></script>
     {% endif %}
 
-    {% if request.path == "/faq" %}
-      <script src="{{ url_for('static', filename='static/faq.js') }}"></script>
-    {% endif %}
+  {% block scripts %}
+  <script src="{{ url_for('static', filename='faq.js') }}"></script>
+  {% endblock %}
+  
   {% endblock %}
 
   {% if body_class != 'chat-page' %}
