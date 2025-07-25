@@ -1,63 +1,78 @@
-{% extends "base.html" %}
-{% block title %}FAQs - Jobcus{% endblock %}
-
-{% block content %}
 <section class="faq-section">
   <div class="faq-header">
-    <h1>❓ Frequently Asked Questions</h1>
-    <p>Your guide to making the most of Jobcus – your AI Career Advisor</p>
+    <h1>Frequently Asked Questions</h1>
+    <p>Answers to common questions about using Jobcus</p>
   </div>
 
   <div class="faq-list">
     <div class="faq-item">
-      <h3>🔍 What is Jobcus?</h3>
-      <p>Jobcus is an AI-powered career assistant designed to help job seekers build optimized resumes, analyze their skill gaps, prepare for interviews, and gain job market insights — all in one platform.</p>
+      <button class="faq-question">What is Jobcus? <span class="toggle-icon">+</span></button>
+      <div class="faq-answer">
+        <p>Jobcus is an AI-powered career assistant that helps you build resumes, analyze job market data, identify skill gaps, and prepare for interviews.</p>
+      </div>
     </div>
 
     <div class="faq-item">
-      <h3>📄 How does the Resume Builder work?</h3>
-      <p>Simply fill in your career details and our AI formats it into a professionally structured resume. You can then download your resume in PDF, Word, or TXT formats.</p>
+      <button class="faq-question">Is Jobcus free to use? <span class="toggle-icon">+</span></button>
+      <div class="faq-answer">
+        <p>Yes, Jobcus offers core features for free. Premium features and tools may require a subscription.</p>
+      </div>
     </div>
 
     <div class="faq-item">
-      <h3>⚙️ What is Resume Optimization?</h3>
-      <p>Our AI scans your resume and offers an optimized version tailored for ATS (Applicant Tracking Systems) to improve your chances of getting hired.</p>
+      <button class="faq-question">Do I need to sign up to use Jobcus? <span class="toggle-icon">+</span></button>
+      <div class="faq-answer">
+        <p>No registration is required to access most of the features. However, saving your progress and accessing premium tools may require an account.</p>
+      </div>
     </div>
 
     <div class="faq-item">
-      <h3>🎯 What is the Resume Analyzer?</h3>
-      <p>The analyzer scores your resume based on keywords, relevance, and formatting. It also highlights areas you can improve for better results.</p>
+      <button class="faq-question">Can I download my resume in different formats? <span class="toggle-icon">+</span></button>
+      <div class="faq-answer">
+        <p>Yes. Jobcus allows you to download your resume in PDF, DOCX, and TXT formats after generation or optimization.</p>
+      </div>
     </div>
 
     <div class="faq-item">
-      <h3>📊 What kind of insights can I get from Job Insights?</h3>
-      <p>You can discover average salaries, job trends, in-demand skills, and opportunities by region — helping you make informed career choices.</p>
+      <button class="faq-question">Is my data secure on Jobcus? <span class="toggle-icon">+</span></button>
+      <div class="faq-answer">
+        <p>Absolutely. Jobcus respects your privacy. Data shared with the platform is only used for enhancing your career tools and is never sold or misused.</p>
+      </div>
     </div>
 
     <div class="faq-item">
-      <h3>💼 What is the Interview Coach?</h3>
-      <p>Our AI Interview Coach helps you rehearse job interview questions, suggests best answers, and provides feedback to boost your confidence.</p>
+      <button class="faq-question">What kind of resumes can Jobcus create? <span class="toggle-icon">+</span></button>
+      <div class="faq-answer">
+        <p>Jobcus builds modern, ATS-friendly resumes for various industries including tech, business, healthcare, and creative fields.</p>
+      </div>
     </div>
 
     <div class="faq-item">
-      <h3>🤖 How is Jobcus different from other career tools?</h3>
-      <p>Jobcus combines AI resume writing, real-time job market data, personalized interview coaching, and skill gap analysis — all in one simple platform.</p>
+      <button class="faq-question">How accurate are the job insights and salary data? <span class="toggle-icon">+</span></button>
+      <div class="faq-answer">
+        <p>Jobcus pulls real-time data from job APIs like Adzuna and Remotive, ensuring reliable insights on job availability, skills in demand, and salary benchmarks.</p>
+      </div>
     </div>
 
     <div class="faq-item">
-      <h3>🌍 Is Jobcus free to use?</h3>
-      <p>Jobcus offers both free and premium features. You can build and analyze resumes for free, while advanced features may require a subscription.</p>
+      <button class="faq-question">Does Jobcus help with interviews? <span class="toggle-icon">+</span></button>
+      <div class="faq-answer">
+        <p>Yes. Jobcus offers an AI-powered Interview Coach that simulates common interview questions and provides answer feedback to help you prepare confidently.</p>
+      </div>
     </div>
 
     <div class="faq-item">
-      <h3>📥 Can I upload my existing resume?</h3>
-      <p>Yes! You can upload a PDF version of your resume, and our AI will analyze and suggest improvements instantly.</p>
+      <button class="faq-question">What is Skill Gap Analysis? <span class="toggle-icon">+</span></button>
+      <div class="faq-answer">
+        <p>The Skill Gap Analysis tool compares your current skills to target roles and suggests training or development paths to help you qualify for desired jobs.</p>
+      </div>
     </div>
 
     <div class="faq-item">
-      <h3>🛠️ I found a bug or have feedback. What should I do?</h3>
-      <p>We’d love to hear from you! Use our contact form or reach out via support@jobcus.com. Your feedback helps us improve.</p>
+      <button class="faq-question">Can employers use Jobcus? <span class="toggle-icon">+</span></button>
+      <div class="faq-answer">
+        <p>Yes. Employers can use Jobcus to generate optimized job descriptions using AI and connect with potential job seekers.</p>
+      </div>
     </div>
   </div>
 </section>
-{% endblock %}
