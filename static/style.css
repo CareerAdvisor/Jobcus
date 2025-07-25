@@ -13,7 +13,6 @@ html, body {
   background-color: #f9fbf9;
   color: #333;
   overflow-x: hidden; /* Prevent horizontal scroll */
-  padding-top: 20px; /* Adjust this based on header height */
 }
 
 .container {
@@ -225,7 +224,7 @@ main {
   max-width: 800px;
   margin: 0 auto;
   padding: 0 20px;
-  padding-top: 20px;
+  padding-top: 50px;
   box-sizing: border-box;
   flex-grow: 1;
   overflow: hidden;
@@ -2247,6 +2246,7 @@ button {
 .faq-header {
   text-align: center;
   margin-bottom: 40px;
+  padding-top: 20px; /* Adjust this based on header height */
 }
 
 .faq-header h1 {
