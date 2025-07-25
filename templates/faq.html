@@ -1,55 +1,62 @@
 {% extends "base.html" %}
-
 {% block title %}FAQs - Jobcus{% endblock %}
 
 {% block content %}
-<section style="padding: 40px 20px; background-color: #f9fafb;">
-  <div style="max-width: 900px; margin: auto;">
-    <h1 style="text-align: center; color: #104879; font-size: 32px; font-weight: 700; margin-bottom: 30px;">Frequently Asked Questions</h1>
+<section class="faq-section">
+  <div class="faq-header">
+    <h1>❓ Frequently Asked Questions</h1>
+    <p>Your guide to making the most of Jobcus – your AI Career Advisor</p>
+  </div>
 
-    <div class="faq-item" style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <h3 style="color: #104879; font-size: 18px; margin-bottom: 10px;">🤖 What is Jobcus?</h3>
-      <p style="color: #333;">Jobcus is your AI-powered career assistant. It helps job seekers create professional resumes, analyze and optimize them for ATS, discover job insights, prepare for interviews, and more.</p>
+  <div class="faq-list">
+    <div class="faq-item">
+      <h3>🔍 What is Jobcus?</h3>
+      <p>Jobcus is an AI-powered career assistant designed to help job seekers build optimized resumes, analyze their skill gaps, prepare for interviews, and gain job market insights — all in one platform.</p>
     </div>
 
-    <div class="faq-item" style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <h3 style="color: #104879; font-size: 18px; margin-bottom: 10px;">📄 How does the Resume Builder work?</h3>
-      <p style="color: #333;">Just fill in your details—such as name, job title, experience, education—and Jobcus AI generates a clean, modern resume tailored to your profile. You can download it in PDF, DOCX, or TXT formats.</p>
+    <div class="faq-item">
+      <h3>📄 How does the Resume Builder work?</h3>
+      <p>Simply fill in your career details and our AI formats it into a professionally structured resume. You can then download your resume in PDF, Word, or TXT formats.</p>
     </div>
 
-    <div class="faq-item" style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <h3 style="color: #104879; font-size: 18px; margin-bottom: 10px;">📊 What is Resume Analyzer & Optimizer?</h3>
-      <p style="color: #333;">Upload or paste your resume text, and Jobcus will analyze it for ATS-friendliness, highlight missing keywords, score its effectiveness, and let you optimize it instantly with AI suggestions.</p>
+    <div class="faq-item">
+      <h3>⚙️ What is Resume Optimization?</h3>
+      <p>Our AI scans your resume and offers an optimized version tailored for ATS (Applicant Tracking Systems) to improve your chances of getting hired.</p>
     </div>
 
-    <div class="faq-item" style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <h3 style="color: #104879; font-size: 18px; margin-bottom: 10px;">📈 What are Job Insights?</h3>
-      <p style="color: #333;">Job Insights provide real-time data on job demand, salary ranges, in-demand skills, and hiring trends based on your selected job title and location, helping you stay ahead in your career planning.</p>
+    <div class="faq-item">
+      <h3>🎯 What is the Resume Analyzer?</h3>
+      <p>The analyzer scores your resume based on keywords, relevance, and formatting. It also highlights areas you can improve for better results.</p>
     </div>
 
-    <div class="faq-item" style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <h3 style="color: #104879; font-size: 18px; margin-bottom: 10px;">🎤 What is the Interview Coach?</h3>
-      <p style="color: #333;">The Interview Coach simulates interview sessions using AI. It provides tailored questions, voice responses, and feedback to help you practice and build confidence for real interviews.</p>
+    <div class="faq-item">
+      <h3>📊 What kind of insights can I get from Job Insights?</h3>
+      <p>You can discover average salaries, job trends, in-demand skills, and opportunities by region — helping you make informed career choices.</p>
     </div>
 
-    <div class="faq-item" style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <h3 style="color: #104879; font-size: 18px; margin-bottom: 10px;">🔎 Is Jobcus free to use?</h3>
-      <p style="color: #333;">Jobcus offers a freemium model. You can access many features for free, while advanced features and export formats may require a subscription or one-time purchase.</p>
+    <div class="faq-item">
+      <h3>💼 What is the Interview Coach?</h3>
+      <p>Our AI Interview Coach helps you rehearse job interview questions, suggests best answers, and provides feedback to boost your confidence.</p>
     </div>
 
-    <div class="faq-item" style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <h3 style="color: #104879; font-size: 18px; margin-bottom: 10px;">🌍 Can I use Jobcus outside the UK?</h3>
-      <p style="color: #333;">Absolutely. Jobcus is available globally. While it emphasizes UK job markets, its tools and AI features are adaptable to job seekers from any country.</p>
+    <div class="faq-item">
+      <h3>🤖 How is Jobcus different from other career tools?</h3>
+      <p>Jobcus combines AI resume writing, real-time job market data, personalized interview coaching, and skill gap analysis — all in one simple platform.</p>
     </div>
 
-    <div class="faq-item" style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <h3 style="color: #104879; font-size: 18px; margin-bottom: 10px;">🛠 How is my data handled?</h3>
-      <p style="color: #333;">We prioritize your privacy. Jobcus does not store your personal resume data unless you explicitly create an account and choose to save it. All processing is secure and temporary.</p>
+    <div class="faq-item">
+      <h3>🌍 Is Jobcus free to use?</h3>
+      <p>Jobcus offers both free and premium features. You can build and analyze resumes for free, while advanced features may require a subscription.</p>
     </div>
 
-    <div class="faq-item" style="background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <h3 style="color: #104879; font-size: 18px; margin-bottom: 10px;">💬 Can I talk to Jobcus AI directly?</h3>
-      <p style="color: #333;">Yes! Visit the <a href="/chat" style="color: #ee9e12; font-weight: 600; text-decoration: none;">Jobcus AI chat</a> to ask career-related questions, get job advice, or generate content using natural language.</p>
+    <div class="faq-item">
+      <h3>📥 Can I upload my existing resume?</h3>
+      <p>Yes! You can upload a PDF version of your resume, and our AI will analyze and suggest improvements instantly.</p>
+    </div>
+
+    <div class="faq-item">
+      <h3>🛠️ I found a bug or have feedback. What should I do?</h3>
+      <p>We’d love to hear from you! Use our contact form or reach out via support@jobcus.com. Your feedback helps us improve.</p>
     </div>
   </div>
 </section>
