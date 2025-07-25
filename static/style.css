@@ -13,6 +13,7 @@ html, body {
   background-color: #f9fbf9;
   color: #333;
   overflow-x: hidden; /* Prevent horizontal scroll */
+  padding-top: 80px; /* Adjust this based on header height */
 }
 
 .container {
@@ -2320,52 +2321,62 @@ button {
   color: #333;
 }
 
-  .faq-intro {
-  padding: 30px 20px;
+.faq-intro {
+  padding: 60px 20px 30px; /* top padding added to prevent overlap with fixed header */
   background-color: #f4f4f4;
   text-align: center;
 }
+
 .faq-header h1 {
   font-size: 28px;
   color: #104879;
+  margin-bottom: 10px;
 }
 .faq-header p {
   color: #555;
+  font-size: 16px;
 }
 .faq-nav {
-  list-style: none;
+  list-style: none; /* removes bullet points */
   padding: 0;
   margin: 30px auto;
   max-width: 600px;
 }
 .faq-nav li {
-  margin: 10px 0;
+  margin: 12px 0;
 }
 .faq-nav a {
   color: #104879;
   font-weight: 600;
   text-decoration: none;
+  font-size: 16px;
+  display: block;
+  padding-left: 10px;
   transition: all 0.2s ease;
 }
 .faq-nav a:hover {
   text-decoration: underline;
 }
+
 .faq-answers {
-  padding: 40px 20px;
+  padding: 50px 25px 80px; /* more spacing around answers */
 }
+
 .faq-entry {
-  margin-bottom: 50px;
-  scroll-margin-top: 100px;
+  margin-bottom: 60px;
+  scroll-margin-top: 90px;
 }
 .faq-entry h2 {
-  color: #104879;
-  font-size: 24px;
-  margin-bottom: 10px;
+  color: #ee9e12; /* makes the header stand out */
+  font-size: 22px;
+  margin-bottom: 15px;
+  padding-top: 20px;
 }
 .faq-entry p {
   color: #333;
   font-size: 16px;
-  max-width: 700px;
+  line-height: 1.6;
+  margin-left: 5px;
 }
 
   /* Highlight animation when scrolling to a question */
