@@ -2287,8 +2287,6 @@ button {
   line-height: 1.5;
 }
 
-  
-
 .faq-question {
   width: 100%;
   background: #104879;
@@ -2370,3 +2368,13 @@ button {
   max-width: 700px;
 }
 
+  /* Highlight animation when scrolling to a question */
+.highlight-faq {
+  animation: flash 1s ease-in-out;
+}
+
+@keyframes flash {
+  0% { background-color: #fff8e1; }
+  50% { background-color: #ffe082; }
+  100% { background-color: transparent; }
+}
