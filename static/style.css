@@ -13,7 +13,7 @@ html, body {
   background-color: #f9fbf9;
   color: #333;
   overflow-x: hidden; /* Prevent horizontal scroll */
-  padding-top: 80px; /* Adjust this based on header height */
+  padding-top: 20px; /* Adjust this based on header height */
 }
 
 .container {
