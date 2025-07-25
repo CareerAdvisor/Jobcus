@@ -2246,7 +2246,7 @@ button {
 .faq-header {
   text-align: center;
   margin-bottom: 40px;
-  padding-top: 40px; /* Adjust this based on header height */
+  padding-top: 60px; /* Adjust this based on header height */
 }
 
 .faq-header h1 {
