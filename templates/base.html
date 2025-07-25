@@ -95,6 +95,10 @@
     {% if request.path == "/chat" %}
       <script src="{{ url_for('static', filename='chat.js') }}"></script>
     {% endif %}
+
+    {% if request.path == "/faq" %}
+      <script src="{{ url_for('static', filename='static/faq.js') }}"></script>
+    {% endif %}
   {% endblock %}
 
   {% if body_class != 'chat-page' %}
