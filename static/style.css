@@ -121,8 +121,6 @@ header {
   }
 }
 
-
-
 /* Only apply hover dropdown on screens wider than 768px */
 @media (min-width: 768px) {
   .hamburger {
@@ -2237,9 +2235,26 @@ button {
 }
 
 /* ==== FAQ PAGE STYLES ==== */
+.faq-hero {
+  background: linear-gradient(to right, #0078d4, #005a9e);
+  color: white;
+  padding: 60px 20px;
+  text-align: center;
+}
+  
+.faq-hero h1 {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+.faq-hero p {
+  font-size: 18px;
+  margin: 0;
+}
+  
 .faq-section {
   max-width: 800px;
   margin: 40px auto;
+  padding-top: 60px;
 }
 
 .faq-header {
@@ -2299,6 +2314,9 @@ button {
   border: none;
   cursor: pointer;
   position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .faq-question .toggle-icon {
@@ -2314,6 +2332,10 @@ button {
   transition: max-height 0.4s ease;
   padding: 0 20px;
   background: #f9f9f9;
+  display: none;
+  margin-top: 10px;
+  font-size: 15px;
+  color: #333;
 }
 
 .faq-answer p {
@@ -2333,17 +2355,7 @@ button {
   font-weight: 700;
   color: #0c4a6e;
 }
-
-  .faq-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
   
-.faq-header p {
-  color: #555;
-  font-size: 16px;
-}
 .faq-nav {
   list-style: none;
   padding-left: 10px;
@@ -2388,23 +2400,16 @@ button {
   color: #104879;          /* You can style the color */
   font-weight: bold;
 }
-  
-.faq-answers {
-  margin-top: 3rem;
-}
-
-.faq-entry {
-  background: #ffffff;
-  border-left: 4px solid #0077cc;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 0 5px rgba(0,0,0,0.05);
-}
 
 .faq-entry h2 {
   font-size: 1.5rem;
   color: #0077cc;
   margin-bottom: 1rem;
+}
+
+.faq-entry {
+  border-top: 1px solid #eee;
+  padding: 15px 0;
 }
 
 .faq-entry p {
@@ -2413,10 +2418,49 @@ button {
   line-height: 1.6;
 }
 
-  .faq-section {
-  padding-top: 60px;
+.faq-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+}
+.faq-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.faq-controls button {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
 }
 
+.faq-title {
+  font-weight: 600;
+  font-size: 18px;
+}
+.faq-number {
+  color: #0078d4;
+  font-weight: bold;
+  margin-right: 10px;
+}
+.faq-toggle {
+  background: #0078d4;
+  color: white;
+  border: none;
+  font-size: 18px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.faq-entry.open .faq-answer {
+  display: block;
+}
+  
 .highlight-faq {
   background-color: #e0f2fe;
   transition: background-color 0.5s ease-in-out;
