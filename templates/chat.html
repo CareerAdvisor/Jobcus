@@ -21,7 +21,7 @@
   <form id="chat-form">
     <div class="input-container" id="inputContainer">
       <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)"></textarea>
-      <div class="icon-group">
+      <div class="icon-group" style="align-items: right;">
         <label for="file-upload"><img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach"></label>
         <input id="file-upload" type="file" style="display: none;">
         <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" onclick="handleMic()">
