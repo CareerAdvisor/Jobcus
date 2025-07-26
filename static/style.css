@@ -2322,66 +2322,88 @@ button {
 }
 
 .faq-intro {
-  padding: 60px 20px 30px; /* top padding added to prevent overlap with fixed header */
-  background-color: #f4f4f4;
   text-align: center;
+  padding: 3rem 1rem;
+  background-color: #f7f9fc;
 }
 
-.faq-header h1 {
-  font-size: 28px;
-  color: #104879;
-  margin-bottom: 10px;
+.faq-intro h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0c4a6e;
 }
+
+  .faq-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+  
 .faq-header p {
   color: #555;
   font-size: 16px;
 }
 .faq-nav {
-  list-style: none; /* removes bullet points */
+  list-style: none;
   padding: 0;
-  margin: 30px auto;
-  max-width: 600px;
+  margin: 2rem 0;
 }
+
 .faq-nav li {
-  margin: 12px 0;
+  margin-bottom: 1rem;
 }
+
 .faq-nav a {
-  color: #104879;
-  font-weight: 600;
   text-decoration: none;
-  font-size: 16px;
   display: block;
-  padding-left: 10px;
-  transition: all 0.2s ease;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  color: #0f172a;
+  font-weight: 600;
+  position: relative;
+  transition: all 0.2s;
 }
+
 .faq-nav a:hover {
-  text-decoration: underline;
+  background: #f1f5f9;
+}
+  
+.faq-nav a::before {
+  content: "+";
+  font-weight: bold;
+  margin-right: 0.5rem;
+  color: #0077cc;
 }
 
 .faq-answers {
-  padding: 50px 25px 80px; /* more spacing around answers */
+  margin-top: 3rem;
 }
 
 .faq-entry {
-  margin-bottom: 60px;
-  scroll-margin-top: 90px;
-}
-.faq-entry h2 {
-  color: #ee9e12; /* makes the header stand out */
-  font-size: 22px;
-  margin-bottom: 15px;
-  padding-top: 20px;
-}
-.faq-entry p {
-  color: #333;
-  font-size: 16px;
-  line-height: 1.6;
-  margin-left: 5px;
+  background: #ffffff;
+  border-left: 4px solid #0077cc;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 0 5px rgba(0,0,0,0.05);
 }
 
-  /* Highlight animation when scrolling to a question */
+.faq-entry h2 {
+  font-size: 1.5rem;
+  color: #0077cc;
+  margin-bottom: 1rem;
+}
+
+.faq-entry p {
+  font-size: 1rem;
+  color: #334155;
+  line-height: 1.6;
+}
+
 .highlight-faq {
-  animation: flash 1s ease-in-out;
+  background-color: #e0f2fe;
+  transition: background-color 0.5s ease-in-out;
 }
 
 @keyframes flash {
