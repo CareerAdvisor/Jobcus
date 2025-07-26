@@ -2240,12 +2240,12 @@ button {
 .faq-section {
   max-width: 800px;
   margin: 40px auto;
+  padding: 20px;
 }
 
 .faq-header {
   text-align: center;
   margin-bottom: 40px;
-  padding-top: 80px; /* Adjust this based on header height */
 }
 
 .faq-header h1 {
@@ -2285,124 +2285,6 @@ button {
   color: #333;
   font-size: 15px;
   line-height: 1.5;
-}
-
-.faq-question {
-  width: 100%;
-  background: #104879;
-  color: #fff;
-  padding: 16px 20px;
-  font-size: 16px;
-  text-align: left;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  position: relative;
-}
-
-.faq-question .toggle-icon {
-  position: absolute;
-  right: 20px;
-  font-size: 20px;
-  transition: transform 0.3s ease;
-}
-
-.faq-answer {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.4s ease;
-  padding: 0 20px;
-  background: #f9f9f9;
-}
-
-.faq-answer p {
-  margin: 15px 0;
-  color: #333;
-}
-
-.faq-intro {
-  text-align: center;
-  padding: 3rem 1rem;
-  background-color: #f7f9fc;
-}
-
-.faq-intro h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #0c4a6e;
-}
-
-  .faq-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-  
-.faq-header p {
-  color: #555;
-  font-size: 16px;
-}
-.faq-nav {
-  list-style: none;
-  padding: 0;
-  margin: 2rem 0;
-}
-
-.faq-nav li {
-  margin-bottom: 1rem;
-}
-
-.faq-nav a {
-  text-decoration: none;
-  display: block;
-  padding: 1rem;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  color: #0f172a;
-  font-weight: 600;
-  position: relative;
-  transition: all 0.2s;
-}
-
-.faq-nav a:hover {
-  background: #f1f5f9;
-}
-  
-.faq-nav a::before {
-  content: "+";
-  font-weight: bold;
-  margin-right: 0.5rem;
-  color: #0077cc;
-}
-
-.faq-answers {
-  margin-top: 3rem;
-}
-
-.faq-entry {
-  background: #ffffff;
-  border-left: 4px solid #0077cc;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 0 5px rgba(0,0,0,0.05);
-}
-
-.faq-entry h2 {
-  font-size: 1.5rem;
-  color: #0077cc;
-  margin-bottom: 1rem;
-}
-
-.faq-entry p {
-  font-size: 1rem;
-  color: #334155;
-  line-height: 1.6;
-}
-
-.highlight-faq {
-  background-color: #e0f2fe;
-  transition: background-color 0.5s ease-in-out;
 }
 
 @keyframes flash {
