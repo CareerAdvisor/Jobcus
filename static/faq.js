@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     toggle.addEventListener("click", () => {
       const isOpen = entry.classList.contains("open");
-
       if (isOpen) {
         entry.classList.remove("open");
         toggle.textContent = "+";
@@ -17,17 +16,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.getElementById("expandAll").addEventListener("click", () => {
-    entries.forEach(entry => {
-      entry.classList.add("open");
-      entry.querySelector(".faq-toggle").textContent = "−";
-    });
-  });
+  const expandAllBtn = document.getElementById("expandAll");
+  const collapseAllBtn = document.getElementById("collapseAll");
 
-  document.getElementById("collapseAll").addEventListener("click", () => {
-    entries.forEach(entry => {
-      entry.classList.remove("open");
-      entry.querySelector(".faq-toggle").textContent = "+";
+  if (expandAllBtn) {
+    expandAllBtn.addEventListener("click", () => {
+      entries.forEach(entry => {
+        entry.classList.add("open");
+        entry.querySelector(".faq-toggle").textContent = "−";
+      });
     });
-  });
+  }
+
+  if (collapseAllBtn) {
+    collapseAllBtn.addEventListener("click", () => {
+      entries.forEach(entry => {
+        entry.classList.remove("open");
+        entry.querySelector(".faq-toggle").textContent = "+";
+      });
+    });
+  }
 });
