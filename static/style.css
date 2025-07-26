@@ -2295,11 +2295,13 @@ button {
 }
 
 .faq-answer {
-  padding: 16px 20px;
-  background: #f4f7fa;
-  font-size: 15px;
   display: none;
+  padding: 15px 20px;
+  background-color: #f9f9f9;
+  margin-top: 8px;
+  border-radius: 4px;
   color: #333;
+  font-size: 15px;
   line-height: 1.6;
 }
 
@@ -2328,6 +2330,10 @@ button {
 
 .faq-controls button:hover {
   background-color: #f1f1f1;
+}
+
+  .faq-entry.open .faq-answer {
+  display: block;
 }
 
 @keyframes flash {
