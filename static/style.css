@@ -2346,12 +2346,12 @@ button {
 }
 .faq-nav {
   list-style: none;
-  padding: 0;
-  margin: 2rem 0;
+  padding-left: 0;
+  margin: 0;
 }
 
 .faq-nav li {
-  margin-bottom: 1rem;
+  margin-bottom: 10px;
 }
 
 .faq-nav a {
@@ -2365,6 +2365,7 @@ button {
   font-weight: 600;
   position: relative;
   transition: all 0.2s;
+  font-size: 16px;
 }
 
 .faq-nav a:hover {
@@ -2400,6 +2401,10 @@ button {
   font-size: 1rem;
   color: #334155;
   line-height: 1.6;
+}
+
+  .faq-section {
+  padding-top: 60px;
 }
 
 .highlight-faq {
