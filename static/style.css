@@ -2251,7 +2251,7 @@ button {
 .faq-header p {
   color: #555;
   font-size: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .faq-container {
@@ -2311,7 +2311,7 @@ button {
   padding: 16px 22px;
   background-color: #f9f9f9;
   border-radius: 6px;
-  margin-top: 10px;
+  margin-top: 14px;
   font-size: 15px;
   line-height: 1.6;
   color: #333;
@@ -2319,6 +2319,7 @@ button {
 
 .faq-answer p {
   margin: 10px 0 0;
+  margin-bottom: 16px;
 }
 
 /* Show answer when entry is open */
@@ -2341,6 +2342,7 @@ button {
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  margin-bottom: 16px;
 }
 
 .faq-controls button:hover {
