@@ -91,9 +91,6 @@
     {% endif %}
     </div>
 
-    {% block scripts %}
-    {% if request.path == "/chat" %}
-      <script src="{{ url_for('static', filename='chat.js') }}"></script>
     {% endif %}
 
     {% block scripts %}{% endblock %}
