@@ -1,44 +1,48 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const entries = document.querySelectorAll(".faq-entry");
+document.addEventListener("DOMContentLoaded", function () {
+  const faqEntries = document.querySelectorAll(".faq-entry");
 
-  entries.forEach(entry => {
+  faqEntries.forEach(entry => {
     const question = entry.querySelector(".faq-question");
-    const toggle = entry.querySelector(".faq-toggle");
     const answer = entry.querySelector(".faq-answer");
+    const toggleIcon = entry.querySelector(".faq-toggle");
+
+    // Hide answers initially
+    answer.style.display = "none";
 
     question.addEventListener("click", () => {
       const isOpen = entry.classList.contains("open");
 
-      // Close all other entries (optional)
-      entries.forEach(e => {
-        e.classList.remove("open");
-        e.querySelector(".faq-toggle").textContent = "+";
-      });
-
-      // Toggle current entry
-      if (!isOpen) {
-        entry.classList.add("open");
-        toggle.textContent = "−";
-      } else {
+      if (isOpen) {
         entry.classList.remove("open");
-        toggle.textContent = "+";
+        answer.style.display = "none";
+        toggleIcon.textContent = "+";
+      } else {
+        entry.classList.add("open");
+        answer.style.display = "block";
+        toggleIcon.textContent = "−";
       }
     });
   });
 
   // Expand All
   document.getElementById("expandAll").addEventListener("click", () => {
-    entries.forEach(entry => {
+    faqEntries.forEach(entry => {
+      const answer = entry.querySelector(".faq-answer");
+      const toggleIcon = entry.querySelector(".faq-toggle");
       entry.classList.add("open");
-      entry.querySelector(".faq-toggle").textContent = "−";
+      answer.style.display = "block";
+      toggleIcon.textContent = "−";
     });
   });
 
   // Collapse All
   document.getElementById("collapseAll").addEventListener("click", () => {
-    entries.forEach(entry => {
+    faqEntries.forEach(entry => {
+      const answer = entry.querySelector(".faq-answer");
+      const toggleIcon = entry.querySelector(".faq-toggle");
       entry.classList.remove("open");
-      entry.querySelector(".faq-toggle").textContent = "+";
+      answer.style.display = "none";
+      toggleIcon.textContent = "+";
     });
   });
 });
