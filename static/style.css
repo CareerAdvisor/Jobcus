@@ -2275,16 +2275,22 @@ button {
 }
 
 .faq-item h3 {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   color: #104879;
   font-size: 18px;
+  line-height: 1.4;
 }
 
 .faq-item p {
   margin: 0;
+  padding-bottom: 5px;
   color: #333;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+.faq-item + .faq-item {
+  margin-top: 24px; /* Adds space between FAQ cards */
 }
 
 @keyframes flash {
