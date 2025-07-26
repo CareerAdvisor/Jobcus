@@ -1,64 +1,50 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% block title %}FAQs - Jobcus{% endblock %}
 
 {% block content %}
-<section class="faq-section">
-  <div class="faq-header">
-    <h1>❓ Frequently Asked Questions</h1>
-    <p>Your guide to making the most of Jobcus – your AI Career Advisor</p>
-  </div>
-
-  <div class="faq-list">
-    <div class="faq-item">
-      <h3>🔍 What is Jobcus?</h3>
-      <p>Jobcus is an AI-powered career assistant designed to help job seekers build optimized resumes, analyze their skill gaps, prepare for interviews, and gain job market insights — all in one platform.</p>
-    </div>
-
-    <div class="faq-item">
-      <h3>📄 How does the Resume Builder work?</h3>
-      <p>Simply fill in your career details and our AI formats it into a professionally structured resume. You can then download your resume in PDF, Word, or TXT formats.</p>
-    </div>
-
-    <div class="faq-item">
-      <h3>⚙️ What is Resume Optimization?</h3>
-      <p>Our AI scans your resume and offers an optimized version tailored for ATS (Applicant Tracking Systems) to improve your chances of getting hired.</p>
-    </div>
-
-    <div class="faq-item">
-      <h3>🎯 What is the Resume Analyzer?</h3>
-      <p>The analyzer scores your resume based on keywords, relevance, and formatting. It also highlights areas you can improve for better results.</p>
-    </div>
-
-    <div class="faq-item">
-      <h3>📊 What kind of insights can I get from Job Insights?</h3>
-      <p>You can discover average salaries, job trends, in-demand skills, and opportunities by region — helping you make informed career choices.</p>
-    </div>
-
-    <div class="faq-item">
-      <h3>💼 What is the Interview Coach?</h3>
-      <p>Our AI Interview Coach helps you rehearse job interview questions, suggests best answers, and provides feedback to boost your confidence.</p>
-    </div>
-
-    <div class="faq-item">
-      <h3>🤖 How is Jobcus different from other career tools?</h3>
-      <p>Jobcus combines AI resume writing, real-time job market data, personalized interview coaching, and skill gap analysis — all in one simple platform.</p>
-    </div>
-
-    <div class="faq-item">
-      <h3>🌍 Is Jobcus free to use?</h3>
-      <p>Jobcus offers both free and premium features. You can build and analyze resumes for free, while advanced features may require a subscription.</p>
-    </div>
-
-    <div class="faq-item">
-      <h3>📥 Can I upload my existing resume?</h3>
-      <p>Yes! You can upload a PDF version of your resume, and our AI will analyze and suggest improvements instantly.</p>
-    </div>
-
-    <div class="faq-item">
-      <h3>🛠️ I found a bug or have feedback. What should I do?</h3>
-      <p>We’d love to hear from you! Use our contact form or reach out via support@jobcus.com. Your feedback helps us improve.</p>
-    </div>
-  </div>
+<section class="faq-intro">
+  <h1>Frequently Asked Questions</h1>
+  <p>Have a question? We're here to help.</p>
 </section>
+
+<div class="faq-container">
+  <ul class="faq-nav">
+    <li><a href="#q1">+ What is Jobcus AI?</a></li>
+    <li><a href="#q2">+ How can Jobcus help me find a job?</a></li>
+    <li><a href="#q3">+ Is Jobcus free to use?</a></li>
+    <li><a href="#q4">+ Can employers use Jobcus?</a></li>
+    <li><a href="#q5">+ How secure is my data?</a></li>
+  </ul>
+
+  <div class="faq-answers">
+    <div id="q1" class="faq-entry">
+      <h2>What is Jobcus AI?</h2>
+      <p>Jobcus is your AI-powered career advisor that helps you build your CV, get career insights, discover job openings, and prepare for interviews — all in one place.</p>
+    </div>
+
+    <div id="q2" class="faq-entry">
+      <h2>How can Jobcus help me find a job?</h2>
+      <p>Jobcus analyzes your skills and experience to match you with relevant job openings, offers resume optimization tips, and even coaches you for interviews.</p>
+    </div>
+
+    <div id="q3" class="faq-entry">
+      <h2>Is Jobcus free to use?</h2>
+      <p>Yes! Jobcus offers a free plan with basic features. You can also upgrade to a premium plan for advanced tools and personalized job insights.</p>
+    </div>
+
+    <div id="q4" class="faq-entry">
+      <h2>Can employers use Jobcus?</h2>
+      <p>Yes. Employers can partner with us to access talent tools, post jobs, and benefit from our intelligent matching system for top candidates.</p>
+    </div>
+
+    <div id="q5" class="faq-entry">
+      <h2>How secure is my data?</h2>
+      <p>Very secure. Jobcus follows industry best practices and encryption to protect your personal and professional information.</p>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
+{% block scripts %}
+<script src="{{ url_for('static', filename='faq.js') }}"></script>
+{% endblock %}
