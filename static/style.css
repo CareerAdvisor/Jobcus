@@ -1054,10 +1054,10 @@ career-hero h1 {
 /* Skill Gap Page Styles */
 .skill-gap-container {
   background-color: #f9fcfe;
-  padding: 40px 20px;
+  padding: 20px;
   border-radius: 16px;
   max-width: 960px;
-  margin: 40px auto;
+  margin: auto;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
 }
