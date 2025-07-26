@@ -2346,12 +2346,14 @@ button {
 }
 .faq-nav {
   list-style: none;
-  padding-left: 0;
+  padding-left: 10px;
   margin: 0;
 }
 
 .faq-nav li {
   margin-bottom: 10px;
+  position: relative;
+  padding-left: 20px;      /* Creates space for the custom '+' */
 }
 
 .faq-nav a {
@@ -2379,6 +2381,14 @@ button {
   color: #0077cc;
 }
 
+.faq-nav li::before {
+  content: "+";            /* Adds the plus sign */
+  position: absolute;
+  left: 0;
+  color: #104879;          /* You can style the color */
+  font-weight: bold;
+}
+  
 .faq-answers {
   margin-top: 3rem;
 }
