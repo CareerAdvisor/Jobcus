@@ -2280,7 +2280,9 @@ button {
   align-items: left;
   width: 100%;
 }
-
+.faq-question {
+  user-select: none;
+}
 .faq-question:hover {
   background-color: #f9a006;
 }
@@ -2295,7 +2297,7 @@ button {
 }
 
 .faq-answer {
-  display: none;
+ display: none !important;  /* Ensure it's hidden by default */
   padding: 15px 20px;
   background-color: #f9f9f9;
   margin-top: 14px;
@@ -2315,7 +2317,7 @@ button {
 }
 
 .faq-entry.open .faq-answer {
-  display: block;
+   display: block !important;  /* Only shows when .open is added by JS */
 }
 
 .faq-controls {
