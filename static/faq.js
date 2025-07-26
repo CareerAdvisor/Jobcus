@@ -10,14 +10,14 @@ document.addEventListener("DOMContentLoaded", function () {
     question.addEventListener("click", () => {
       const isOpen = item.classList.contains("open");
 
-      // Close all
+      // Close all items
       faqItems.forEach(i => {
         i.classList.remove("open");
         i.querySelector(".faq-answer").style.maxHeight = null;
         i.querySelector(".toggle-icon").textContent = "+";
       });
 
-      // Open current
+      // Open current item
       if (!isOpen) {
         item.classList.add("open");
         answer.style.maxHeight = answer.scrollHeight + "px";
