@@ -3,46 +3,56 @@
 
 {% block content %}
 <section class="faq-intro">
-  <h1>Frequently Asked Questions</h1>
-  <p>Have a question? We're here to help.</p>
+  <div class="faq-header">
+    <h1>Frequently Asked Questions</h1>
+    <p>Click on a question to jump to its answer below</p>
+  </div>
+  <ul class="faq-nav">
+    <li><a href="#faq1">+ What is Jobcus?</a></li>
+    <li><a href="#faq2">+ Is Jobcus free to use?</a></li>
+    <li><a href="#faq3">+ How does the Resume Builder work?</a></li>
+    <li><a href="#faq4">+ Can I download resumes in different formats?</a></li>
+    <li><a href="#faq5">+ What is the Skill Gap Analysis tool?</a></li>
+    <li><a href="#faq6">+ How secure is my data on Jobcus?</a></li>
+    <li><a href="#faq7">+ Do I need to create an account?</a></li>
+    <li><a href="#faq8">+ How does the AI Interview Coach help me?</a></li>
+  </ul>
 </section>
 
-<div class="faq-container">
-  <ul class="faq-nav">
-    <li><a href="#q1">+ What is Jobcus AI?</a></li>
-    <li><a href="#q2">+ How can Jobcus help me find a job?</a></li>
-    <li><a href="#q3">+ Is Jobcus free to use?</a></li>
-    <li><a href="#q4">+ Can employers use Jobcus?</a></li>
-    <li><a href="#q5">+ How secure is my data?</a></li>
-  </ul>
-
-  <div class="faq-answers">
-    <div id="q1" class="faq-entry">
-      <h2>What is Jobcus AI?</h2>
-      <p>Jobcus is your AI-powered career advisor that helps you build your CV, get career insights, discover job openings, and prepare for interviews — all in one place.</p>
-    </div>
-
-    <div id="q2" class="faq-entry">
-      <h2>How can Jobcus help me find a job?</h2>
-      <p>Jobcus analyzes your skills and experience to match you with relevant job openings, offers resume optimization tips, and even coaches you for interviews.</p>
-    </div>
-
-    <div id="q3" class="faq-entry">
-      <h2>Is Jobcus free to use?</h2>
-      <p>Yes! Jobcus offers a free plan with basic features. You can also upgrade to a premium plan for advanced tools and personalized job insights.</p>
-    </div>
-
-    <div id="q4" class="faq-entry">
-      <h2>Can employers use Jobcus?</h2>
-      <p>Yes. Employers can partner with us to access talent tools, post jobs, and benefit from our intelligent matching system for top candidates.</p>
-    </div>
-
-    <div id="q5" class="faq-entry">
-      <h2>How secure is my data?</h2>
-      <p>Very secure. Jobcus follows industry best practices and encryption to protect your personal and professional information.</p>
-    </div>
+<section class="faq-answers">
+  <div id="faq1" class="faq-entry">
+    <h2>What is Jobcus?</h2>
+    <p>Jobcus is an AI-powered career assistant that helps you build resumes, analyze job market data, identify skill gaps, and prepare for interviews.</p>
   </div>
-</div>
+  <div id="faq2" class="faq-entry">
+    <h2>Is Jobcus free to use?</h2>
+    <p>Yes, Jobcus offers core features for free. Premium features and tools may require a subscription.</p>
+  </div>
+  <div id="faq3" class="faq-entry">
+    <h2>How does the Resume Builder work?</h2>
+    <p>You fill in your career details and our AI instantly formats it into a professional resume ready for download and optimization.</p>
+  </div>
+  <div id="faq4" class="faq-entry">
+    <h2>Can I download resumes in different formats?</h2>
+    <p>Yes. Resumes can be downloaded in DOCX, PDF, or TXT format.</p>
+  </div>
+  <div id="faq5" class="faq-entry">
+    <h2>What is the Skill Gap Analysis tool?</h2>
+    <p>This tool compares your resume with target job requirements to identify skills you may need to acquire to become more competitive.</p>
+  </div>
+  <div id="faq6" class="faq-entry">
+    <h2>How secure is my data on Jobcus?</h2>
+    <p>We use secure, encrypted protocols and never store resumes without your consent.</p>
+  </div>
+  <div id="faq7" class="faq-entry">
+    <h2>Do I need to create an account?</h2>
+    <p>Jobcus works without login for most tools. Account creation will unlock saved history and resume versioning features soon.</p>
+  </div>
+  <div id="faq8" class="faq-entry">
+    <h2>How does the AI Interview Coach help me?</h2>
+    <p>It simulates real-world interview scenarios, gives tips, and helps you build confidence with feedback.</p>
+  </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
