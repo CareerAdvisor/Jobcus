@@ -2251,7 +2251,7 @@ button {
 .faq-header p {
   color: #555;
   font-size: 16px;
-  Margin-bottom: 12px;
+  margin-bottom: 12px;
 }
 
 .faq-container {
@@ -2261,34 +2261,40 @@ button {
   width: 100%;
   padding-top: 16px;
 }
-
+  
+/* Each FAQ block */
 .faq-entry {
   border: none;
-  margin-bottom: 20px;
-  overflow: hidden;
-  border-radius: 4px;
+  margin-bottom: 28px; /* More space between entries */
+  padding-bottom: 6px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
 }
 
+/* Question button */
 .faq-question {
   background-color: #104879;
   color: white;
   padding: 16px 20px;
   font-size: 16px;
   font-weight: 600;
-  text-align: left !important;
+  text-align: left;
   border: none;
   cursor: pointer;
-  justify-content: space-between;
-  align-items: left;
   width: 100%;
-}
-.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
   user-select: none;
 }
+
 .faq-question:hover {
   background-color: #f9a006;
 }
 
+/* Toggle icon */
 .faq-toggle {
   font-size: 24px;
   font-weight: bold;
@@ -2296,42 +2302,45 @@ button {
   border: none;
   color: white;
   cursor: pointer;
+  margin-left: 10px;
 }
 
+/* Answer section */
 .faq-answer {
- display: none !important;  /* Ensure it's hidden by default */
-  padding: 15px 20px;
+  display: none !important;
+  padding: 16px 22px;
   background-color: #f9f9f9;
-  border-radius: 4px;
-  color: #333;
-  font-size: 14px;
+  border-radius: 6px;
+  margin-top: 10px;
+  font-size: 15px;
   line-height: 1.6;
-  transition: all 0.3s ease;
+  color: #333;
 }
 
 .faq-answer p {
-  margin: 12px 0 0;
-  color: #333;
-  margin-top: 4px;
-  margin-bottom: 14px;
+  margin: 10px 0 0;
 }
 
+/* Show answer when entry is open */
 .faq-entry.open .faq-answer {
-   display: block !important;  /* Only shows when .open is added by JS */
+  display: block !important;
 }
 
+/* Control buttons: Expand All / Collapse All */
 .faq-controls {
   text-align: right;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .faq-controls button {
   margin-left: 10px;
-  padding: 6px 14px;
+  padding: 8px 16px;
   background-color: #ffffff;
   border: 1px solid #ccc;
   font-size: 14px;
+  border-radius: 6px;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 .faq-controls button:hover {
