@@ -144,13 +144,13 @@ def job_insights():
 def employers():
     return render_template("employers.html")
 
+@app.route("/price")
+def about():
+    return render_template("price.html")
+
 @app.route("/faq")
 def faq():
     return render_template("faq.html")
-
-@app.route("/about")
-def about():
-    return render_template("about.html")
 
 @app.route("/ask", methods=["POST"])
 def ask():
