@@ -1214,7 +1214,7 @@ career-hero h1 {
 
 .interview-hero-full {
   width: 100%;
-  margin-top: 40px; /* adjust if header is fixed */
+  margin-top: 0; /* adjust if header is fixed */
   overflow: hidden;
   Margin-bottom: 10px;
   animation: fadeInUp 1s ease-in-out;
