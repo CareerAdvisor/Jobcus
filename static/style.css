@@ -2240,13 +2240,12 @@ button {
 .faq-section {
   max-width: 800px;
   margin: 40px auto;
-  padding: 40px;
 }
 
 .faq-header {
   text-align: center;
   margin-bottom: 40px;
-  padding-top: 60px; /* Adjust this based on header height */
+  padding-top: 80px; /* Adjust this based on header height */
 }
 
 .faq-header h1 {
