@@ -2031,6 +2031,7 @@ button[type="submit"]:hover {
   margin: 0;
   margin: 0 auto;
   Margin-top: 60px;
+  animation: fadeIn 1.5s ease-in-out;
 }
 
 .employer-hero-full img {
@@ -2039,7 +2040,6 @@ button[type="submit"]:hover {
   display: block;
   max-width: 100%
   object-fit: contain;
-  animation: fadeIn 1.5s ease-in-out;
 }
 
 .employer-hero {
@@ -2240,7 +2240,6 @@ button {
   margin-bottom: 40px;
   padding-top: 60px;
   width: 100%
-  animation: fadeSlideIn 0.6s ease-in-out;
 }
 
 .faq-header h1 {
@@ -2257,9 +2256,10 @@ button {
 }
 
  .faq-section {
-  max-width: 800px;
+  max-width: 100%;
   margin: 40px auto;
   padding-top: 60px;
+  animation: fadeSlideIn 0.6s ease-in-out;
 }
 
 .faq-section img {
