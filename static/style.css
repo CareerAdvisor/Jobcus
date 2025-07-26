@@ -2239,6 +2239,8 @@ button {
   text-align: left;
   margin-bottom: 40px;
   padding-top: 60px;
+  width: 100%
+  animation: fadeSlideIn 0.6s ease-in-out;
 }
 
 .faq-header h1 {
