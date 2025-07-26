@@ -2332,10 +2332,6 @@ button {
   background-color: #f1f1f1;
 }
 
-  .faq-entry.open .faq-answer {
-  display: block;
-}
-
 @keyframes flash {
   0% { background-color: #fff8e1; }
   50% { background-color: #ffe082; }
