@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const answer = entry.querySelector(".faq-answer");
     const toggleIcon = entry.querySelector(".faq-toggle");
 
-    // Hide answers initially
+    // Initially hide all answers
     answer.style.display = "none";
 
     question.addEventListener("click", () => {
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Expand All
+  // Expand all
   document.getElementById("expandAll").addEventListener("click", () => {
     faqEntries.forEach(entry => {
       const answer = entry.querySelector(".faq-answer");
@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Collapse All
+  // Collapse all
   document.getElementById("collapseAll").addEventListener("click", () => {
     faqEntries.forEach(entry => {
       const answer = entry.querySelector(".faq-answer");
