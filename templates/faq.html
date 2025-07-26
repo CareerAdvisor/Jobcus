@@ -7,13 +7,13 @@
     <h1>Frequently Asked Questions</h1>
     <p style="margin-bottom: 14px;">Your guide to making the most of Jobcus – your AI Career Advisor</p>
 
-    <div class="faq-controls">
+    <div class="faq-controls" style="margin-bottom: 14px; margin-top: 14px;">
       <button id="expandAll">Expand All</button>
       <button id="collapseAll">Collapse All</button>
     </div>
   </div>
 
-  <div class="faq-container" style="margin-bottom: 14px;">
+  <div class="faq-container" style="padding-bottom: 14px; padding-top: 14px;">
     {% for faq in [
       ["🔍 What is Jobcus?", "Jobcus is an AI-powered career assistant designed to help job seekers build optimized resumes, analyze their skill gaps, prepare for interviews, and gain job market insights — all in one platform."],
       ["📄 How does the Resume Builder work?", "Simply fill in your career details and our AI formats it into a professionally structured resume. You can then download your resume in PDF, Word, or TXT formats."],
@@ -31,7 +31,7 @@
         <span>{{ faq[0] }}</span>
         <span class="faq-toggle">+</span>
       </button>
-      <div class="faq-answer" style="margin-bottom: 14px;">
+      <div class="faq-answer" style="margin-bottom: 14px; margin-top: 14px;">
         <p>{{ faq[1] }}</p>
       </div>
     </div>
