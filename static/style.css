@@ -2251,12 +2251,15 @@ button {
 .faq-header p {
   color: #555;
   font-size: 16px;
+  Margin-bottom: 12px;
 }
 
 .faq-container {
   max-width: 800px;
   margin: 0 auto 60px;
   padding: 0 20px;
+  width: 100%;
+  padding-top: 16px;
 }
 
 .faq-entry {
@@ -2272,10 +2275,9 @@ button {
   padding: 16px 20px;
   font-size: 16px;
   font-weight: 600;
-  text-align: left;
+  text-align: left !important;
   border: none;
   cursor: pointer;
-  display: flex;
   justify-content: space-between;
   align-items: left;
   width: 100%;
@@ -2300,8 +2302,8 @@ button {
  display: none !important;  /* Ensure it's hidden by default */
   padding: 15px 20px;
   background-color: #f9f9f9;
-  margin-top: 14px;
-  margin-bottom: 14px;
+  padding-top: 14px;
+  padding-bottom: 14px;
   border-radius: 4px;
   color: #333;
   font-size: 14px;
@@ -2312,8 +2314,8 @@ button {
 .faq-answer p {
   margin: 12px 0 0;
   color: #333;
-  margn-top: 4px;
-  margin-bottom: 10px;
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
 .faq-entry.open .faq-answer {
