@@ -2302,8 +2302,6 @@ button {
  display: none !important;  /* Ensure it's hidden by default */
   padding: 15px 20px;
   background-color: #f9f9f9;
-  padding-top: 14px;
-  padding-bottom: 14px;
   border-radius: 4px;
   color: #333;
   font-size: 14px;
@@ -2314,8 +2312,8 @@ button {
 .faq-answer p {
   margin: 12px 0 0;
   color: #333;
-  padding-top: 14px;
-  padding-bottom: 14px;
+  margin-top: 4px;
+  margin-bottom: 14px;
 }
 
 .faq-entry.open .faq-answer {
