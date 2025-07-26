@@ -2236,7 +2236,7 @@ button {
 
 /* ==== FAQ PAGE STYLES ==== */
 .faq-header {
-  text-align: center;
+  text-align: left;
   margin-bottom: 40px;
   padding-top: 60px;
 }
@@ -2261,7 +2261,7 @@ button {
 
 .faq-entry {
   border: none;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
   overflow: hidden;
   border-radius: 4px;
 }
@@ -2277,7 +2277,7 @@ button {
   cursor: pointer;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: left;
   width: 100%;
 }
 
@@ -2295,10 +2295,12 @@ button {
 }
 
 .faq-answer {
-  padding: 0 20px 16px;
+  padding: 16px 20px;
   background: #f4f7fa;
   font-size: 15px;
   display: none;
+  color: #333;
+  line-height: 1.6;
 }
 
 .faq-answer p {
