@@ -2303,6 +2303,7 @@ button {
   color: #333;
   font-size: 15px;
   line-height: 1.6;
+  transition: all 0.3s ease;
 }
 
 .faq-answer p {
