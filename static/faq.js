@@ -1,44 +1,33 @@
-document.addEventListener("DOMContentLoaded", function () {
-  // === Accordion Toggle Logic ===
-  const faqItems = document.querySelectorAll(".faq-item");
+document.addEventListener("DOMContentLoaded", () => {
+  const entries = document.querySelectorAll(".faq-entry");
 
-  faqItems.forEach(item => {
-    const question = item.querySelector(".faq-question");
-    const answer = item.querySelector(".faq-answer");
-    const icon = question.querySelector(".toggle-icon");
+  entries.forEach(entry => {
+    const toggle = entry.querySelector(".faq-toggle");
 
-    question.addEventListener("click", () => {
-      const isOpen = item.classList.contains("open");
+    toggle.addEventListener("click", () => {
+      const isOpen = entry.classList.contains("open");
 
-      // Close all items
-      faqItems.forEach(i => {
-        i.classList.remove("open");
-        i.querySelector(".faq-answer").style.maxHeight = null;
-        i.querySelector(".toggle-icon").textContent = "+";
-      });
-
-      // Open current item
-      if (!isOpen) {
-        item.classList.add("open");
-        answer.style.maxHeight = answer.scrollHeight + "px";
-        icon.textContent = "−";
+      if (isOpen) {
+        entry.classList.remove("open");
+        toggle.textContent = "+";
+      } else {
+        entry.classList.add("open");
+        toggle.textContent = "−";
       }
     });
   });
 
-  // === Smooth Scroll to Anchors with Highlight ===
-  const faqLinks = document.querySelectorAll(".faq-nav a");
+  document.getElementById("expandAll").addEventListener("click", () => {
+    entries.forEach(entry => {
+      entry.classList.add("open");
+      entry.querySelector(".faq-toggle").textContent = "−";
+    });
+  });
 
-  faqLinks.forEach(link => {
-    link.addEventListener("click", function (e) {
-      e.preventDefault();
-      const targetId = this.getAttribute("href").substring(1);
-      const target = document.getElementById(targetId);
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
-        target.classList.add("highlight-faq");
-        setTimeout(() => target.classList.remove("highlight-faq"), 1500);
-      }
+  document.getElementById("collapseAll").addEventListener("click", () => {
+    entries.forEach(entry => {
+      entry.classList.remove("open");
+      entry.querySelector(".faq-toggle").textContent = "+";
     });
   });
 });
