@@ -330,6 +330,7 @@ main {
   height: 20px;
   width: 20px;
   cursor: pointer;
+  align-items: right;
 }
 
 .icon-group img:hover {
