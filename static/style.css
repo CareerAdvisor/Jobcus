@@ -2282,7 +2282,7 @@ button {
 }
 
 .faq-question:hover {
-  background-color: #0c3a6e;
+  background-color: #f9a006;
 }
 
 .faq-toggle {
@@ -2298,10 +2298,11 @@ button {
   display: none;
   padding: 15px 20px;
   background-color: #f9f9f9;
-  margin-top: 8px;
+  margin-top: 14px;
+  margin-bottom: 14px;
   border-radius: 4px;
   color: #333;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
   transition: all 0.3s ease;
 }
@@ -2309,6 +2310,8 @@ button {
 .faq-answer p {
   margin: 12px 0 0;
   color: #333;
+  margn-top: 4px;
+  margin-bottom: 10px;
 }
 
 .faq-entry.open .faq-answer {
