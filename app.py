@@ -8,8 +8,6 @@ from dotenv import load_dotenv
 from collections import Counter
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
-
-# ✅ Add PyPDF2 for PDF parsing
 from PyPDF2 import PdfReader
 from io import BytesIO
 import base64
@@ -17,21 +15,17 @@ import base64
 # Load environment variables
 load_dotenv()
 
-# Initialize Flask app
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 CORS(app)
 
-# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Initialize Supabase
 from supabase import create_client, Client
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Constants
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
 ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs"
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
@@ -128,17 +122,10 @@ class User:
         self.password = password
         self.fullname = fullname
 
-    def is_active(self):
-        return True
-
-    def is_authenticated(self):
-        return True
-
-    def is_anonymous(self):
-        return False
-
-    def get_id(self):
-        return str(self.id)
+    def is_active(self): return True
+    def is_authenticated(self): return True
+    def is_anonymous(self): return False
+    def get_id(self): return str(self.id)
 
 USERS = {}
 
@@ -187,7 +174,7 @@ def faq():
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "POST":
-        mode = request.form.get("mode")  # 'login' or 'signup'
+        mode = request.form.get("mode")
         email = request.form.get("email")
         password = request.form.get("password")
 
@@ -209,7 +196,7 @@ def account():
             return redirect("/account")
 
     return render_template("account.html")
-
+    
 @app.route("/logout")
 @login_required
 def logout():
@@ -220,7 +207,7 @@ def logout():
 @login_required
 def dashboard():
     return render_template("dashboard.html")
-
+    
 @app.route("/ask", methods=["POST"])
 def ask():
     user_msg = request.json.get("message")
