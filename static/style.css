@@ -321,8 +321,9 @@ main {
   outline: none;
   font-size: 16px;
   padding: 12px;
-  background-color: transparent;
+  resize: none;
   width: 100%;
+  box-sizing: border-box;
 }
 
 /* === ICON GROUP === */
