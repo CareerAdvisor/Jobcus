@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}My Dashboard – Jobcus{% endblock %}
+
+{% block content %}
+<section class="dashboard-container">
+  <h1 class="dashboard-heading">Welcome back, Ugo!</h1>
+  <p class="dashboard-subtext">Here’s an overview of your career progress powered by Jobcus AI.</p>
+
+  <div class="dashboard-quick-links">
+    <a href="/resume-builder" class="quick-link-card" data-aos="zoom-in">
+      <img src="{{ url_for('static', filename='icons/resume.svg') }}" alt="Resume Builder">
+      <h3>Resume Builder</h3>
+      <p>Build or update your professional resume.</p>
+    </a>
+    <a href="/skill-gap" class="quick-link-card" data-aos="zoom-in" data-aos-delay="100">
+      <img src="{{ url_for('static', filename='icons/gap.svg') }}" alt="Skill Gap Analysis">
+      <h3>Skill Gap</h3>
+      <p>Identify and bridge missing skills.</p>
+    </a>
+    <a href="/interview-coach" class="quick-link-card" data-aos="zoom-in" data-aos-delay="200">
+      <img src="{{ url_for('static', filename='icons/interview.svg') }}" alt="Interview Coach">
+      <h3>Interview Coach</h3>
+      <p>Practice with AI and get instant tips.</p>
+    </a>
+    <a href="/job-insights" class="quick-link-card" data-aos="zoom-in" data-aos-delay="300">
+      <img src="{{ url_for('static', filename='icons/insight.svg') }}" alt="Job Insights">
+      <h3>Job Insights</h3>
+      <p>See trends in job demand and pay.</p>
+    </a>
+  </div>
+
+  <div class="dashboard-resume-score">
+    <h2>Your Resume Score</h2>
+    <canvas id="resumeScoreChart"></canvas>
+    <p class="resume-score-summary">Your latest score is <strong>57/100</strong>. Improve by fixing key areas below.</p>
+
+    <div class="resume-tips">
+      <div class="tip-card error">
+        <h4>❌ Unnecessary Sections</h4>
+        <p>Consider removing redundant parts of your resume.</p>
+      </div>
+      <div class="tip-card warning">
+        <h4>⚡ Weak Action Verbs</h4>
+        <p>Try using more impactful verbs.</p>
+      </div>
+      <div class="tip-card warning">
+        <h4>❌ Inconsistent Dates</h4>
+        <p>Ensure formatting is consistent.</p>
+      </div>
+    </div>
+
+    <div class="resume-success">
+      <h3>🌟 Strengths</h3>
+      <ul>
+        <li>🔹 Page layout looks right</li>
+        <li>🔹 Consistent punctuation</li>
+        <li>🔹 Proper verb tenses</li>
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='myaccount.js') }}"></script>
+{% endblock %}
