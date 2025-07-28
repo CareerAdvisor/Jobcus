@@ -1,53 +1,50 @@
 {% extends "base.html" %}
 
-{% block title %}Jobcus Account – Sign In / Sign Up{% endblock %}
-
+{% block title %}Jobcus – Sign In / Sign Up{% endblock %}
 {% block body_class %}account-page{% endblock %}
 
 {% block content %}
-<section class="account-container">
-  <div class="account-box">
-    <h2 id="formTitle">Sign In to Jobcus</h2>
+<section class="auth-section" data-aos="fade-up">
+  <h2 id="formTitle">Sign In to Jobcus</h2>
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <div class="flash-message">
-          {% for message in messages %}
-            <p>{{ message }}</p>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-
-    <form id="accountForm" method="POST" action="/account">
-      <input type="hidden" name="mode" id="mode" value="login" />
-
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" required />
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="flash-message">
+        {% for message in messages %}
+          <p class="highlight">{{ message }}</p>
+        {% endfor %}
       </div>
+    {% endif %}
+  {% endwith %}
 
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required />
-      </div>
+  <form id="accountForm" method="POST" action="/account" class="auth-form">
+    <input type="hidden" name="mode" id="mode" value="login" />
 
-      <div class="form-group">
-        <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
-      </div>
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="you@example.com" required />
+    </div>
 
-      <div class="form-group" id="nameGroup" style="display: none;">
-        <label for="name">Full Name</label>
-        <input type="text" id="name" name="name" />
-      </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="Enter your password" required />
+    </div>
 
-      <button type="submit" class="cta-primary" id="submitButton">Sign In</button>
+    <div class="form-group hidden" id="nameGroup">
+      <label for="name">Full Name</label>
+      <input type="text" id="name" name="name" placeholder="Your full name" />
+    </div>
 
-      <p class="toggle-text">
-        Don't have an account? <a href="#" id="toggleMode">Sign Up</a>
-      </p>
-    </form>
-  </div>
+    <div class="form-group" style="text-align: right;">
+      <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
+    </div>
+
+    <button type="submit" class="cta-primary" id="submitButton">Sign In</button>
+
+    <p class="toggle-text" style="text-align: center;">
+      Don’t have an account? <a href="#" id="toggleMode" class="toggle-link">Sign Up</a>
+    </p>
+  </form>
 </section>
 {% endblock %}
 
