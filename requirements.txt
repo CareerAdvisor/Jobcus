@@ -1,9 +1,9 @@
 Flask
-openai
 flask-cors
+Flask-Login
 gunicorn
+openai
 requests
 python-dotenv
 supabase
 PyPDF2>=3.0.0
-pip install flask-login
