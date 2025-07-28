@@ -28,10 +28,19 @@
       </div>
 
       <div class="header-right">
-        <div class="hamburger" onclick="toggleMobileMenu()">
-          <div></div><div></div><div></div>
-        </div>
-      </div>
+  <!-- User Icon -->
+  <a href="/account" title="Account">
+    <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="User Icon" class="header-user-icon" />
+  </a>
+
+  <!-- Ellipsis Separator Icon -->
+  <img src="{{ url_for('static', filename='icons/ellipsis-v.svg') }}" alt="More Options" class="header-ellipsis-icon" />
+
+  <!-- Hamburger Menu -->
+  <div class="hamburger" onclick="toggleMobileMenu()">
+    <div></div><div></div><div></div>
+  </div>
+  </div>
 
       <div class="mobile-nav" id="mobileMenu">
         <a href="/resume-builder">Resume Builder</a>
