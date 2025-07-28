@@ -124,26 +124,30 @@ class User(UserMixin):
         self.password = password
         self.fullname = fullname
 
-    @staticmethod
-    def get_by_email(email):
-        try:
-            result = supabase.table("users").select("*").eq("email", email).single().execute()
-            data = result.data
+@staticmethod
+def get_by_email(email):
+    try:
+        result = supabase.table("users").select("*").eq("email", email).single().execute()
+        data = result.data
         if data:
             return User(data['id'], data['email'], data['password'], data['fullname'])
-        except Exception as e:
-            print("Supabase get_by_email error:", e)
+        return None
+    except Exception as e:
+        print("Error in get_by_email:", e)
         return None
 
-
-
-    @staticmethod
-    def get_by_id(user_id):
+@staticmethod
+def get_by_id(user_id):
+    try:
         result = supabase.table("users").select("*").eq("id", user_id).single().execute()
         data = result.data
         if data:
             return User(data['id'], data['email'], data['password'], data['fullname'])
         return None
+    except Exception as e:
+        print("Error in get_by_id:", e)
+        return None
+
 
 @login_manager.user_loader
 def load_user(user_id):
