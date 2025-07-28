@@ -814,10 +814,27 @@ textarea#userInput {
   padding-left: 10px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .header-pencil-icon {
   width: 20px;
   height: 20px;
   cursor: pointer;
+}
+
+.header-user-icon,
+.header-ellipsis-icon {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.header-user-icon {
+  border-radius: 50%;
 }
 
 /* Default: logo aligned left */
