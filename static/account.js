@@ -1,54 +1,53 @@
 // account.js
 
 document.addEventListener("DOMContentLoaded", function () {
-  const toggleBtn = document.getElementById("toggleAuthMode");
-  const authTitle = document.getElementById("authTitle");
-  const submitBtn = document.getElementById("submitBtn");
-  const authForm = document.getElementById("authForm");
-  let isLogin = true;
+  const toggleLink = document.getElementById("toggleMode");
+  const formTitle = document.getElementById("formTitle");
+  const nameGroup = document.getElementById("nameGroup");
+  const submitBtn = document.getElementById("submitButton");
+  const accountForm = document.getElementById("accountForm");
 
-  toggleBtn.addEventListener("click", function () {
-    isLogin = !isLogin;
+  let isSignup = false;
 
-    authTitle.textContent = isLogin ? "Sign In to Jobcus" : "Create Your Jobcus Account";
-    submitBtn.textContent = isLogin ? "Sign In" : "Sign Up";
-    toggleBtn.textContent = isLogin
-      ? "Don't have an account? Sign up"
-      : "Already have an account? Sign in";
+  toggleLink.addEventListener("click", function (e) {
+    e.preventDefault();
+    isSignup = !isSignup;
+
+    if (isSignup) {
+      formTitle.textContent = "Create a Jobcus Account";
+      submitBtn.textContent = "Sign Up";
+      toggleLink.textContent = "Already have an account? Sign In";
+      nameGroup.style.display = "block";
+    } else {
+      formTitle.textContent = "Sign In to Jobcus";
+      submitBtn.textContent = "Sign In";
+      toggleLink.textContent = "Don't have an account? Sign Up";
+      nameGroup.style.display = "none";
+    }
   });
 
-  authForm.addEventListener("submit", function (e) {
+  accountForm.addEventListener("submit", function (e) {
     e.preventDefault();
 
-    const formData = {
-      email: authForm.email.value,
-      password: authForm.password.value,
-    };
+    const formData = new FormData(accountForm);
+    formData.append("mode", isSignup ? "signup" : "login");
 
-    if (!isLogin) {
-      formData.fullname = authForm.fullname.value;
-    }
-
-    console.log(isLogin ? "Logging in..." : "Signing up...", formData);
-    alert(`This is a mock submission for ${isLogin ? "login" : "signup"}.`);
-    authForm.reset();
-  });
-
-  // 👤 User Menu Toggle Logic
-  function toggleUserMenu() {
-    const menu = document.getElementById("userMenu");
-    menu.style.display = menu.style.display === "block" ? "none" : "block";
-  }
-
-  window.toggleUserMenu = toggleUserMenu;
-
-  // Hide menu when clicking outside
-  document.addEventListener("click", function (e) {
-    const menu = document.getElementById("userMenu");
-    const icon = document.querySelector(".header-user-icon");
-
-    if (menu && icon && !menu.contains(e.target) && !icon.contains(e.target)) {
-      menu.style.display = "none";
-    }
+    fetch("/account", {
+      method: "POST",
+      body: formData,
+    })
+      .then((res) => {
+        if (res.redirected) {
+          window.location.href = res.url;
+        } else {
+          return res.text().then((html) => {
+            document.body.innerHTML = html; // re-renders the returned template
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("Error:", err);
+        alert("Something went wrong.");
+      });
   });
 });
