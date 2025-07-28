@@ -21,3 +21,34 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+  const ctx = document.getElementById('userProgressChart').getContext('2d');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Resume Score', 'Skill Gap Filled', 'Job Matches'],
+      datasets: [{
+        label: 'Progress (%)',
+        data: [85, 70, 60], // You can dynamically replace these with actual values
+        backgroundColor: ['#104879', '#0077b6', '#48cae4'],
+        borderWidth: 1,
+        borderRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { stepSize: 20 }
+        }
+      }
+    }
+  });
+});
