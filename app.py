@@ -153,12 +153,12 @@ def faq():
     return render_template("faq.html")
 
 @app.route("/account")
-def faq():
+def account():
     return render_template("account.html")
 
-@app.route("/mydashboard")
-def faq():
-    return render_template("mydashboard.html")
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
 
 @app.route("/ask", methods=["POST"])
 def ask():
