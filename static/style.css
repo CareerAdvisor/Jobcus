@@ -390,10 +390,22 @@ img {
   margin-bottom: 30px;
 }
 
-.btn-primary,
-.cv-check-button {
+.btn-primary {
   background-color: white;
   color: #104879;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 1rem;
+  line-height: 1.4;
+  display: inline-block;
+  text-align: center;
+}
+
+.cv-check-button {
+  background-color: #104879;
+  color: white;
   padding: 12px 24px;
   border-radius: 9999px;
   font-weight: 600;
