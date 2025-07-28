@@ -8,20 +8,37 @@
 <section class="account-container">
   <div class="account-box">
     <h2 id="formTitle">Sign In to Jobcus</h2>
-    <form id="accountForm">
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-message">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form id="accountForm" method="POST" action="/account">
+      <input type="hidden" name="mode" id="mode" value="login" />
+
       <div class="form-group">
         <label for="email">Email</label>
         <input type="email" id="email" name="email" required />
       </div>
+
       <div class="form-group">
         <label for="password">Password</label>
         <input type="password" id="password" name="password" required />
       </div>
+
       <div class="form-group" id="nameGroup" style="display: none;">
         <label for="name">Full Name</label>
         <input type="text" id="name" name="name" />
       </div>
+
       <button type="submit" class="cta-primary" id="submitButton">Sign In</button>
+
       <p class="toggle-text">
         Don't have an account? <a href="#" id="toggleMode">Sign Up</a>
       </p>
@@ -31,5 +48,5 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="{{ url_for('static', filename='account.js') }}"></script>
+<script src="{{ url_for('static', filename='account.js') }}"></script>
 {% endblock %}
