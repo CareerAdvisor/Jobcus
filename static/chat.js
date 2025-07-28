@@ -48,7 +48,7 @@ if (form && input && chatbox) {
     userMsg.innerHTML = `<p style="font-size: 1.1em;"><strong>${message}</strong></p>`;
     chatbox.appendChild(userMsg);
     chatbox.appendChild(aiBlock);
-    scrollToBottom();
+    scrollToAI(aiBlock);
 
     const res = await fetch("/ask", {
       method: "POST",
@@ -80,11 +80,12 @@ if (form && input && chatbox) {
         buffer += rawText[i];
         targetDiv.textContent = buffer;
         i++;
-        scrollToBottom();
+        scrollToAI(aiBlock);
         setTimeout(typeWriterEffect, 5);
       } else {
         targetDiv.innerHTML = marked.parse(buffer);
         saveChatToStorage();
+        scrollToAI(aiBlock);
       }
     }
 
@@ -92,8 +93,7 @@ if (form && input && chatbox) {
 
     if (data.suggestJobs) await fetchJobs(message, aiBlock);
 
-    saveChatToStorage(); // extra save after job fetch
-    scrollToBottom();
+    saveChatToStorage();
     maybeShowScrollIcon();
   });
 }
@@ -105,7 +105,7 @@ function autoResize(textarea) {
 
 // === On Page Load Restore Chat ===
 window.addEventListener("DOMContentLoaded", () => {
-  const chatbox = document.getElementById("chatbox"); // re-declare it here just in case
+  const chatbox = document.getElementById("chatbox");
   if (!chatbox) return;
 
   const saved = localStorage.getItem("chatHistory");
@@ -120,8 +120,9 @@ function saveChatToStorage() {
   localStorage.setItem("chatHistory", chatbox.innerHTML);
 }
 
-function scrollToBottom() {
-  chatbox.scrollTop = chatbox.scrollHeight;
+function scrollToAI(element) {
+  if (!element) return;
+  element.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function maybeShowScrollIcon() {
@@ -146,6 +147,7 @@ function copyToClipboard(id) {
     if (!wrapper) return;
 
     wrapper.innerHTML = `<span class="copied-msg">Copied!</span>`;
+
     setTimeout(() => {
       wrapper.innerHTML = `
         <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${id}')">
@@ -188,6 +190,7 @@ function displayJobs(data, aiBlock) {
   jobsContainer.className = "job-listings";
 
   const allJobs = [...(data.remotive || []), ...(data.adzuna || []), ...(data.jsearch || [])];
+
   if (allJobs.length === 0) return;
 
   const heading = document.createElement("p");
@@ -208,7 +211,7 @@ function displayJobs(data, aiBlock) {
 
   aiBlock.appendChild(jobsContainer);
   saveChatToStorage();
-  scrollToBottom();
+  scrollToAI(aiBlock);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
