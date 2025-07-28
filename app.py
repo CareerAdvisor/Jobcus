@@ -1,11 +1,13 @@
 import os
 import requests
 import traceback
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from flask_cors import CORS
 from openai import OpenAI
 from dotenv import load_dotenv
 from collections import Counter
+from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # ✅ Add PyPDF2 for PDF parsing
 from PyPDF2 import PdfReader
@@ -17,6 +19,7 @@ load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 CORS(app)
 
 # Initialize OpenAI client
@@ -38,8 +41,6 @@ JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
 
 JOB_TITLES = ["Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"]
 KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
-
-# ... Other functions remain the same
 
 # Fetch Adzuna salary info for multiple titles
 def fetch_salary_data():
@@ -114,6 +115,37 @@ def fetch_location_counts():
         pass
     return location_counter.most_common(5)
 
+# Flask-Login Setup
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'account'
+
+# Dummy User class and loader (replace with actual DB logic)
+class User:
+    def __init__(self, id, email, password, fullname):
+        self.id = id
+        self.email = email
+        self.password = password
+        self.fullname = fullname
+
+    def is_active(self):
+        return True
+
+    def is_authenticated(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return str(self.id)
+
+USERS = {}
+
+@login_manager.user_loader
+def load_user(user_id):
+    return USERS.get(user_id)
+    
 # ----------- ROUTES -----------
 
 @app.route("/")
@@ -152,11 +184,40 @@ def about():
 def faq():
     return render_template("faq.html")
 
-@app.route("/account")
+@app.route("/account", methods=["GET", "POST"])
 def account():
+    if request.method == "POST":
+        mode = request.form.get("mode")  # 'login' or 'signup'
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        if mode == "signup":
+            fullname = request.form.get("name")
+            user_id = str(len(USERS) + 1)
+            hashed_password = generate_password_hash(password)
+            new_user = User(user_id, email, hashed_password, fullname)
+            USERS[user_id] = new_user
+            login_user(new_user)
+            return redirect("/dashboard")
+
+        elif mode == "login":
+            user = next((u for u in USERS.values() if u.email == email), None)
+            if user and check_password_hash(user.password, password):
+                login_user(user)
+                return redirect("/dashboard")
+            flash("Invalid credentials.")
+            return redirect("/account")
+
     return render_template("account.html")
 
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
+
 @app.route("/dashboard")
+@login_required
 def dashboard():
     return render_template("dashboard.html")
 
