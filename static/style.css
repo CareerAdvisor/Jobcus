@@ -536,7 +536,7 @@ img {
 .how-it-works {
   padding: 10px 20px;
   text-align: center;
-  background-color: #ffffff;
+  background-color: #d6e9fc;
 }
 
 .how-it-works h2 {
@@ -550,6 +550,7 @@ img {
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.6;
+  margin-bottom: 20px;
 }
 
 /* ==== CTA SECTION ==== */
