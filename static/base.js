@@ -34,6 +34,23 @@ document.addEventListener("click", function (event) {
   }
 });
 
+function toggleUserMenu() {
+  const menu = document.getElementById('userMenu');
+  if (menu) {
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+  }
+}
+
+// Optional: Close on outside click
+document.addEventListener("click", function (e) {
+  const menu = document.getElementById('userMenu');
+  const icon = document.querySelector('.header-user-icon');
+  if (menu && icon && !menu.contains(e.target) && !icon.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+
+
 // === Toggle User Dropdown Menu ===
 function toggleUserMenu() {
   const menu = document.getElementById("userMenu");
