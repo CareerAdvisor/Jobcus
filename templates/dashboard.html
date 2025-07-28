@@ -3,66 +3,55 @@
 {% block title %}My Dashboard – Jobcus{% endblock %}
 
 {% block content %}
+
 <section class="dashboard-container">
-  <h1 class="dashboard-heading">Welcome back, Ugo!</h1>
-  <p class="dashboard-subtext">Here’s an overview of your career progress powered by Jobcus AI.</p>
+  <h1 class="dashboard-title">Welcome Back</h1>
+  <p class="dashboard-subtitle">Track your career growth and insights powered by Jobcus AI</p>
 
-  <div class="dashboard-quick-links">
-    <a href="/resume-builder" class="quick-link-card" data-aos="zoom-in">
-      <img src="{{ url_for('static', filename='icons/resume.svg') }}" alt="Resume Builder">
-      <h3>Resume Builder</h3>
-      <p>Build or update your professional resume.</p>
-    </a>
-    <a href="/skill-gap" class="quick-link-card" data-aos="zoom-in" data-aos-delay="100">
-      <img src="{{ url_for('static', filename='icons/gap.svg') }}" alt="Skill Gap Analysis">
-      <h3>Skill Gap</h3>
-      <p>Identify and bridge missing skills.</p>
-    </a>
-    <a href="/interview-coach" class="quick-link-card" data-aos="zoom-in" data-aos-delay="200">
-      <img src="{{ url_for('static', filename='icons/interview.svg') }}" alt="Interview Coach">
-      <h3>Interview Coach</h3>
-      <p>Practice with AI and get instant tips.</p>
-    </a>
-    <a href="/job-insights" class="quick-link-card" data-aos="zoom-in" data-aos-delay="300">
-      <img src="{{ url_for('static', filename='icons/insight.svg') }}" alt="Job Insights">
-      <h3>Job Insights</h3>
-      <p>See trends in job demand and pay.</p>
-    </a>
-  </div>
+  <div class="dashboard-cards">
 
-  <div class="dashboard-resume-score">
-    <h2>Your Resume Score</h2>
-    <canvas id="resumeScoreChart"></canvas>
-    <p class="resume-score-summary">Your latest score is <strong>57/100</strong>. Improve by fixing key areas below.</p>
-
-    <div class="resume-tips">
-      <div class="tip-card error">
-        <h4>❌ Unnecessary Sections</h4>
-        <p>Consider removing redundant parts of your resume.</p>
-      </div>
-      <div class="tip-card warning">
-        <h4>⚡ Weak Action Verbs</h4>
-        <p>Try using more impactful verbs.</p>
-      </div>
-      <div class="tip-card warning">
-        <h4>❌ Inconsistent Dates</h4>
-        <p>Ensure formatting is consistent.</p>
+    <!-- Resume Score -->
+    <div class="dashboard-card">
+      <h3>📄 Resume Score</h3>
+      <div class="progress-circle" data-score="78">
+        <svg viewBox="0 0 36 36">
+          <path class="bg" d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831
+            a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <path class="progress" stroke-dasharray="78, 100" d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831
+            a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <text x="18" y="20.35" class="percentage">78%</text>
+        </svg>
+        <p class="metric-note">Last analyzed: 2 days ago</p>
       </div>
     </div>
 
-    <div class="resume-success">
-      <h3>🌟 Strengths</h3>
-      <ul>
-        <li>🔹 Page layout looks right</li>
-        <li>🔹 Consistent punctuation</li>
-        <li>🔹 Proper verb tenses</li>
-      </ul>
+    <!-- Skill Gap -->
+    <div class="dashboard-card">
+      <h3>🧰 Skill Gap Progress</h3>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 65%;"></div>
+      </div>
+      <p class="metric-note">65% skill match for your target role</p>
+      <a href="/skill-gap" class="dashboard-link">Improve Skills</a>
     </div>
+
+    <!-- Interview Readiness -->
+    <div class="dashboard-card">
+      <h3>🧠 Interview Readiness</h3>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 45%;"></div>
+      </div>
+      <p class="metric-note">Practiced 3 out of 10 scenarios</p>
+      <a href="/interview-coach" class="dashboard-link">Practice Now</a>
+    </div>
+
   </div>
 </section>
+
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='mydashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 {% endblock %}
