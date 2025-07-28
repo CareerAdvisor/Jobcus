@@ -1,3 +1,4 @@
+
 // === Chat Suggestions Insertion ===
 function insertSuggestion(text) {
   document.getElementById("userInput").value = text;
@@ -30,9 +31,9 @@ function sharePage() {
 // === Chat Form Submission ===
 const form = document.getElementById("chat-form");
 const input = document.getElementById("userInput");
-const chatbox = document.getElementById("chatbox");
+const chatboxEl = document.getElementById("chatbox");
 
-if (form && input && chatbox) {
+if (form && input && chatboxEl) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const message = input.value.trim();
@@ -46,8 +47,8 @@ if (form && input && chatbox) {
     const userMsg = document.createElement("div");
     userMsg.className = "chat-entry user";
     userMsg.innerHTML = `<p style="font-size: 1.1em;"><strong>${message}</strong></p>`;
-    chatbox.appendChild(userMsg);
-    chatbox.appendChild(aiBlock);
+    chatboxEl.appendChild(userMsg);
+    chatboxEl.appendChild(aiBlock);
     scrollToAI(aiBlock);
 
     const res = await fetch("/ask", {
@@ -105,18 +106,28 @@ function autoResize(textarea) {
 
 // === On Page Load Restore Chat ===
 window.addEventListener("DOMContentLoaded", () => {
-  if (!chatbox) return;
+  if (!chatboxEl) return;
 
   const saved = localStorage.getItem("chatHistory");
   if (saved) {
-    chatbox.innerHTML = saved;
+    chatboxEl.innerHTML = saved;
   }
 
   maybeShowScrollIcon();
 });
 
+// === Scroll Observer ===
+const observer = new MutationObserver(() => {
+  if (chatboxEl) {
+    chatboxEl.scrollTop = chatboxEl.scrollHeight;
+  }
+});
+if (chatboxEl) {
+  observer.observe(chatboxEl, { childList: true, subtree: true });
+}
+
 function saveChatToStorage() {
-  localStorage.setItem("chatHistory", chatbox.innerHTML);
+  localStorage.setItem("chatHistory", chatboxEl.innerHTML);
 }
 
 function scrollToAI(element) {
@@ -128,7 +139,7 @@ function maybeShowScrollIcon() {
   const scrollIcon = document.getElementById("scrollDown");
   if (!scrollIcon) return;
 
-  if (chatbox.scrollHeight > chatbox.clientHeight + 20) {
+  if (chatboxEl.scrollHeight > chatboxEl.clientHeight + 20) {
     scrollIcon.style.display = "block";
   } else {
     scrollIcon.style.display = "none";
@@ -156,7 +167,7 @@ function copyToClipboard(id) {
 }
 
 function clearChat() {
-  chatbox.innerHTML = "";
+  chatboxEl.innerHTML = "";
   document.getElementById("job-results").innerHTML = "";
   localStorage.removeItem("chatHistory");
 }
