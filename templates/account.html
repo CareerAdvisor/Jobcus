@@ -1,25 +1,31 @@
 {% extends "base.html" %}
 
-{% block title %}Login or Sign Up – Jobcus{% endblock %}
+{% block title %}Jobcus Account – Sign In / Sign Up{% endblock %}
 
-{% block body_class %}auth-page{% endblock %}
+{% block body_class %}account-page{% endblock %}
 
 {% block content %}
-<section class="auth-container">
-  <div class="auth-card">
-    <h2 id="authTitle">Login to Jobcus</h2>
-    <form id="authForm" class="auth-form">
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="password" id="password" placeholder="Password" required />
-      <div id="confirmPasswordField" style="display: none;">
-        <input type="password" id="confirmPassword" placeholder="Confirm Password" />
+<section class="account-container">
+  <div class="account-box">
+    <h2 id="formTitle">Sign In to Jobcus</h2>
+    <form id="accountForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required />
       </div>
-      <button type="submit" class="cta-primary" id="authBtn">Login</button>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required />
+      </div>
+      <div class="form-group" id="nameGroup" style="display: none;">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" />
+      </div>
+      <button type="submit" class="cta-primary" id="submitButton">Sign In</button>
+      <p class="toggle-text">
+        Don't have an account? <a href="#" id="toggleMode">Sign Up</a>
+      </p>
     </form>
-    <p class="switch-text">
-      Don't have an account? 
-      <a href="#" id="toggleMode">Sign up here</a>
-    </p>
   </div>
 </section>
 {% endblock %}
