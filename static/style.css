@@ -226,6 +226,60 @@ header {
   }
 }
 
+.auth-section {
+  background-color: #f9fafb;
+  padding: 40px 20px;
+  max-width: 450px;
+  margin: 60px auto;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.auth-section h2 {
+  font-size: 1.8em;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #104879;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.auth-form input {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1em;
+}
+
+.auth-form button {
+  padding: 12px;
+  background-color: #104879;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.auth-form button:hover {
+  background-color: #0d3a63;
+}
+
+.auth-form .toggle-link {
+  background: none;
+  border: none;
+  text-decoration: underline;
+  font-size: 0.95em;
+  color: #104879;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
 /* === CHAT PAGE STYLE === */
 main {
   display: flex;
