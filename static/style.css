@@ -500,7 +500,37 @@ img {
   line-height: 1.5;
 }
 
+/* === AI-Powered Assistance Section === */
+.ai-assistance {
+  background: #fff;
+  padding: 40px 20px;
+  text-align: center;
+  border-radius: 12px;
+  margin: 40px auto;
+  max-width: 800px;
+}
 
+.ai-assistance img {
+  max-width: 100%;
+  border-radius: 16px;
+}
+
+.ai-assistance h2 {
+  font-size: 1.8em;
+  margin: 30px 0 10px;
+  color: #222;
+}
+
+.ai-assistance p {
+  font-size: 1.1em;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.ai-assistance .cta-primary {
+  padding: 12px 28px;
+  font-size: 1.1em;
+}
 
 /* ==== HOW IT WORKS ==== */
 .how-it-works {
