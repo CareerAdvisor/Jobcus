@@ -1,66 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}My Account – Jobcus{% endblock %}
+{% block title %}Jobcus Account – Sign In / Sign Up{% endblock %}
+
+{% block body_class %}account-page{% endblock %}
 
 {% block content %}
-<section class="dashboard">
-  <h2>Welcome back, Ugo 👋</h2>
-  <p>Here’s your personalised Jobcus dashboard. Track progress, resume scores, and career insights.</p>
-
-  <!-- Quick Tools -->
-  <div class="quick-tools">
-    <a href="/resume-builder" class="tool-card">
-      <img src="{{ url_for('static', filename='icons/resume.svg') }}" alt="Resume Builder" />
-      <h3>Resume Builder</h3>
-      <p>Create and optimize your resume</p>
-    </a>
-    <a href="/skill-gap" class="tool-card">
-      <img src="{{ url_for('static', filename='icons/skill.svg') }}" alt="Skill Gap" />
-      <h3>Skill Gap</h3>
-      <p>Identify and fill missing skills</p>
-    </a>
-    <a href="/interview-coach" class="tool-card">
-      <img src="{{ url_for('static', filename='icons/interview.svg') }}" alt="Interview Coach" />
-      <h3>Interview Coach</h3>
-      <p>Get AI-powered coaching</p>
-    </a>
-    <a href="/job-insights" class="tool-card">
-      <img src="{{ url_for('static', filename='icons/insights.svg') }}" alt="Job Insights" />
-      <h3>Job Insights</h3>
-      <p>See salaries and skill trends</p>
-    </a>
-  </div>
-
-  <!-- Resume Score Summary -->
-  <div class="score-section">
-    <h3>Your Resume Score</h3>
-    <canvas id="resumeScoreChart" width="300" height="120"></canvas>
-    <p class="score-text">Your score is based on 20+ recruiter checks.</p>
-  </div>
-
-  <!-- Improvement Tips -->
-  <div class="score-tips">
-    <h4>Tips to Improve:</h4>
-    <ul>
-      <li>❌ Unnecessary sections found</li>
-      <li>⚠️ Weak action verbs</li>
-      <li>⚠️ Inconsistent date formats</li>
-    </ul>
-  </div>
-
-  <!-- Success Highlights -->
-  <div class="score-success">
-    <h4>What You Did Well:</h4>
-    <ul>
-      <li>✅ Page layout is clean</li>
-      <li>✅ Punctuation is consistent</li>
-      <li>✅ Action verbs are in the right tense</li>
-    </ul>
+<section class="account-container">
+  <div class="account-box">
+    <h2 id="formTitle">Sign In to Jobcus</h2>
+    <form id="accountForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required />
+      </div>
+      <div class="form-group" id="nameGroup" style="display: none;">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" />
+      </div>
+      <button type="submit" class="cta-primary" id="submitButton">Sign In</button>
+      <p class="toggle-text">
+        Don't have an account? <a href="#" id="toggleMode">Sign Up</a>
+      </p>
+    </form>
   </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='myaccount.js') }}"></script>
+  <script src="{{ url_for('static', filename='account.js') }}"></script>
 {% endblock %}
