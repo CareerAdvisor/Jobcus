@@ -8,10 +8,13 @@
   <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" type="image/x-icon" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
+  <button id="darkModeToggle" title="Toggle dark mode">🌓</button>
+
   <div class="page-container">
     <header class="site-header">  
       <div class="header-left">
@@ -96,6 +99,21 @@
     <img src="{{ url_for('static', filename='icons/pencilchat.svg') }}" alt="Chat Icon" />
   </a>
   {% endif %}
+
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    AOS.init();
+
+    const toggleBtn = document.getElementById('darkModeToggle');
+    const isDark = localStorage.getItem('darkMode') === 'true';
+
+    if (isDark) document.body.classList.add('dark-mode');
+
+    toggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    });
+  </script>
 
   {% block scripts %}{% endblock %}
 </body>
