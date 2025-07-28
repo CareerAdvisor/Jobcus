@@ -314,8 +314,8 @@ main {
   display: flex;
   border-top: 1px solid #ddd;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
-  flex-direction: column;
-  align-items: stretch;
+  justify-content: space-between;
+  align-items: center;
   z-index: 1000;
 }
 
@@ -334,7 +334,7 @@ main {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 10px
+  margin-top: 10px;
   width: 100%;
   align-items: right;
 }
@@ -344,6 +344,7 @@ main {
   width: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-right: 5px;
 }
 
 .icon-group img:hover {
