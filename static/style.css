@@ -26,6 +26,16 @@ body.chat-page {
   overflow-y: auto;
 }
 
+h1, h2, h3 {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
 /* === HEADER === */
 header {
   position: sticky;
@@ -388,6 +398,38 @@ img {
 .hero p {
   font-size: 1.2rem;
   margin-bottom: 30px;
+  margin: 12px auto;
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+.cta-primary,
+.cta-secondary {
+  display: inline-block;
+  margin: 12px 10px 0;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.cta-primary {
+  background-color: #f9a006;
+  color: #fff;
+}
+
+.cta-primary:hover {
+  background-color: #e08f00;
+}
+
+.cta-secondary {
+  border: 2px solid #fff;
+  color: #fff;
+}
+
+.cta-secondary:hover {
+  background-color: #ffffff15;
 }
 
 .btn-primary {
@@ -421,6 +463,7 @@ img {
   text-align: center;
 }
 
+/* ==== FEATURES ==== */
 .features {
   display: flex;
   flex-direction: column;
