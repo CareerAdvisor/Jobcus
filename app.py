@@ -131,9 +131,10 @@ class User(UserMixin):
         data = result.data
         if data:
             return User(data['id'], data['email'], data['password'], data['fullname'])
-        except Exception as e:
-            print("Supabase get_by_email error:", e)
-        return None
+    except Exception as e:
+        print("Supabase get_by_email error:", e)
+    return None
+
 
 
     @staticmethod
@@ -193,7 +194,12 @@ def account():
         email = request.form.get("email")
         password = request.form.get("password")
 
+        print("Form Mode:", mode)
+        print("Checking for user with email:", email)
+
         if mode == "signup":
+            print("SIGNUP - Email:", email)
+
             fullname = request.form.get("name")
             hashed_password = generate_password_hash(password)
             try:
@@ -202,19 +208,25 @@ def account():
                     "password": hashed_password,
                     "fullname": fullname
                 }).execute()
+
                 user_data = result.data[0]
                 user = User(user_data['id'], email, hashed_password, fullname)
                 login_user(user)
                 return redirect("/dashboard")
+
             except Exception as e:
+                print("Signup error:", e)
                 flash("Email already exists.")
                 return redirect("/account")
 
         elif mode == "login":
+            print("LOGIN - Email:", email)
+
             user = User.get_by_email(email)
             if user and check_password_hash(user.password, password):
                 login_user(user)
                 return redirect("/dashboard")
+
             flash("Invalid credentials.")
             return redirect("/account")
 
