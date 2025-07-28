@@ -1,34 +1,53 @@
+// myaccount.js
+
 document.addEventListener("DOMContentLoaded", function () {
-  const toggleBtn = document.getElementById("toggleAuthMode");
-  const authTitle = document.getElementById("authTitle");
-  const submitBtn = document.getElementById("submitBtn");
-  const authForm = document.getElementById("authForm");
-  let isLogin = true;
-
-  toggleBtn.addEventListener("click", function () {
-    isLogin = !isLogin;
-
-    authTitle.textContent = isLogin ? "Sign In to Jobcus" : "Create Your Jobcus Account";
-    submitBtn.textContent = isLogin ? "Sign In" : "Sign Up";
-    toggleBtn.textContent = isLogin
-      ? "Don't have an account? Sign up"
-      : "Already have an account? Sign in";
+  // Resume score chart
+  const ctx = document.getElementById("resumeScoreChart").getContext("2d");
+  new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Your Score", "Remaining"],
+      datasets: [
+        {
+          label: "Resume Score",
+          data: [57, 43], // Example score
+          backgroundColor: ["#104879", "#eee"],
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              return `${context.label}: ${context.raw}%`;
+            },
+          },
+        },
+      },
+      cutout: "75%",
+    },
   });
 
-  authForm.addEventListener("submit", function (e) {
-    e.preventDefault();
+  // Show more feedback
+  const showMoreBtn = document.getElementById("showMoreBtn");
+  if (showMoreBtn) {
+    showMoreBtn.addEventListener("click", function () {
+      const hiddenFeedback = document.querySelectorAll(".feedback-item.hidden");
+      hiddenFeedback.forEach((item) => item.classList.remove("hidden"));
+      showMoreBtn.style.display = "none";
+    });
+  }
 
-    const formData = {
-      email: authForm.email.value,
-      password: authForm.password.value,
-    };
-
-    if (!isLogin) {
-      formData.fullname = authForm.fullname.value;
-    }
-
-    console.log(isLogin ? "Logging in..." : "Signing up...", formData);
-    alert(`This is a mock submission for ${isLogin ? "login" : "signup"}.`);
-    authForm.reset();
+  // Dropdown toggles for fix actions
+  document.querySelectorAll(".fix-button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      alert("This would open a fix modal or redirect to the relevant tool.");
+    });
   });
 });
