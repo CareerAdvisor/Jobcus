@@ -280,6 +280,81 @@ header {
   margin-top: 10px;
 }
 
+/* === My Account Dashboard Styles === */
+.dashboard-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+}
+
+.dashboard-container h1 {
+  text-align: center;
+  font-size: 2em;
+  margin-bottom: 10px;
+}
+
+.dashboard-container p {
+  text-align: center;
+  color: #555;
+  margin-bottom: 40px;
+}
+
+.dashboard-card {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 30px;
+}
+
+.dashboard-card h2 {
+  margin-bottom: 15px;
+  font-size: 1.4em;
+  color: #104879;
+}
+
+.resume-score {
+  text-align: center;
+}
+
+.score-text {
+  font-size: 1.1em;
+  margin-top: 10px;
+  color: #222;
+}
+
+.skill-progress-list {
+  list-style: none;
+  padding: 0;
+}
+
+.skill-progress-list li {
+  margin-bottom: 18px;
+}
+
+.skill-progress-list span {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.skill-progress-list progress {
+  width: 100%;
+  height: 18px;
+}
+
+.resume-feedback ul,
+.suggestion-list {
+  list-style-type: disc;
+  padding-left: 20px;
+  color: #333;
+}
+
+.hidden-feedback {
+  display: none;
+}
+
 /* === CHAT PAGE STYLE === */
 main {
   display: flex;
@@ -430,6 +505,15 @@ main {
   border-radius: 8px;
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.user-menu.show {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .user-menu a {
@@ -438,6 +522,10 @@ main {
   text-decoration: none;
   color: #333;
   font-size: 14px;
+}
+
+.user-menu a:last-child {
+  border-bottom: none;
 }
 
 .user-menu a:hover {
@@ -539,6 +627,19 @@ img {
   line-height: 1.4;
   display: inline-block;
   text-align: center;
+}
+
+.btn-secondary {
+  margin-top: 12px;
+  background-color: #f0f0f0;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #e0e0e0;
 }
 
 .cv-check-button {
