@@ -109,29 +109,40 @@ def fetch_location_counts():
         pass
     return location_counter.most_common(5)
 
+from flask_login import UserMixin
+
 # Flask-Login Setup
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'account'
 
-# Dummy User class and loader (replace with actual DB logic)
-class User:
+# Supabase-backed User class
+class User(UserMixin):
     def __init__(self, id, email, password, fullname):
         self.id = id
         self.email = email
         self.password = password
         self.fullname = fullname
 
-    def is_active(self): return True
-    def is_authenticated(self): return True
-    def is_anonymous(self): return False
-    def get_id(self): return str(self.id)
+    @staticmethod
+    def get_by_email(email):
+        result = supabase.table("users").select("*").eq("email", email).single().execute()
+        data = result.data
+        if data:
+            return User(data['id'], data['email'], data['password'], data['fullname'])
+        return None
 
-USERS = {}
+    @staticmethod
+    def get_by_id(user_id):
+        result = supabase.table("users").select("*").eq("id", user_id).single().execute()
+        data = result.data
+        if data:
+            return User(data['id'], data['email'], data['password'], data['fullname'])
+        return None
 
 @login_manager.user_loader
 def load_user(user_id):
-    return USERS.get(user_id)
+    return User.get_by_id(user_id)
     
 # ----------- ROUTES -----------
 
@@ -174,21 +185,29 @@ def faq():
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "POST":
-        mode = request.form.get("mode")
+        mode = request.form.get("mode")  # 'login' or 'signup'
         email = request.form.get("email")
         password = request.form.get("password")
 
         if mode == "signup":
             fullname = request.form.get("name")
-            user_id = str(len(USERS) + 1)
             hashed_password = generate_password_hash(password)
-            new_user = User(user_id, email, hashed_password, fullname)
-            USERS[user_id] = new_user
-            login_user(new_user)
-            return redirect("/dashboard")
+            try:
+                result = supabase.table("users").insert({
+                    "email": email,
+                    "password": hashed_password,
+                    "fullname": fullname
+                }).execute()
+                user_data = result.data[0]
+                user = User(user_data['id'], email, hashed_password, fullname)
+                login_user(user)
+                return redirect("/dashboard")
+            except Exception as e:
+                flash("Email already exists.")
+                return redirect("/account")
 
         elif mode == "login":
-            user = next((u for u in USERS.values() if u.email == email), None)
+            user = User.get_by_email(email)
             if user and check_password_hash(user.password, password):
                 login_user(user)
                 return redirect("/dashboard")
@@ -250,6 +269,34 @@ def get_jobs():
         return jsonify({"remotive": remotive_jobs, "adzuna": adzuna_jobs, "jsearch": jsearch_jobs})
     except Exception as e:
         return jsonify({"remotive": [], "adzuna": [], "jsearch": []})
+
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email")
+        user = User.get_by_email(email)
+        if not user:
+            flash("No account found with that email.")
+            return redirect("/forgot-password")
+        return render_template("reset-password.html", email=email)
+    return render_template("forgot-password.html")
+
+
+@app.route("/reset-password", methods=["POST"])
+def reset_password():
+    email = request.form.get("email")
+    new_password = request.form.get("password")
+    hashed = generate_password_hash(new_password)
+
+    try:
+        supabase.table("users").update({"password": hashed}).eq("email", email).execute()
+        flash("Password reset successful. Please log in.")
+        return redirect("/account")
+    except Exception as e:
+        print("Reset error:", e)
+        flash("Error resetting password.")
+        return redirect("/forgot-password")
 
 # === JOB INSIGHTS API ENDPOINTS ===
 
