@@ -28,6 +28,7 @@
       </div>
 
       <div class="header-right">
+        {% if current_user.is_authenticated %}
         <div class="user-dropdown">
           <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="User Icon" class="header-user-icon" onclick="toggleUserMenu()" />
           <div class="user-menu" id="userMenu">
@@ -35,6 +36,11 @@
             <a href="/logout">🚪 Logout</a>
           </div>
         </div>
+        {% else %}
+        <a href="/account" class="header-login-btn">
+          <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="Login" class="header-user-icon" />
+        </a>
+        {% endif %}
 
         <div class="hamburger" onclick="toggleMobileMenu()">
           <div></div><div></div><div></div>
@@ -83,9 +89,7 @@
 
     const toggleBtn = document.getElementById('darkModeToggle');
     const isDark = localStorage.getItem('darkMode') === 'true';
-
     if (isDark) document.body.classList.add('dark-mode');
-
     toggleBtn.addEventListener('click', () => {
       document.body.classList.toggle('dark-mode');
       localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
