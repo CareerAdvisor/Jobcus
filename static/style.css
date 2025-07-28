@@ -332,9 +332,11 @@ main {
 /* === ICON GROUP === */
 .icon-group {
   display: flex;
-  justify-ietms: flex-end;
+  justify-content: flex-end;
   gap: 12px;
   margin-top: 10px
+  width: 100%;
+  align-items: right;
 }
 
 .icon-group img {
