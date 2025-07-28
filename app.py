@@ -156,6 +156,10 @@ def faq():
 def faq():
     return render_template("account.html")
 
+@app.route("/mydashboard")
+def faq():
+    return render_template("mydashboard.html")
+
 @app.route("/ask", methods=["POST"])
 def ask():
     user_msg = request.json.get("message")
