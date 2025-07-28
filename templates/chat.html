@@ -36,11 +36,4 @@
 
 {% block scripts %}
   <script src="{{ url_for('static', filename='chat.js') }}"></script>
-  <script>
-    const chatbox = document.getElementById("chatbox");
-    const observer = new MutationObserver(() => {
-      chatbox.scrollTop = chatbox.scrollHeight;
-    });
-    observer.observe(chatbox, { childList: true, subtree: true });
-  </script>
 {% endblock %}
