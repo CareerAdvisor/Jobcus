@@ -13,6 +13,8 @@
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
+  <button id="darkModeToggle" title="Toggle dark mode">🌓</button>
+
   <div class="page-container">
     <header class="site-header">  
       <div class="header-left">
@@ -29,7 +31,7 @@
         <div class="user-dropdown">
           <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="User Icon" class="header-user-icon" onclick="toggleUserMenu()" />
           <div class="user-menu" id="userMenu">
-            <a href="/account">👤 Profile</a>
+            <a href="/dashboard">👤 Profile</a>
             <a href="/settings">⚙️ Settings</a>
             <a href="/logout">🚪 Logout</a>
           </div>
@@ -69,7 +71,7 @@
     </footer>
     {% endif %}
   </div>
-  
+
   {% if body_class != 'chat-page' %}
   <a href="/chat" class="chat-float-button" title="Chat with Jobcus">
     <img src="{{ url_for('static', filename='icons/pencilchat.svg') }}" alt="Chat Icon" />
@@ -79,10 +81,19 @@
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script>
     AOS.init();
+
+    const toggleBtn = document.getElementById('darkModeToggle');
+    const isDark = localStorage.getItem('darkMode') === 'true';
+
+    if (isDark) document.body.classList.add('dark-mode');
+
+    toggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    });
   </script>
 
-  {% block scripts %}
   <script src="{{ url_for('static', filename='base.js') }}"></script>
-  {% endblock %}
+  {% block scripts %}{% endblock %}
 </body>
 </html>
