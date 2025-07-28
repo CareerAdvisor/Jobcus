@@ -12,6 +12,7 @@ html, body {
   font-family: 'Segoe UI', sans-serif;
   background-color: #f9fbf9;
   color: #333;
+  max-width: 100%
   overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
@@ -1938,6 +1939,20 @@ button[type="submit"]:hover {
   cursor: pointer;
 }
 
+  .resume-button {
+  display: block;
+  max-width: 100%;
+  padding: 12px 20px;
+  font-size: 16px;
+  text-align: center;
+  white-space: nowrap;
+}
+  
+/* Make sure padding/border doesn't break layout */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+  
 #score-visual {
   background: #e5e7eb;
   border-radius: 20px;
