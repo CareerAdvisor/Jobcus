@@ -126,14 +126,14 @@ class User(UserMixin):
 
     @staticmethod
     def get_by_email(email):
-    try:
-        result = supabase.table("users").select("*").eq("email", email).single().execute()
-        data = result.data
+        try:
+            result = supabase.table("users").select("*").eq("email", email).single().execute()
+            data = result.data
         if data:
             return User(data['id'], data['email'], data['password'], data['fullname'])
-    except Exception as e:
-        print("Supabase get_by_email error:", e)
-    return None
+        except Exception as e:
+            print("Supabase get_by_email error:", e)
+        return None
 
 
 
