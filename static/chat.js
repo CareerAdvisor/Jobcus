@@ -106,14 +106,14 @@ function autoResize(textarea) {
 // === On Page Load Restore Chat ===
 window.addEventListener("DOMContentLoaded", () => {
   const chatbox = document.getElementById("chatbox"); // re-declare it here just in case
-  if (!chatbox) return;  // ✅ skip on non-chat pages
+  if (!chatbox) return;
 
   const saved = localStorage.getItem("chatHistory");
   if (saved) {
     chatbox.innerHTML = saved;
   }
 
-  maybeShowScrollIcon(); // only runs if chatbox exists
+  maybeShowScrollIcon();
 });
 
 function saveChatToStorage() {
@@ -145,10 +145,7 @@ function copyToClipboard(id) {
     const wrapper = el.parentElement.querySelector(".copy-wrapper");
     if (!wrapper) return;
 
-    // Fade out original copy icon/text
     wrapper.innerHTML = `<span class="copied-msg">Copied!</span>`;
-
-    // Restore after 1.5s
     setTimeout(() => {
       wrapper.innerHTML = `
         <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${id}')">
@@ -191,10 +188,8 @@ function displayJobs(data, aiBlock) {
   jobsContainer.className = "job-listings";
 
   const allJobs = [...(data.remotive || []), ...(data.adzuna || []), ...(data.jsearch || [])];
-
   if (allJobs.length === 0) return;
 
-   // ✅ Insert heading before job cards
   const heading = document.createElement("p");
   heading.innerHTML = `<strong>Here are some job opportunities that match your interest:</strong>`;
   heading.style.marginTop = "16px";
