@@ -152,6 +152,10 @@ def about():
 def faq():
     return render_template("faq.html")
 
+@app.route("/account")
+def faq():
+    return render_template("account.html")
+
 @app.route("/ask", methods=["POST"])
 def ask():
     user_msg = request.json.get("message")
