@@ -105,7 +105,6 @@ function autoResize(textarea) {
 
 // === On Page Load Restore Chat ===
 window.addEventListener("DOMContentLoaded", () => {
-  const chatbox = document.getElementById("chatbox");
   if (!chatbox) return;
 
   const saved = localStorage.getItem("chatHistory");
@@ -126,10 +125,9 @@ function scrollToAI(element) {
 }
 
 function maybeShowScrollIcon() {
-  const chatbox = document.getElementById("chatbox");
   const scrollIcon = document.getElementById("scrollDown");
-
   if (!scrollIcon) return;
+
   if (chatbox.scrollHeight > chatbox.clientHeight + 20) {
     scrollIcon.style.display = "block";
   } else {
