@@ -243,7 +243,7 @@ main {
 .chatbox {
   flex-grow: 1;
   overflow-y: auto;
-  padding-bottom: 200px;
+  padding-bottom: 50px;
   scroll-behavior: smooth;
 }
 
