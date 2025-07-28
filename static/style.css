@@ -537,12 +537,13 @@ img {
   padding: 10px 20px;
   text-align: center;
   background-color: #d6e9fc;
+  margin-bottom: 20px;
 }
 
 .how-it-works h2 {
   font-size: 1.8rem;
   color: #104879;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
 }
 
 .how-it-works p {
