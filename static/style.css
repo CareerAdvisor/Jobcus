@@ -202,8 +202,6 @@ header {
   color: #ffffff !important;
 }
 
-
-
 /* Only apply hover dropdown on screens wider than 768px */
 @media (min-width: 768px) {
   .hamburger {
@@ -282,7 +280,7 @@ header {
 
 /* === My Account Dashboard Styles === */
 .dashboard-container {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 40px auto;
   padding: 20px;
   font-family: 'Inter', sans-serif;
@@ -300,18 +298,98 @@ header {
   margin-bottom: 40px;
 }
 
+.dashboard-title {
+  font-size: 2em;
+  margin-bottom: 10px;
+}
+
+.dashboard-subtitle {
+  color: #555;
+  margin-bottom: 30px;
+}
+
 .dashboard-card {
   background: #fff;
-  padding: 25px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 30px;
+  padding: 20px;
+  flex: 1 1 280px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.dashboard-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
 }
 
 .dashboard-card h2 {
   margin-bottom: 15px;
   font-size: 1.4em;
   color: #104879;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 16px;
+  background: #eee;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #104879;
+  transition: width 0.5s ease;
+}
+
+.progress-circle {
+  width: 120px;
+  margin: auto;
+  position: relative;
+}
+
+.progress-circle svg {
+  width: 100%;
+  height: auto;
+  transform: rotate(-90deg);
+}
+
+.progress-circle .bg {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 3.8;
+}
+
+.progress-circle .progress {
+  fill: none;
+  stroke: #104879;
+  stroke-width: 3.8;
+  stroke-linecap: round;
+  transition: stroke-dasharray 1s ease;
+}
+
+.percentage {
+  font-size: 0.7em;
+  fill: #222;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.metric-note {
+  margin-top: 10px;
+  color: #666;
+  font-size: 0.9em;
+}
+
+.dashboard-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: #104879;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .resume-score {
