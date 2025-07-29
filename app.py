@@ -142,14 +142,14 @@ def get_by_email(email):
 @staticmethod
 def get_by_id(user_id):
     try:
-          result = supabase.table("users").select("*").eq("id", user_id).single().execute()
-            data = result.data
-            if data:
-                return User(data['id'], data['email'], data['password'], data['fullname'])
-            return None
-        except Exception as e:
-            print("Error in get_by_id:", e)
-            return None
+        result = supabase.table("users").select("*").eq("id", user_id).single().execute()
+        data = result.data
+        if data:
+            return User(data['id'], data['email'], data['password'], data['fullname'])
+        return None
+    except Exception as e:
+        print("Error in get_by_id:", e)
+        return None
 
 @login_manager.user_loader
 def load_user(user_id):
