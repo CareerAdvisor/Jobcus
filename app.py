@@ -110,6 +110,8 @@ def fetch_location_counts():
         pass
     return location_counter.most_common(5)
 
+
+
 # Flask-Login Setup
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -217,7 +219,6 @@ def account():
 
     # This handles GET requests
     return render_template("account.html")
-
     
 @app.route("/logout")
 @login_required
@@ -283,8 +284,7 @@ def forgot_password():
             flash("No account found with that email.")
             return redirect("/forgot-password")
         return render_template("reset-password.html", email=email)
-    return render_template("forgot-password.html")
-
+    return renderavg = (_template("forgot-password.html")
 
 @app.route("/reset-password", methods=["POST"])
 def reset_password():
