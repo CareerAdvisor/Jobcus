@@ -237,8 +237,7 @@ def account():
 
             flash("Invalid credentials.")
             return redirect("/account")
-
-    return render_template("account.html")
+            return render_template("account.html")
     
 @app.route("/logout")
 @login_required
