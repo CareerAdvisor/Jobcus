@@ -5,5 +5,5 @@ gunicorn
 openai
 requests
 python-dotenv
-supabase-py
+supabase
 PyPDF2>=3.0.0
