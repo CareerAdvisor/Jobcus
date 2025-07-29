@@ -569,7 +569,7 @@ def analyze_resume():
         ).choices[0].message.content
 
         # --- Step 2: Keyword Match ---
-        target_keywords = ["Project Management", "Python", "Communication", "Teamwork", "Leadership", "Management skill", "Scrum Master", "Product Management", "IT", "Information Technology", "Customer Service", "Cross-Functional", "Support", "Agile"]
+        target_keywords = ["Project Management", "Python", "Communication", "Leadership", "Product Management", "Customer Service", "Agile"]
         found_keywords = [kw for kw in target_keywords if kw.lower() in resume_text.lower()]
 
         return jsonify({
