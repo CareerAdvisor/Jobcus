@@ -274,33 +274,6 @@ def get_jobs():
     except Exception as e:
         return jsonify({"remotive": [], "adzuna": [], "jsearch": []})
 
-
-@app.route("/forgot-password", methods=["GET", "POST"])
-def forgot_password():
-    if request.method == "POST":
-        email = request.form.get("email")
-        user = User.get_by_email(email)
-        if not user:
-            flash("No account found with that email.")
-            return redirect("/forgot-password")
-        return render_template("reset-password.html", email=email)
-    return renderavg = (_template("forgot-password.html")
-
-@app.route("/reset-password", methods=["POST"])
-def reset_password():
-    email = request.form.get("email")
-    new_password = request.form.get("password")
-    hashed = generate_password_hash(new_password)
-
-    try:
-        supabase.table("users").update({"password": hashed}).eq("email", email).execute()
-        flash("Password reset successful. Please log in.")
-        return redirect("/account")
-    except Exception as e:
-        print("Reset error:", e)
-        flash("Error resetting password.")
-        return redirect("/forgot-password")
-
 # === JOB INSIGHTS API ENDPOINTS ===
 
 @app.route("/api/salary")
