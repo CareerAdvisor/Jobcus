@@ -196,16 +196,11 @@ def faq():
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "POST":
-        mode = request.form.get("mode")  # 'login' or 'signup'
+        mode = request.form.get("mode")
         email = request.form.get("email")
         password = request.form.get("password")
 
-        print("Form Mode:", mode)
-        print("Checking for user with email:", email)
-
         if mode == "signup":
-            print("SIGNUP - Email:", email)
-
             fullname = request.form.get("name")
             hashed_password = generate_password_hash(password)
             try:
@@ -214,30 +209,25 @@ def account():
                     "password": hashed_password,
                     "fullname": fullname
                 }).execute()
-
                 user_data = result.data[0]
                 user = User(user_data['id'], email, hashed_password, fullname)
                 login_user(user)
                 return redirect("/dashboard")
-
             except Exception as e:
-                print("Signup error:", e)
                 flash("Email already exists.")
                 return redirect("/account")
 
         elif mode == "login":
-            print("LOGIN - Email:", email)
-            print("User class has get_by_email:", hasattr(User, "get_by_email"))
-            print("User class methods:", dir(User))
-
             user = User.get_by_email(email)
             if user and check_password_hash(user.password, password):
                 login_user(user)
                 return redirect("/dashboard")
-
             flash("Invalid credentials.")
             return redirect("/account")
-            return render_template("account.html")
+
+    # This handles GET requests
+    return render_template("account.html")
+
     
 @app.route("/logout")
 @login_required
