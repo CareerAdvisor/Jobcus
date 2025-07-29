@@ -6,7 +6,7 @@ from flask_cors import CORS
 from openai import OpenAI
 from dotenv import load_dotenv
 from collections import Counter
-from flask_login import LoginManager, login_user, logout_user, current_user, login_required, UserMixin
+from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from PyPDF2 import PdfReader
 from io import BytesIO
@@ -116,6 +116,8 @@ login_manager.init_app(app)
 login_manager.login_view = 'account'
 
 # Supabase-backed User class
+from flask_login import UserMixin
+
 class User(UserMixin):
     def __init__(self, id, email, password, fullname):
         self.id = id
@@ -123,32 +125,20 @@ class User(UserMixin):
         self.password = password
         self.fullname = fullname
 
-    def get_id(self):
-        return str(self.id)
-
-@staticmethod
-def get_by_email(email):
-    try:
-        print("Checking for user with email:", email)
+    @staticmethod
+    def get_by_email(email):
         result = supabase.table("users").select("*").eq("email", email).single().execute()
         data = result.data
         if data:
             return User(data['id'], data['email'], data['password'], data['fullname'])
         return None
-    except Exception as e:
-        print("Error in get_by_email:", e)
-        return None
 
-@staticmethod
-def get_by_id(user_id):
-    try:
+    @staticmethod
+    def get_by_id(user_id):
         result = supabase.table("users").select("*").eq("id", user_id).single().execute()
         data = result.data
         if data:
             return User(data['id'], data['email'], data['password'], data['fullname'])
-        return None
-    except Exception as e:
-        print("Error in get_by_id:", e)
         return None
 
 @login_manager.user_loader
