@@ -6,10 +6,11 @@ from flask_cors import CORS
 from openai import OpenAI
 from dotenv import load_dotenv
 from collections import Counter
-from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from flask_login import LoginManager, login_user, logout_user, current_user, login_required, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from PyPDF2 import PdfReader
 from io import BytesIO
+from supabase import create_client, Client
 import base64
 
 # Load environment variables
@@ -21,10 +22,10 @@ CORS(app)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-from supabase import create_client, Client
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Supabase setup
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
+supabase = create_client(supabase_url, supabase_key)
 
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
 ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs"
@@ -109,8 +110,6 @@ def fetch_location_counts():
         pass
     return location_counter.most_common(5)
 
-from flask_login import UserMixin
-
 # Flask-Login Setup
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -124,30 +123,33 @@ class User(UserMixin):
         self.password = password
         self.fullname = fullname
 
-@staticmethod
-def get_by_email(email):
-    try:
-        result = supabase.table("users").select("*").eq("email", email).single().execute()
-        data = result.data
-        if data:
-            return User(data['id'], data['email'], data['password'], data['fullname'])
-        return None
-    except Exception as e:
-        print("Error in get_by_email:", e)
-        return None
+    def get_id(self):
+        return str(self.id)
 
-@staticmethod
-def get_by_id(user_id):
-    try:
-        result = supabase.table("users").select("*").eq("id", user_id).single().execute()
-        data = result.data
-        if data:
-            return User(data['id'], data['email'], data['password'], data['fullname'])
-        return None
-    except Exception as e:
-        print("Error in get_by_id:", e)
-        return None
+    @staticmethod
+    def get_by_email(email):
+        try:
+            print("Checking for user with email:", email)
+            result = supabase.table("users").select("*").eq("email", email).single().execute()
+            data = result.data
+            if data:
+                return User(data['id'], data['email'], data['password'], data['fullname'])
+            return None
+        except Exception as e:
+            print("Error in get_by_email:", e)
+            return None
 
+    @staticmethod
+    def get_by_id(user_id):
+        try:
+            result = supabase.table("users").select("*").eq("id", user_id).single().execute()
+            data = result.data
+            if data:
+                return User(data['id'], data['email'], data['password'], data['fullname'])
+            return None
+        except Exception as e:
+            print("Error in get_by_id:", e)
+            return None
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -225,6 +227,8 @@ def account():
 
         elif mode == "login":
             print("LOGIN - Email:", email)
+            print("User class has get_by_email:", hasattr(User, "get_by_email"))
+            print("User class methods:", dir(User))
 
             user = User.get_by_email(email)
             if user and check_password_hash(user.password, password):
