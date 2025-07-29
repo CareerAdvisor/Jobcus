@@ -140,6 +140,10 @@ class User(UserMixin):
         if data:
             return User(data['id'], data['email'], data['password'], data['fullname'])
         return None
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get_by_id(user_id)
     
 # ----------- ROUTES -----------
 
