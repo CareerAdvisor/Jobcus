@@ -1,9 +1,9 @@
-Flask>=2.3
-flask-cors>=3.0
-Flask-Login>=0.6
-gunicorn>=21.2
-openai>=1.0.0
-requests>=2.31
-python-dotenv>=1.0
-supabase-py>=2.3
+Flask
+flask-cors
+Flask-Login
+gunicorn
+openai
+requests
+python-dotenv
+supabase-py
 PyPDF2>=3.0.0
