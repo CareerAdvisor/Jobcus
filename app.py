@@ -129,7 +129,7 @@ class User(UserMixin):
 
     @staticmethod
     def get_by_email(email):
-        result = supabase.table("users").select("*").eq("email", email).single().execute()
+        result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
         data = result.data
         if data:
             return User(data['id'], data['email'], data['password'], data['fullname'])
@@ -137,7 +137,7 @@ class User(UserMixin):
 
     @staticmethod
     def get_by_id(user_id):
-        result = supabase.table("users").select("*").eq("id", user_id).single().execute()
+        result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
         data = result.data
         if data:
             return User(data['id'], data['email'], data['password'], data['fullname'])
@@ -185,13 +185,21 @@ def about():
 def faq():
     return render_template("faq.html")
 
+from flask import request, redirect, flash
+from werkzeug.security import generate_password_hash, check_password_hash
+from postgrest.exceptions import APIError
+from flask_login import login_user
+
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "POST":
         mode = request.form.get("mode")
-        email = request.form.get("email")
+        email = request.form.get("email", "").strip().lower()
         password = request.form.get("password")
 
+        # -------------------
+        # 🔹 Signup Mode
+        # -------------------
         if mode == "signup":
             fullname = request.form.get("name")
             hashed_password = generate_password_hash(password)
@@ -201,21 +209,79 @@ def account():
                     "password": hashed_password,
                     "fullname": fullname
                 }).execute()
+
+                if not result.data:  # Insert failed
+                    flash("Signup failed. Please try again.")
+                    return redirect("/account")
+
                 user_data = result.data[0]
                 user = User(user_data['id'], email, hashed_password, fullname)
                 login_user(user)
                 return redirect("/dashboard")
-            except Exception as e:
-                flash("Email already exists.")
+
+            except Exception:
+                flash("Email already exists or database error.")
                 return redirect("/account")
 
+        # -------------------
+        # 🔹 Login Mode
+        # -------------------
         elif mode == "login":
-            user = User.get_by_email(email)
-            if user and check_password_hash(user.password, password):
-                login_user(user)
-                return redirect("/dashboard")
-            flash("Invalid credentials.")
-            return redirect("/account")
+            try:
+                # Safe query: maybe_single prevents crash if 0 rows
+                result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
+                data = result.data
+
+                if data is None:
+                    flash("Invalid credentials.")
+                    return redirect("/account")
+
+                user = User(data['id'], data['email'], data['password'], data.get('fullname'))
+
+                if check_password_hash(user.password, password):
+                    login_user(user)
+                    return redirect("/dashboard")
+
+                flash("Invalid credentials.")
+                return redirect("/account")
+
+            except APIError:
+                flash("Database error. Please try again later.")
+                return redirect("/account")
+
+    # GET request or fallback
+    return redirect("/account")
+
+# 🔹 New JSON API endpoint (Safe lookup, no redirects)
+@app.route("/api/account", methods=["POST"])
+def api_account():
+    email = request.json.get("email", "").strip().lower()
+    
+    try:
+        result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
+        data = result.data
+        
+        if data is None:
+            return jsonify({"error": "User not found"}), 404
+
+        user = User(
+            data['id'],
+            data['email'],
+            data['password'],
+            data.get('fullname')
+        )
+
+        return jsonify({
+            "id": user.id,
+            "email": user.email,
+            "fullname": user.fullname
+        }), 200
+
+    except APIError as e:
+        return jsonify({
+            "error": "Database error",
+            "details": str(e)
+        }), 500
 
     # This handles GET requests
     return render_template("account.html")
