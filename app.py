@@ -236,7 +236,7 @@ def ask():
     user_msg = request.json.get("message")
 
     messages = [
-        {"role": "system", "content": "You are Jobcus, a helpful and intelligent AI career assistant..."},
+        {"role": "system", "content": "You are Jobcus, a helpful and intelligent AI career assistant"},
         {"role": "user", "content": user_msg}
     ]
 
