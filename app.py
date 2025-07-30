@@ -11,7 +11,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from PyPDF2 import PdfReader
 from io import BytesIO
 from supabase import create_client, Client
-from postgrest.exceptions import APIError
 import base64
 
 # Load environment variables
@@ -111,6 +110,8 @@ def fetch_location_counts():
         pass
     return location_counter.most_common(5)
 
+
+
 # Flask-Login Setup
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -127,30 +128,16 @@ class User(UserMixin):
         self.fullname = fullname
 
     @staticmethod
-    def get_by_email(email: str):
-       try:
-            # Safe query: prevents crash if 0 rows or multiple rows
-            result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
-            data = result.data
-
-            if data is None:  # No user found
-                return None
-
-            # Create User safely
-            return User(
-                data['id'],
-                data['email'],
-                data['password'],
-                data.get('fullname')  # safer than data['fullname']
-           )
-
-        except APIError:
-            # Optional: log the error or return None for silent fail
-            return None
+    def get_by_email(email):
+        result = supabase.table("users").select("*").eq("email", email).single().execute()
+        data = result.data
+        if data:
+            return User(data['id'], data['email'], data['password'], data['fullname'])
+        return None
 
     @staticmethod
     def get_by_id(user_id):
-        result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
+        result = supabase.table("users").select("*").eq("id", user_id).single().execute()
         data = result.data
         if data:
             return User(data['id'], data['email'], data['password'], data['fullname'])
@@ -202,80 +189,33 @@ def faq():
 def account():
     if request.method == "POST":
         mode = request.form.get("mode")
-        email = request.form.get("email", "").strip().lower()
+        email = request.form.get("email")
         password = request.form.get("password")
 
-        # ---------------- SIGNUP ----------------
         if mode == "signup":
             fullname = request.form.get("name")
             hashed_password = generate_password_hash(password)
-
             try:
-                # Check if email already exists
-                check_user = supabase.table("users").select("id").eq("email", email).maybe_single().execute()
-                if check_user.data is not None:
-                    flash("Email already exists.")
-                    return redirect("/account")
-
-                # Insert new user
                 result = supabase.table("users").insert({
                     "email": email,
                     "password": hashed_password,
                     "fullname": fullname
                 }).execute()
-
                 user_data = result.data[0]
                 user = User(user_data['id'], email, hashed_password, fullname)
                 login_user(user)
                 return redirect("/dashboard")
-
-            except APIError:
-                flash("Error creating account. Please try again.")
+            except Exception as e:
+                flash("Email already exists.")
                 return redirect("/account")
 
-        # ---------------- LOGIN ----------------
         elif mode == "login":
             user = User.get_by_email(email)
             if user and check_password_hash(user.password, password):
                 login_user(user)
                 return redirect("/dashboard")
-
             flash("Invalid credentials.")
             return redirect("/account")
-
-    # If GET request
-    return render_template("account.html")
-
-# 🔹 New JSON API endpoint (Safe lookup, no redirects)
-@app.route("/api/account", methods=["POST"])
-def api_account():
-    email = request.json.get("email", "").strip().lower()
-    
-    try:
-        result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
-        data = result.data
-        
-        if data is None:
-            return jsonify({"error": "User not found"}), 404
-
-        user = User(
-            data['id'],
-            data['email'],
-            data['password'],
-            data.get('fullname')
-        )
-
-        return jsonify({
-            "id": user.id,
-            "email": user.email,
-            "fullname": user.fullname
-        }), 200
-
-    except APIError as e:
-        return jsonify({
-            "error": "Database error",
-            "details": str(e)
-        }), 500
 
     # This handles GET requests
     return render_template("account.html")
@@ -333,6 +273,33 @@ def get_jobs():
         return jsonify({"remotive": remotive_jobs, "adzuna": adzuna_jobs, "jsearch": jsearch_jobs})
     except Exception as e:
         return jsonify({"remotive": [], "adzuna": [], "jsearch": []})
+
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email")
+        user = User.get_by_email(email)
+        if not user:
+            flash("No account found with that email.")
+            return redirect("/forgot-password")
+        return render_template("reset-password.html", email=email)
+    return renderavg = (_template("forgot-password.html")
+
+@app.route("/reset-password", methods=["POST"])
+def reset_password():
+    email = request.form.get("email")
+    new_password = request.form.get("password")
+    hashed = generate_password_hash(new_password)
+
+    try:
+        supabase.table("users").update({"password": hashed}).eq("email", email).execute()
+        flash("Password reset successful. Please log in.")
+        return redirect("/account")
+    except Exception as e:
+        print("Reset error:", e)
+        flash("Error resetting password.")
+        return redirect("/forgot-password")
 
 # === JOB INSIGHTS API ENDPOINTS ===
 
