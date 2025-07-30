@@ -119,42 +119,29 @@ login_manager.login_view = 'account'
 # Supabase-backed User class
 from flask_login import UserMixin
 
-class User(UserMixin):
-    def __init__(self, id, email, password, fullname):
-        self.id = id
+class User:
+    def __init__(self, user_id, email, password, fullname=None):
+        self.id = user_id
         self.email = email
         self.password = password
         self.fullname = fullname
 
     @staticmethod
     def get_by_email(email: str):
-       try:
-            # Safe query: prevents crash if 0 rows or multiple rows
-            result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
-            data = result.data
-
-            if data is None:  # No user found
-                return None
-
-            # Create User safely
-            return User(
-                data['id'],
-                data['email'],
-                data['password'],
-                data.get('fullname')  # safer than data['fullname']
-           )
-
-        except APIError:
-            # Optional: log the error or return None for silent fail
-            return None
-
-    @staticmethod
-    def get_by_id(user_id):
-        result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
+        result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
         data = result.data
         if data:
-            return User(data['id'], data['email'], data['password'], data['fullname'])
+            return User(data["id"], data["email"], data["password"], data.get("fullname"))
         return None
+
+@login_manager.user_loader
+def load_user(user_id):
+    # Fetch user by ID from Supabase if necessary
+    result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
+    data = result.data
+    if data:
+        return User(data["id"], data["email"], data["password"], data.get("fullname"))
+    return None
 
 @login_manager.user_loader
 def load_user(user_id):
