@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let isSignup = false;
 
-  // Toggle between Login and Sign Up modes
+  // Toggle between Login and Sign Up
   toggleLink.addEventListener("click", function (e) {
     e.preventDefault();
     isSignup = !isSignup;
@@ -28,10 +28,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Handle AJAX form submission
+  // Handle Form Submission
   accountForm.addEventListener("submit", async function (e) {
     e.preventDefault();
-    flashMessages.innerHTML = ""; // Clear old messages
+    flashMessages.innerHTML = ""; // clear previous messages
 
     const formData = new FormData(accountForm);
 
@@ -40,17 +40,15 @@ document.addEventListener("DOMContentLoaded", function () {
         method: "POST",
         body: formData
       });
-
-      // Expect JSON from Flask endpoint
       const result = await response.json();
 
-      // Display dynamic message
+      // Show message dynamically
       const msg = document.createElement("p");
-      msg.textContent = result.message || "Unknown response";
+      msg.textContent = result.message;
       msg.classList.add(result.success ? "success" : "error");
       flashMessages.appendChild(msg);
 
-      // Redirect if success and redirect URL provided
+      // Redirect on success
       if (result.success && result.redirect) {
         setTimeout(() => {
           window.location.href = result.redirect;
