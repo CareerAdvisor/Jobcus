@@ -1,6 +1,5 @@
 Flask
 flask-cors
-Flask-Login
 gunicorn
 openai
 requests
