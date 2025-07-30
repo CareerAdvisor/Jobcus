@@ -5,7 +5,7 @@ import traceback
 from io import BytesIO
 from collections import Counter
 
-from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
+from flask import Flask, request, jsonify, render_template, redirect, url_for, flash, session
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -191,77 +191,57 @@ def faq():
     return render_template("faq.html")
 
 app = Flask(__name__)
-app.secret_key = "your-secret-key"  # Needed for sessions
+app.secret_key = "your_secret_key_here"
 
-# Initialize Supabase
-SUPABASE_URL = "https://your-supabase-url.supabase.co"
-SUPABASE_KEY = "your-supabase-anon-or-service-key"
+# Supabase config
+SUPABASE_URL = "https://your-project.supabase.co"
+SUPABASE_KEY = "your_anon_or_service_key"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-
-@app.route("/account", methods=["POST"])
+@app.route("/account", methods=["GET", "POST"])
 def account():
+    if request.method == "GET":
+        # Render the login/sign-up page
+        return render_template("account.html")
+
     mode = request.form.get("mode")
     email = request.form.get("email")
     password = request.form.get("password")
     name = request.form.get("name")
 
-    # Handle Sign Up
-    if mode == "signup":
-        try:
-            # Create user in Supabase Auth
-            auth_response = supabase.auth.sign_up({
-                "email": email,
-                "password": password
-            })
-
-            if auth_response.user:
-                # Optionally store the user in your own DB if needed
-                session["user"] = {
-                    "email": email,
-                    "id": auth_response.user.id
-                }
-                return jsonify({
-                    "success": True,
-                    "message": f"Welcome {name or email}! Account created successfully.",
-                    "redirect": "/dashboard"
-                })
+    try:
+        # SIGN UP
+        if mode == "signup":
+            response = supabase.auth.sign_up({"email": email, "password": password})
+            
+            if response.user:
+                # Store user session
+                session["user"] = {"email": email, "name": name or email.split("@")[0]}
+                return jsonify(success=True, message="Account created!", redirect="/dashboard")
             else:
-                return jsonify({
-                    "success": False,
-                    "message": "Sign up failed. Try again."
-                })
-        except Exception as e:
-            return jsonify({"success": False, "message": str(e)})
+                return jsonify(success=False, message=response.get("error", "Sign-up failed."))
 
-    # Handle Login
-    elif mode == "login":
-        try:
-            auth_response = supabase.auth.sign_in_with_password({
-                "email": email,
-                "password": password
-            })
-
-            if auth_response.user:
-                session["user"] = {
-                    "email": email,
-                    "id": auth_response.user.id
-                }
-                return jsonify({
-                    "success": True,
-                    "message": "Login successful! Redirecting...",
-                    "redirect": "/dashboard"
-                })
+        # LOGIN
+        elif mode == "login":
+            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            
+            if response.user:
+                session["user"] = {"email": email}
+                return jsonify(success=True, message="Login successful!", redirect="/dashboard")
             else:
-                return jsonify({
-                    "success": False,
-                    "message": "Invalid email or password."
-                })
-        except Exception as e:
-            return jsonify({"success": False, "message": str(e)})
+                return jsonify(success=False, message="Invalid credentials. Please try again.")
 
-    # Invalid mode
-    return jsonify({"success": False, "message": "Invalid request mode."})
+        return jsonify(success=False, message="Invalid request mode")
+
+    except Exception as e:
+        return jsonify(success=False, message=f"Error: {str(e)}")
+
+
+@app.route("/dashboard")
+def dashboard():
+    if "user" not in session:
+        return redirect("/account")
+    return render_template("dashboard.html")
 
 # 🔹 New JSON API endpoint (Safe lookup, no redirects)
 
@@ -305,9 +285,14 @@ def logout():
     return redirect("/")
 
 @app.route("/dashboard")
-@login_required
 def dashboard():
-    return render_template("dashboard.html")
+    # Check if user is logged in
+    if "user" not in session:
+        return redirect(url_for("account_page"))  # Replace with your login page route
+    
+    user = session["user"]
+    return render_template("dashboard.html", user=user)
+
     
 @app.route("/ask", methods=["POST"])
 def ask():
