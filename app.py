@@ -111,8 +111,6 @@ def fetch_location_counts():
         pass
     return location_counter.most_common(5)
 
-
-
 # Flask-Login Setup
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -207,60 +205,46 @@ def account():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password")
 
-        # -------------------
-        # 🔹 Signup Mode
-        # -------------------
+        # ---------------- SIGNUP ----------------
         if mode == "signup":
             fullname = request.form.get("name")
             hashed_password = generate_password_hash(password)
+
             try:
+                # Check if email already exists
+                check_user = supabase.table("users").select("id").eq("email", email).maybe_single().execute()
+                if check_user.data is not None:
+                    flash("Email already exists.")
+                    return redirect("/account")
+
+                # Insert new user
                 result = supabase.table("users").insert({
                     "email": email,
                     "password": hashed_password,
                     "fullname": fullname
                 }).execute()
 
-                if not result.data:  # Insert failed
-                    flash("Signup failed. Please try again.")
-                    return redirect("/account")
-
                 user_data = result.data[0]
                 user = User(user_data['id'], email, hashed_password, fullname)
                 login_user(user)
                 return redirect("/dashboard")
 
-            except Exception:
-                flash("Email already exists or database error.")
-                return redirect("/account")
-
-        # -------------------
-        # 🔹 Login Mode
-        # -------------------
-        elif mode == "login":
-            try:
-                # Safe query: maybe_single prevents crash if 0 rows
-                result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
-                data = result.data
-
-                if data is None:
-                    flash("Invalid credentials.")
-                    return redirect("/account")
-
-                user = User(data['id'], data['email'], data['password'], data.get('fullname'))
-
-                if check_password_hash(user.password, password):
-                    login_user(user)
-                    return redirect("/dashboard")
-
-                flash("Invalid credentials.")
-                return redirect("/account")
-
             except APIError:
-                flash("Database error. Please try again later.")
+                flash("Error creating account. Please try again.")
                 return redirect("/account")
 
-    # GET request or fallback
-    return redirect("/account")
+        # ---------------- LOGIN ----------------
+        elif mode == "login":
+            user = User.get_by_email(email)
+            if user and check_password_hash(user.password, password):
+                login_user(user)
+                return redirect("/dashboard")
+
+            flash("Invalid credentials.")
+            return redirect("/account")
+
+    # If GET request
+    return render_template("account.html")
 
 # 🔹 New JSON API endpoint (Safe lookup, no redirects)
 @app.route("/api/account", methods=["POST"])
