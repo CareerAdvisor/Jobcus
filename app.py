@@ -1,22 +1,30 @@
+# --- Existing imports ---
 import os
-import requests
-import traceback
-from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
-from flask_cors import CORS
-from openai import OpenAI
-from dotenv import load_dotenv
-from collections import Counter
-from PyPDF2 import PdfReader
-from io import BytesIO
-from supabase import create_client, Client
 import base64
+import traceback
+from io import BytesIO
+from collections import Counter
 
-# Load environment variables
+from flask import Flask, request, jsonify, render_template, redirect, url_for, flash, session
+from flask_cors import CORS
+from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from werkzeug.security import generate_password_hash, check_password_hash
+from postgrest.exceptions import APIError
+from PyPDF2 import PdfReader
+from supabase import create_client, Client
+from dotenv import load_dotenv
+from openai import OpenAI
+import logging  
+
+# --- Environment and app setup ---
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 CORS(app)
+
+# Enable logging
+logging.basicConfig(level=logging.INFO)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -25,7 +33,6 @@ supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 supabase = create_client(supabase_url, supabase_key)
 
-# Constants
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
 ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs"
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
@@ -35,8 +42,6 @@ JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
 
 JOB_TITLES = ["Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"]
 KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
-
-# ... Other functions remain the same
 
 # Fetch Adzuna salary info for multiple titles
 def fetch_salary_data():
@@ -111,6 +116,42 @@ def fetch_location_counts():
         pass
     return location_counter.most_common(5)
 
+# Flask-Login Setup
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'account'
+
+# Supabase-backed User class
+from flask_login import UserMixin
+
+class User:
+    def __init__(self, user_id, email, password, fullname=None):
+        self.id = user_id
+        self.email = email
+        self.password = password
+        self.fullname = fullname
+
+    @staticmethod
+    def get_by_email(email: str):
+        result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
+        data = result.data
+        if data:
+            return User(data["id"], data["email"], data["password"], data.get("fullname"))
+        return None
+
+@login_manager.user_loader
+def load_user(user_id):
+    # Fetch user by ID from Supabase if necessary
+    result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
+    data = result.data
+    if data:
+        return User(data["id"], data["email"], data["password"], data.get("fullname"))
+    return None
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get_by_id(user_id)
+    
 # ----------- ROUTES -----------
 
 @app.route("/")
@@ -149,20 +190,116 @@ def about():
 def faq():
     return render_template("faq.html")
 
-@app.route("/account")
+app = Flask(__name__)
+app.secret_key = "your_secret_key_here"
+
+# Supabase config
+SUPABASE_URL = "https://your-project.supabase.co"
+SUPABASE_KEY = "your_anon_or_service_key"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+@app.route("/account", methods=["GET", "POST"])
 def account():
-    return render_template("account.html")
+    if request.method == "GET":
+        # Render the login/sign-up page
+        return render_template("account.html")
+
+    mode = request.form.get("mode")
+    email = request.form.get("email")
+    password = request.form.get("password")
+    name = request.form.get("name")
+
+    try:
+        # SIGN UP
+        if mode == "signup":
+            response = supabase.auth.sign_up({"email": email, "password": password})
+            
+            if response.user:
+                # Store user session
+                session["user"] = {"email": email, "name": name or email.split("@")[0]}
+                return jsonify(success=True, message="Account created!", redirect="/dashboard")
+            else:
+                return jsonify(success=False, message=response.get("error", "Sign-up failed."))
+
+        # LOGIN
+        elif mode == "login":
+            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            
+            if response.user:
+                session["user"] = {"email": email}
+                return jsonify(success=True, message="Login successful!", redirect="/dashboard")
+            else:
+                return jsonify(success=False, message="Invalid credentials. Please try again.")
+
+        return jsonify(success=False, message="Invalid request mode")
+
+    except Exception as e:
+        return jsonify(success=False, message=f"Error: {str(e)}")
+
 
 @app.route("/dashboard")
 def dashboard():
+    if "user" not in session:
+        return redirect("/account")
     return render_template("dashboard.html")
 
+# 🔹 New JSON API endpoint (Safe lookup, no redirects)
+
+@app.route("/api/account", methods=["POST"])
+def api_account():
+    email = request.json.get("email", "").strip().lower()
+    
+    try:
+        result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
+        data = result.data
+        
+        if data is None:
+            return jsonify({"error": "User not found"}), 404
+
+        user = User(
+            data['id'],
+            data['email'],
+            data['password'],
+            data.get('fullname')
+        )
+
+        return jsonify({
+            "id": user.id,
+            "email": user.email,
+            "fullname": user.fullname
+        }), 200
+
+    except APIError as e:
+        return jsonify({
+            "error": "Database error",
+            "details": str(e)
+        }), 500
+
+    # This handles GET requests
+    return render_template("account.html")
+    
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
+
+@app.route("/dashboard")
+def dashboard():
+    # Check if user is logged in
+    if "user" not in session:
+        return redirect(url_for("account_page"))  # Replace with your login page route
+    
+    user = session["user"]
+    return render_template("dashboard.html", user=user)
+
+    
 @app.route("/ask", methods=["POST"])
 def ask():
     user_msg = request.json.get("message")
 
     messages = [
-        {"role": "system", "content": "You are Jobcus, a helpful and intelligent AI career assistant..."},
+        {"role": "system", "content": "You are Jobcus, a helpful and intelligent AI career assistant"},
         {"role": "user", "content": user_msg}
     ]
 
@@ -448,7 +585,7 @@ def analyze_resume():
         ).choices[0].message.content
 
         # --- Step 2: Keyword Match ---
-        target_keywords = ["Project Management", "Python", "Communication", "Teamwork", "Leadership", "Management skill", "Scrum Master", "Product Management", "IT", "Information Technology", "Customer Service", "Cross-Functional", "Support", "Agile"]
+        target_keywords = ["Project Management", "Python", "Communication", "Leadership", "Product Management", "Customer Service", "Agile"]
         found_keywords = [kw for kw in target_keywords if kw.lower() in resume_text.lower()]
 
         return jsonify({
