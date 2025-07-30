@@ -14,7 +14,7 @@ from PyPDF2 import PdfReader
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from openai import OpenAI
-import logging  # <-- Added
+import logging  
 
 # --- Environment and app setup ---
 load_dotenv()
@@ -190,54 +190,78 @@ def about():
 def faq():
     return render_template("faq.html")
 
-@app.route("/account", methods=["GET", "POST"])
+app = Flask(__name__)
+app.secret_key = "your-secret-key"  # Needed for sessions
+
+# Initialize Supabase
+SUPABASE_URL = "https://your-supabase-url.supabase.co"
+SUPABASE_KEY = "your-supabase-anon-or-service-key"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+@app.route("/account", methods=["POST"])
 def account():
-    if request.method == "POST":
-        mode = request.form.get("mode")
-        email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password")
-        fullname = request.form.get("name", "")
+    mode = request.form.get("mode")
+    email = request.form.get("email")
+    password = request.form.get("password")
+    name = request.form.get("name")
 
+    # Handle Sign Up
+    if mode == "signup":
         try:
-            # ---------------- SIGNUP ----------------
-            if mode == "signup":
-                hashed_password = generate_password_hash(password)
+            # Create user in Supabase Auth
+            auth_response = supabase.auth.sign_up({
+                "email": email,
+                "password": password
+            })
 
-                # Check if email already exists
-                check_user = supabase.table("users").select("id").eq("email", email).maybe_single().execute()
-                if check_user.data is not None:
-                    return jsonify({"success": False, "message": "Email already exists."})
-
-                # Insert new user into Supabase
-                result = supabase.table("users").insert({
+            if auth_response.user:
+                # Optionally store the user in your own DB if needed
+                session["user"] = {
                     "email": email,
-                    "password": hashed_password,
-                    "fullname": fullname
-                }).execute()
-
-                if result.data:
-                    user_data = result.data[0]
-                    user = User(user_data['id'], email, hashed_password, fullname)
-                    login_user(user)
-                    return jsonify({"success": True, "message": "Account created successfully!", "redirect": "/dashboard"})
-
-                return jsonify({"success": False, "message": "Failed to create account."})
-
-            # ---------------- LOGIN ----------------
-            elif mode == "login":
-                user = User.get_by_email(email)
-                if user and check_password_hash(user.password, password):
-                    login_user(user)
-                    return jsonify({"success": True, "message": "Login successful!", "redirect": "/dashboard"})
-
-                return jsonify({"success": False, "message": "Invalid credentials."})
-
+                    "id": auth_response.user.id
+                }
+                return jsonify({
+                    "success": True,
+                    "message": f"Welcome {name or email}! Account created successfully.",
+                    "redirect": "/dashboard"
+                })
+            else:
+                return jsonify({
+                    "success": False,
+                    "message": "Sign up failed. Try again."
+                })
         except Exception as e:
-            app.logger.error(f"Error handling /account: {str(e)}")
-            return jsonify({"success": False, "message": "Server error: " + str(e)})
+            return jsonify({"success": False, "message": str(e)})
 
-    # For GET request, render the form page
-    return render_template("account.html")
+    # Handle Login
+    elif mode == "login":
+        try:
+            auth_response = supabase.auth.sign_in_with_password({
+                "email": email,
+                "password": password
+            })
+
+            if auth_response.user:
+                session["user"] = {
+                    "email": email,
+                    "id": auth_response.user.id
+                }
+                return jsonify({
+                    "success": True,
+                    "message": "Login successful! Redirecting...",
+                    "redirect": "/dashboard"
+                })
+            else:
+                return jsonify({
+                    "success": False,
+                    "message": "Invalid email or password."
+                })
+        except Exception as e:
+            return jsonify({"success": False, "message": str(e)})
+
+    # Invalid mode
+    return jsonify({"success": False, "message": "Invalid request mode."})
 
 # 🔹 New JSON API endpoint (Safe lookup, no redirects)
 
