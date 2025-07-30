@@ -1,30 +1,25 @@
-# --- Existing imports ---
 import os
-import base64
+import requests
 import traceback
-from io import BytesIO
-from collections import Counter
-
-from flask import Flask, request, jsonify, render_template, redirect, url_for, flash, session
+from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from flask_cors import CORS
+from openai import OpenAI
+from dotenv import load_dotenv
+from collections import Counter
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
-from postgrest.exceptions import APIError
 from PyPDF2 import PdfReader
+from io import BytesIO
 from supabase import create_client, Client
-from dotenv import load_dotenv
-from openai import OpenAI
-import logging  
+from postgrest.exceptions import APIError
+import base64
 
-# --- Environment and app setup ---
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 CORS(app)
-
-# Enable logging
-logging.basicConfig(level=logging.INFO)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -124,29 +119,42 @@ login_manager.login_view = 'account'
 # Supabase-backed User class
 from flask_login import UserMixin
 
-class User:
-    def __init__(self, user_id, email, password, fullname=None):
-        self.id = user_id
+class User(UserMixin):
+    def __init__(self, id, email, password, fullname):
+        self.id = id
         self.email = email
         self.password = password
         self.fullname = fullname
 
     @staticmethod
     def get_by_email(email: str):
-        result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
+       try:
+            # Safe query: prevents crash if 0 rows or multiple rows
+            result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
+            data = result.data
+
+            if data is None:  # No user found
+                return None
+
+            # Create User safely
+            return User(
+                data['id'],
+                data['email'],
+                data['password'],
+                data.get('fullname')  # safer than data['fullname']
+           )
+
+        except APIError:
+            # Optional: log the error or return None for silent fail
+            return None
+
+    @staticmethod
+    def get_by_id(user_id):
+        result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
         data = result.data
         if data:
-            return User(data["id"], data["email"], data["password"], data.get("fullname"))
+            return User(data['id'], data['email'], data['password'], data['fullname'])
         return None
-
-@login_manager.user_loader
-def load_user(user_id):
-    # Fetch user by ID from Supabase if necessary
-    result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
-    data = result.data
-    if data:
-        return User(data["id"], data["email"], data["password"], data.get("fullname"))
-    return None
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -190,61 +198,55 @@ def about():
 def faq():
     return render_template("faq.html")
 
-app = Flask(__name__)
-app.secret_key = "your_secret_key_here"
-
-# Supabase config
-SUPABASE_URL = "https://your-project.supabase.co"
-SUPABASE_KEY = "your_anon_or_service_key"
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 @app.route("/account", methods=["GET", "POST"])
 def account():
-    if request.method == "GET":
-        # Render the login/sign-up page
-        return render_template("account.html")
+    if request.method == "POST":
+        mode = request.form.get("mode")
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password")
 
-    mode = request.form.get("mode")
-    email = request.form.get("email")
-    password = request.form.get("password")
-    name = request.form.get("name")
-
-    try:
-        # SIGN UP
+        # ---------------- SIGNUP ----------------
         if mode == "signup":
-            response = supabase.auth.sign_up({"email": email, "password": password})
-            
-            if response.user:
-                # Store user session
-                session["user"] = {"email": email, "name": name or email.split("@")[0]}
-                return jsonify(success=True, message="Account created!", redirect="/dashboard")
-            else:
-                return jsonify(success=False, message=response.get("error", "Sign-up failed."))
+            fullname = request.form.get("name")
+            hashed_password = generate_password_hash(password)
 
-        # LOGIN
+            try:
+                # Check if email already exists
+                check_user = supabase.table("users").select("id").eq("email", email).maybe_single().execute()
+                if check_user.data is not None:
+                    flash("Email already exists.")
+                    return redirect("/account")
+
+                # Insert new user
+                result = supabase.table("users").insert({
+                    "email": email,
+                    "password": hashed_password,
+                    "fullname": fullname
+                }).execute()
+
+                user_data = result.data[0]
+                user = User(user_data['id'], email, hashed_password, fullname)
+                login_user(user)
+                return redirect("/dashboard")
+
+            except APIError:
+                flash("Error creating account. Please try again.")
+                return redirect("/account")
+
+        # ---------------- LOGIN ----------------
         elif mode == "login":
-            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            
-            if response.user:
-                session["user"] = {"email": email}
-                return jsonify(success=True, message="Login successful!", redirect="/dashboard")
-            else:
-                return jsonify(success=False, message="Invalid credentials. Please try again.")
+            user = User.get_by_email(email)
+            if user and check_password_hash(user.password, password):
+                login_user(user)
+                return redirect("/dashboard")
 
-        return jsonify(success=False, message="Invalid request mode")
+            flash("Invalid credentials.")
+            return redirect("/account")
 
-    except Exception as e:
-        return jsonify(success=False, message=f"Error: {str(e)}")
-
-
-@app.route("/dashboard")
-def dashboard():
-    if "user" not in session:
-        return redirect("/account")
-    return render_template("dashboard.html")
+    # If GET request
+    return render_template("account.html")
 
 # 🔹 New JSON API endpoint (Safe lookup, no redirects)
-
 @app.route("/api/account", methods=["POST"])
 def api_account():
     email = request.json.get("email", "").strip().lower()
@@ -285,14 +287,9 @@ def logout():
     return redirect("/")
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
-    # Check if user is logged in
-    if "user" not in session:
-        return redirect(url_for("account_page"))  # Replace with your login page route
-    
-    user = session["user"]
-    return render_template("dashboard.html", user=user)
-
+    return render_template("dashboard.html")
     
 @app.route("/ask", methods=["POST"])
 def ask():
