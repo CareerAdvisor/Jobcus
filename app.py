@@ -1,18 +1,18 @@
 import os
-import requests
+import base64
 import traceback
+from io import BytesIO
+from collections import Counter
+
 from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from flask_cors import CORS
-from openai import OpenAI
-from dotenv import load_dotenv
-from collections import Counter
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
-from PyPDF2 import PdfReader
-from io import BytesIO
-from supabase import create_client, Client
 from postgrest.exceptions import APIError
-import base64
+from PyPDF2 import PdfReader
+from supabase import create_client, Client
+from dotenv import load_dotenv
+from openai import OpenAI
 
 # Load environment variables
 load_dotenv()
