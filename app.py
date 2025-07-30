@@ -6,8 +6,6 @@ from flask_cors import CORS
 from openai import OpenAI
 from dotenv import load_dotenv
 from collections import Counter
-from flask_login import LoginManager, login_user, logout_user, current_user, login_required
-from werkzeug.security import generate_password_hash, check_password_hash
 from PyPDF2 import PdfReader
 from io import BytesIO
 from supabase import create_client, Client
