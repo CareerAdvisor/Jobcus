@@ -196,7 +196,7 @@ def account():
         mode = request.form.get("mode")
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password")
-        fullname = request.form.get("name")
+        fullname = request.form.get("name", "")
 
         try:
             # ---------------- SIGNUP ----------------
@@ -208,18 +208,20 @@ def account():
                 if check_user.data is not None:
                     return jsonify({"success": False, "message": "Email already exists."})
 
-                # Insert new user
+                # Insert new user into Supabase
                 result = supabase.table("users").insert({
                     "email": email,
                     "password": hashed_password,
                     "fullname": fullname
                 }).execute()
 
-                user_data = result.data[0]
-                user = User(user_data['id'], email, hashed_password, fullname)
-                login_user(user)
+                if result.data:
+                    user_data = result.data[0]
+                    user = User(user_data['id'], email, hashed_password, fullname)
+                    login_user(user)
+                    return jsonify({"success": True, "message": "Account created successfully!", "redirect": "/dashboard"})
 
-                return jsonify({"success": True, "message": "Account created successfully!", "redirect": "/dashboard"})
+                return jsonify({"success": False, "message": "Failed to create account."})
 
             # ---------------- LOGIN ----------------
             elif mode == "login":
@@ -232,9 +234,9 @@ def account():
 
         except Exception as e:
             app.logger.error(f"Error handling /account: {str(e)}")
-            return jsonify({"success": False, "message": "Server error."}), 500
+            return jsonify({"success": False, "message": "Server error: " + str(e)})
 
-    # GET request - return the HTML page
+    # For GET request, render the form page
     return render_template("account.html")
 
 # 🔹 New JSON API endpoint (Safe lookup, no redirects)
