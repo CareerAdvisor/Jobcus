@@ -200,17 +200,6 @@ def get_jobs():
     except Exception as e:
         return jsonify({"remotive": [], "adzuna": [], "jsearch": []})
 
-import os
-
-@app.route("/", methods=["GET", "HEAD"])
-def index():
-    print("CWD:", os.getcwd())
-    print("Files:", os.listdir())
-    print("Templates exist:", os.path.exists("templates"))
-    if os.path.exists("templates"):
-        print("Templates:", os.listdir("templates"))
-    return render_template("index.html")
-
 # === JOB INSIGHTS API ENDPOINTS ===
 
 @app.route("/api/salary")
