@@ -5,8 +5,10 @@
 
 {% block content %}
 <section class="auth-section" data-aos="fade-up">
+  <!-- Form Title -->
   <h2 id="formTitle">Sign In to Jobcus</h2>
 
+  <!-- Flash Messages -->
   {% with messages = get_flashed_messages() %}
     {% if messages %}
       <div class="flash-message">
@@ -21,7 +23,7 @@
   <form id="accountForm" method="POST" action="/account" class="auth-form" autocomplete="on">
     <input type="hidden" name="mode" id="mode" value="login" />
 
-    <!-- Email -->
+    <!-- Email Field -->
     <div class="form-group">
       <label for="email">Email</label>
       <input type="email" 
@@ -32,7 +34,7 @@
              required />
     </div>
 
-    <!-- Password -->
+    <!-- Password Field -->
     <div class="form-group">
       <label for="password">Password</label>
       <input type="password" 
@@ -43,7 +45,7 @@
              required />
     </div>
 
-    <!-- Full Name (for Sign Up mode only) -->
+    <!-- Full Name (Only for Sign Up) -->
     <div class="form-group hidden" id="nameGroup">
       <label for="name">Full Name</label>
       <input type="text" 
@@ -56,19 +58,19 @@
     <!-- Submit Button -->
     <button type="submit" class="cta-primary" id="submitButton">Sign In</button>
 
-    <!-- Forgot Password -->
+    <!-- Forgot Password Link -->
     <div class="form-group" style="text-align: right;">
       <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
     </div>
 
-    <!-- Toggle Mode -->
+    <!-- Toggle between Sign In / Sign Up -->
     <p class="toggle-text" style="text-align: center;">
-      Don’t have an account? <a href="#" id="toggleMode" class="toggle-link">Sign Up</a>
+      Don’t have an account? 
+      <a href="#" id="toggleMode" class="toggle-link">Sign Up</a>
     </p>
   </form>
 </section>
-{% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='account.js') }}"></script>
+<!-- Link to your account.js script -->
+<script src="{{ url_for('static', filename='js/account.js') }}"></script>
 {% endblock %}
