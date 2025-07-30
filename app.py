@@ -1,32 +1,34 @@
 import os
 import requests
 import traceback
-from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from openai import OpenAI
 from dotenv import load_dotenv
 from collections import Counter
-from flask_login import LoginManager, login_user, logout_user, current_user, login_required
-from werkzeug.security import generate_password_hash, check_password_hash
+
+# ✅ Add PyPDF2 for PDF parsing
 from PyPDF2 import PdfReader
 from io import BytesIO
-from supabase import create_client, Client
 import base64
 
 # Load environment variables
 load_dotenv()
 
+# Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 CORS(app)
 
+# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Supabase setup
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
-supabase = create_client(supabase_url, supabase_key)
+# Initialize Supabase
+from supabase import create_client, Client
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# Constants
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
 ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs"
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
@@ -36,6 +38,8 @@ JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
 
 JOB_TITLES = ["Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"]
 KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
+
+# ... Other functions remain the same
 
 # Fetch Adzuna salary info for multiple titles
 def fetch_salary_data():
@@ -110,43 +114,6 @@ def fetch_location_counts():
         pass
     return location_counter.most_common(5)
 
-
-
-# Flask-Login Setup
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'account'
-
-# Supabase-backed User class
-from flask_login import UserMixin
-
-class User(UserMixin):
-    def __init__(self, id, email, password, fullname):
-        self.id = id
-        self.email = email
-        self.password = password
-        self.fullname = fullname
-
-    @staticmethod
-    def get_by_email(email):
-        result = supabase.table("users").select("*").eq("email", email).single().execute()
-        data = result.data
-        if data:
-            return User(data['id'], data['email'], data['password'], data['fullname'])
-        return None
-
-    @staticmethod
-    def get_by_id(user_id):
-        result = supabase.table("users").select("*").eq("id", user_id).single().execute()
-        data = result.data
-        if data:
-            return User(data['id'], data['email'], data['password'], data['fullname'])
-        return None
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.get_by_id(user_id)
-    
 # ----------- ROUTES -----------
 
 @app.route("/")
@@ -185,52 +152,14 @@ def about():
 def faq():
     return render_template("faq.html")
 
-@app.route("/account", methods=["GET", "POST"])
+@app.route("/account")
 def account():
-    if request.method == "POST":
-        mode = request.form.get("mode")
-        email = request.form.get("email")
-        password = request.form.get("password")
-
-        if mode == "signup":
-            fullname = request.form.get("name")
-            hashed_password = generate_password_hash(password)
-            try:
-                result = supabase.table("users").insert({
-                    "email": email,
-                    "password": hashed_password,
-                    "fullname": fullname
-                }).execute()
-                user_data = result.data[0]
-                user = User(user_data['id'], email, hashed_password, fullname)
-                login_user(user)
-                return redirect("/dashboard")
-            except Exception as e:
-                flash("Email already exists.")
-                return redirect("/account")
-
-        elif mode == "login":
-            user = User.get_by_email(email)
-            if user and check_password_hash(user.password, password):
-                login_user(user)
-                return redirect("/dashboard")
-            flash("Invalid credentials.")
-            return redirect("/account")
-
-    # This handles GET requests
     return render_template("account.html")
-    
-@app.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    return redirect("/")
 
 @app.route("/dashboard")
-@login_required
 def dashboard():
     return render_template("dashboard.html")
-    
+
 @app.route("/ask", methods=["POST"])
 def ask():
     user_msg = request.json.get("message")
@@ -273,33 +202,6 @@ def get_jobs():
         return jsonify({"remotive": remotive_jobs, "adzuna": adzuna_jobs, "jsearch": jsearch_jobs})
     except Exception as e:
         return jsonify({"remotive": [], "adzuna": [], "jsearch": []})
-
-
-@app.route("/forgot-password", methods=["GET", "POST"])
-def forgot_password():
-    if request.method == "POST":
-        email = request.form.get("email")
-        user = User.get_by_email(email)
-        if not user:
-            flash("No account found with that email.")
-            return redirect("/forgot-password")
-        return render_template("reset-password.html", email=email)
-    return renderavg = (_template("forgot-password.html")
-
-@app.route("/reset-password", methods=["POST"])
-def reset_password():
-    email = request.form.get("email")
-    new_password = request.form.get("password")
-    hashed = generate_password_hash(new_password)
-
-    try:
-        supabase.table("users").update({"password": hashed}).eq("email", email).execute()
-        flash("Password reset successful. Please log in.")
-        return redirect("/account")
-    except Exception as e:
-        print("Reset error:", e)
-        flash("Error resetting password.")
-        return redirect("/forgot-password")
 
 # === JOB INSIGHTS API ENDPOINTS ===
 
@@ -549,7 +451,7 @@ def analyze_resume():
         ).choices[0].message.content
 
         # --- Step 2: Keyword Match ---
-        target_keywords = ["Project Management", "Python", "Communication", "Leadership", "Product Management", "Customer Service", "Agile"]
+        target_keywords = ["Project Management", "Python", "Communication", "Teamwork", "Leadership", "Management skill", "Scrum Master", "Product Management", "IT", "Information Technology", "Customer Service", "Cross-Functional", "Support", "Agile"]
         found_keywords = [kw for kw in target_keywords if kw.lower() in resume_text.lower()]
 
         return jsonify({
