@@ -518,25 +518,23 @@ def get_interview_feedback():
         print("Interview Feedback Error:", e)
         return jsonify({"error": "Error generating feedback"}), 500
 
-@app.route("/api/analyze-resume", methods=["POST"])
-def analyze_resume():
+@app.route("/api/resume-analysis", methods=["POST"])
+def resume_analysis():
     try:
         data = request.get_json()
         resume_text = ""
 
+        # --- Step 0: Handle Resume Input ---
         if not data:
             return jsonify({"error": "Invalid request format"}), 400
 
-        # ✅ Handle PDF input
         if "pdf" in data and data["pdf"]:
             try:
                 pdf_bytes = base64.b64decode(data["pdf"])
                 reader = PdfReader(BytesIO(pdf_bytes))
                 resume_text = " ".join((page.extract_text() or "") for page in reader.pages)
-
                 if not resume_text.strip():
                     return jsonify({"error": "PDF content is empty"}), 400
-
             except Exception as pdf_err:
                 print("PDF Decode Error:", pdf_err)
                 return jsonify({"error": "Unable to extract text from PDF"}), 400
@@ -549,11 +547,14 @@ def analyze_resume():
         if not resume_text:
             return jsonify({"error": "No resume content found"}), 400
 
-        # --- Step 1: AI Feedback ---
+        # --- Step 1: AI ATS Analysis ---
         ai_prompt = (
-            "You are an ATS resume analyzer. Analyze the following resume text. "
-            "Give insights about formatting, keyword richness, tone, clarity, and structure. "
-            "Be concise, and offer actionable tips. Resume:\n\n" + resume_text
+            "You are an ATS resume analyzer. Analyze the resume below based on "
+            "international best practices and ATS standards. Provide:\n"
+            "1. A score out of 100.\n"
+            "2. Top 3 issues preventing higher score.\n"
+            "3. Top 3 strengths.\n"
+            "Resume:\n\n" + resume_text
         )
 
         ai_response = client.chat.completions.create(
@@ -562,19 +563,39 @@ def analyze_resume():
             temperature=0.6
         ).choices[0].message.content
 
-        # --- Step 2: Keyword Match ---
-        target_keywords = ["Project Management", "Python", "Communication", "Leadership", "Product Management", "Customer Service", "Agile"]
+        # --- Step 2: Parse AI Response ---
+        score, issues, strengths = 0, [], []
+        for line in ai_response.splitlines():
+            line = line.strip()
+            if line.lower().startswith("score"):
+                try:
+                    score = int(line.split(":")[1].strip())
+                except:
+                    score = 70  # fallback score
+            elif line.lower().startswith("issues"):
+                issues = [i.strip() for i in line.split(":")[1].split(";")]
+            elif line.lower().startswith("strengths"):
+                strengths = [s.strip() for s in line.split(":")[1].split(";")]
+
+        # --- Step 3: Keyword Matching ---
+        target_keywords = [
+            "Project Management", "Python", "Communication", 
+            "Leadership", "Product Management", "Customer Service", "Agile"
+        ]
         found_keywords = [kw for kw in target_keywords if kw.lower() in resume_text.lower()]
 
         return jsonify({
-            "analysis": ai_response,
+            "score": score,
+            "analysis": {
+                "issues": issues,
+                "strengths": strengths
+            },
             "keywords": found_keywords
         })
 
     except Exception as e:
         print("ATS Analyzer Error:", e)
         return jsonify({"error": "Resume analysis failed"}), 500
-        
 
 @app.route("/generate-resume", methods=["POST"])
 def generate_resume():
