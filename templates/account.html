@@ -8,7 +8,7 @@
   <!-- Form Title -->
   <h2 id="formTitle">Sign In to Jobcus</h2>
 
-  <!-- Flash Messages -->
+  <!-- Static Flash Messages from Flask -->
   {% with messages = get_flashed_messages() %}
     {% if messages %}
       <div class="flash-message">
@@ -18,6 +18,9 @@
       </div>
     {% endif %}
   {% endwith %}
+
+  <!-- Dynamic Flash Messages from JS -->
+  <div id="flashMessages" class="flash-message"></div>
 
   <!-- Authentication Form -->
   <form id="accountForm" method="POST" action="/account" class="auth-form" autocomplete="on">
@@ -45,7 +48,7 @@
              required />
     </div>
 
-    <!-- Full Name (Only for Sign Up) -->
+    <!-- Full Name Field (hidden for login) -->
     <div class="form-group hidden" id="nameGroup">
       <label for="name">Full Name</label>
       <input type="text" 
@@ -63,14 +66,10 @@
       <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
     </div>
 
-    <!-- Toggle between Sign In / Sign Up -->
+    <!-- Toggle Sign In / Sign Up -->
     <p class="toggle-text" style="text-align: center;">
-      Don’t have an account? 
-      <a href="#" id="toggleMode" class="toggle-link">Sign Up</a>
+      Don’t have an account? <a href="#" id="toggleMode" class="toggle-link">Sign Up</a>
     </p>
   </form>
 </section>
-
-<!-- Link to your account.js script -->
-<script src="{{ url_for('static', filename='js/account.js') }}"></script>
 {% endblock %}
