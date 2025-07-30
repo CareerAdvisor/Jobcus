@@ -186,11 +186,6 @@ def price():
 def faq():
     return render_template("faq.html")
 
-# Supabase config
-SUPABASE_URL = "https://your-project.supabase.co"
-SUPABASE_KEY = "your_anon_or_service_key"
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
