@@ -17,9 +17,11 @@
     {% endif %}
   {% endwith %}
 
+  <!-- Authentication Form -->
   <form id="accountForm" method="POST" action="/account" class="auth-form" autocomplete="on">
     <input type="hidden" name="mode" id="mode" value="login" />
 
+    <!-- Email -->
     <div class="form-group">
       <label for="email">Email</label>
       <input type="email" 
@@ -30,6 +32,7 @@
              required />
     </div>
 
+    <!-- Password -->
     <div class="form-group">
       <label for="password">Password</label>
       <input type="password" 
@@ -40,21 +43,25 @@
              required />
     </div>
 
+    <!-- Full Name (for Sign Up mode only) -->
     <div class="form-group hidden" id="nameGroup">
       <label for="name">Full Name</label>
       <input type="text" 
              id="name" 
              name="name" 
-             placeholder="Your full name"
+             placeholder="Your full name" 
              autocomplete="name" />
     </div>
 
+    <!-- Submit Button -->
     <button type="submit" class="cta-primary" id="submitButton">Sign In</button>
 
+    <!-- Forgot Password -->
     <div class="form-group" style="text-align: right;">
       <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
     </div>
 
+    <!-- Toggle Mode -->
     <p class="toggle-text" style="text-align: center;">
       Don’t have an account? <a href="#" id="toggleMode" class="toggle-link">Sign Up</a>
     </p>
