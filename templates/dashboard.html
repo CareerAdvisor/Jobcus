@@ -5,9 +5,11 @@
 {% block content %}
 
 <section class="dashboard-container">
-  <h1 class="dashboard-title">Welcome Back</h1>
-  <p class="dashboard-subtitle">Track your career growth and insights powered by Jobcus AI</p>
-
+  <h1 class="dashboard-title">Welcome Back {{ current_user.name }}</h1>
+  <p class="dashboard-subtitle">
+    Track your career growth and insights powered by Jobcus AI
+  </p>
+  
   <div class="dashboard-cards">
 
     <!-- Resume Score -->
