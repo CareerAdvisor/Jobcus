@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let isSignup = false;
 
+  // Toggle between Sign In / Sign Up
   toggleLink.addEventListener("click", function (e) {
     e.preventDefault();
     isSignup = !isSignup;
@@ -26,28 +27,35 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  accountForm.addEventListener("submit", function (e) {
-    e.preventDefault();
+  // Handle Form Submit (with Fetch API)
+  if (accountForm) {
+    accountForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    const formData = new FormData(accountForm);
-    formData.append("mode", isSignup ? "signup" : "login");
+      const formData = new FormData(accountForm);
+      formData.append("mode", isSignup ? "signup" : "login"); // send mode to backend
 
-    fetch("/account", {
-      method: "POST",
-      body: formData,
-    })
-      .then((res) => {
-        if (res.redirected) {
-          window.location.href = res.url;
+      try {
+        const response = await fetch("/account", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Server returned error:", errorText);
+          alert("Server error! Check console logs.");
+        } else if (response.redirected) {
+          // If Flask sends a redirect
+          window.location.href = response.url;
         } else {
-          return res.text().then((html) => {
-            document.body.innerHTML = html; // re-renders the returned template
-          });
+          // Reload page to show flash messages
+          window.location.reload();
         }
-      })
-      .catch((err) => {
-        console.error("Error:", err);
-        alert("Something went wrong.");
-      });
-  });
+      } catch (err) {
+        console.error("Request failed:", err);
+        alert("Request failed. Check console logs.");
+      }
+    });
+  }
 });
