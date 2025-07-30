@@ -1,32 +1,31 @@
 import os
 import requests
 import traceback
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from flask_cors import CORS
 from openai import OpenAI
 from dotenv import load_dotenv
 from collections import Counter
-
-# ✅ Add PyPDF2 for PDF parsing
+from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from werkzeug.security import generate_password_hash, check_password_hash
 from PyPDF2 import PdfReader
 from io import BytesIO
+from supabase import create_client, Client
 import base64
 
 # Load environment variables
 load_dotenv()
 
-# Initialize Flask app
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 CORS(app)
 
-# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Initialize Supabase
-from supabase import create_client, Client
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Supabase setup
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
+supabase = create_client(supabase_url, supabase_key)
 
 # Constants
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
