@@ -283,16 +283,6 @@ def api_account():
 def logout():
     logout_user()
     return redirect("/")
-
-@app.route("/dashboard")
-def dashboard():
-    # Check if user is logged in
-    if "user" not in session:
-        return redirect(url_for("account_page"))  # Replace with your login page route
-    
-    user = session["user"]
-    return render_template("dashboard.html", user=user)
-
     
 @app.route("/ask", methods=["POST"])
 def ask():
