@@ -147,10 +147,6 @@ def load_user(user_id):
     if data:
         return User(data["id"], data["email"], data["password"], data.get("fullname"))
     return None
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.get_by_id(user_id)
     
 # ----------- ROUTES -----------
 
@@ -183,15 +179,12 @@ def employers():
     return render_template("employers.html")
 
 @app.route("/price")
-def about():
+def price():
     return render_template("price.html")
 
 @app.route("/faq")
 def faq():
     return render_template("faq.html")
-
-app = Flask(__name__)
-app.secret_key = "your_secret_key_here"
 
 # Supabase config
 SUPABASE_URL = "https://your-project.supabase.co"
