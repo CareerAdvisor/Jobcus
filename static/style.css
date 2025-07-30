@@ -341,6 +341,9 @@ header {
   flex-wrap: wrap;
   gap: 20px;
   justify-content: center;
+  max-width: 100%; /* ✅ Prevent stretching wider than parent */
+  flex: 1 1 300px; /* ✅ Responsive flex sizing */
+  box-sizing: border-box;
 }
 
 .dashboard-card h2 {
