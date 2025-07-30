@@ -11,6 +11,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from PyPDF2 import PdfReader
 from io import BytesIO
 from supabase import create_client, Client
+from postgrest.exceptions import APIError
 import base64
 
 # Load environment variables
@@ -128,12 +129,26 @@ class User(UserMixin):
         self.fullname = fullname
 
     @staticmethod
-    def get_by_email(email):
-        result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
-        data = result.data
-        if data:
-            return User(data['id'], data['email'], data['password'], data['fullname'])
-        return None
+    def get_by_email(email: str):
+       try:
+            # Safe query: prevents crash if 0 rows or multiple rows
+            result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
+            data = result.data
+
+            if data is None:  # No user found
+                return None
+
+            # Create User safely
+            return User(
+                data['id'],
+                data['email'],
+                data['password'],
+                data.get('fullname')  # safer than data['fullname']
+           )
+
+        except APIError:
+            # Optional: log the error or return None for silent fail
+            return None
 
     @staticmethod
     def get_by_id(user_id):
@@ -184,11 +199,6 @@ def about():
 @app.route("/faq")
 def faq():
     return render_template("faq.html")
-
-from flask import request, redirect, flash
-from werkzeug.security import generate_password_hash, check_password_hash
-from postgrest.exceptions import APIError
-from flask_login import login_user
 
 @app.route("/account", methods=["GET", "POST"])
 def account():
