@@ -4,7 +4,7 @@ import traceback
 from io import BytesIO
 from collections import Counter
 
-from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -13,6 +13,9 @@ from PyPDF2 import PdfReader
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from openai import OpenAI
+
+# Added logging
+import logging
 
 # Load environment variables
 load_dotenv()
