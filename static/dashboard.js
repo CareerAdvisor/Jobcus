@@ -33,6 +33,49 @@ document.addEventListener("DOMContentLoaded", function () {
         percentageText.textContent = `${score}%`;
       }
 
+// === Dynamic Resume Analysis Update ===
+function updateDashboardWithAnalysis(data) {
+  // Update Resume Score Circle
+  const progressCircle = document.querySelector(".progress-circle");
+  const progressPath = progressCircle.querySelector(".progress");
+  const percentageText = progressCircle.querySelector(".percentage");
+  
+  const score = data.score || 0;
+  progressPath.setAttribute("stroke-dasharray", `${score}, 100`);
+  percentageText.textContent = `${score}%`;
+
+  // Update Issues List
+  const issuesList = document.getElementById('top-issues');
+  issuesList.innerHTML = '';
+  (data.analysis.issues || []).forEach(issue => {
+    const li = document.createElement('li');
+    li.textContent = issue;
+    issuesList.appendChild(li);
+  });
+
+  // Update Strengths List
+  const strengthsList = document.getElementById('good-points');
+  strengthsList.innerHTML = '';
+  (data.analysis.strengths || []).forEach(point => {
+    const li = document.createElement('li');
+    li.textContent = point;
+    strengthsList.appendChild(li);
+  });
+}
+
+// Fetch updated analysis automatically (when page loads)
+function fetchResumeAnalysis() {
+  fetch('/api/resume-analysis', { method: 'POST', body: JSON.stringify({ text: "" }), headers: { 'Content-Type': 'application/json' } })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.error) {
+        updateDashboardWithAnalysis(data);
+      } else {
+        console.warn("Resume analysis error:", data.error);
+      }
+    });
+}
+  
       // ✅ Populate issues dynamically
       const issuesList = document.getElementById('top-issues');
       if (issuesList) {
