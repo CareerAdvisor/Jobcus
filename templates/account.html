@@ -17,22 +17,36 @@
     {% endif %}
   {% endwith %}
 
-  <form id="accountForm" method="POST" action="/account" class="auth-form">
+  <form id="accountForm" method="POST" action="/account" class="auth-form" autocomplete="on">
     <input type="hidden" name="mode" id="mode" value="login" />
 
     <div class="form-group">
       <label for="email">Email</label>
-      <input type="email" id="email" name="email" placeholder="you@example.com" required />
+      <input type="email" 
+             id="email" 
+             name="email" 
+             placeholder="you@example.com" 
+             autocomplete="email" 
+             required />
     </div>
 
     <div class="form-group">
       <label for="password">Password</label>
-      <input type="password" id="password" name="password" placeholder="Enter your password" required />
+      <input type="password" 
+             id="password" 
+             name="password" 
+             placeholder="Enter your password" 
+             autocomplete="current-password" 
+             required />
     </div>
 
     <div class="form-group hidden" id="nameGroup">
       <label for="name">Full Name</label>
-      <input type="text" id="name" name="name" placeholder="Your full name" />
+      <input type="text" 
+             id="name" 
+             name="name" 
+             placeholder="Your full name"
+             autocomplete="name" />
     </div>
 
     <button type="submit" class="cta-primary" id="submitButton">Sign In</button>
