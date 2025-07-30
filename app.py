@@ -196,18 +196,17 @@ def account():
         mode = request.form.get("mode")
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password")
+        fullname = request.form.get("name")
 
-        # ---------------- SIGNUP ----------------
-        if mode == "signup":
-            fullname = request.form.get("name")
-            hashed_password = generate_password_hash(password)
+        try:
+            # ---------------- SIGNUP ----------------
+            if mode == "signup":
+                hashed_password = generate_password_hash(password)
 
-            try:
                 # Check if email already exists
                 check_user = supabase.table("users").select("id").eq("email", email).maybe_single().execute()
                 if check_user.data is not None:
-                    flash("Email already exists.")
-                    return redirect("/account")
+                    return jsonify({"success": False, "message": "Email already exists."})
 
                 # Insert new user
                 result = supabase.table("users").insert({
@@ -219,23 +218,23 @@ def account():
                 user_data = result.data[0]
                 user = User(user_data['id'], email, hashed_password, fullname)
                 login_user(user)
-                return redirect("/dashboard")
 
-            except APIError:
-                flash("Error creating account. Please try again.")
-                return redirect("/account")
+                return jsonify({"success": True, "message": "Account created successfully!", "redirect": "/dashboard"})
 
-        # ---------------- LOGIN ----------------
-        elif mode == "login":
-            user = User.get_by_email(email)
-            if user and check_password_hash(user.password, password):
-                login_user(user)
-                return redirect("/dashboard")
+            # ---------------- LOGIN ----------------
+            elif mode == "login":
+                user = User.get_by_email(email)
+                if user and check_password_hash(user.password, password):
+                    login_user(user)
+                    return jsonify({"success": True, "message": "Login successful!", "redirect": "/dashboard"})
 
-            flash("Invalid credentials.")
-            return redirect("/account")
+                return jsonify({"success": False, "message": "Invalid credentials."})
 
-    # If GET request
+        except Exception as e:
+            app.logger.error(f"Error handling /account: {str(e)}")
+            return jsonify({"success": False, "message": "Server error."}), 500
+
+    # GET request - return the HTML page
     return render_template("account.html")
 
 # 🔹 New JSON API endpoint (Safe lookup, no redirects)
