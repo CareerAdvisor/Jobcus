@@ -105,13 +105,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // === Resume Analyzer Function (PDF or text) ===
   async function sendAnalysis(file) {
+    if (!file) {
+      alert("Please select a file to analyze.");
+      return;
+    }
+
     const reader = new FileReader();
 
     reader.onload = async function () {
-      const base64Resume = reader.result.split(",")[1];
+      const base64Resume = reader.result.split(",")[1]; // Remove data: prefix
+      if (!base64Resume) {
+        alert("Failed to read file. Please try another PDF or TXT file.");
+        return;
+      }
 
       try {
-        const res = await fetch("/api/resume-analysis", { // ✅ FIXED ENDPOINT
+        const res = await fetch("/api/resume-analysis", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pdf: base64Resume })
@@ -124,6 +133,21 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Error analyzing resume: " + data.error);
           return;
         }
+
+        // ✅ Save result to localStorage for the Dashboard
+        localStorage.setItem("resumeAnalysis", JSON.stringify(data));
+
+        // ✅ Redirect to Dashboard to show the analysis
+        window.location.href = "/dashboard";
+
+      } catch (err) {
+        console.error("Analyzer error:", err);
+        alert("Failed to analyze resume. Please try again.");
+      }
+    };
+
+    reader.readAsDataURL(file);
+  }
 
         // Update Analyzer Section
         analyzerResult.innerHTML = marked.parse(
