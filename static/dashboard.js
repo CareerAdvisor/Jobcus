@@ -1,6 +1,4 @@
-// static/dashboard.js
-
-// — Circular score animation —
+// Animate the circular resume score
 function animateProgressCircle(circle, targetScore) {
   if (!circle) return;
   const path = circle.querySelector(".progress");
@@ -8,56 +6,63 @@ function animateProgressCircle(circle, targetScore) {
   let current = parseInt(text.textContent) || 0;
   const step = targetScore > current ? 1 : -1;
   const anim = setInterval(() => {
-    if (current === targetScore) return clearInterval(anim);
+    if (current === targetScore) {
+      clearInterval(anim);
+      return;
+    }
     current += step;
     path.setAttribute("stroke-dasharray", `${current}, 100`);
     text.textContent = `${current}%`;
   }, 20);
 }
 
-// — Bar animation for skill-gap & interview readiness —
+// Animate a horizontal progress bar
 function animateProgressBar(bar, targetWidth) {
   if (!bar) return;
   let current = parseInt(bar.style.width) || 0;
   const step = targetWidth > current ? 1 : -1;
   const anim = setInterval(() => {
-    if (current === targetWidth) return clearInterval(anim);
+    if (current === targetWidth) {
+      clearInterval(anim);
+      return;
+    }
     current += step;
     bar.style.width = `${current}%`;
   }, 15);
 }
 
-// — Inject the API’s analysis into the UI —
+// Inject analysis data into the DOM
 function updateDashboardWithAnalysis(data) {
-  console.debug("Applying analysis data:", data);
-
-  // 1) Score circle
+  // Resume score circle
   const circle = document.querySelector(".progress-circle");
-  if (circle) animateProgressCircle(circle, data.score || 0);
+  if (circle) {
+    circle.dataset.score = data.score;
+    animateProgressCircle(circle, data.score || 0);
+  }
 
-  // 2) Issues list
+  // Issues
   const issues = document.getElementById("top-issues");
   if (issues) {
     issues.innerHTML = "";
-    ;(data.analysis.issues || []).forEach(i => {
+    (data.analysis.issues || []).forEach(i => {
       const li = document.createElement("li");
       li.textContent = i;
       issues.appendChild(li);
     });
   }
 
-  // 3) Strengths list
+  // Strengths
   const strengths = document.getElementById("good-points");
   if (strengths) {
     strengths.innerHTML = "";
-    ;(data.analysis.strengths || []).forEach(s => {
+    (data.analysis.strengths || []).forEach(s => {
       const li = document.createElement("li");
       li.textContent = s;
       strengths.appendChild(li);
     });
   }
 
-  // 4) Skill-Gap & Interview bars
+  // Skill gap & interview readiness bars
   const bars = document.querySelectorAll(".progress-fill");
   if (bars[1] && data.skill_gap_percent !== undefined) {
     animateProgressBar(bars[1], data.skill_gap_percent);
@@ -67,7 +72,7 @@ function updateDashboardWithAnalysis(data) {
   }
 }
 
-// — Fallback fetch if no LocalStorage data — 
+// Fetch the latest analysis if none stored locally
 function fetchResumeAnalysis() {
   fetch("/api/resume-analysis", {
     method: "POST",
@@ -81,12 +86,13 @@ function fetchResumeAnalysis() {
     .catch(console.error);
 }
 
-// — Handle the “Upload Resume” form on the dashboard —
+// Handle re-uploading a resume from the dashboard
 function handleResumeUpload(e) {
   e.preventDefault();
   const input = document.getElementById("resumeFile");
   if (!input.files.length) {
-    return alert("Please select a resume file to upload.");
+    alert("Please select a resume file to upload.");
+    return;
   }
   const file = input.files[0];
   const reader = new FileReader();
@@ -105,26 +111,27 @@ function handleResumeUpload(e) {
         updateDashboardWithAnalysis(data);
       }
     } catch (err) {
-      console.error("Upload analysis error:", err);
+      console.error("Upload error:", err);
       alert("Server error while analyzing resume.");
     }
   };
   reader.readAsDataURL(file);
 }
 
+// On DOM ready…
 document.addEventListener("DOMContentLoaded", () => {
-  // — 0) Dynamic greeting (unchanged) —
+  // 1) Dynamic greeting
   const greetEl  = document.getElementById("dashboardGreeting");
-  const userName = "{{ current_user.name }}";
+  const userName = greetEl?.dataset.userName || "there";
   const firstVisit = !localStorage.getItem("dashboardVisited");
   if (greetEl) {
-    greetEl.textContent = firstVisit 
-      ? `Welcome, ${userName}` 
+    greetEl.textContent = firstVisit
+      ? `Welcome, ${userName}`
       : `Welcome Back, ${userName}`;
     localStorage.setItem("dashboardVisited", "true");
   }
 
-  // — 1) Initialize everything to 0% so our real data can override it —
+  // 2) Initialize visuals at 0%
   document.querySelectorAll(".progress-circle").forEach(c => {
     c.querySelector(".progress")
      .setAttribute("stroke-dasharray", "0, 100");
@@ -133,13 +140,11 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".progress-fill")
           .forEach(b => b.style.width = "0%");
 
-  // — 2) Hook up the upload form —
+  // 3) Hook up the upload form
   const uploadForm = document.getElementById("resumeUploadForm");
-  if (uploadForm) {
-    uploadForm.addEventListener("submit", handleResumeUpload);
-  }
+  if (uploadForm) uploadForm.addEventListener("submit", handleResumeUpload);
 
-  // — 3) Inject analysis: prefer LocalStorage (post-builder), else fetch_latest —
+  // 4) Populate analysis: prefer localStorage, else fetch_latest
   const saved = localStorage.getItem("resumeAnalysis");
   if (saved) {
     updateDashboardWithAnalysis(JSON.parse(saved));
