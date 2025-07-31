@@ -111,6 +111,17 @@ function fetchResumeAnalysis() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+
+  // ✅ Check if a resume analysis was saved in localStorage (from resume-builder.js)
+  const savedAnalysis = localStorage.getItem("resumeAnalysis");
+  if (savedAnalysis) {
+    const data = JSON.parse(savedAnalysis);
+    updateDashboardWithAnalysis(data);
+
+    // Optional: clear it after showing once
+    localStorage.removeItem("resumeAnalysis");
+  }
+
   // --- Initialize Resume Score Circles ---
   const circles = document.querySelectorAll(".progress-circle");
   circles.forEach(circle => {
@@ -125,7 +136,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const progressBars = document.querySelectorAll(".progress-fill");
   progressBars.forEach(bar => bar.style.width = "0%");
 
-  // --- Fetch initial resume analysis ---
+  // --- Fetch initial resume analysis (fallback) ---
   fetchResumeAnalysis();
 
   // --- User Progress Chart (Bar Chart) ---
@@ -138,7 +149,7 @@ document.addEventListener("DOMContentLoaded", function () {
         labels: ['Resume Score', 'Skill Gap Filled', 'Job Matches'],
         datasets: [{
           label: 'Progress (%)',
-          data: [85, 70, 60], // ✅ Replace with actual values if available
+          data: [85, 70, 60],
           backgroundColor: ['#104879', '#0077b6', '#48cae4'],
           borderWidth: 1,
           borderRadius: 5
@@ -176,7 +187,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const reader = new FileReader();
 
       reader.onload = async function () {
-        const base64Resume = reader.result.split(",")[1]; // Remove the prefix
+        const base64Resume = reader.result.split(",")[1];
 
         const res = await fetch("/api/resume-analysis", {
           method: "POST",
@@ -186,7 +197,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const data = await res.json();
         if (!data.error) {
-          // Ensure default values if missing
           if (data.skill_gap_percent === undefined) data.skill_gap_percent = 65;
           if (data.interview_readiness_percent === undefined) data.interview_readiness_percent = 45;
           updateDashboardWithAnalysis(data);
