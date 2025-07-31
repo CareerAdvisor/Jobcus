@@ -1,25 +1,23 @@
 {% extends "base.html" %}
+
 {% block title %}My Dashboard – Jobcus{% endblock %}
 
 {% block content %}
 
-<!-- Dashboard Header with Navigation -->
+<!-- Header Navigation -->
 <header class="dashboard-header">
-  <div class="dashboard-nav-left">
-    <button onclick="window.history.back()" class="nav-btn" title="Go Back">⬅️</button>
-    <a href="/" class="nav-btn" title="Home">🏠</a>
+  <div class="nav-left">
+    <button class="nav-btn" onclick="window.history.back()">⬅ Back</button>
+    <a href="/" class="nav-btn">🏠 Home</a>
   </div>
-  
-  <h1 class="dashboard-title">Welcome Back {{ current_user.name }}</h1>
-  
-  <div class="dashboard-nav-right">
-    <a href="/logout" class="nav-btn logout-btn" title="Logout">🚪 Logout</a>
+  <div class="nav-right">
+    <button class="logout-btn" onclick="window.location.href='/logout'">Logout</button>
   </div>
 </header>
 
-<p class="dashboard-subtitle">Track your career growth and insights powered by Jobcus AI</p>
-
 <section class="dashboard-container">
+  <h1 class="dashboard-title">Welcome Back, {{ current_user.name }}</h1>
+  <p class="dashboard-subtitle">Track your career growth and insights powered by Jobcus AI</p>
 
   <div class="dashboard-cards">
 
@@ -45,7 +43,6 @@
       <h2>Steps to Improve Your Resume</h2>
       <p>Based on ATS analysis, here are the key points:</p>
 
-      <!-- Top Fixes -->
       <div class="analysis-issues">
         <h3>⚠️ Issues Found</h3>
         <ul id="top-issues">
@@ -56,7 +53,6 @@
         <button class="cta-primary">Show More Issues</button>
       </div>
 
-      <!-- Strengths -->
       <div class="analysis-strengths">
         <h3>✅ What You Did Well</h3>
         <ul id="good-points">
@@ -86,7 +82,7 @@
       <p class="metric-note">Practiced 3 out of 10 scenarios</p>
       <a href="/interview-coach" class="dashboard-link">Practice Now</a>
     </div>
-
+    
   </div>
 </section>
 
