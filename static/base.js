@@ -1,60 +1,72 @@
-// === Mobile Menu Toggle ===
+// base.js
+
+// 1) Initialize AOS
+AOS.init();
+
+// 2) Dark mode toggle
+;(function() {
+  const btn = document.getElementById('darkModeToggle');
+  const dark = localStorage.getItem('darkMode') === 'true';
+  if (dark) document.body.classList.add('dark-mode');
+  btn?.addEventListener('click', () => {
+    const isNowDark = document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', isNowDark);
+  });
+})();
+
+// 3) Mobile menu toggle
 function toggleMobileMenu() {
-  const menu = document.getElementById("mobileMenu");
-  menu?.classList.toggle("show");
+  document.getElementById('mobileMenu')?.classList.toggle('show');
 }
 
-// === Features Dropdown & Mobile Menu Close ===
-document.addEventListener("click", function (event) {
-  // Mobile menu auto-close
-  const mobileMenu = document.getElementById("mobileMenu");
-  const hamburger = document.querySelector(".hamburger");
+// 4) Global click handler for closing menus
+document.addEventListener('click', (e) => {
+  // a) Close mobile menu if click outside
+  const mobileMenu = document.getElementById('mobileMenu'),
+        hamburger = document.querySelector('.hamburger');
   if (
-    mobileMenu?.classList.contains("show") &&
-    !mobileMenu.contains(event.target) &&
-    !hamburger.contains(event.target)
+    mobileMenu?.classList.contains('show') &&
+    !mobileMenu.contains(e.target) &&
+    !hamburger.contains(e.target)
   ) {
-    mobileMenu.classList.remove("show");
+    mobileMenu.classList.remove('show');
   }
 
-  // Features submenu
-  document.querySelectorAll(".dropdown-content").forEach((dropdown) => {
-    const btn = dropdown.previousElementSibling;
-    if (
-      !dropdown.contains(event.target) &&
-      !btn.contains(event.target)
-    ) {
-      dropdown.style.display = "none";
+  // b) Close features dropdowns
+  document.querySelectorAll('.dropdown-content').forEach(drop => {
+    const btn = drop.previousElementSibling;
+    if (!drop.contains(e.target) && !btn.contains(e.target)) {
+      drop.style.display = 'none';
     }
   });
-  if (event.target.matches(".dropbtn")) {
-    const dd = event.target.nextElementSibling;
-    dd.style.display = dd.style.display === "flex" ? "none" : "flex";
-  }
 
-  // User menu auto-close
-  const userMenu = document.getElementById("userMenu");
-  const userIcon = document.getElementById("userIcon");
+  // c) Close user menu
+  const userMenu = document.getElementById('userMenu'),
+        userIcon = document.getElementById('userIcon');
   if (
-    userMenu?.classList.contains("show") &&
-    !userMenu.contains(event.target) &&
-    !userIcon.contains(event.target)
+    userMenu?.classList.contains('show') &&
+    !userMenu.contains(e.target) &&
+    !userIcon.contains(e.target)
   ) {
-    userMenu.classList.remove("show");
+    userMenu.classList.remove('show');
   }
 });
 
-// === User Menu Toggle ===
-document.getElementById("userIcon")?.addEventListener("click", function (e) {
-  e.stopPropagation();            // prevent the document click handler
-  const menu = document.getElementById("userMenu");
-  menu?.classList.toggle("show");
+// 5) Features dropdown toggle
+document.querySelectorAll('.dropbtn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const drop = e.target.nextElementSibling;
+    drop.style.display = drop.style.display === 'flex' ? 'none' : 'flex';
+  });
 });
 
-// === Hide User Menu on Scroll ===
-window.addEventListener("scroll", function () {
-  const menu = document.getElementById("userMenu");
-  if (menu?.classList.contains("show")) {
-    menu.classList.remove("show");
-  }
+// 6) User‐icon dropdown toggle
+document.getElementById('userIcon')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('userMenu')?.classList.toggle('show');
+});
+
+// 7) Hide user menu on scroll
+window.addEventListener('scroll', () => {
+  document.getElementById('userMenu')?.classList.remove('show');
 });
