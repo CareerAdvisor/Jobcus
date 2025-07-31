@@ -1,211 +1,151 @@
 // dashboard.js
 
-// --- Toggle visibility for any dashboard section ---
-function toggleSection(id) {
-  const section = document.getElementById(id);
-  if (section) {
-    section.style.display = section.style.display === 'none' ? 'block' : 'none';
-  }
-}
+// — Helpers for your existing analysis logic —
 
-// === Animate Progress Circle Smoothly ===
+// Animate the circular score
 function animateProgressCircle(circle, targetScore) {
   if (!circle) return;
-
   const progressPath = circle.querySelector(".progress");
   const percentageText = circle.querySelector(".percentage");
-
-  let currentScore = parseInt(percentageText.textContent) || 0;
-  const step = targetScore > currentScore ? 1 : -1;
-
-  const animation = setInterval(() => {
-    if (currentScore === targetScore) {
-      clearInterval(animation);
-      return;
-    }
-    currentScore += step;
-    progressPath.setAttribute("stroke-dasharray", `${currentScore}, 100`);
-    percentageText.textContent = `${currentScore}%`;
+  let current = parseInt(percentageText.textContent) || 0;
+  const step = targetScore > current ? 1 : -1;
+  const anim = setInterval(() => {
+    if (current === targetScore) return clearInterval(anim);
+    current += step;
+    progressPath.setAttribute("stroke-dasharray", `${current}, 100`);
+    percentageText.textContent = `${current}%`;
   }, 20);
 }
 
-// === Animate Progress Bar Smoothly (Skill Gap / Interview Readiness) ===
+// Animate the skill-gap & interview bars
 function animateProgressBar(bar, targetWidth) {
   if (!bar) return;
-
-  let currentWidth = parseInt(bar.style.width) || 0;
-  const step = targetWidth > currentWidth ? 1 : -1;
-
-  const animation = setInterval(() => {
-    if (currentWidth === targetWidth) {
-      clearInterval(animation);
-      return;
-    }
-    currentWidth += step;
-    bar.style.width = `${currentWidth}%`;
+  let current = parseInt(bar.style.width) || 0;
+  const step = targetWidth > current ? 1 : -1;
+  const anim = setInterval(() => {
+    if (current === targetWidth) return clearInterval(anim);
+    current += step;
+    bar.style.width = `${current}%`;
   }, 15);
 }
 
-// === Dynamic Resume Analysis Update ===
+// Inject analysis results into the page
 function updateDashboardWithAnalysis(data) {
-  // --- Resume Score Circle ---
-  const progressCircle = document.querySelector(".progress-circle");
-  if (progressCircle) {
-    const score = data.score || 0;
-    animateProgressCircle(progressCircle, score);
-  }
+  // Resume circle
+  const circle = document.querySelector(".progress-circle");
+  if (circle) animateProgressCircle(circle, data.score || 0);
 
-  // --- Skill Gap Progress Bar ---
-  const skillGapBar = document.querySelector(".skill-gap-card .progress-fill");
-  if (skillGapBar && data.skill_gap_percent !== undefined) {
-    animateProgressBar(skillGapBar, data.skill_gap_percent);
-  }
-
-  // --- Interview Readiness Progress Bar ---
-  const interviewBar = document.querySelector(".interview-readiness-card .progress-fill");
-  if (interviewBar && data.interview_readiness_percent !== undefined) {
-    animateProgressBar(interviewBar, data.interview_readiness_percent);
-  }
-
-  // --- Issues List ---
-  const issuesList = document.getElementById('top-issues');
+  // Issues
+  const issuesList = document.getElementById("top-issues");
   if (issuesList) {
-    issuesList.innerHTML = '';
-    (data.analysis.issues || []).forEach(issue => {
-      const li = document.createElement('li');
-      li.textContent = issue;
+    issuesList.innerHTML = "";
+    (data.analysis.issues || []).forEach(i => {
+      const li = document.createElement("li");
+      li.textContent = i;
       issuesList.appendChild(li);
     });
   }
 
-  // --- Strengths List ---
-  const strengthsList = document.getElementById('good-points');
+  // Strengths
+  const strengthsList = document.getElementById("good-points");
   if (strengthsList) {
-    strengthsList.innerHTML = '';
-    (data.analysis.strengths || []).forEach(point => {
-      const li = document.createElement('li');
-      li.textContent = point;
+    strengthsList.innerHTML = "";
+    (data.analysis.strengths || []).forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = s;
       strengthsList.appendChild(li);
     });
   }
+
+  // Skill-Gap bar
+  const skillBar = document.querySelectorAll(".dashboard-card .progress-fill")[1];
+  if (skillBar && data.skill_gap_percent !== undefined) {
+    animateProgressBar(skillBar, data.skill_gap_percent);
+  }
+
+  // Interview-Readiness bar
+  const interviewBar = document.querySelectorAll(".dashboard-card .progress-fill")[2];
+  if (interviewBar && data.interview_readiness_percent !== undefined) {
+    animateProgressBar(interviewBar, data.interview_readiness_percent);
+  }
 }
 
-// === Fetch analysis automatically on page load ===
+// Fallback fetch if no localStorage result
 function fetchResumeAnalysis() {
-  fetch('/api/resume-analysis', {
-    method: 'POST',
-    body: JSON.stringify({ fetch_latest: true }), // ✅ New key
-    headers: { 'Content-Type': 'application/json' }
+  fetch("/api/resume-analysis", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fetch_latest: true })
   })
-    .then(res => res.json())
+    .then(r => r.json())
     .then(data => {
       if (!data.error) {
         if (data.skill_gap_percent === undefined) data.skill_gap_percent = 65;
         if (data.interview_readiness_percent === undefined) data.interview_readiness_percent = 45;
         updateDashboardWithAnalysis(data);
-      } else {
-        console.warn("Resume analysis error:", data.error);
       }
     })
-    .catch(err => console.error("Resume analysis fetch error:", err));
+    .catch(console.error);
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+// — Page setup & custom features ——
+document.addEventListener("DOMContentLoaded", () => {
+  // 1) Nav buttons
+  document.getElementById("backButton")
+    ?.addEventListener("click", () => window.history.back());
+  document.getElementById("homeButton")
+    ?.addEventListener("click", () => window.location.href = "/");
+  document.getElementById("logoutButton")
+    ?.addEventListener("click", () => window.location.href = "/logout");
 
-  // ✅ Check if a resume analysis was saved in localStorage (from resume-builder.js)
-  const savedAnalysis = localStorage.getItem("resumeAnalysis");
-  if (savedAnalysis) {
-    const data = JSON.parse(savedAnalysis);
-    updateDashboardWithAnalysis(data);
-
-    // Optional: clear it after showing once
-    localStorage.removeItem("resumeAnalysis");
+  // 2) Dark-mode toggle
+  const dmToggle = document.getElementById("darkModeToggle");
+  const root       = document.documentElement;
+  const isDark     = localStorage.getItem("darkMode") === "true";
+  if (isDark) {
+    root.classList.add("dark-mode");
+    dmToggle.textContent = "☀️";
   }
-
-  // --- Initialize Resume Score Circles ---
-  const circles = document.querySelectorAll(".progress-circle");
-  circles.forEach(circle => {
-    const value = parseInt(circle.dataset.score || "0");
-    const progressPath = circle.querySelector(".progress");
-    const percentageText = circle.querySelector(".percentage");
-    progressPath.setAttribute("stroke-dasharray", `${value}, 100`);
-    percentageText.textContent = `${value}%`;
+  dmToggle?.addEventListener("click", () => {
+    const nowDark = root.classList.toggle("dark-mode");
+    localStorage.setItem("darkMode", nowDark);
+    dmToggle.textContent = nowDark ? "☀️" : "🌙";
   });
 
-  // --- Initialize Progress Bars (start from 0%) ---
-  const progressBars = document.querySelectorAll(".progress-fill");
-  progressBars.forEach(bar => bar.style.width = "0%");
-
-  // --- Fetch initial resume analysis (fallback) ---
-  fetchResumeAnalysis();
-
-  // --- User Progress Chart (Bar Chart) ---
-  const chartCanvas = document.getElementById('userProgressChart');
-  if (chartCanvas) {
-    const ctx = chartCanvas.getContext('2d');
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Resume Score', 'Skill Gap Filled', 'Job Matches'],
-        datasets: [{
-          label: 'Progress (%)',
-          data: [85, 70, 60],
-          backgroundColor: ['#104879', '#0077b6', '#48cae4'],
-          borderWidth: 1,
-          borderRadius: 5
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: { enabled: true }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            max: 100,
-            ticks: { stepSize: 20 }
-          }
-        }
-      }
-    });
+  // 3) Dynamic greeting
+  const greetEl   = document.getElementById("dashboardGreeting");
+  const userName  = "{{ current_user.name }}";
+  const visited   = localStorage.getItem("dashboardVisited");
+  if (greetEl) {
+    if (!visited) {
+      greetEl.textContent = `Welcome, ${userName}`;
+      localStorage.setItem("dashboardVisited", "true");
+    } else {
+      greetEl.textContent = `Welcome Back, ${userName}`;
+    }
   }
 
-  // --- Resume Upload Form Event Listener ---
-  const uploadForm = document.getElementById("resumeUploadForm");
-  if (uploadForm) {
-    uploadForm.addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const fileInput = document.getElementById("resumeFile");
-      if (!fileInput || !fileInput.files.length) {
-        return alert("Please select a resume file");
-      }
-
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-
-      reader.onload = async function () {
-        const base64Resume = reader.result.split(",")[1];
-
-        const res = await fetch("/api/resume-analysis", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pdf: base64Resume })
-        });
-
-        const data = await res.json();
-        if (!data.error) {
-          if (data.skill_gap_percent === undefined) data.skill_gap_percent = 65;
-          if (data.interview_readiness_percent === undefined) data.interview_readiness_percent = 45;
-          updateDashboardWithAnalysis(data);
-        } else {
-          alert("Error analyzing resume: " + data.error);
-        }
-      };
-
-      reader.readAsDataURL(file);
-    });
+  // 4) Resume analysis flow
+  //    If the resume-builder saved a result, use it…
+  const saved = localStorage.getItem("resumeAnalysis");
+  if (saved) {
+    updateDashboardWithAnalysis(JSON.parse(saved));
+    localStorage.removeItem("resumeAnalysis");
+  } else {
+    // …otherwise fallback to pulling the latest from the server
+    fetchResumeAnalysis();
   }
+
+  // 5) Initialize the SVG circles (in case you want a default before anim)
+  document.querySelectorAll(".progress-circle").forEach(c => {
+    const v = parseInt(c.dataset.score || "0");
+    c.querySelector(".progress")
+     .setAttribute("stroke-dasharray", `${v}, 100`);
+    c.querySelector(".percentage")
+     .textContent = `${v}%`;
+  });
+
+  // 6) Set all bar widths to 0 so they animate in
+  document.querySelectorAll(".progress-fill")
+    .forEach(b => b.style.width = "0%");
 });
