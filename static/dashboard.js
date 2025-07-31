@@ -8,17 +8,33 @@ function toggleSection(id) {
   }
 }
 
+// === Animate Progress Circle Smoothly ===
+function animateProgressCircle(circle, targetScore) {
+  if (!circle) return;
+
+  const progressPath = circle.querySelector(".progress");
+  const percentageText = circle.querySelector(".percentage");
+
+  let currentScore = parseInt(percentageText.textContent) || 0;
+  const step = targetScore > currentScore ? 1 : -1; // determine direction
+
+  const animation = setInterval(() => {
+    if (currentScore === targetScore) {
+      clearInterval(animation);
+      return;
+    }
+    currentScore += step;
+    progressPath.setAttribute("stroke-dasharray", `${currentScore}, 100`);
+    percentageText.textContent = `${currentScore}%`;
+  }, 20); // adjust speed here (20ms per step)
+}
+
 // === Dynamic Resume Analysis Update ===
 function updateDashboardWithAnalysis(data) {
-  // Update Resume Score Circle
   const progressCircle = document.querySelector(".progress-circle");
   if (progressCircle) {
-    const progressPath = progressCircle.querySelector(".progress");
-    const percentageText = progressCircle.querySelector(".percentage");
-
     const score = data.score || 0;
-    progressPath.setAttribute("stroke-dasharray", `${score}, 100`);
-    percentageText.textContent = `${score}%`;
+    animateProgressCircle(progressCircle, score);
   }
 
   // Update Issues List
@@ -63,10 +79,10 @@ function fetchResumeAnalysis() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  // --- Animate Resume Score Circles ---
+  // --- Initialize Progress Circles ---
   const circles = document.querySelectorAll(".progress-circle");
   circles.forEach(circle => {
-    const value = circle.dataset.score || 0;
+    const value = parseInt(circle.dataset.score || "0");
     const progressPath = circle.querySelector(".progress");
     const percentageText = circle.querySelector(".percentage");
     progressPath.setAttribute("stroke-dasharray", `${value}, 100`);
