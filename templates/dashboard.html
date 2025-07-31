@@ -1,73 +1,60 @@
 {% extends "base.html" %}
 
 {% block title %}My Dashboard – Jobcus{% endblock %}
+{% block body_class %}dashboard-page{% endblock %}
 
 {% block content %}
-
-<!-- Header Navigation -->
-<header class="dashboard-header">
-  <div class="nav-left">
-    <button id="backButton" class="nav-btn">⬅ Back</button>
-    <button id="homeButton" class="nav-btn">🏠 Home</button>
-  </div>
-  <div class="nav-right">
-    <button id="darkModeToggle" class="nav-btn">🌙</button>
-    <button id="logoutButton" class="logout-btn">Logout</button>
-  </div>
-</header>
-
 <section class="dashboard-container">
-  <!-- Greeting (injected by JS) -->
-  <h1 id="dashboardGreeting" class="dashboard-title"></h1>
+  <!-- Greeting placeholder; JS will fill this from data-user-name -->
+  <h1 id="dashboardGreeting"
+      data-user-name="{{ current_user.fullname or current_user.email }}"
+      class="dashboard-title">
+    <!-- injected by JS -->
+  </h1>
   <p class="dashboard-subtitle">
     Track your career growth and insights powered by Jobcus AI
   </p>
 
   <div class="dashboard-cards">
 
-    <!-- Resume Score -->
+    <!-- Resume Score Card -->
     <div class="dashboard-card">
       <h3>📄 Resume Score</h3>
-      <div class="progress-circle" data-score="78">
+      <div class="progress-circle" data-score="0">
         <svg viewBox="0 0 36 36">
           <path class="bg"
-            d="M18 2.0845
-               a 15.9155 15.9155 0 0 1 0 31.831
-               a 15.9155 15.9155 0 0 1 0 -31.831"/>
-          <path class="progress" stroke-dasharray="78, 100"
-            d="M18 2.0845
-               a 15.9155 15.9155 0 0 1 0 31.831
-               a 15.9155 15.9155 0 0 1 0 -31.831"/>
-          <text x="18" y="20.35" class="percentage">78%</text>
+                d="M18 2.0845
+                   a 15.9155 15.9155 0 0 1 0 31.831
+                   a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <path class="progress" stroke-dasharray="0, 100"
+                d="M18 2.0845
+                   a 15.9155 15.9155 0 0 1 0 31.831
+                   a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <text x="18" y="20.35" class="percentage">0%</text>
         </svg>
-        <p class="metric-note">Last analyzed: 2 days ago</p>
+        <p class="metric-note">Last analyzed: just now</p>
       </div>
     </div>
 
-    <!-- Resume Upload Form -->
+    <!-- Dashboard Upload Form -->
     <form id="resumeUploadForm" class="resume-upload">
       <input type="file" id="resumeFile" accept=".pdf,.txt" />
       <button type="submit" class="cta-primary">Upload Resume</button>
     </form>
 
-    <!-- Resume Analysis Insights -->
+    <!-- Analysis Insights -->
     <section class="resume-analysis">
       <h2>Steps to Improve Your Resume</h2>
       <p>Based on ATS analysis, here are the key points:</p>
 
       <div class="analysis-issues">
         <h3>⚠️ Issues Found</h3>
-        <ul id="top-issues">
-          <!-- injected by JS -->
-        </ul>
-        <button class="cta-primary">Show More Issues</button>
+        <ul id="top-issues"></ul>
       </div>
 
       <div class="analysis-strengths">
         <h3>✅ What You Did Well</h3>
-        <ul id="good-points">
-          <!-- injected by JS -->
-        </ul>
+        <ul id="good-points"></ul>
       </div>
     </section>
 
@@ -77,7 +64,7 @@
       <div class="progress-bar">
         <div class="progress-fill" style="width: 0%;"></div>
       </div>
-      <p class="metric-note">65% skill match for your target role</p>
+      <p class="metric-note">0% skill match for your target role</p>
       <a href="/skill-gap" class="dashboard-link">Improve Skills</a>
     </div>
 
@@ -87,16 +74,14 @@
       <div class="progress-bar">
         <div class="progress-fill" style="width: 0%;"></div>
       </div>
-      <p class="metric-note">Practiced 3 out of 10 scenarios</p>
+      <p class="metric-note">0% practiced scenarios</p>
       <a href="/interview-coach" class="dashboard-link">Practice Now</a>
     </div>
 
   </div>
 </section>
-
 {% endblock %}
 
 {% block scripts %}
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 {% endblock %}
