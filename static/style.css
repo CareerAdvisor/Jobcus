@@ -303,6 +303,7 @@ header {
   margin: 40px auto;
   padding: 20px;
   font-family: 'Inter', sans-serif;
+  text-align: center;
 }
 
 .dashboard-container h1 {
@@ -320,11 +321,13 @@ header {
 .dashboard-title {
   font-size: 2em;
   margin-bottom: 10px;
+  font-weight: 700;
+  color: #104879;
 }
 
 .dashboard-subtitle {
   color: #555;
-  margin-bottom: 30px;
+  margin-bottom: 2rem;
 }
 
 .dashboard-card {
@@ -367,6 +370,7 @@ header {
   color: #104879;
 }
 
+/* Progress Bar */
 .progress-bar {
   width: 100%;
   height: 16px;
@@ -380,6 +384,8 @@ header {
   height: 100%;
   background-color: #104879;
   transition: width 0.5s ease;
+  border-radius: 20px;
+  width: 0%;
 }
 
 .progress-circle {
@@ -470,11 +476,29 @@ header {
   display: none;
 }
 
+/* Resume Analysis Section */
+.resume-analysis {
+  grid-column: 1 / -1;
+  text-align: left;
+  background: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.resume-analysis h2 {
+  color: #104879;
+}
+
+.analysis-issues, .analysis-strengths {
+  margin-top: 1rem;
+}
+
+/* Header Navigation */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
+  padding: 1rem 2rem;
   background: #104879;
   color: white;
   border-radius: 8px;
@@ -491,7 +515,7 @@ header {
   background: #ffffff22;
   border: none;
   color: white;
-  padding: 8px 12px;
+  padding: 0.5rem 1rem;
   border-radius: 6px;
   cursor: pointer;
   font-size: 16px;
@@ -506,7 +530,12 @@ header {
 }
 
 .logout-btn {
-  background: #ff4b5c88;
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 .logout-btn:hover {
