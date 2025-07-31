@@ -16,54 +16,31 @@
   <button id="darkModeToggle" title="Toggle dark mode">🌓</button>
 
   <div class="page-container">
-    <header class="site-header">  
-      <div class="header-left">
-        {% block header_icon %}{% endblock %}
-      </div>
-        
-      <div class="header-logo"> 
+
+    <!-- ✅ Updated Header with Only User Menu -->
+    <header class="main-header">
+      <div class="logo">
         <a href="/">
-          <img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" class="logo-img" />
+          <img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus Logo" class="logo-img">
         </a>
       </div>
 
-      <div class="header-right">
+      <nav class="user-nav">
         {% if current_user.is_authenticated %}
-        <div class="user-dropdown">
-          <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="User Icon" class="header-user-icon" onclick="toggleUserMenu()" title="Account" />
-          <div class="user-menu" id="userMenu" style="display: none;">
-            <a href="/dashboard">👤 Dashboard</a>
-            <a href="/logout">🚪 Logout</a>
-          </div>
+        <div class="user-menu">
+          <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="User" id="userMenuToggle" class="user-icon" />
+          <ul class="user-dropdown" id="userDropdownMenu">
+            <li><a href="/profile">Profile</a></li>
+            <li><a href="/settings">Settings</a></li>
+            <li><a href="/logout">Logout</a></li>
+          </ul>
         </div>
         {% else %}
         <a href="/account" class="header-login-btn" title="Sign In / Sign Up">
-          <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="Login" class="header-user-icon" />
+          <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="Login" class="user-icon" />
         </a>
         {% endif %}
-
-        <div class="hamburger" onclick="toggleMobileMenu()">
-          <div></div><div></div><div></div>
-        </div>
-      </div>
-
-      <div class="mobile-nav" id="mobileMenu">
-        <a href="/resume-builder">Resume Builder</a>
-        <a href="/interview-coach">Interview Coach</a>
-        <a href="/skill-gap">Skill Gap Analysis</a>
-
-        <!-- Features Dropdown -->
-        <div class="dropdown">
-          <button class="dropbtn">Features ▾</button>
-          <div class="dropdown-content">
-            <a href="/chat">Jobcus AI</a>
-            <a href="/job-insights">Job Insights</a>
-          </div>
-        </div>
-
-        <a href="/employers">Partner with Us</a>
-        <a href="/faq">FAQs</a>
-      </div>
+      </nav>
     </header>
 
     <main>
@@ -87,6 +64,7 @@
   <script>
     AOS.init();
 
+    // ✅ Dark Mode Toggle
     const toggleBtn = document.getElementById('darkModeToggle');
     const isDark = localStorage.getItem('darkMode') === 'true';
     if (isDark) document.body.classList.add('dark-mode');
@@ -95,18 +73,23 @@
       localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
     });
 
-    // Toggle user menu dropdown
-    function toggleUserMenu() {
-      const menu = document.getElementById("userMenu");
-      menu.style.display = menu.style.display === "block" ? "none" : "block";
-    }
+    // ✅ Updated User Menu Toggle
+    document.addEventListener("DOMContentLoaded", function () {
+      const userMenuToggle = document.getElementById("userMenuToggle");
+      const userDropdownMenu = document.getElementById("userDropdownMenu");
 
-    // Close user menu if clicking outside
-    document.addEventListener("click", function (event) {
-      const dropdown = document.querySelector(".user-dropdown");
-      const menu = document.getElementById("userMenu");
-      if (menu && !dropdown.contains(event.target)) {
-        menu.style.display = "none";
+      if (userMenuToggle && userDropdownMenu) {
+        userMenuToggle.addEventListener("click", () => {
+          userDropdownMenu.style.display =
+            userDropdownMenu.style.display === "block" ? "none" : "block";
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", (e) => {
+          if (!userMenuToggle.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+            userDropdownMenu.style.display = "none";
+          }
+        });
       }
     });
   </script>
