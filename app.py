@@ -1,51 +1,143 @@
-# --- Existing imports ---
+# app.py
+
 import os
 import base64
 import traceback
 from io import BytesIO
 from collections import Counter
+import json
+import requests  # ← added so fetch_* helpers work
 
-from flask import Flask, request, jsonify, render_template, redirect, url_for, flash, session
+from flask import (
+    Flask, request, jsonify, render_template,
+    redirect, session
+)
 from flask_cors import CORS
-from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+from flask_login import (
+    LoginManager, login_user, logout_user,
+    current_user, login_required, UserMixin
+)
 from werkzeug.security import generate_password_hash, check_password_hash
 from postgrest.exceptions import APIError
 from PyPDF2 import PdfReader
-from supabase import create_client, Client
+from supabase import create_client
 from dotenv import load_dotenv
 from openai import OpenAI
-import logging  
+import logging
 
-# --- Environment and app setup ---
+# --- Environment & app setup ---
 load_dotenv()
-
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 CORS(app)
-
-# Enable logging
 logging.basicConfig(level=logging.INFO)
 
+# --- OpenAI client ---
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Supabase setup
+# --- Supabase client ---
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 supabase = create_client(supabase_url, supabase_key)
 
+# --- External API constants ---
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
-ADZUNA_API_URL = "https://api.adzuna.com/v1/api/jobs"
-ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
-ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
-JSEARCH_API_KEY = os.getenv("JSEARCH_API_KEY")
+ADZUNA_API_URL   = "https://api.adzuna.com/v1/api/jobs"
+ADZUNA_APP_ID    = os.getenv("ADZUNA_APP_ID")
+ADZUNA_APP_KEY   = os.getenv("ADZUNA_APP_KEY")
+JSEARCH_API_KEY  = os.getenv("JSEARCH_API_KEY")
 JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
 
-JOB_TITLES = ["Software Engineer", "Data Analyst", "Project Manager", "UX Designer", "Cybersecurity Analyst"]
+JOB_TITLES = [
+    "Software Engineer", "Data Analyst",
+    "Project Manager", "UX Designer", "Cybersecurity Analyst"
+]
 KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
 
-# Fetch Adzuna salary info for multiple titles
+
+# --- Helpers ---
+
+def get_user_resume_text(user_id: str) -> str:
+    """Fetch the latest stored resume text for a user from Supabase."""
+    res = supabase.table("resumes")\
+                  .select("text")\
+                  .eq("user_id", user_id)\
+                  .maybe_single()\
+                  .execute()
+    data = res.data
+    return data.get("text") if data and "text" in data else None
+
+
+# Job-search helpers for /jobs
+def fetch_remotive_jobs(query: str):
+    try:
+        r = requests.get(REMOTIVE_API_URL, params={"search": query})
+        jobs = r.json().get("jobs", [])
+        return [
+            {
+                "id": job.get("id"),
+                "title": job.get("title"),
+                "company_name": job.get("company_name"),
+                "location": job.get("candidate_required_location"),
+                "url": job.get("url")
+            }
+            for job in jobs
+        ]
+    except:
+        return []
+
+def fetch_adzuna_jobs(query: str, location: str, job_type: str):
+    country = "gb"
+    params = {
+        "app_id": ADZUNA_APP_ID,
+        "app_key": ADZUNA_APP_KEY,
+        "what": query,
+        "where": location,
+        "results_per_page": 10
+    }
+    try:
+        r = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params=params)
+        results = r.json().get("results", [])
+        return [
+            {
+                "id": job.get("id"),
+                "title": job.get("title"),
+                "company": job.get("company", {}).get("display_name"),
+                "location": job.get("location", {}).get("display_name"),
+                "url": job.get("redirect_url")
+            }
+            for job in results
+        ]
+    except:
+        return []
+
+def fetch_jsearch_jobs(query: str):
+    url = "https://jsearch.p.rapidapi.com/search"
+    headers = {
+        "X-RapidAPI-Key": JSEARCH_API_KEY,
+        "X-RapidAPI-Host": JSEARCH_API_HOST
+    }
+    params = {"query": query, "num_pages": 1}
+    try:
+        r = requests.get(url, headers=headers, params=params)
+        data = r.json().get("data", [])
+        return [
+            {
+                "id": job.get("job_id"),
+                "title": job.get("job_title"),
+                "company": job.get("employer_name"),
+                "location": job.get("job_city"),
+                "url": job.get("job_apply_link")
+            }
+            for job in data
+        ]
+    except:
+        return []
+
+
+# Analytics helpers
 def fetch_salary_data():
-    salary_data = []
+    data = []
     country = "gb"
     for title in JOB_TITLES:
         params = {
@@ -55,76 +147,66 @@ def fetch_salary_data():
             "results_per_page": 1
         }
         try:
-            response = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params=params)
-            result = response.json().get("results", [])
-            if result:
-                avg = result[0].get("salary_is_predicted") == "1" and float(result[0].get("salary_min")) + float(result[0].get("salary_max")) / 2 or result[0].get("salary_average")
-                salary_data.append(avg or 0)
+            r = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params=params)
+            results = r.json().get("results", [])
+            if results:
+                job = results[0]
+                low = float(job.get("salary_min", 0))
+                high = float(job.get("salary_max", 0))
+                data.append(((low + high) / 2) or 0)
             else:
-                salary_data.append(0)
+                data.append(0)
         except:
-            salary_data.append(0)
-    return salary_data
+            data.append(0)
+    return data
 
-# Count jobs for each title using Remotive
 def fetch_job_counts():
     counts = []
     for title in JOB_TITLES:
         try:
-            res = requests.get(REMOTIVE_API_URL, params={"search": title})
-            jobs = res.json().get("jobs", [])
-            counts.append(len(jobs))
+            r = requests.get(REMOTIVE_API_URL, params={"search": title})
+            counts.append(len(r.json().get("jobs", [])))
         except:
             counts.append(0)
     return counts
 
-# Extract common skills from job descriptions
-KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
-
 def fetch_skill_trends():
-    keyword_freq = Counter()
+    freq = Counter()
     try:
-        res = requests.get(REMOTIVE_API_URL, params={"limit": 50})
-        jobs = res.json().get("jobs", [])
-        for job in jobs:
+        r = requests.get(REMOTIVE_API_URL, params={"limit": 50})
+        for job in r.json().get("jobs", []):
             text = (job.get("description") or "").lower()
             for key in KEYWORDS:
                 if key.lower() in text:
-                    keyword_freq[key] += 1
+                    freq[key] += 1
     except:
         pass
-    return keyword_freq
-
-# Top locations from Adzuna
+    return freq
 
 def fetch_location_counts():
-    location_counter = Counter()
+    freq = Counter()
     country = "gb"
     try:
-        params = {
+        r = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params={
             "app_id": ADZUNA_APP_ID,
             "app_key": ADZUNA_APP_KEY,
             "results_per_page": 30
-        }
-        res = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params=params)
-        results = res.json().get("results", [])
-        for job in results:
+        })
+        for job in r.json().get("results", []):
             loc = job.get("location", {}).get("display_name")
             if loc:
-                location_counter[loc] += 1
+                freq[loc] += 1
     except:
         pass
-    return location_counter.most_common(5)
+    return freq.most_common(5)
 
-# Flask-Login Setup
+
+# --- Flask-Login setup ---
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'account'
 
-# Supabase-backed User class
-from flask_login import UserMixin
-
-class User:
+class User(UserMixin):
     def __init__(self, user_id, email, password, fullname=None):
         self.id = user_id
         self.email = email
@@ -133,22 +215,26 @@ class User:
 
     @staticmethod
     def get_by_email(email: str):
-        result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
-        data = result.data
-        if data:
-            return User(data["id"], data["email"], data["password"], data.get("fullname"))
-        return None
+        r = supabase.table("users")\
+                     .select("*")\
+                     .eq("email", email)\
+                     .maybe_single()\
+                     .execute()
+        d = r.data
+        return User(d["id"], d["email"], d["password"], d.get("fullname")) if d else None
 
 @login_manager.user_loader
 def load_user(user_id):
-    # Fetch user by ID from Supabase if necessary
-    result = supabase.table("users").select("*").eq("id", user_id).maybe_single().execute()
-    data = result.data
-    if data:
-        return User(data["id"], data["email"], data["password"], data.get("fullname"))
-    return None
-    
-# ----------- ROUTES -----------
+    r = supabase.table("users")\
+                 .select("*")\
+                 .eq("id", user_id)\
+                 .maybe_single()\
+                 .execute()
+    d = r.data
+    return User(d["id"], d["email"], d["password"], d.get("fullname")) if d else None
+
+
+# -------- Routes --------
 
 @app.route("/")
 def index():
@@ -186,487 +272,308 @@ def price():
 def faq():
     return render_template("faq.html")
 
+
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
-        # Render the login/sign-up page
         return render_template("account.html")
 
-    mode = request.form.get("mode")
-    email = request.form.get("email")
+    mode     = request.form.get("mode")
+    email    = request.form.get("email")
     password = request.form.get("password")
-    name = request.form.get("name")
+    name     = request.form.get("name")
 
     try:
-        # SIGN UP
         if mode == "signup":
-            response = supabase.auth.sign_up({"email": email, "password": password})
-            
-            if response.user:
-                # Store user session
+            resp = supabase.auth.sign_up({"email": email, "password": password})
+            if resp.user:
                 session["user"] = {"email": email, "name": name or email.split("@")[0]}
-                return jsonify(success=True, message="Account created!", redirect="/dashboard")
-            else:
-                return jsonify(success=False, message=response.get("error", "Sign-up failed."))
-
-        # LOGIN
+                return jsonify(success=True, redirect="/dashboard")
+            return jsonify(success=False, message=resp.get("error","Sign-up failed"))
         elif mode == "login":
-            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            
-            if response.user:
+            resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            if resp.user:
                 session["user"] = {"email": email}
-                return jsonify(success=True, message="Login successful!", redirect="/dashboard")
-            else:
-                return jsonify(success=False, message="Invalid credentials. Please try again.")
-
-        return jsonify(success=False, message="Invalid request mode")
-
+                return jsonify(success=True, redirect="/dashboard")
+            return jsonify(success=False, message="Invalid credentials.")
+        return jsonify(success=False, message="Invalid mode.")
     except Exception as e:
-        return jsonify(success=False, message=f"Error: {str(e)}")
+        return jsonify(success=False, message=str(e))
 
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
-    if "user" not in session:
-        return redirect("/account")
     return render_template("dashboard.html")
 
-# 🔹 New JSON API endpoint (Safe lookup, no redirects)
 
-@app.route("/api/account", methods=["POST"])
-def api_account():
-    email = request.json.get("email", "").strip().lower()
-    
-    try:
-        result = supabase.table("users").select("*").eq("email", email).maybe_single().execute()
-        data = result.data
-        
-        if data is None:
-            return jsonify({"error": "User not found"}), 404
-
-        user = User(
-            data['id'],
-            data['email'],
-            data['password'],
-            data.get('fullname')
-        )
-
-        return jsonify({
-            "id": user.id,
-            "email": user.email,
-            "fullname": user.fullname
-        }), 200
-
-    except APIError as e:
-        return jsonify({
-            "error": "Database error",
-            "details": str(e)
-        }), 500
-
-    # This handles GET requests
-    return render_template("account.html")
-    
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
     return redirect("/")
-    
+
+
 @app.route("/ask", methods=["POST"])
 def ask():
-    user_msg = request.json.get("message")
-
-    messages = [
-        {"role": "system", "content": "You are Jobcus, a helpful and intelligent AI career assistant"},
-        {"role": "user", "content": user_msg}
+    user_msg = request.json.get("message", "")
+    msgs = [
+        {"role": "system", "content": "You are Jobcus, a helpful and intelligent AI career assistant."},
+        {"role": "user",   "content": user_msg}
     ]
-
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages
-        )
-        ai_msg = response.choices[0].message.content
-        suggest_jobs = any(phrase in user_msg.lower() for phrase in ["find jobs", "apply for", "job search"])
-        return jsonify({"reply": ai_msg, "suggestJobs": suggest_jobs})
+        resp = client.chat.completions.create(model="gpt-4o", messages=msgs)
+        ai_msg = resp.choices[0].message.content
+        suggest = any(phrase in user_msg.lower() for phrase in ["find jobs","apply for","job search"])
+        return jsonify(reply=ai_msg, suggestJobs=suggest)
     except Exception as e:
-        return jsonify({"reply": f"⚠️ Server Error: {str(e)}", "suggestJobs": False})
+        return jsonify(reply=f"⚠️ Server Error: {str(e)}", suggestJobs=False)
+
 
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
     try:
-        data = request.json
-        query = data.get("query", "")
-        location = data.get("location", "")
-        job_type = data.get("jobType", "").lower()
+        data     = request.json
+        query    = data.get("query","")
+        location = data.get("location","")
+        jtype    = data.get("jobType","").lower()
 
-        remotive_jobs = []
-        adzuna_jobs = []
-        jsearch_jobs = []
+        rem = fetch_remotive_jobs(query) if jtype in ["remote",""] else []
+        adz = fetch_adzuna_jobs(query, location, jtype) if jtype in ["onsite","hybrid",""] else []
+        js  = [] if rem or adz else fetch_jsearch_jobs(query)
 
-        if job_type in ["remote", ""]:
-            remotive_jobs = fetch_remotive_jobs(query)
-        if job_type in ["onsite", "hybrid", ""]:
-            adzuna_jobs = fetch_adzuna_jobs(query, location, job_type)
-        if not remotive_jobs and not adzuna_jobs:
-            jsearch_jobs = fetch_jsearch_jobs(query)
+        return jsonify(remotive=rem, adzuna=adz, jsearch=js)
+    except:
+        return jsonify(remotive=[], adzuna=[], jsearch=[])
 
-        return jsonify({"remotive": remotive_jobs, "adzuna": adzuna_jobs, "jsearch": jsearch_jobs})
-    except Exception as e:
-        return jsonify({"remotive": [], "adzuna": [], "jsearch": []})
 
-# === JOB INSIGHTS API ENDPOINTS ===
-
+# Job Insights APIs
 @app.route("/api/salary")
 def get_salary_data():
-    salaries = fetch_salary_data()
-    return jsonify({"labels": JOB_TITLES, "salaries": salaries})
+    return jsonify(labels=JOB_TITLES, salaries=fetch_salary_data())
 
 @app.route("/api/job-count")
 def get_job_count_data():
-    counts = fetch_job_counts()
-    return jsonify({"labels": JOB_TITLES, "counts": counts})
+    return jsonify(labels=JOB_TITLES, counts=fetch_job_counts())
 
 @app.route("/api/skills")
 def get_skills_data():
     freq = fetch_skill_trends()
-    return jsonify({
-        "labels": list(freq.keys()),
-        "frequency": list(freq.values())
-    })
+    return jsonify(labels=list(freq.keys()), frequency=list(freq.values()))
 
 @app.route("/api/locations")
 def get_location_data():
     locs = fetch_location_counts()
-    return jsonify({
-        "labels": [l[0] for l in locs],
-        "counts": [l[1] for l in locs]
-    })
+    return jsonify(labels=[l[0] for l in locs], counts=[l[1] for l in locs])
 
+
+# Skill Gap API
 @app.route("/api/skill-gap", methods=["POST"])
 def skill_gap_api():
     try:
-        data = request.get_json()
-        goal = data.get("goal", "").strip()
-        skills = data.get("skills", "").strip()
-
+        data  = request.get_json()
+        goal  = data.get("goal","").strip()
+        skills= data.get("skills","").strip()
         if not goal or not skills:
-            return jsonify({"error": "Missing required input"}), 400
+            return jsonify(error="Missing required input"), 400
 
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a helpful AI assistant that performs skill gap analysis.\n"
-                    "The user will provide their career goal and current skills.\n"
-                    "Your job is to:\n"
-                    "1. Identify the missing skills.\n"
-                    "2. Suggest learning resources for each missing skill.\n"
-                    "Format the result as a list of missing skills and a short learning plan."
-                )
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"My goal is to become a {goal}. My current skills include: {skills}.\n"
-                    "What skills am I missing, and how can I bridge the gap?"
-                )
-            }
+        msgs = [
+            {"role":"system","content":(
+                "You are an AI that performs skill gap analysis. "
+                "Return JSON: { missing: [...], plan: [...] }"
+            )},
+            {"role":"user","content":f"My goal: {goal}. My skills: {skills}."}
         ]
-
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-            temperature=0.6
-        )
-
-        reply = response.choices[0].message.content
-        return jsonify({"result": reply})
-
+        resp = client.chat.completions.create(model="gpt-4o", messages=msgs, temperature=0.6)
+        return jsonify(**json.loads(resp.choices[0].message.content))
     except Exception as e:
-        print("Skill Gap Error:", e)
-        traceback.print_exc()
-        return jsonify({"error": "Server error"}), 500
+        logging.exception("Skill gap error")
+        return jsonify(error="Server error"), 500
 
+
+# Interview Coach APIs
 @app.route("/api/interview", methods=["POST"])
 def interview_coach_api():
     try:
         data = request.get_json()
-        role = data.get("role", "").strip()
-        experience = data.get("experience", "").strip()
+        role = data.get("role","").strip()
+        exp  = data.get("experience","").strip()
+        if not role or not exp:
+            return jsonify(error="Missing role or experience"), 400
 
-        if not role or not experience:
-            return jsonify({"error": "Missing role or experience"}), 400
-
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are an AI Interview Coach. Based on the user's target role and experience level, "
-                    "you'll simulate likely interview questions and suggested responses.\n"
-                    "Keep the tone supportive, informative, and prepare users with at least 3 Q&A samples."
-                )
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"I am preparing for a job interview as a {role}. My experience level is {experience}.\n"
-                    "Please help me practice by suggesting sample questions and how I might answer them."
-                )
-            }
+        msgs = [
+            {"role":"system","content":(
+                "You are an AI Interview Coach. Provide at least 3 Q&A samples."
+            )},
+            {"role":"user","content":f"Role: {role}. Experience: {exp}."}
         ]
-
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-            temperature=0.7
-        )
-
-        reply = response.choices[0].message.content
-        return jsonify({"result": reply})
+        resp = client.chat.completions.create(model="gpt-4o", messages=msgs, temperature=0.7)
+        return jsonify(result=resp.choices[0].message.content)
     except Exception as e:
-        print("Interview Coach Error:", e)
-        traceback.print_exc()
-        return jsonify({"error": "Server error"}), 500
+        logging.exception("Interview coach error")
+        return jsonify(error="Server error"), 500
 
 @app.route("/api/interview/question", methods=["POST"])
 def get_interview_question():
     try:
-        data = request.get_json()
-        previous = data.get("previousRole", "").strip()
-        target = data.get("targetRole", "").strip()
-        experience = data.get("experience", "").strip()
+        data     = request.get_json()
+        prev     = data.get("previousRole","").strip()
+        target   = data.get("targetRole","").strip()
+        exp      = data.get("experience","").strip()
+        if not prev or not target or not exp:
+            return jsonify(error="Missing inputs"), 400
 
-        if not previous or not target or not experience:
-            return jsonify({"error": "Missing inputs"}), 400
-
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a virtual interview coach. Ask realistic, job-specific interview questions "
-                    "based on the user's career transition, including their past and target roles, and experience level. "
-                    "Avoid repeating previous questions. Keep it concise and focused on soft and technical skills."
-                )
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"I was a {previous}, applying for a {target} role. My experience level is {experience}.\n"
-                    "Ask me a relevant interview question."
-                )
-            }
+        msgs = [
+            {"role":"system","content":(
+                "You are a virtual interview coach. Ask one job-specific question."
+            )},
+            {"role":"user","content":f"Was {prev}, applying for {target}. Experience: {exp}."}
         ]
-
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-            temperature=0.7
-        )
-        question = response.choices[0].message.content
-        return jsonify({"question": question})
+        resp = client.chat.completions.create(model="gpt-4o", messages=msgs, temperature=0.7)
+        return jsonify(question=resp.choices[0].message.content)
     except Exception as e:
-        print("Interview Question Error:", e)
-        return jsonify({"error": "Unable to generate question"}), 500
+        logging.exception("Interview question error")
+        return jsonify(error="Unable to generate question"), 500
 
 @app.route("/api/interview/feedback", methods=["POST"])
 def get_interview_feedback():
     try:
-        data = request.get_json()
-        question = data.get("question", "")
-        answer = data.get("answer", "")
-
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a professional interview coach. Your job is to:\n"
-                    "1. Give constructive feedback on the user's response.\n"
-                    "2. Point out what was done well and what can be improved.\n"
-                    "3. Offer 2-3 fallback suggestions in bullet points.\n"
-                    "Format the response clearly."
-                )
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"Interview Question: {question}\n"
-                    f"My Answer: {answer}\n"
-                    "Please give me feedback and fallback suggestions."
-                )
-            }
+        data     = request.get_json()
+        question = data.get("question","")
+        answer   = data.get("answer","")
+        msgs = [
+            {"role":"system","content":(
+                "You are an interview coach. Give feedback and 2–3 fallback suggestions."
+            )},
+            {"role":"user","content":f"Q: {question}\nA: {answer}"}
         ]
-
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages
-        )
-
-        reply = response.choices[0].message.content.strip()
-
-        # Separate main feedback and tips if possible
-        parts = reply.split("Fallback Suggestions:")
+        resp = client.chat.completions.create(model="gpt-4o", messages=msgs, temperature=0.7)
+        content = resp.choices[0].message.content.strip()
+        parts = content.split("Fallback Suggestions:")
         feedback = parts[0].strip()
-        tips = parts[1].strip().split("\n") if len(parts) > 1 else []
-
-        return jsonify({
-            "feedback": feedback,
-            "fallbacks": [tip.lstrip("-• ").strip() for tip in tips if tip.strip()]
-        })
-
+        tips = parts[1].split("\n") if len(parts) > 1 else []
+        return jsonify(
+            feedback=feedback,
+            fallbacks=[t.lstrip("-• ").strip() for t in tips if t.strip()]
+        )
     except Exception as e:
-        print("Interview Feedback Error:", e)
-        return jsonify({"error": "Error generating feedback"}), 500
+        logging.exception("Interview feedback error")
+        return jsonify(error="Error generating feedback"), 500
 
+
+# Resume Analysis API
 @app.route("/api/resume-analysis", methods=["POST"])
+@login_required
 def resume_analysis():
     try:
-        data = request.get_json(force=True)  # Force JSON parsing
-        resume_text = ""
+        data = request.get_json(force=True)
+        text = ""
 
-        # --- Step 0: Handle fetch_latest (from DB) ---
+        # fetch_latest
         if data.get("fetch_latest"):
-            # ✅ Replace with your DB logic
-            resume_text = get_user_resume_text(current_user.id)
-            if not resume_text:
-                return jsonify({"error": "No previous resume found"}), 400
+            text = get_user_resume_text(current_user.id) or ""
+            if not text:
+                return jsonify(error="No previous resume found"), 400
 
-        # --- Step 1: Handle resume input (PDF or text) ---
-        elif "pdf" in data and data["pdf"]:
+        # PDF upload
+        elif data.get("pdf"):
             try:
                 pdf_bytes = base64.b64decode(data["pdf"])
-                reader = PdfReader(BytesIO(pdf_bytes))
-                resume_text = " ".join((page.extract_text() or "") for page in reader.pages)
-                if not resume_text.strip():
-                    return jsonify({"error": "PDF content is empty"}), 400
-            except Exception as pdf_err:
-                print("PDF Decode Error:", pdf_err)
-                return jsonify({"error": "Unable to extract text from PDF"}), 400
+                reader    = PdfReader(BytesIO(pdf_bytes))
+                text      = " ".join(p.extract_text() or "" for p in reader.pages)
+                if not text.strip():
+                    return jsonify(error="PDF content empty"), 400
+            except:
+                return jsonify(error="Unable to extract PDF text"), 400
 
-        elif "text" in data and data["text"].strip():
-            resume_text = data["text"].strip()
+        # Text paste
+        elif data.get("text"):
+            text = data["text"].strip()
+            if not text:
+                return jsonify(error="No text provided"), 400
         else:
-            return jsonify({"error": "No resume data provided"}), 400
+            return jsonify(error="No resume data provided"), 400
 
-        # --- Step 2: AI ATS Analysis ---
-        ai_prompt = (
-            "You are an ATS resume analyzer. Analyze the resume below based on "
-            "international best practices and ATS standards. Provide:\n"
-            "1. A score out of 100.\n"
-            "2. Top 3 issues preventing higher score.\n"
-            "3. Top 3 strengths.\n"
-            "Resume:\n\n" + resume_text
+        # Ask AI for strict JSON
+        prompt = (
+            "You are an ATS resume analyzer. Return only a JSON object with keys:\n"
+            "score (integer 0–100), issues (array), strengths (array).\n"
+            "Resume: " + text
         )
-
-        ai_response = client.chat.completions.create(
+        resp = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": ai_prompt}],
-            temperature=0.6
-        ).choices[0].message.content
-
-        # --- Step 3: Parse AI Response ---
-        score, issues, strengths = 0, [], []
-        for line in ai_response.splitlines():
-            line = line.strip()
-            if line.lower().startswith("score"):
-                try:
-                    score = int(line.split(":")[1].strip())
-                except:
-                    score = 70  # fallback
-            elif line.lower().startswith("issues"):
-                issues = [i.strip() for i in line.split(":")[1].split(";") if i.strip()]
-            elif line.lower().startswith("strengths"):
-                strengths = [s.strip() for s in line.split(":")[1].split(";") if s.strip()]
-
-        # --- Step 4: Keyword Matching ---
-        target_keywords = [
-            "Project Management", "Python", "Communication", 
-            "Leadership", "Product Management", "Customer Service", "Agile"
-        ]
-        found_keywords = [kw for kw in target_keywords if kw.lower() in resume_text.lower()]
-
-        # --- Step 5: Return structured JSON ---
-        return jsonify({
-            "score": score,
-            "analysis": {
-                "issues": issues,
-                "strengths": strengths
-            },
-            "keywords": found_keywords
-        })
+            messages=[{"role":"user","content":prompt}],
+            temperature=0.0
+        )
+        parsed = json.loads(resp.choices[0].message.content)
+        return jsonify(parsed)
 
     except Exception as e:
-        print("ATS Analyzer Error:", e)
-        return jsonify({"error": "Resume analysis failed"}), 500
+        logging.exception("Resume analysis error")
+        return jsonify(error="Resume analysis failed"), 500
 
+
+# Generate Resume via AI
 @app.route("/generate-resume", methods=["POST"])
 def generate_resume():
-    data = request.json  # or request.form if using form-data
-
+    data = request.json or {}
     prompt = f"""
-    Create a professional, modern UK resume in HTML format using the following data:
-    Full Name: {data.get('fullName')}
-    Summary: {data.get('summary')}
-    Education: {data.get('education')}
-    Experience: {data.get('experience')}
-    Skills: {data.get('skills')}
-    Certifications: {data.get('certifications')}
-    LinkedIn/Portfolio: {data.get('portfolio')}
-    """
-
+Create a professional, modern UK resume in HTML format:
+Full Name: {data.get('fullName')}
+Summary: {data.get('summary')}
+Education: {data.get('education')}
+Experience: {data.get('experience')}
+Skills: {data.get('skills')}
+Certifications: {data.get('certifications')}
+Portfolio: {data.get('portfolio')}
+"""
     try:
-        response = client.chat.completions.create(
+        resp = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role":"user","content":prompt}],
             temperature=0.7
         )
-        ai_response = response.choices[0].message.content
-        return jsonify({"formatted_resume": ai_response})
+        return jsonify(formatted_resume=resp.choices[0].message.content)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify(error=str(e)), 500
 
+
+# Employer inquiry endpoints
 @app.route("/api/employer-inquiry", methods=["POST"])
 def employer_inquiry():
     try:
         data = request.json
-        print("Employer Inquiry Payload:", data)
-
-        response = supabase.table("employer_inquiries").insert({
-            "company": data.get("company"),
-            "name": data.get("name"),
-            "email": data.get("email"),
-            "phone": data.get("phone"),
-            "job_roles": data.get("job_roles"),
-            "message": data.get("message")
+        supabase.table("employer_inquiries").insert({
+            "company":    data.get("company"),
+            "name":       data.get("name"),
+            "email":      data.get("email"),
+            "phone":      data.get("phone"),
+            "job_roles":  data.get("job_roles"),
+            "message":    data.get("message")
         }).execute()
-
-        print("Employer Inquiry Response:", response)
-        return jsonify({"success": True, "message": "Inquiry submitted"}), 200
-
+        return jsonify(success=True, message="Inquiry submitted"), 200
     except Exception as e:
-        print("Employer Inquiry Error:", str(e))  # <--- This is important
-        return jsonify({"success": False, "error": str(e)}), 500
+        logging.exception("Employer inquiry error")
+        return jsonify(success=False, error=str(e)), 500
 
 @app.route("/api/employer/submit", methods=["POST"])
 def submit_employer_form():
     try:
         data = request.get_json()
-
-        job_title = data.get("jobTitle")
-        company = data.get("company")
-        role_summary = data.get("summary")
-        location = data.get("location")
-        employmentType = data.get("employmentType")
-        salaryRange = data.get("salaryRange")
-        applicationDeadline = data.get("applicationDeadline")
-        applicationEmail = data.get("applicationEmail")
+        job_title          = data.get("jobTitle")
+        company            = data.get("company")
+        role_summary       = data.get("summary")
+        location           = data.get("location")
+        employmentType     = data.get("employmentType")
+        salaryRange        = data.get("salaryRange")
+        applicationDeadline= data.get("applicationDeadline")
+        applicationEmail   = data.get("applicationEmail")
 
         if not job_title or not company:
-            return jsonify({"success": False, "message": "Job title and company are required."}), 400
+            return jsonify(success=False, message="Job title and company are required."), 400
 
-        # Prompt with inserted fields
         prompt = f"""
-You are a recruitment assistant. Generate a professional job description for the following role:
+You are a recruitment assistant. Generate a professional job description:
 
 Job Title: {job_title}
 Company: {company}
@@ -677,43 +584,38 @@ Application Deadline: {applicationDeadline}
 Application Email/Link: {applicationEmail}
 Summary: {role_summary}
 
-Include sections for About the Company, Job Summary, Key Responsibilities, Required Qualifications, Preferred Skills, and How to Apply.
+Include: About the Company, Job Summary, Key Responsibilities,
+Required Qualifications, Preferred Skills, and How to Apply.
 """
-
-        response = client.chat.completions.create(
+        resp = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role":"user","content":prompt}],
             temperature=0.6
         )
+        job_desc = resp.choices[0].message.content
 
-        job_description = response.choices[0].message.content
-
-        # Optional: Save to Supabase
+        # Optionally save
         try:
             supabase.table("job_posts").insert({
-               "job_title": job_title,
+                "job_title": job_title,
                 "company": company,
                 "summary": role_summary,
                 "location": location,
                 "employment_type": employmentType,
                 "salary_range": salaryRange,
                 "application_deadline": applicationDeadline,
-                "application_email": applicationEmail,
+                "application_email": applicationEmail
             }).execute()
+        except Exception as db_e:
+            logging.warning("Job post save failed: %s", db_e)
 
-        except Exception as db_err:
-            print("Supabase insert skipped/error:", db_err)
-
-        return jsonify({
-            "success": True,
-            "message": "Job post generated successfully.",
-            "jobDescription": job_description
-        })
+        return jsonify(success=True, jobDescription=job_desc), 200
 
     except Exception as e:
-        print("Employer Submission Error:", e)
-        return jsonify({"success": False, "message": "Server error generating job post."}), 500
+        logging.exception("Employer submission error")
+        return jsonify(success=False, message="Server error generating job post."), 500
+
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.getenv("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
