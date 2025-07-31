@@ -1,23 +1,21 @@
-// dashboard.js
+// static/dashboard.js
 
-// — Helpers for your existing analysis logic —
-
-// Animate the circular score
+// — Circular score animation —
 function animateProgressCircle(circle, targetScore) {
   if (!circle) return;
-  const progressPath = circle.querySelector(".progress");
-  const percentageText = circle.querySelector(".percentage");
-  let current = parseInt(percentageText.textContent) || 0;
+  const path = circle.querySelector(".progress");
+  const text = circle.querySelector(".percentage");
+  let current = parseInt(text.textContent) || 0;
   const step = targetScore > current ? 1 : -1;
   const anim = setInterval(() => {
     if (current === targetScore) return clearInterval(anim);
     current += step;
-    progressPath.setAttribute("stroke-dasharray", `${current}, 100`);
-    percentageText.textContent = `${current}%`;
+    path.setAttribute("stroke-dasharray", `${current}, 100`);
+    text.textContent = `${current}%`;
   }, 20);
 }
 
-// Animate the skill-gap & interview bars
+// — Bar animation for skill-gap & interview readiness —
 function animateProgressBar(bar, targetWidth) {
   if (!bar) return;
   let current = parseInt(bar.style.width) || 0;
@@ -29,48 +27,47 @@ function animateProgressBar(bar, targetWidth) {
   }, 15);
 }
 
-// Inject analysis results into the page
+// — Inject the API’s analysis into the UI —
 function updateDashboardWithAnalysis(data) {
-  // Resume circle
+  console.debug("Applying analysis data:", data);
+
+  // 1) Score circle
   const circle = document.querySelector(".progress-circle");
   if (circle) animateProgressCircle(circle, data.score || 0);
 
-  // Issues
-  const issuesList = document.getElementById("top-issues");
-  if (issuesList) {
-    issuesList.innerHTML = "";
-    (data.analysis.issues || []).forEach(i => {
+  // 2) Issues list
+  const issues = document.getElementById("top-issues");
+  if (issues) {
+    issues.innerHTML = "";
+    ;(data.analysis.issues || []).forEach(i => {
       const li = document.createElement("li");
       li.textContent = i;
-      issuesList.appendChild(li);
+      issues.appendChild(li);
     });
   }
 
-  // Strengths
-  const strengthsList = document.getElementById("good-points");
-  if (strengthsList) {
-    strengthsList.innerHTML = "";
-    (data.analysis.strengths || []).forEach(s => {
+  // 3) Strengths list
+  const strengths = document.getElementById("good-points");
+  if (strengths) {
+    strengths.innerHTML = "";
+    ;(data.analysis.strengths || []).forEach(s => {
       const li = document.createElement("li");
       li.textContent = s;
-      strengthsList.appendChild(li);
+      strengths.appendChild(li);
     });
   }
 
-  // Skill-Gap bar
-  const skillBar = document.querySelectorAll(".dashboard-card .progress-fill")[1];
-  if (skillBar && data.skill_gap_percent !== undefined) {
-    animateProgressBar(skillBar, data.skill_gap_percent);
+  // 4) Skill-Gap & Interview bars
+  const bars = document.querySelectorAll(".progress-fill");
+  if (bars[1] && data.skill_gap_percent !== undefined) {
+    animateProgressBar(bars[1], data.skill_gap_percent);
   }
-
-  // Interview-Readiness bar
-  const interviewBar = document.querySelectorAll(".dashboard-card .progress-fill")[2];
-  if (interviewBar && data.interview_readiness_percent !== undefined) {
-    animateProgressBar(interviewBar, data.interview_readiness_percent);
+  if (bars[2] && data.interview_readiness_percent !== undefined) {
+    animateProgressBar(bars[2], data.interview_readiness_percent);
   }
 }
 
-// Fallback fetch if no localStorage result
+// — Fallback fetch if no LocalStorage data — 
 function fetchResumeAnalysis() {
   fetch("/api/resume-analysis", {
     method: "POST",
@@ -79,73 +76,75 @@ function fetchResumeAnalysis() {
   })
     .then(r => r.json())
     .then(data => {
-      if (!data.error) {
-        if (data.skill_gap_percent === undefined) data.skill_gap_percent = 65;
-        if (data.interview_readiness_percent === undefined) data.interview_readiness_percent = 45;
-        updateDashboardWithAnalysis(data);
-      }
+      if (!data.error) updateDashboardWithAnalysis(data);
     })
     .catch(console.error);
 }
 
-// — Page setup & custom features ——
-document.addEventListener("DOMContentLoaded", () => {
-  // 1) Nav buttons
-  document.getElementById("backButton")
-    ?.addEventListener("click", () => window.history.back());
-  document.getElementById("homeButton")
-    ?.addEventListener("click", () => window.location.href = "/");
-  document.getElementById("logoutButton")
-    ?.addEventListener("click", () => window.location.href = "/logout");
-
-  // 2) Dark-mode toggle
-  const dmToggle = document.getElementById("darkModeToggle");
-  const root       = document.documentElement;
-  const isDark     = localStorage.getItem("darkMode") === "true";
-  if (isDark) {
-    root.classList.add("dark-mode");
-    dmToggle.textContent = "☀️";
+// — Handle the “Upload Resume” form on the dashboard —
+function handleResumeUpload(e) {
+  e.preventDefault();
+  const input = document.getElementById("resumeFile");
+  if (!input.files.length) {
+    return alert("Please select a resume file to upload.");
   }
-  dmToggle?.addEventListener("click", () => {
-    const nowDark = root.classList.toggle("dark-mode");
-    localStorage.setItem("darkMode", nowDark);
-    dmToggle.textContent = nowDark ? "☀️" : "🌙";
-  });
-
-  // 3) Dynamic greeting
-  const greetEl   = document.getElementById("dashboardGreeting");
-  const userName  = "{{ current_user.name }}";
-  const visited   = localStorage.getItem("dashboardVisited");
-  if (greetEl) {
-    if (!visited) {
-      greetEl.textContent = `Welcome, ${userName}`;
-      localStorage.setItem("dashboardVisited", "true");
-    } else {
-      greetEl.textContent = `Welcome Back, ${userName}`;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const b64 = reader.result.split(",")[1];
+    try {
+      const res = await fetch("/api/resume-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdf: b64 })
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert("Error analyzing resume: " + data.error);
+      } else {
+        updateDashboardWithAnalysis(data);
+      }
+    } catch (err) {
+      console.error("Upload analysis error:", err);
+      alert("Server error while analyzing resume.");
     }
+  };
+  reader.readAsDataURL(file);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // — 0) Dynamic greeting (unchanged) —
+  const greetEl  = document.getElementById("dashboardGreeting");
+  const userName = "{{ current_user.name }}";
+  const firstVisit = !localStorage.getItem("dashboardVisited");
+  if (greetEl) {
+    greetEl.textContent = firstVisit 
+      ? `Welcome, ${userName}` 
+      : `Welcome Back, ${userName}`;
+    localStorage.setItem("dashboardVisited", "true");
   }
 
-  // 4) Resume analysis flow
-  //    If the resume-builder saved a result, use it…
+  // — 1) Initialize everything to 0% so our real data can override it —
+  document.querySelectorAll(".progress-circle").forEach(c => {
+    c.querySelector(".progress")
+     .setAttribute("stroke-dasharray", "0, 100");
+    c.querySelector(".percentage").textContent = "0%";
+  });
+  document.querySelectorAll(".progress-fill")
+          .forEach(b => b.style.width = "0%");
+
+  // — 2) Hook up the upload form —
+  const uploadForm = document.getElementById("resumeUploadForm");
+  if (uploadForm) {
+    uploadForm.addEventListener("submit", handleResumeUpload);
+  }
+
+  // — 3) Inject analysis: prefer LocalStorage (post-builder), else fetch_latest —
   const saved = localStorage.getItem("resumeAnalysis");
   if (saved) {
     updateDashboardWithAnalysis(JSON.parse(saved));
     localStorage.removeItem("resumeAnalysis");
   } else {
-    // …otherwise fallback to pulling the latest from the server
     fetchResumeAnalysis();
   }
-
-  // 5) Initialize the SVG circles (in case you want a default before anim)
-  document.querySelectorAll(".progress-circle").forEach(c => {
-    const v = parseInt(c.dataset.score || "0");
-    c.querySelector(".progress")
-     .setAttribute("stroke-dasharray", `${v}, 100`);
-    c.querySelector(".percentage")
-     .textContent = `${v}%`;
-  });
-
-  // 6) Set all bar widths to 0 so they animate in
-  document.querySelectorAll(".progress-fill")
-    .forEach(b => b.style.width = "0%");
 });
