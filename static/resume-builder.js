@@ -6,6 +6,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const downloadOptions = document.getElementById("resumeDownloadOptions");
   const optimizedDownloadOptions = document.getElementById("optimizedDownloadOptions");
 
+  const analyzeBtn = document.getElementById("analyze-btn");
+  const resumeText = document.getElementById("resume-text");
+  const resumeFile = document.getElementById("resumeFile");
+  const analyzerResult = document.getElementById("analyzer-result");
+  const scoreBar = document.getElementById("score-bar");
+  const keywordList = document.getElementById("keyword-list");
+
   let optimizeWithAI = true;
   let shouldBuild = true;
 
@@ -14,7 +21,15 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
 
-  // ==== Resume Builder Submit ====
+  // === Clean AI Response ===
+  function cleanAIText(content) {
+    return content
+      .replace(/```html|```/g, "")
+      .replace(/(?:Certainly!|Here's a resume|This HTML).*?\n/gi, "")
+      .trim();
+  }
+
+  // === Resume Builder Submit ===
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     if (!shouldBuild) return;
@@ -45,26 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Clean AI Response
-  function cleanAIText(content) {
-    return content
-      .replace(/```html|```/g, "")
-      .replace(/(?:Certainly!|Here's a resume|This HTML).*?\n/gi, "")
-      .trim();
-  }
-
-  // ==== Download Resume Builder ====
-  window.downloadResume = function (format) {
-    const text = builderResumeOutput.innerText || "Your resume content here";
-    downloadHelper(format, text, "resume");
-  };
-
-  // ==== Download Optimized Resume ====
-  window.downloadOptimizedResume = function (format) {
-    const content = analyzerResumeOutput.innerText || "Optimized resume content";
-    downloadHelper(format, content, "resume-optimized");
-  };
-
+  // === Download Resume Helper ===
   function downloadHelper(format, text, filename) {
     if (format === "txt") {
       const blob = new Blob([text], { type: "text/plain" });
@@ -96,124 +92,94 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // ==== Resume Optimizer from Analyzer ====
-  const optimizeBtn = document.getElementById("optimizeResume");
-  if (optimizeBtn) {
-    optimizeBtn.addEventListener("click", async () => {
-      const resumeText = document.getElementById("resume-text")?.value.trim();
-      if (!resumeText) {
-        alert("Please paste your resume text above first.");
-        return;
-      }
+  // === Public download functions ===
+  window.downloadResume = function (format) {
+    const text = builderResumeOutput.innerText || "Your resume content here";
+    downloadHelper(format, text, "resume");
+  };
 
-      optimizedLoading.style.display = "block";
-      analyzerResumeOutput.innerHTML = "";
-      analyzerResumeOutput.style.display = "none";
+  window.downloadOptimizedResume = function (format) {
+    const content = analyzerResumeOutput.innerText || "Optimized resume content";
+    downloadHelper(format, content, "resume-optimized");
+  };
+
+  // === Resume Analyzer Function (PDF or text) ===
+  async function sendAnalysis(file) {
+    const reader = new FileReader();
+
+    reader.onload = async function () {
+      const base64Resume = reader.result.split(",")[1];
 
       try {
-        const response = await fetch("/generate-resume", {
+        const res = await fetch("/api/resume-analysis", { // ✅ FIXED ENDPOINT
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fullName: "Candidate",
-            summary: resumeText,
-            education: "",
-            experience: "",
-            skills: "",
-            certifications: "",
-            portfolio: "",
-            optimize: true
-          })
+          body: JSON.stringify({ pdf: base64Resume })
         });
 
-        const result = await response.json();
-        optimizedLoading.style.display = "none";
+        if (!res.ok) throw new Error("Server returned " + res.status);
 
-        if (result.formatted_resume) {
-          const cleaned = cleanAIText(result.formatted_resume);
-          analyzerResumeOutput.innerHTML = cleaned;
-          analyzerResumeOutput.style.display = "block";
-          if (optimizedDownloadOptions) optimizedDownloadOptions.style.display = "block";
-          window.scrollTo({ top: analyzerResumeOutput.offsetTop, behavior: "smooth" });
-        } else {
-          analyzerResumeOutput.innerHTML = `<p style="color:red;">❌ Optimization failed.</p>`;
-          analyzerResumeOutput.style.display = "block";
+        const data = await res.json();
+        if (data.error) {
+          alert("Error analyzing resume: " + data.error);
+          return;
         }
-      } catch (error) {
-        console.error(error);
-        optimizedLoading.style.display = "none";
-        analyzerResumeOutput.innerHTML = `<p style="color:red;">⚠️ Optimization error. Try again.</p>`;
-        analyzerResumeOutput.style.display = "block";
+
+        // Update Analyzer Section
+        analyzerResult.innerHTML = marked.parse(
+          (data.analysis.issues || []).map(i => `- ${i}`).join("\n") || "No issues found."
+        );
+
+        // Populate Keywords
+        keywordList.innerHTML = "";
+        (data.keywords || []).forEach(kw => {
+          const li = document.createElement("li");
+          li.innerText = kw;
+          keywordList.appendChild(li);
+        });
+
+        // Animate Score Bar
+        let score = data.score || 0;
+        let current = 0;
+        const animate = setInterval(() => {
+          if (current >= score) clearInterval(animate);
+          scoreBar.style.width = `${current}%`;
+          scoreBar.innerText = `${current}%`;
+          current++;
+        }, 15);
+
+        // Reveal CTA if available
+        const cta = document.getElementById("post-analysis-cta");
+        if (cta) cta.style.display = "block";
+
+      } catch (err) {
+        console.error("Analyzer error:", err);
+        analyzerResult.innerHTML = `<p style="color:red;">❌ Failed to analyze resume. Please try again.</p>`;
       }
-    });
+    };
+
+    reader.readAsDataURL(file);
   }
 
-  // ==== Resume Analyzer Logic ====
-  const analyzeBtn = document.getElementById("analyze-btn");
-  const resumeText = document.getElementById("resume-text");
-  const resumeFile = document.getElementById("resumeFile");
-  const analyzerResult = document.getElementById("analyzer-result");
-  const scoreBar = document.getElementById("score-bar");
-  const keywordList = document.getElementById("keyword-list");
-
-  if (analyzeBtn && resumeText && analyzerResult && scoreBar && keywordList) {
+  // === Analyze Button Click Handler ===
+  if (analyzeBtn && analyzerResult && scoreBar && keywordList) {
     analyzeBtn.addEventListener("click", async () => {
       analyzerResult.innerHTML = "⏳ Analyzing...";
       keywordList.innerHTML = "";
       scoreBar.style.width = "0%";
       scoreBar.innerText = "0%";
 
-      let resumeData = resumeText.value.trim();
-      let pdfData = "";
+      const file = resumeFile.files.length > 0 ? resumeFile.files[0] : null;
 
-      if (!resumeData && resumeFile.files.length > 0) {
-        const reader = new FileReader();
-        reader.onload = async function (e) {
-          const base64 = e.target.result.split(",")[1];
-          pdfData = base64;
-          await sendAnalysis(pdfData);
-        };
-        reader.readAsDataURL(resumeFile.files[0]);
+      if (file) {
+        await sendAnalysis(file);
+      } else if (resumeText.value.trim()) {
+        const blob = new Blob([resumeText.value], { type: "text/plain" });
+        const fakeFile = new File([blob], "resume.txt", { type: "text/plain" });
+        await sendAnalysis(fakeFile);
       } else {
-        await sendAnalysis(null, resumeData);
+        alert("Please enter resume text or upload a file.");
       }
     });
-  }
-
-  async function sendAnalysis(pdf = null, text = "") {
-    try {
-      const response = await fetch("/api/analyze-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(pdf ? { pdf } : { text })
-      });
-
-      const result = await response.json();
-      if (result.error) throw new Error(result.error);
-
-      analyzerResult.innerHTML = marked.parse(result.analysis || "No analysis returned.");
-
-      if (text && document.getElementById("resume-text")) {
-        document.getElementById("resume-text").value = text;
-      }
-
-      if (result.keywords && Array.isArray(result.keywords)) {
-        result.keywords.forEach(kw => {
-          const li = document.createElement("li");
-          li.innerText = kw;
-          keywordList.appendChild(li);
-        });
-      }
-
-      const score = Math.min(100, result.keywords.length * 20);
-      scoreBar.style.width = `${score}%`;
-      scoreBar.innerText = `${score}%`;
-
-      const cta = document.getElementById("post-analysis-cta");
-      if (cta) cta.style.display = "block";
-    } catch (err) {
-      console.error("Analyzer error:", err);
-      analyzerResult.innerHTML = `<p style="color:red;">❌ Failed to analyze resume. Please try again.</p>`;
-    }
   }
 });
