@@ -94,7 +94,7 @@ function updateDashboardWithAnalysis(data) {
 function fetchResumeAnalysis() {
   fetch('/api/resume-analysis', {
     method: 'POST',
-    body: JSON.stringify({ text: "" }),
+    body: JSON.stringify({ fetch_latest: true }), // Custom key to indicate fetch last resume
     headers: { 'Content-Type': 'application/json' }
   })
     .then(res => res.json())
