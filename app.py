@@ -528,8 +528,13 @@ def resume_analysis():
         if not data:
             return jsonify({"error": "Invalid request format"}), 400
 
-        # Handle PDF
-        if "pdf" in data and data["pdf"]:
+        # ✅ Fetch last uploaded resume if requested
+        if data.get("fetch_latest"):
+            resume_text = get_user_resume_text(current_user.id)
+            if not resume_text:
+                return jsonify({"error": "No previous resume found"}), 400
+
+        elif "pdf" in data and data["pdf"]:
             try:
                 pdf_bytes = base64.b64decode(data["pdf"])
                 reader = PdfReader(BytesIO(pdf_bytes))
@@ -540,9 +545,9 @@ def resume_analysis():
                 print("PDF Decode Error:", pdf_err)
                 return jsonify({"error": "Unable to extract text from PDF"}), 400
 
-        # Handle Plain Text
-        elif "text" in data and data["text"]:
+        elif "text" in data and data["text"].strip():
             resume_text = data["text"].strip()
+
         else:
             return jsonify({"error": "No resume data provided"}), 400
 
