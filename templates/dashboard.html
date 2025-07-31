@@ -5,11 +5,15 @@
 {% block content %}
 
 <section class="dashboard-container">
-  <h1 class="dashboard-title">Welcome Back {{ current_user.name }}</h1>
-  <p class="dashboard-subtitle">
-    Track your career growth and insights powered by Jobcus AI
-  </p>
-  
+  <h1 class="dashboard-title">Welcome Back, {{ current_user.name }}</h1>
+  <p class="dashboard-subtitle">Track your career growth and insights powered by Jobcus AI</p>
+
+  <!-- Resume Upload Form -->
+  <form id="resumeUploadForm" class="resume-upload-form">
+    <input type="file" id="resumeFile" accept=".pdf,.txt" />
+    <button type="submit" class="cta-primary">Upload Resume</button>
+  </form>
+
   <div class="dashboard-cards">
 
     <!-- Resume Score -->
@@ -20,65 +24,69 @@
           <path class="bg" d="M18 2.0845
             a 15.9155 15.9155 0 0 1 0 31.831
             a 15.9155 15.9155 0 0 1 0 -31.831"/>
-          <path class="progress" stroke-dasharray="78, 100" d="M18 2.0845
+          <path class="progress" stroke-dasharray="0, 100" d="M18 2.0845
             a 15.9155 15.9155 0 0 1 0 31.831
             a 15.9155 15.9155 0 0 1 0 -31.831"/>
-          <text x="18" y="20.35" class="percentage">78%</text>
+          <text x="18" y="20.35" class="percentage">0%</text>
         </svg>
         <p class="metric-note">Last analyzed: 2 days ago</p>
       </div>
     </div>
 
-  </div> <!-- ✅ Close dashboard-cards so Resume Analysis is outside -->
+    <!-- Resume Analysis Insights -->
+    <section class="resume-analysis">
+      <h2>Steps to Improve Your Resume</h2>
+      <p>Based on ATS analysis, here are the key points:</p>
 
-  <!-- Resume Analysis Insights -->
-  <section class="resume-analysis">
-    <h2>Steps to Improve Your Resume</h2>
-    <p>Based on ATS analysis, here are the key points:</p>
+      <!-- Top Fixes -->
+      <div class="analysis-issues">
+        <h3>⚠️ Issues Found</h3>
+        <ul id="top-issues">
+          <li>Unnecessary sections found</li>
+          <li>Weak action verbs (Pro tip: use power verbs)</li>
+          <li>Inconsistent dates or formatting</li>
+        </ul>
+        <button class="cta-primary">Show More Issues</button>
+      </div>
 
-    <!-- Top Fixes -->
-    <div class="analysis-issues">
-      <h3>⚠️ Issues Found</h3>
-      <ul id="top-issues">
-        <li>Unnecessary sections found</li>
-        <li>Weak action verbs (Pro tip: use power verbs)</li>
-        <li>Inconsistent dates or formatting</li>
-      </ul>
-      <button class="cta-primary">Show More Issues</button>
-    </div>
+      <!-- Strengths -->
+      <div class="analysis-strengths">
+        <h3>✅ What You Did Well</h3>
+        <ul id="good-points">
+          <li>Consistent punctuation in bullet points</li>
+          <li>Page layout is clear and scannable</li>
+          <li>Action verbs are mostly correct</li>
+        </ul>
+      </div>
+    </section>
 
-    <!-- Strengths -->
-    <div class="analysis-strengths">
-      <h3>✅ What You Did Well</h3>
-      <ul id="good-points">
-        <li>Consistent punctuation in bullet points</li>
-        <li>Page layout is clear and scannable</li>
-        <li>Action verbs are mostly correct</li>
-      </ul>
-    </div>
-  </section>
-
-  <div class="dashboard-cards">
-    <!-- Skill Gap -->
-    <div class="dashboard-card">
+    <!-- Skill Gap Progress -->
+    <div class="dashboard-card skill-gap-card">
       <h3>🧰 Skill Gap Progress</h3>
       <div class="progress-bar">
-        <div class="progress-fill" style="width: 65%;"></div>
+        <div class="progress-fill" style="width: 0%;"></div>
       </div>
       <p class="metric-note">65% skill match for your target role</p>
       <a href="/skill-gap" class="dashboard-link">Improve Skills</a>
     </div>
 
     <!-- Interview Readiness -->
-    <div class="dashboard-card">
+    <div class="dashboard-card interview-readiness-card">
       <h3>🧠 Interview Readiness</h3>
       <div class="progress-bar">
-        <div class="progress-fill" style="width: 45%;"></div>
+        <div class="progress-fill" style="width: 0%;"></div>
       </div>
       <p class="metric-note">Practiced 3 out of 10 scenarios</p>
       <a href="/interview-coach" class="dashboard-link">Practice Now</a>
     </div>
+
   </div>
+
+  <!-- User Progress Overview Chart -->
+  <section class="dashboard-chart">
+    <h3>User Progress Overview</h3>
+    <canvas id="userProgressChart" style="width: 80%; height: auto;"></canvas>
+  </section>
 
 </section>
 
