@@ -722,9 +722,7 @@ main {
 }
 
 .user-menu.show {
-  display: flex;
-  opacity: 1;
-  transform: translateY(0);
+  display: block;
 }
 
 .user-menu a {
