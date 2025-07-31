@@ -276,30 +276,63 @@ def faq():
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
+        # Just render the login/sign-up page
         return render_template("account.html")
 
-    mode     = request.form.get("mode")
+    # POST: form submit
+    mode     = request.form.get("mode")     # "signup" or "login"
     email    = request.form.get("email")
     password = request.form.get("password")
-    name     = request.form.get("name")
+    name     = request.form.get("name")     # only used on signup
 
     try:
+        # --- SIGN UP FLOW ---
         if mode == "signup":
+            # 1) Create user in Supabase Auth
             resp = supabase.auth.sign_up({"email": email, "password": password})
-            if resp.user:
-                session["user"] = {"email": email, "name": name or email.split("@")[0]}
-                return jsonify(success=True, redirect="/dashboard")
-            return jsonify(success=False, message=resp.get("error","Sign-up failed"))
-        elif mode == "login":
-            resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            if resp.user:
-                session["user"] = {"email": email}
-                return jsonify(success=True, redirect="/dashboard")
-            return jsonify(success=False, message="Invalid credentials.")
-        return jsonify(success=False, message="Invalid mode.")
-    except Exception as e:
-        return jsonify(success=False, message=str(e))
+            if not resp.user:
+                return jsonify(success=False, message=resp.get("error", "Sign-up failed."))
 
+            # 2) Hash & store in your own `users` table
+            hashed_pw = generate_password_hash(password)
+            supabase.table("users").insert({
+                "email":    email,
+                "password": hashed_pw,
+                "fullname": name or email.split("@")[0]
+            }).execute()
+
+            # 3) Fetch the new row back, instantiate your User, and log in
+            user = User.get_by_email(email)
+            login_user(user)
+
+            # 4) Return JSON to frontend
+            return jsonify(success=True, redirect="/dashboard")
+
+
+        # --- LOGIN FLOW ---
+        elif mode == "login":
+            # 1) Verify creds with Supabase Auth
+            resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            if not resp.user:
+                return jsonify(success=False, message="Invalid credentials.")
+
+            # 2) Fetch from your own table to get id, fullname, etc
+            user = User.get_by_email(email)
+            if not user:
+                return jsonify(success=False, message="User record not found.")
+
+            # 3) Tell Flask-Login to remember this user
+            login_user(user)
+
+            return jsonify(success=True, redirect="/dashboard")
+
+
+        else:
+            return jsonify(success=False, message="Invalid mode."), 400
+
+    except Exception as e:
+        # any unexpected errors end up here
+        return jsonify(success=False, message=str(e)), 500
 
 @app.route("/dashboard")
 @login_required
