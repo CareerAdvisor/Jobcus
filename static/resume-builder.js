@@ -1,5 +1,15 @@
 // resume-builder.js
 
+// === Force all fetch() calls to include cookies ===
+;(function() {
+  const _fetch = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    // if the caller already set credentials, respect it; else default to same-origin
+    if (!('credentials' in init)) init.credentials = 'same-origin';
+    return _fetch(input, init);
+  };
+})();
+
 document.addEventListener("DOMContentLoaded", function () {
   // === Element References ===
   const form                      = document.getElementById("resumeForm");
