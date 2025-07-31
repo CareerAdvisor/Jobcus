@@ -528,6 +528,7 @@ def resume_analysis():
         if not data:
             return jsonify({"error": "Invalid request format"}), 400
 
+        # Handle PDF
         if "pdf" in data and data["pdf"]:
             try:
                 pdf_bytes = base64.b64decode(data["pdf"])
@@ -539,6 +540,7 @@ def resume_analysis():
                 print("PDF Decode Error:", pdf_err)
                 return jsonify({"error": "Unable to extract text from PDF"}), 400
 
+        # Handle Plain Text
         elif "text" in data and data["text"]:
             resume_text = data["text"].strip()
         else:
