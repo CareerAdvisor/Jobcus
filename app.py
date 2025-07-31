@@ -521,19 +521,17 @@ def get_interview_feedback():
 @app.route("/api/resume-analysis", methods=["POST"])
 def resume_analysis():
     try:
-        data = request.get_json()
+        data = request.get_json(force=True)  # Force JSON parsing
         resume_text = ""
 
-        # --- Step 0: Handle Resume Input ---
-        if not data:
-            return jsonify({"error": "Invalid request format"}), 400
-
-        # ✅ Fetch last uploaded resume if requested
+        # --- Step 0: Handle fetch_latest (from DB) ---
         if data.get("fetch_latest"):
+            # ✅ Replace with your DB logic
             resume_text = get_user_resume_text(current_user.id)
             if not resume_text:
                 return jsonify({"error": "No previous resume found"}), 400
 
+        # --- Step 1: Handle resume input (PDF or text) ---
         elif "pdf" in data and data["pdf"]:
             try:
                 pdf_bytes = base64.b64decode(data["pdf"])
@@ -547,14 +545,10 @@ def resume_analysis():
 
         elif "text" in data and data["text"].strip():
             resume_text = data["text"].strip()
-
         else:
             return jsonify({"error": "No resume data provided"}), 400
 
-        if not resume_text:
-            return jsonify({"error": "No resume content found"}), 400
-
-        # --- Step 1: AI ATS Analysis ---
+        # --- Step 2: AI ATS Analysis ---
         ai_prompt = (
             "You are an ATS resume analyzer. Analyze the resume below based on "
             "international best practices and ATS standards. Provide:\n"
@@ -570,7 +564,7 @@ def resume_analysis():
             temperature=0.6
         ).choices[0].message.content
 
-        # --- Step 2: Parse AI Response ---
+        # --- Step 3: Parse AI Response ---
         score, issues, strengths = 0, [], []
         for line in ai_response.splitlines():
             line = line.strip()
@@ -578,19 +572,20 @@ def resume_analysis():
                 try:
                     score = int(line.split(":")[1].strip())
                 except:
-                    score = 70  # fallback score
+                    score = 70  # fallback
             elif line.lower().startswith("issues"):
-                issues = [i.strip() for i in line.split(":")[1].split(";")]
+                issues = [i.strip() for i in line.split(":")[1].split(";") if i.strip()]
             elif line.lower().startswith("strengths"):
-                strengths = [s.strip() for s in line.split(":")[1].split(";")]
+                strengths = [s.strip() for s in line.split(":")[1].split(";") if s.strip()]
 
-        # --- Step 3: Keyword Matching ---
+        # --- Step 4: Keyword Matching ---
         target_keywords = [
             "Project Management", "Python", "Communication", 
             "Leadership", "Product Management", "Customer Service", "Agile"
         ]
         found_keywords = [kw for kw in target_keywords if kw.lower() in resume_text.lower()]
 
+        # --- Step 5: Return structured JSON ---
         return jsonify({
             "score": score,
             "analysis": {
