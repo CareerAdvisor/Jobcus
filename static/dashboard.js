@@ -16,7 +16,7 @@ function animateProgressCircle(circle, targetScore) {
   const percentageText = circle.querySelector(".percentage");
 
   let currentScore = parseInt(percentageText.textContent) || 0;
-  const step = targetScore > currentScore ? 1 : -1; // determine direction
+  const step = targetScore > currentScore ? 1 : -1;
 
   const animation = setInterval(() => {
     if (currentScore === targetScore) {
@@ -26,18 +26,48 @@ function animateProgressCircle(circle, targetScore) {
     currentScore += step;
     progressPath.setAttribute("stroke-dasharray", `${currentScore}, 100`);
     percentageText.textContent = `${currentScore}%`;
-  }, 20); // adjust speed here (20ms per step)
+  }, 20);
+}
+
+// === Animate Progress Bar Smoothly (Skill Gap / Interview Readiness) ===
+function animateProgressBar(bar, targetWidth) {
+  if (!bar) return;
+
+  let currentWidth = parseInt(bar.style.width) || 0;
+  const step = targetWidth > currentWidth ? 1 : -1;
+
+  const animation = setInterval(() => {
+    if (currentWidth === targetWidth) {
+      clearInterval(animation);
+      return;
+    }
+    currentWidth += step;
+    bar.style.width = `${currentWidth}%`;
+  }, 15);
 }
 
 // === Dynamic Resume Analysis Update ===
 function updateDashboardWithAnalysis(data) {
+  // --- Resume Score Circle ---
   const progressCircle = document.querySelector(".progress-circle");
   if (progressCircle) {
     const score = data.score || 0;
     animateProgressCircle(progressCircle, score);
   }
 
-  // Update Issues List
+  // --- Skill Gap Progress Bar ---
+  const skillGapBar = document.querySelector(".skill-gap-card .progress-fill");
+  if (skillGapBar && data.skill_gap_percent !== undefined) {
+    animateProgressBar(skillGapBar, data.skill_gap_percent);
+  }
+
+  // --- Interview Readiness Progress Bar ---
+  const interviewBar = document.querySelector(".interview-readiness-card .progress-fill");
+  if (interviewBar && data.interview_readiness_percent !== undefined) {
+    animateProgressBar(interviewBar, data.interview_readiness_percent);
+  }
+
+  // --- Issues List ---
   const issuesList = document.getElementById('top-issues');
   if (issuesList) {
     issuesList.innerHTML = '';
@@ -48,7 +78,7 @@ function updateDashboardWithAnalysis(data) {
     });
   }
 
-  // Update Strengths List
+  // --- Strengths List ---
   const strengthsList = document.getElementById('good-points');
   if (strengthsList) {
     strengthsList.innerHTML = '';
@@ -70,6 +100,9 @@ function fetchResumeAnalysis() {
     .then(res => res.json())
     .then(data => {
       if (!data.error) {
+        // Simulate missing values
+        if (data.skill_gap_percent === undefined) data.skill_gap_percent = 65;
+        if (data.interview_readiness_percent === undefined) data.interview_readiness_percent = 45;
         updateDashboardWithAnalysis(data);
       } else {
         console.warn("Resume analysis error:", data.error);
@@ -79,7 +112,7 @@ function fetchResumeAnalysis() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  // --- Initialize Progress Circles ---
+  // --- Initialize Resume Score Circles ---
   const circles = document.querySelectorAll(".progress-circle");
   circles.forEach(circle => {
     const value = parseInt(circle.dataset.score || "0");
@@ -89,7 +122,11 @@ document.addEventListener("DOMContentLoaded", function () {
     percentageText.textContent = `${value}%`;
   });
 
-  // Fetch initial resume analysis
+  // --- Initialize Progress Bars (start from 0%) ---
+  const progressBars = document.querySelectorAll(".progress-fill");
+  progressBars.forEach(bar => bar.style.width = "0%");
+
+  // --- Fetch initial resume analysis ---
   fetchResumeAnalysis();
 
   // --- User Progress Chart (Bar Chart) ---
@@ -145,11 +182,14 @@ document.addEventListener("DOMContentLoaded", function () {
         const res = await fetch("/api/resume-analysis", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pdf: base64Resume }) // or { text: resumeText }
+          body: JSON.stringify({ pdf: base64Resume })
         });
 
         const data = await res.json();
         if (!data.error) {
+          // Ensure default values if missing
+          if (data.skill_gap_percent === undefined) data.skill_gap_percent = 65;
+          if (data.interview_readiness_percent === undefined) data.interview_readiness_percent = 45;
           updateDashboardWithAnalysis(data);
         } else {
           alert("Error analyzing resume: " + data.error);
