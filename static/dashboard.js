@@ -94,13 +94,12 @@ function updateDashboardWithAnalysis(data) {
 function fetchResumeAnalysis() {
   fetch('/api/resume-analysis', {
     method: 'POST',
-    body: JSON.stringify({ fetch_latest: true }), // Custom key to indicate fetch last resume
+    body: JSON.stringify({ fetch_latest: true }), // ✅ New key
     headers: { 'Content-Type': 'application/json' }
   })
     .then(res => res.json())
     .then(data => {
       if (!data.error) {
-        // Simulate missing values
         if (data.skill_gap_percent === undefined) data.skill_gap_percent = 65;
         if (data.interview_readiness_percent === undefined) data.interview_readiness_percent = 45;
         updateDashboardWithAnalysis(data);
