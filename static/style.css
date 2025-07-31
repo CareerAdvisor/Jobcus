@@ -743,6 +743,53 @@ main {
   background-color: #f3f3f3;
 }
 
+.user-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.user-icon {
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  min-width: 140px;
+  display: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  z-index: 1000;
+}
+
+.user-dropdown li {
+  border-bottom: 1px solid #eee;
+}
+
+.user-dropdown li:last-child {
+  border-bottom: none;
+}
+
+.user-dropdown li a {
+  display: block;
+  padding: 10px;
+  color: #333;
+  text-decoration: none;
+}
+
+.user-dropdown li a:hover {
+  background: #f0f0f0;
+}
+
 /* === SCROLL DOWN ICON === */
 .scroll-down-icon {
   position: fixed;
