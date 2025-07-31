@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Jobcus{% endblock %}</title>
 
-  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" type="image/x-icon" />
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
@@ -16,23 +16,27 @@
   <button id="darkModeToggle" title="Toggle dark mode">🌓</button>
 
   <div class="page-container">
-    <header class="site-header">  
+    <header class="site-header">
       <div class="header-left">
         {% block header_icon %}{% endblock %}
       </div>
-        
-      <div class="header-logo"> 
-        <a href="/">
-          <img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" class="logo-img" />
-        </a>
+
+      <div class="header-logo">
+        <a href="/"><img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" class="logo-img" /></a>
       </div>
 
       <div class="header-right">
         {% if current_user.is_authenticated %}
         <div class="user-dropdown">
-          <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="User Icon" class="header-user-icon" onclick="toggleUserMenu()" title="Account" />
-          <div class="user-menu" id="userMenu" style="display: none;">
-            <a href="/dashboard">👤 Dashboard</a>
+          <img
+            src="{{ url_for('static', filename='icons/user.svg') }}"
+            alt="User Icon"
+            class="header-user-icon"
+            id="userIcon"
+            title="Account"
+          />
+          <div class="user-menu" id="userMenu">
+            <a href="/account">👤 Profile</a>
             <a href="/logout">🚪 Logout</a>
           </div>
         </div>
@@ -52,7 +56,6 @@
         <a href="/interview-coach">Interview Coach</a>
         <a href="/skill-gap">Skill Gap Analysis</a>
 
-        <!-- Features Dropdown -->
         <div class="dropdown">
           <button class="dropbtn">Features ▾</button>
           <div class="dropdown-content">
@@ -69,7 +72,7 @@
     <main>
       {% block content %}{% endblock %}
     </main>
-    
+
     {% if show_footer | default(true) %}
     <footer class="footer-note-static">
       &copy; 2025 Jobcus – Your AI Career Advisor
@@ -84,33 +87,6 @@
   {% endif %}
 
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-  <script>
-    AOS.init();
-
-    const toggleBtn = document.getElementById('darkModeToggle');
-    const isDark = localStorage.getItem('darkMode') === 'true';
-    if (isDark) document.body.classList.add('dark-mode');
-    toggleBtn.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-    });
-
-    // Toggle user menu dropdown
-    function toggleUserMenu() {
-      const menu = document.getElementById("userMenu");
-      menu.style.display = menu.style.display === "block" ? "none" : "block";
-    }
-
-    // Close user menu if clicking outside
-    document.addEventListener("click", function (event) {
-      const dropdown = document.querySelector(".user-dropdown");
-      const menu = document.getElementById("userMenu");
-      if (menu && !dropdown.contains(event.target)) {
-        menu.style.display = "none";
-      }
-    });
-  </script>
-
   <script src="{{ url_for('static', filename='base.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
