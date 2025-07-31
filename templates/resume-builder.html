@@ -1,4 +1,3 @@
-<!-- resume-builder.html -->
 {% extends "base.html" %}
 
 {% block title %}Resume Builder – Jobcus{% endblock %}
@@ -75,30 +74,29 @@
     <!-- Analysis will be injected here -->
   </div>
 
-<!-- Call to Action After Analysis -->
-<div id="post-analysis-cta" style="display:none; margin-top: 30px; padding: 20px; background: #fefce8; border-left: 4px solid #facc15; border-radius: 6px;">
-  <p style="margin: 0 0 10px; font-weight: 500;">🎯 A score above <strong>75%</strong> significantly increases your chances of being contacted by recruiters.</p>
-  <p style="margin: 0 0 15px;">Want to improve your score instantly?</p>
-  <button id="optimizeResume" class="primary-btn" style="background-color: #104879; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; font-size: 14px;">
-    ✨ Optimize My Resume
-  </button>
-</div>
+  <!-- Call to Action After Analysis -->
+  <div id="post-analysis-cta" style="display:none; margin-top: 30px; padding: 20px; background: #fefce8; border-left: 4px solid #facc15; border-radius: 6px;">
+    <p style="margin: 0 0 10px; font-weight: 500;">🎯 A score above <strong>75%</strong> significantly increases your chances of being contacted by recruiters.</p>
+    <p style="margin: 0 0 15px;">Want to improve your score instantly?</p>
+    <button id="optimizeResume" class="primary-btn" style="background-color: #104879; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; font-size: 14px;">
+      ✨ Optimize My Resume
+    </button>
+  </div>
 
-<!-- Optimized Resume Loading Indicator -->
-<div id="optimizedLoading" style="display: none; text-align: center; margin-top: 20px;">
-  <span style="font-size: 16px;">🤖 Optimizing your resume...</span>
-</div>
+  <!-- Optimized Resume Loading Indicator -->
+  <div id="optimizedLoading" style="display: none; text-align: center; margin-top: 20px;">
+    <span style="font-size: 16px;">🤖 Optimizing your resume...</span>
+  </div>
 
-<!-- Optimized Resume Output -->
-<div id="analyzerResumeOutput" class="resume-container" style="margin-top: 30px; display: none;"></div>
+  <!-- Optimized Resume Output -->
+  <div id="analyzerResumeOutput" class="resume-container" style="margin-top: 30px; display: none;"></div>
 
-<!-- Optimized Resume Download Buttons -->
-<div id="optimizedDownloadOptions" style="display: none; margin-top: 1rem; text-align: center;">
-  <button onclick="downloadOptimizedResume('pdf')">⬇️ Download PDF</button>
-  <button onclick="downloadOptimizedResume('docx')">⬇️ Download Word (.docx)</button>
-  <button onclick="downloadOptimizedResume('txt')">⬇️ Download TXT</button>
-</div>
-
+  <!-- Optimized Resume Download Buttons -->
+  <div id="optimizedDownloadOptions" style="display: none; margin-top: 1rem; text-align: center;">
+    <button onclick="downloadOptimizedResume('pdf')">⬇️ Download PDF</button>
+    <button onclick="downloadOptimizedResume('docx')">⬇️ Download Word (.docx)</button>
+    <button onclick="downloadOptimizedResume('txt')">⬇️ Download TXT</button>
+  </div>
 </section>
 
 <!-- 🧠 AI Resume Builder -->
@@ -110,33 +108,35 @@
 
   <form id="resumeForm" method="POST" action="javascript:void(0);">
     <label for="fullName">Full Name</label>
-    <textarea name="fullName" id="fullName" placeholder="John Doe" required /></textarea>
+    <textarea name="fullName" id="fullName" placeholder="John Doe" required></textarea>
 
     <label for="title">Job Title(s)</label>
-    <textarea name="title" id="title" placeholder="e.g. IT Support | Project Manager" required /></textarea>
+    <textarea name="title" id="title" placeholder="e.g. IT Support | Project Manager" required></textarea>
 
     <label for="contact">Contact Info</label>
-    <textarea name="contact" id="contact" placeholder="City | Phone Number | Email" required /></textarea>
+    <textarea name="contact" id="contact" placeholder="City | Phone Number | Email" required></textarea>
 
     <label for="summary">Professional Summary</label>
-    <textarea name="summary" placeholder="Tell us about your background"></textarea>
+    <textarea name="summary" id="summary" placeholder="Tell us about your background"></textarea>
 
     <label for="education">Education</label>
-    <textarea name="education" placeholder="List your academic background"></textarea>
+    <textarea name="education" id="education" placeholder="List your academic background"></textarea>
 
     <label for="experience">Work Experience</label>
-    <textarea name="experience" placeholder="Include your relevant job roles"></textarea>
+    <textarea name="experience" id="experience" placeholder="Include your relevant job roles"></textarea>
 
     <label for="skills">Skills</label>
-    <textarea name="skills" placeholder="List your top skills"></textarea>
+    <textarea name="skills" id="skills" placeholder="List your top skills"></textarea>
 
     <label for="certifications">Certifications</label>
-    <textarea name="certifications" placeholder="Any relevant licenses or certifications?"></textarea>
+    <textarea name="certifications" id="certifications" placeholder="Any relevant licenses or certifications?"></textarea>
 
     <label for="portfolio">LinkedIn or Portfolio</label>
-    <textarea name="portfolio" placeholder="Link to your profile or personal website" /></textarea>
+    <textarea name="portfolio" id="portfolio" placeholder="Link to your profile or personal website"></textarea>
 
-    <button type="submit" style="background-color: #104879; color: white; padding: 10px 20px; margin-top: 10px; border-radius: 5px;">✨ Generate Resume</button>
+    <button type="submit" style="background-color: #104879; color: white; padding: 10px 20px; margin-top: 10px; border-radius: 5px;">
+      ✨ Generate Resume
+    </button>
   </form>
 
   <div id="builderResumeOutput" class="resume-container" style="margin-top: 30px;"></div>
@@ -160,15 +160,9 @@
 {% endblock %}
 
 {% block scripts %}
-
-<!-- 3rd-party libs -->
-
-<!-- 📄 DOCX Export Support -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-<!-- 🧾 PDF Export Support -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
+  <!-- 3rd-party libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
 {% endblock %}
