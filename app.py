@@ -506,83 +506,109 @@ def get_interview_feedback():
 @app.route("/api/resume-analysis", methods=["POST"])
 def resume_analysis():
     data = request.get_json(force=True)
-    text = ""
+    resume_text = ""
 
-    # 1) Extract text
+    # 1) Extract text from PDF or plain text
     if data.get("pdf"):
         try:
             pdf_bytes = base64.b64decode(data["pdf"])
             reader    = PdfReader(BytesIO(pdf_bytes))
-            text      = " ".join(p.extract_text() or "" for p in reader.pages)
-            if not text.strip():
+            resume_text = " ".join(page.extract_text() or "" for page in reader.pages)
+            if not resume_text.strip():
                 return jsonify(error="PDF content empty"), 400
-        except:
+        except Exception as e:
+            logging.exception("PDF Decode Error")
             return jsonify(error="Unable to extract PDF text"), 400
+
     elif data.get("text"):
-        text = data["text"].strip()
-        if not text:
+        resume_text = data["text"].strip()
+        if not resume_text:
             return jsonify(error="No text provided"), 400
+
     else:
         return jsonify(error="No resume data provided"), 400
 
-    # 2) Ask the model
+    # 2) Build a rich ATS‐focused prompt
     prompt = (
-        "You are an ATS resume analyzer. Return only valid JSON. "
-        "Produce these keys exactly (all lowercase):\n"
-        "  score: integer between 0 and 100\n"
-        "  issues: array of strings\n"
-        "  strengths: array of strings\n\n"
-        f"Resume:\n{text}"
+        "You are an ATS-certified resume analyzer. Analyze the following resume and return **only** a JSON object with these keys:\n"
+        "  • score: integer 0–100 (overall ATS compatibility)\n"
+        "  • issues: array of strings (top 5 problems, e.g. missing power verbs, repeated words, grammar errors, lack of buzzwords, inconsistent bullet style)\n"
+        "  • strengths: array of strings (top 3 things done well, e.g. clear bullet structure, relevant keywords, concise summary)\n"
+        "  • suggestions: array of short actionable recommendations (e.g. “Replace passive verbs with action verbs like ‘Led’, ‘Implemented’”, “Vary your adjectives—avoid saying ‘responsible for’ more than once”, “Use ‘Project Management’, ‘Stakeholder Engagement’ as key phrases”)\n\n"
+        f"Resume content:\n\n{resume_text}"
     )
+
     try:
-        resp    = client.chat.completions.create(
+        # 3) Call the OpenAI API
+        resp = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role":"user","content":prompt}],
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.0
         )
         content = resp.choices[0].message.content.strip()
 
-        # 3) JSON parse
-        parsed = {}
+        # 4) Try to parse strict JSON
         try:
             parsed = json.loads(content)
         except json.JSONDecodeError:
-            # fallback to your line‐by‐line parsing
-            parsed = {}
-            score, issues, strengths = 0, [], []
+            # 5) Fallback line-by-line parse
+            score, issues, strengths, suggestions = 0, [], [], []
+            mode = None
             for line in content.splitlines():
                 line = line.strip()
-                if line.lower().startswith("score"):
+                lw   = line.lower()
+                if lw.startswith("score"):
                     try:
                         score = int(line.split(":",1)[1].strip())
                     except:
                         pass
-                elif line.lower().startswith("issues"):
-                    parts  = line.split(":",1)[1]
-                    issues = [i.strip() for i in parts.replace(";",",").split(",") if i.strip()]
-                elif line.lower().startswith("strengths"):
-                    parts     = line.split(":",1)[1]
-                    strengths= [s.strip() for s in parts.replace(";",",").split(",") if s.strip()]
+                elif lw.startswith("issues"):
+                    mode = "issues"
+                    continue
+                elif lw.startswith("strengths"):
+                    mode = "strengths"
+                    continue
+                elif lw.startswith("suggestions"):
+                    mode = "suggestions"
+                    continue
+                elif line.startswith(("-", "•")) and mode:
+                    item = line.lstrip("-• ").strip()
+                    if mode == "issues":
+                        issues.append(item)
+                    elif mode == "strengths":
+                        strengths.append(item)
+                    elif mode == "suggestions":
+                        suggestions.append(item)
+                else:
+                    # if it's inline after the header, split on semicolons/commas
+                    if mode in ("issues","strengths","suggestions") and ":" in line:
+                        parts = line.split(":",1)[1]
+                        arr   = [p.strip() for p in parts.replace(";",",").split(",") if p.strip()]
+                        if mode == "issues":
+                            issues.extend(arr)
+                        elif mode == "strengths":
+                            strengths.extend(arr)
+                        else:
+                            suggestions.extend(arr)
+
             parsed = {
                 "score": score,
                 "issues": issues,
-                "strengths": strengths
+                "strengths": strengths,
+                "suggestions": suggestions
             }
 
-        # 4) Normalize/massage the shape
-        score     = parsed.get("score") or parsed.get("Score") or 0
-        issues    = parsed.get("issues") or parsed.get("Issues") or []
-        strengths = parsed.get("strengths") or parsed.get("Strengths") or []
-
+        # 6) Normalize keys and return a fixed shape
         return jsonify({
-            "score": score,
+            "score": parsed.get("score", 0),
             "analysis": {
-                "issues": issues,
-                "strengths": strengths
-            }
+                "issues":    parsed.get("issues", []),
+                "strengths": parsed.get("strengths", [])
+            },
+            "suggestions": parsed.get("suggestions", [])
         })
 
-    except Exception:
+    except Exception as e:
         logging.exception("Resume analysis error")
         return jsonify(error="Resume analysis failed"), 500
 
