@@ -323,10 +323,8 @@ def account():
 
 
 @app.route("/dashboard")
-@login_required
 def dashboard():
     return render_template("dashboard.html")
-
 
 @app.route("/logout")
 @login_required
