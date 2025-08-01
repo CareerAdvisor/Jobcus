@@ -1,66 +1,73 @@
-document.addEventListener("DOMContentLoaded", function () { 
-  const toggleLink = document.getElementById("toggleMode");
-  const formTitle = document.getElementById("formTitle");
-  const nameGroup = document.getElementById("nameGroup");
-  const submitBtn = document.getElementById("submitButton");
-  const accountForm = document.getElementById("accountForm");
-  const flashMessages = document.getElementById("flashMessages");
+// static/account.js
+
+// Force cookies on every fetch (so if you later protect endpoints, they’ll work)
+;(function(){
+  const _fetch = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    init.credentials = init.credentials || 'same-origin';
+    return _fetch(input, init);
+  };
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form        = document.getElementById('accountForm');
+  const toggleLink  = document.getElementById('toggleMode');
+  const formTitle   = document.getElementById('formTitle');
+  const submitBtn   = document.getElementById('submitButton');
+  const modeInput   = document.getElementById('mode');
+  const nameGroup   = document.getElementById('nameGroup');
+  const flash       = document.getElementById('flashMessages');
 
   let isSignup = false;
 
-  // Toggle between Login and Sign Up
-  toggleLink.addEventListener("click", function (e) {
+  // Toggle between Sign In / Sign Up
+  toggleLink.addEventListener('click', (e) => {
     e.preventDefault();
     isSignup = !isSignup;
-
     if (isSignup) {
-      formTitle.textContent = "Create a Jobcus Account";
-      submitBtn.textContent = "Sign Up";
-      toggleLink.textContent = "Already have an account? Sign In";
-      nameGroup.style.display = "block";
-      document.getElementById("mode").value = "signup";
+      formTitle.textContent      = 'Sign Up for Jobcus';
+      submitBtn.textContent      = 'Sign Up';
+      toggleLink.textContent     = 'Sign In';
+      modeInput.value            = 'signup';
+      nameGroup.classList.remove('hidden');
     } else {
-      formTitle.textContent = "Sign In to Jobcus";
-      submitBtn.textContent = "Sign In";
-      toggleLink.textContent = "Don't have an account? Sign Up";
-      nameGroup.style.display = "none";
-      document.getElementById("mode").value = "login";
+      formTitle.textContent      = 'Sign In to Jobcus';
+      submitBtn.textContent      = 'Sign In';
+      toggleLink.textContent     = 'Sign Up';
+      modeInput.value            = 'login';
+      nameGroup.classList.add('hidden');
     }
+    flash.textContent = '';  // clear any old messages
   });
 
-  // Handle Form Submission
-  accountForm.addEventListener("submit", async function (e) {
+  // Handle form submit via fetch(JSON)
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    flashMessages.innerHTML = ""; // clear previous messages
+    flash.textContent = '';
 
-    const formData = new FormData(accountForm);
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const name     = document.getElementById('name').value.trim();
+    const mode     = modeInput.value;
 
     try {
-      const response = await fetch("/account", {
-        method: "POST",
-        body: formData
+      const res = await fetch('/account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode, email, password, name })
       });
-      const result = await response.json();
+      const data = await res.json();
 
-      // Show message dynamically
-      const msg = document.createElement("p");
-      msg.textContent = result.message;
-      msg.classList.add(result.success ? "success" : "error");
-      flashMessages.appendChild(msg);
-
-      // Redirect on success
-      if (result.success && result.redirect) {
-        setTimeout(() => {
-          window.location.href = result.redirect;
-        }, 1000);
+      if (data.success) {
+        // Redirect to dashboard on success
+        window.location.href = data.redirect;
+      } else {
+        // Show error message returned by server
+        flash.textContent = data.message || 'Something went wrong. Please try again.';
       }
-
     } catch (err) {
-      console.error("Request failed:", err);
-      const msg = document.createElement("p");
-      msg.textContent = "Request failed. Please try again.";
-      msg.classList.add("error");
-      flashMessages.appendChild(msg);
+      console.error('Account request failed:', err);
+      flash.textContent = 'Server error. Please try again later.';
     }
   });
 });
