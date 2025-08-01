@@ -5,22 +5,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const optimizedDownloadOptions = document.getElementById("optimizedDownloadOptions");
 
   let optimizeWithAI = true;
-  let shouldBuild = false;
+  let shouldBuild = true; // Always build when form is submitted directly
 
   if (!form || !resumeOutput) {
     console.warn("Missing required elements for resume builder.");
     return;
   }
 
-  form.addEventListener("submit", function (e) {
-    if (!shouldBuild) {
-      e.preventDefault();
-      popup.classList.remove("hidden");
-      return;
-    }
-    shouldBuild = false;
-  });
-
+  // Form submission for resume builder
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     if (!shouldBuild) return;
@@ -42,7 +34,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const cleaned = cleanAIText(result.formatted_resume);
         resumeOutput.innerHTML = cleaned;
         if (downloadOptions) downloadOptions.style.display = "block";
-        if (optimizedDownloadOptions) optimizedDownloadOptions.style.display = "block";
         window.scrollTo({ top: resumeOutput.offsetTop, behavior: "smooth" });
       } else {
         resumeOutput.innerHTML = `<p style="color:red;">❌ Failed to generate resume.</p>`;
@@ -67,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
       saveAs(blob, "resume.txt");
     } else if (format === "pdf") {
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
       const lines = doc.splitTextToSize(text, 180);
       doc.text(lines, 10, 10);
       doc.save("resume.pdf");
@@ -89,25 +80,24 @@ document.addEventListener("DOMContentLoaded", function () {
       saveAs(blob, "resume-optimized.doc");
     } else if (format === "pdf") {
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
       const lines = doc.splitTextToSize(content, 180);
       doc.text(lines, 10, 10);
       doc.save("resume-optimized.pdf");
     }
   };
 
+  // Optimizer from Analyzer
   const optimizeBtn = document.getElementById("optimizeResume");
   if (optimizeBtn) {
     optimizeBtn.addEventListener("click", async () => {
       const resumeText = document.getElementById("resume-text")?.value.trim();
-
       if (!resumeText) {
         alert("Please paste your resume text above first.");
         return;
       }
 
       resumeOutput.innerHTML = "⏳ Optimizing your resume...";
-
       try {
         const response = await fetch("/generate-resume", {
           method: "POST",
@@ -198,7 +188,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const cta = document.getElementById("post-analysis-cta");
       if (cta) cta.style.display = "block";
-
     } catch (err) {
       console.error("Analyzer error:", err);
       analyzerResult.innerHTML = `<p style="color:red;">❌ Failed to analyze resume. Please try again.</p>`;
