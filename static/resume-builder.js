@@ -5,14 +5,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const optimizedDownloadOptions = document.getElementById("optimizedDownloadOptions");
 
   let optimizeWithAI = true;
-  let shouldBuild = true; // Always build when form is submitted directly
+  let shouldBuild = true;
 
   if (!form || !resumeOutput) {
     console.warn("Missing required elements for resume builder.");
     return;
   }
 
-  // Form submission for resume builder
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     if (!shouldBuild) return;
@@ -52,42 +51,53 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   window.downloadResume = function (format) {
-    const text = resumeOutput.innerText || "Your resume content here";
+    const container = document.getElementById("resumeOutput");
+    const text = container.innerText || "Your resume content here";
+
     if (format === "txt") {
       const blob = new Blob([text], { type: "text/plain" });
       saveAs(blob, "resume.txt");
-    } else if (format === "pdf") {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: "mm", format: "a4" });
-      const lines = doc.splitTextToSize(text, 180);
-      doc.text(lines, 10, 10);
-      doc.save("resume.pdf");
     } else if (format === "doc") {
       const blob = new Blob([text], { type: "application/msword" });
       saveAs(blob, "resume.doc");
+    } else if (format === "pdf") {
+      const element = container.cloneNode(true);
+      element.style.fontFamily = 'Arial, sans-serif';
+      element.style.padding = '20px';
+      html2pdf().set({
+        margin: 0.5,
+        filename: 'resume.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      }).from(element).save();
     }
   };
 
   window.downloadOptimizedResume = function (format) {
     const container = document.getElementById("resumeOutput");
-    const content = container.innerText || "Optimized resume content";
+    const text = container.innerText || "Optimized resume content";
 
     if (format === "txt") {
-      const blob = new Blob([content], { type: "text/plain" });
+      const blob = new Blob([text], { type: "text/plain" });
       saveAs(blob, "resume-optimized.txt");
     } else if (format === "doc") {
-      const blob = new Blob([content], { type: "application/msword" });
+      const blob = new Blob([text], { type: "application/msword" });
       saveAs(blob, "resume-optimized.doc");
     } else if (format === "pdf") {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: "mm", format: "a4" });
-      const lines = doc.splitTextToSize(content, 180);
-      doc.text(lines, 10, 10);
-      doc.save("resume-optimized.pdf");
+      const element = container.cloneNode(true);
+      element.style.fontFamily = 'Arial, sans-serif';
+      element.style.padding = '20px';
+      html2pdf().set({
+        margin: 0.5,
+        filename: 'resume-optimized.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      }).from(element).save();
     }
   };
 
-  // Optimizer from Analyzer
   const optimizeBtn = document.getElementById("optimizeResume");
   if (optimizeBtn) {
     optimizeBtn.addEventListener("click", async () => {
