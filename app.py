@@ -503,55 +503,52 @@ def get_interview_feedback():
 
 
 # Resume Analysis API
-import json  # make sure this is imported
-
 @app.route("/api/resume-analysis", methods=["POST"])
 def resume_analysis():
     data = request.get_json(force=True)
-    resume_text = ""
+    text = ""
 
-    # Handle PDF or pasted text
+    # 1) Extract text
     if data.get("pdf"):
         try:
             pdf_bytes = base64.b64decode(data["pdf"])
             reader    = PdfReader(BytesIO(pdf_bytes))
-            resume_text = " ".join(p.extract_text() or "" for p in reader.pages)
-            if not resume_text.strip():
+            text      = " ".join(p.extract_text() or "" for p in reader.pages)
+            if not text.strip():
                 return jsonify(error="PDF content empty"), 400
-        except Exception as e:
+        except:
             return jsonify(error="Unable to extract PDF text"), 400
-
     elif data.get("text"):
-        resume_text = data["text"].strip()
-        if not resume_text:
+        text = data["text"].strip()
+        if not text:
             return jsonify(error="No text provided"), 400
-
     else:
         return jsonify(error="No resume data provided"), 400
 
-    # Build AI prompt
+    # 2) Ask the model
     prompt = (
-        "You are an ATS resume analyzer. Output **only** a JSON object with keys:\n"
-        "- score (integer 0–100)\n"
-        "- issues (array of strings)\n"
-        "- strengths (array of strings)\n\n"
-        f"Resume:\n{resume_text}"
+        "You are an ATS resume analyzer. Return only valid JSON. "
+        "Produce these keys exactly (all lowercase):\n"
+        "  score: integer between 0 and 100\n"
+        "  issues: array of strings\n"
+        "  strengths: array of strings\n\n"
+        f"Resume:\n{text}"
     )
-
     try:
-        resp = client.chat.completions.create(
+        resp    = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role":"user", "content":prompt}],
+            messages=[{"role":"user","content":prompt}],
             temperature=0.0
         )
         content = resp.choices[0].message.content.strip()
 
-        # 1) Try strict JSON parse
+        # 3) JSON parse
+        parsed = {}
         try:
             parsed = json.loads(content)
-            return jsonify(parsed)
         except json.JSONDecodeError:
-            # 2) Fallback to line-based parsing
+            # fallback to your line‐by‐line parsing
+            parsed = {}
             score, issues, strengths = 0, [], []
             for line in content.splitlines():
                 line = line.strip()
@@ -561,23 +558,31 @@ def resume_analysis():
                     except:
                         pass
                 elif line.lower().startswith("issues"):
-                    parts = line.split(":",1)[1]
+                    parts  = line.split(":",1)[1]
                     issues = [i.strip() for i in parts.replace(";",",").split(",") if i.strip()]
                 elif line.lower().startswith("strengths"):
-                    parts = line.split(":",1)[1]
-                    strengths = [s.strip() for s in parts.replace(";",",").split(",") if s.strip()]
-
-            return jsonify({
+                    parts     = line.split(":",1)[1]
+                    strengths= [s.strip() for s in parts.replace(";",",").split(",") if s.strip()]
+            parsed = {
                 "score": score,
-                "analysis": {
-                    "issues": issues,
-                    "strengths": strengths
-                },
-                # include raw in case you want it for debugging
-                "raw": content
-            })
+                "issues": issues,
+                "strengths": strengths
+            }
 
-    except Exception as e:
+        # 4) Normalize/massage the shape
+        score     = parsed.get("score") or parsed.get("Score") or 0
+        issues    = parsed.get("issues") or parsed.get("Issues") or []
+        strengths = parsed.get("strengths") or parsed.get("Strengths") or []
+
+        return jsonify({
+            "score": score,
+            "analysis": {
+                "issues": issues,
+                "strengths": strengths
+            }
+        })
+
+    except Exception:
         logging.exception("Resume analysis error")
         return jsonify(error="Resume analysis failed"), 500
 
