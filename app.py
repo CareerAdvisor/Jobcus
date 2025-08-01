@@ -508,7 +508,7 @@ def resume_analysis():
     data = request.get_json(force=True)
     resume_text = ""
 
-    # 1) Extract text from PDF or plain text
+    # 1) Extract text
     if data.get("pdf"):
         try:
             pdf_bytes = base64.b64decode(data["pdf"])
@@ -516,7 +516,7 @@ def resume_analysis():
             resume_text = " ".join(page.extract_text() or "" for page in reader.pages)
             if not resume_text.strip():
                 return jsonify(error="PDF content empty"), 400
-        except Exception as e:
+        except Exception:
             logging.exception("PDF Decode Error")
             return jsonify(error="Unable to extract PDF text"), 400
 
@@ -528,18 +528,18 @@ def resume_analysis():
     else:
         return jsonify(error="No resume data provided"), 400
 
-    # 2) Build a rich ATS‐focused prompt
+    # 2) Rich ATS-focused prompt
     prompt = (
         "You are an ATS-certified resume analyzer. Analyze the following resume and return **only** a JSON object with these keys:\n"
         "  • score: integer 0–100 (overall ATS compatibility)\n"
-        "  • issues: array of strings (top 5 problems, e.g. missing power verbs, repeated words, grammar errors, lack of buzzwords, inconsistent bullet style)\n"
-        "  • strengths: array of strings (top 3 things done well, e.g. clear bullet structure, relevant keywords, concise summary)\n"
-        "  • suggestions: array of short actionable recommendations (e.g. “Replace passive verbs with action verbs like ‘Led’, ‘Implemented’”, “Vary your adjectives—avoid saying ‘responsible for’ more than once”, “Use ‘Project Management’, ‘Stakeholder Engagement’ as key phrases”)\n\n"
+        "  • issues: array of strings (top 5 problems: missing power verbs, repeated words, grammar errors, lack of buzzwords, bullet style inconsistencies)\n"
+        "  • strengths: array of strings (top 3 things done well: clear bullet structure, relevant keywords, concise summary)\n"
+        "  • suggestions: array of short actionable tips (e.g. “Use action verbs like ‘Led’”, “Vary adjectives—avoid ‘responsible for’”, “Include ‘Agile’ once.”)\n\n"
         f"Resume content:\n\n{resume_text}"
     )
 
     try:
-        # 3) Call the OpenAI API
+        # 3) Call OpenAI
         resp = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
@@ -547,49 +547,39 @@ def resume_analysis():
         )
         content = resp.choices[0].message.content.strip()
 
-        # 4) Try to parse strict JSON
+        # 4) Strict JSON parse
         try:
             parsed = json.loads(content)
         except json.JSONDecodeError:
-            # 5) Fallback line-by-line parse
+            # 5) Fallback line-by-line parsing
             score, issues, strengths, suggestions = 0, [], [], []
             mode = None
             for line in content.splitlines():
-                line = line.strip()
-                lw   = line.lower()
+                ln = line.strip()
+                lw = ln.lower()
                 if lw.startswith("score"):
                     try:
-                        score = int(line.split(":",1)[1].strip())
-                    except:
-                        pass
+                        score = int(ln.split(":",1)[1].strip())
+                    except: pass
                 elif lw.startswith("issues"):
-                    mode = "issues"
-                    continue
+                    mode = "issues"; continue
                 elif lw.startswith("strengths"):
-                    mode = "strengths"
-                    continue
+                    mode = "strengths"; continue
                 elif lw.startswith("suggestions"):
-                    mode = "suggestions"
-                    continue
-                elif line.startswith(("-", "•")) and mode:
-                    item = line.lstrip("-• ").strip()
-                    if mode == "issues":
-                        issues.append(item)
-                    elif mode == "strengths":
-                        strengths.append(item)
-                    elif mode == "suggestions":
-                        suggestions.append(item)
+                    mode = "suggestions"; continue
+                elif (ln.startswith("-") or ln.startswith("•")) and mode:
+                    item = ln.lstrip("-• ").strip()
+                    if mode == "issues":     issues.append(item)
+                    elif mode == "strengths": strengths.append(item)
+                    else:                    suggestions.append(item)
                 else:
-                    # if it's inline after the header, split on semicolons/commas
-                    if mode in ("issues","strengths","suggestions") and ":" in line:
-                        parts = line.split(":",1)[1]
+                    # inline list after header
+                    if mode and ":" in ln:
+                        parts = ln.split(":",1)[1]
                         arr   = [p.strip() for p in parts.replace(";",",").split(",") if p.strip()]
-                        if mode == "issues":
-                            issues.extend(arr)
-                        elif mode == "strengths":
-                            strengths.extend(arr)
-                        else:
-                            suggestions.extend(arr)
+                        if mode == "issues":     issues.extend(arr)
+                        elif mode == "strengths": strengths.extend(arr)
+                        else:                    suggestions.extend(arr)
 
             parsed = {
                 "score": score,
@@ -598,7 +588,7 @@ def resume_analysis():
                 "suggestions": suggestions
             }
 
-        # 6) Normalize keys and return a fixed shape
+        # 6) Normalize shape
         return jsonify({
             "score": parsed.get("score", 0),
             "analysis": {
@@ -608,7 +598,7 @@ def resume_analysis():
             "suggestions": parsed.get("suggestions", [])
         })
 
-    except Exception as e:
+    except Exception:
         logging.exception("Resume analysis error")
         return jsonify(error="Resume analysis failed"), 500
 
