@@ -12,20 +12,16 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🚀 resume-builder.js loaded");
 
-  // Grab all the elements we need
-  const analyzeBtn = document.getElementById("analyze-btn");
-  const resumeText = document.getElementById("resume-text");
-  const resumeFile = document.getElementById("resumeFile");
-  const analyzerResult = document.getElementById("analyzer-result");
-  const scoreBar = document.getElementById("score-bar");
-  const keywordList = document.getElementById("keyword-list");
-  const postAnalysisCTA = document.getElementById("post-analysis-cta");
-  const optimizeBtn = document.getElementById("optimizeResume");
-  const optimizedLoading = document.getElementById("optimizedLoading");
-  const optimizedOutput = document.getElementById("analyzerResumeOutput");
+  const analyzeBtn       = document.getElementById("analyze-btn");
+  const resumeText       = document.getElementById("resume-text");
+  const resumeFile       = document.getElementById("resumeFile");
+  const analyzerResult   = document.getElementById("analyzer-result");
+  const scoreBar         = document.getElementById("score-bar");
+  const keywordList      = document.getElementById("keyword-list");
+  const postAnalysisCTA  = document.getElementById("post-analysis-cta");
+  const optimizedOutput  = document.getElementById("analyzerResumeOutput");
   const optimizedDownloads = document.getElementById("optimizedDownloadOptions");
 
-  // Utility to render an array of strings into a <ul>
   function renderList(container, items) {
     container.innerHTML = "";
     items.forEach((i) => {
@@ -35,7 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Animate the score bar from 0 → target
   function animateScore(to) {
     let current = 0;
     scoreBar.style.width = "0%";
@@ -49,27 +44,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 15);
   }
 
-  // Handle the API response
-  async function handleAnalysisResponse(response) {
-    if (!response.ok) {
-      analyzerResult.innerHTML = `<p style='color:red;'>❌ Server error: ${response.status}</p>`;
-      return;
-    }
-
-    const data = await response.json();
-    console.log("✅ Analysis Result:", data);
-
-    // Show results
-    if (data.score !== undefined) animateScore(data.score);
-    if (data.keywords) renderList(keywordList, data.keywords);
-    analyzerResult.innerHTML = data.summary || "<p>Analysis complete.</p>";
-
-    if (postAnalysisCTA) postAnalysisCTA.style.display = "block";
-  }
-
-  // Kick off the analysis using FormData
   async function sendAnalysis(file) {
-    if (!file && !resumeText.value.trim()) {
+    const textContent = resumeText.value.trim();
+    if (!file && !textContent) {
       alert("Please paste text or upload a file.");
       return;
     }
@@ -79,37 +56,68 @@ document.addEventListener("DOMContentLoaded", () => {
     optimizedOutput.style.display = "none";
     optimizedDownloads.style.display = "none";
 
-    try {
-      const formData = new FormData();
-      if (file) formData.append("file", file);
-      if (resumeText.value.trim()) formData.append("text", resumeText.value.trim());
+    let payload = {};
 
-      const response = await fetch("/api/resume/analyze", {
-        method: "POST",
-        body: formData,
-      });
+    if (file) {
+      // Convert file to Base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const b64 = reader.result.split(",")[1];
+        if (!b64) {
+          analyzerResult.innerHTML =
+            "<p style='color:red;'>❌ Failed to read file.</p>";
+          return;
+        }
 
-      await handleAnalysisResponse(response);
-    } catch (err) {
-      console.error("❌ Analysis failed:", err);
-      analyzerResult.innerHTML = "<p style='color:red;'>❌ Failed to analyze your resume.</p>";
+        payload = { pdf: b64 };
+        await sendRequest(payload);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      payload = { text: textContent };
+      await sendRequest(payload);
     }
   }
 
-  // Event listener for the analyze button
-  if (analyzeBtn) {
-    analyzeBtn.addEventListener("click", () => {
-      const file = resumeFile.files[0];
-      sendAnalysis(file);
-    });
+  async function sendRequest(payload) {
+    try {
+      const response = await fetch("/api/resume-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        analyzerResult.innerHTML =
+          `<p style='color:red;'>❌ Error: ${err.error || "Analysis failed"}</p>`;
+        return;
+      }
+
+      const data = await response.json();
+      console.log("Analysis Result:", data);
+
+      // Show results
+      if (data.score !== undefined) animateScore(data.score);
+      if (data.issues) renderList(keywordList, data.issues);
+
+      analyzerResult.innerHTML = `
+        <p>✅ Analysis Complete!</p>
+        <p><strong>Score:</strong> ${data.score || 0}%</p>
+        <p><strong>Strengths:</strong> ${data.strengths?.join(", ") || "N/A"}</p>
+        <p><strong>Suggestions:</strong> ${data.suggestions?.join(", ") || "N/A"}</p>
+      `;
+
+      if (postAnalysisCTA) postAnalysisCTA.style.display = "block";
+    } catch (error) {
+      console.error(error);
+      analyzerResult.innerHTML =
+        "<p style='color:red;'>❌ Network or server error</p>";
+    }
   }
 
-  // Optional: auto-analyze when a file is selected
-  if (resumeFile) {
-    resumeFile.addEventListener("change", () => {
-      if (resumeFile.files.length > 0) {
-        sendAnalysis(resumeFile.files[0]);
-      }
-    });
-  }
+  analyzeBtn?.addEventListener("click", () => {
+    const file = resumeFile.files[0];
+    sendAnalysis(file);
+  });
 });
