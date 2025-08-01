@@ -1,4 +1,4 @@
-// resume-builder.js
+// static/resume-builder.js
 
 // — Force all fetch() calls to include credentials —
 ;(function(){
@@ -12,36 +12,78 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🚀 [resume-builder] script loaded");
 
-  const analyzeBtn     = document.getElementById("analyze-btn");
-  const resumeText     = document.getElementById("resume-text");
-  const resumeFile     = document.getElementById("resumeFile");
-  const analyzerResult = document.getElementById("analyzer-result");
-  const scoreBar       = document.getElementById("score-bar");
-  const keywordList    = document.getElementById("keyword-list");
+  // Element refs
+  const analyzeBtn       = document.getElementById("analyze-btn");
+  const resumeText       = document.getElementById("resume-text");
+  const resumeFile       = document.getElementById("resumeFile");
+  const analyzerResult   = document.getElementById("analyzer-result");
+  const scoreBar         = document.getElementById("score-bar");
+  const keywordList      = document.getElementById("keyword-list");
+  const postAnalysisCTA  = document.getElementById("post-analysis-cta");
+  const optimizedLoading = document.getElementById("optimizedLoading");
 
-  // Always clear old analysis before a new run
+  // Clears any old analysis
   localStorage.removeItem("resumeAnalysis");
 
-  // Cleans AI-returned HTML down to plain text
-  function cleanAIText(content) {
-    return content
-      .replace(/```html|```/g, "")
-      .replace(/(?:Certainly!|Here's a resume|This HTML).*?\n/gi, "")
-      .trim();
+  // Utility: render lists
+  function renderList(container, items) {
+    container.innerHTML = "";
+    items.forEach(i => {
+      const li = document.createElement("li");
+      li.textContent = i;
+      container.appendChild(li);
+    });
   }
 
-  // Reads the file, calls the API, stores result, redirects
+  // Animate score bar from 0 to target
+  function animateScore(to) {
+    let curr = 0;
+    scoreBar.style.width = "0%";
+    scoreBar.innerText = "0%";
+    const step = to > 0 ? 1 : -1;
+    const iv = setInterval(() => {
+      if (curr === to) return clearInterval(iv);
+      curr += step;
+      scoreBar.style.width = `${curr}%`;
+      scoreBar.innerText = `${curr}%`;
+    }, 15);
+  }
+
+  // Inject analysis into DOM
+  function showAnalysis(data) {
+    // Score
+    animateScore(data.score || 0);
+
+    // Issues and strengths
+    renderList(analyzerResult.querySelector(".issues-list"), data.analysis.issues || []);
+    renderList(analyzerResult.querySelector(".strengths-list"), data.analysis.strengths || []);
+
+    // Suggestions (if you have a container)
+    const sugCont = analyzerResult.querySelector(".suggestions-list");
+    if (sugCont && data.suggestions) {
+      renderList(sugCont, data.suggestions);
+    }
+
+    // Reveal CTA
+    if (postAnalysisCTA) postAnalysisCTA.style.display = "block";
+  }
+
+  // Read file/text, call API, then showAnalysis
   async function sendAnalysis(file) {
     if (!file) {
-      alert("Please select a file to analyze.");
+      alert("Please select a file or paste text.");
       return;
     }
+
+    // Show loader
+    analyzerResult.innerHTML = "<p>⏳ Analyzing…</p>";
+    if (postAnalysisCTA) postAnalysisCTA.style.display = "none";
 
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result.split(",")[1];
       if (!base64) {
-        alert("Failed to read file. Try another PDF or TXT.");
+        analyzerResult.innerHTML = "<p style='color:red;'>Read error</p>";
         return;
       }
 
@@ -51,41 +93,71 @@ document.addEventListener("DOMContentLoaded", () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pdf: base64 })
         });
-        if (!res.ok) throw new Error("Server returned " + res.status);
+        if (!res.ok) throw new Error("Server " + res.status);
 
         const data = await res.json();
-        console.log("📝 [resume-builder] Analysis response:", data);
-
         if (data.error) {
-          alert("Error analyzing resume: " + data.error);
+          analyzerResult.innerHTML = `<p style="color:red;">${data.error}</p>`;
           return;
         }
+        console.log("📝 Analysis response:", data);
 
+        // Store for later if you want
         localStorage.setItem("resumeAnalysis", JSON.stringify(data));
-        console.log("💾 [resume-builder] Stored resumeAnalysis:", localStorage.getItem("resumeAnalysis"));
 
-        window.location.href = "/dashboard";
+        // Build out analyzerResult HTML structure
+        analyzerResult.innerHTML = `
+          <h3>Your Resume Analysis</h3>
+          <div class="score-container">
+            <label>Score:</label>
+            <div id="score-bar" class="score-bar">0%</div>
+          </div>
+          <div class="analysis-section">
+            <h4>⚠️ Issues Found</h4>
+            <ul class="issues-list"></ul>
+          </div>
+          <div class="analysis-section">
+            <h4>✅ Strengths</h4>
+            <ul class="strengths-list"></ul>
+          </div>
+          ${ data.suggestions
+             ? `<div class="analysis-section">
+                  <h4>💡 Suggestions</h4>
+                  <ul class="suggestions-list"></ul>
+                </div>`
+             : ""
+          }
+        `;
+
+        // Re-acquire the newly injected scoreBar and lists
+        const newScoreBar   = document.getElementById("score-bar");
+        const newIssuesList = analyzerResult.querySelector(".issues-list");
+        const newStrengths  = analyzerResult.querySelector(".strengths-list");
+        const newSugList    = analyzerResult.querySelector(".suggestions-list");
+
+        // Animate & populate
+        animateScore(data.score || 0);
+        renderList(newIssuesList, data.analysis.issues || []);
+        renderList(newStrengths, data.analysis.strengths || []);
+        if (newSugList) renderList(newSugList, data.suggestions);
+
+        // Reveal CTA
+        if (postAnalysisCTA) postAnalysisCTA.style.display = "block";
+
       } catch (err) {
-        console.error("⚠️ [resume-builder] Analyzer error:", err);
-        alert("Could not analyze resume. Please try again.");
+        console.error("⚠️ Analyzer error:", err);
+        analyzerResult.innerHTML = `<p style="color:red;">Could not analyze resume. Try again.</p>`;
       }
     };
 
     reader.readAsDataURL(file);
   }
 
-  // Wire up the Analyze button
+  // Hook up the Analyze button
   analyzeBtn.addEventListener("click", () => {
-    analyzerResult.innerHTML = "⏳ Analyzing...";
-    keywordList.innerHTML    = "";
-    scoreBar.style.width     = "0%";
-    scoreBar.innerText       = "0%";
-
-    // If they pasted text, wrap it in a File object
-    const file = resumeFile.files[0] ||
-                 new File([new Blob([resumeText.value], { type: "text/plain" })],
+    const file = resumeFile.files[0]
+               || new File([new Blob([resumeText.value], { type: "text/plain" })],
                           "resume.txt", { type: "text/plain" });
-
     sendAnalysis(file);
   });
 });
