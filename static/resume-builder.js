@@ -1,5 +1,20 @@
 // resume-builder.js
 
+console.log("🚀 [resume-builder] script loaded");      // ← top of file
+
+// … rest of file …
+
+      // right after fetch and before saving:
+      const data = await res.json();
+      console.log("📝 [resume-builder] Analysis response:", data);   // ← INSIDE reader.onload
+
+      if (data.error) { … }  
+      localStorage.setItem("resumeAnalysis", JSON.stringify(data));
+      console.log("💾 [resume-builder] Stored resumeAnalysis:",
+                  localStorage.getItem("resumeAnalysis"));           // ← and here
+      window.location.href = "/dashboard";
+
+
 // — Force all fetch() calls to include credentials —
 ;(function(){
   const _fetch = window.fetch.bind(window);
