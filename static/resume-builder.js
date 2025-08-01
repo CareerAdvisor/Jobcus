@@ -17,12 +17,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const scoreBar       = document.getElementById("score-bar");
   const keywordList    = document.getElementById("keyword-list");
 
-  function cleanAIText(content) {
-    return content
-      .replace(/```html|```/g, "")
-      .replace(/(?:Certainly!|Here's a resume|This HTML).*?\n/gi, "")
-      .trim();
-  }
+  // Clean up any old data
+  localStorage.removeItem("resumeAnalysis");
 
   async function sendAnalysis(file) {
     if (!file) { alert("Please select a file."); return; }
@@ -40,16 +36,22 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!res.ok) throw new Error("Server returned " + res.status);
 
         const data = await res.json();
-        console.log("📝 Analysis response:", data);
+        console.log("📝 [resume-builder] Analysis response:", data);
+
         if (data.error) {
           alert("Error analyzing resume: " + data.error);
           return;
         }
 
+        // **Save to LocalStorage for the dashboard**
         localStorage.setItem("resumeAnalysis", JSON.stringify(data));
+        console.log("💾 [resume-builder] Stored resumeAnalysis:", localStorage.getItem("resumeAnalysis"));
+
+        // Redirect to dashboard
         window.location.href = "/dashboard";
+
       } catch (err) {
-        console.error("Analyzer error:", err);
+        console.error("⚠️ [resume-builder] Analyzer error:", err);
         alert("Could not analyze resume. Please try again.");
       }
     };
@@ -63,7 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
     scoreBar.innerText       = "0%";
 
     const file = resumeFile.files[0]
-               || new File([new Blob([resumeText.value], { type:"text/plain" })], "resume.txt");
+               || new File([new Blob([resumeText.value], { type: "text/plain" })], "resume.txt");
     sendAnalysis(file);
   });
 });
