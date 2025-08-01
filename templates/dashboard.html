@@ -1,83 +1,62 @@
 {% extends "base.html" %}
 
 {% block title %}My Dashboard – Jobcus{% endblock %}
-{% block body_class %}dashboard-page{% endblock %}
 
 {% block content %}
 <section class="dashboard-container">
-  <!-- Greeting placeholder; JS will fill this from data-user-name -->
-  <h1 id="dashboardGreeting"
-      data-user-name="{{ current_user.fullname or current_user.email }}"
-      class="dashboard-title">
-    <!-- injected by JS -->
-  </h1>
+  <h1 id="dashboardGreeting" class="dashboard-title"></h1>
   <p class="dashboard-subtitle">
-    Track your career growth and insights powered by Jobcus AI
+    Track your career growth and insights powered by Jobcus AI.
   </p>
 
   <div class="dashboard-cards">
 
-    <!-- Resume Score Card -->
+    <!-- Resume Score -->
     <div class="dashboard-card">
       <h3>📄 Resume Score</h3>
       <div class="progress-circle" data-score="0">
         <svg viewBox="0 0 36 36">
-          <path class="bg"
-                d="M18 2.0845
-                   a 15.9155 15.9155 0 0 1 0 31.831
-                   a 15.9155 15.9155 0 0 1 0 -31.831"/>
-          <path class="progress" stroke-dasharray="0, 100"
-                d="M18 2.0845
-                   a 15.9155 15.9155 0 0 1 0 31.831
-                   a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <path class="bg" d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831
+            a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <path class="progress" stroke-dasharray="0, 100" d="M18 2.0845
+            a 15.9155 15.9155 0 0 1 0 31.831
+            a 15.9155 15.9155 0 0 1 0 -31.831"/>
           <text x="18" y="20.35" class="percentage">0%</text>
         </svg>
         <p class="metric-note">Last analyzed: just now</p>
       </div>
     </div>
 
-    <!-- Dashboard Upload Form -->
-    <form id="resumeUploadForm" class="resume-upload">
-      <input type="file" id="resumeFile" accept=".pdf,.txt" />
-      <button type="submit" class="cta-primary">Upload Resume</button>
-    </form>
+  </div>
 
-    <!-- Analysis Insights -->
-    <section class="resume-analysis">
-      <h2>Steps to Improve Your Resume</h2>
-      <p>Based on ATS analysis, here are the key points:</p>
+  <!-- If no analysis saved, show big CTA -->
+  <div id="no-analysis-cta" style="text-align:center; margin:2rem 0;">
+    <p>You haven’t analyzed a resume yet.</p>
+    <a href="/resume-builder" class="cta-primary">Analyze your resume now</a>
+  </div>
 
-      <div class="analysis-issues">
-        <h3>⚠️ Issues Found</h3>
-        <ul id="top-issues"></ul>
-      </div>
+  <!-- Detailed Analysis -->
+  <section id="resume-analysis" style="display:none; margin-top:2rem;">
+    <h2>Steps to Improve Your Resume</h2>
 
-      <div class="analysis-strengths">
-        <h3>✅ What You Did Well</h3>
-        <ul id="good-points"></ul>
-      </div>
-    </section>
-
-    <!-- Skill Gap -->
-    <div class="dashboard-card">
-      <h3>🧰 Skill Gap Progress</h3>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: 0%;"></div>
-      </div>
-      <p class="metric-note">0% skill match for your target role</p>
-      <a href="/skill-gap" class="dashboard-link">Improve Skills</a>
+    <div class="analysis-issues">
+      <h3>⚠️ Issues Found</h3>
+      <ul id="top-issues"></ul>
     </div>
 
-    <!-- Interview Readiness -->
-    <div class="dashboard-card">
-      <h3>🧠 Interview Readiness</h3>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: 0%;"></div>
-      </div>
-      <p class="metric-note">0% practiced scenarios</p>
-      <a href="/interview-coach" class="dashboard-link">Practice Now</a>
+    <div class="analysis-strengths" style="margin-top:1rem;">
+      <h3>✅ What You Did Well</h3>
+      <ul id="good-points"></ul>
     </div>
+  </section>
 
+  <!-- Always show signup CTA -->
+  <div style="text-align:center; margin:3rem 0;">
+    <p>
+      Want to **save** your results and track progress over time?
+      <a href="/account">Sign up or log in</a>
+    </p>
   </div>
 </section>
 {% endblock %}
