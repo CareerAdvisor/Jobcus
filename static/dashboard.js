@@ -26,6 +26,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   console.log("✅ [dashboard] parsed data:", data);
 
+  // dashboard.js
+
+console.log("🚀 [dashboard] script loaded");            // ← top
+
+document.addEventListener("DOMContentLoaded", () => {
+  const raw = localStorage.getItem("resumeAnalysis");
+  console.log("🚀 [dashboard] raw resumeAnalysis:", raw); // ← immediately
+  if (!raw) return;
+
+  const data = JSON.parse(raw);
+  console.log("✅ [dashboard] parsed data:", data);      // ← and here
+
+  // … rest of your code …
+});
+
+
   // 3) Show/hide sections
   document.getElementById("no-analysis-cta").style.display    = "none";
   document.getElementById("resume-analysis").style.display   = "block";
