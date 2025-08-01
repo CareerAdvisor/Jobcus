@@ -506,7 +506,6 @@ def get_interview_feedback():
 
 # Resume Analysis API
 @app.route("/api/resume-analysis", methods=["POST"])
-@login_required
 def resume_analysis():
     try:
         data = request.get_json(force=True)
