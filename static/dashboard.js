@@ -1,7 +1,7 @@
 // dashboard.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Greeting
+  // 1) Greeting
   const greetEl = document.getElementById("dashboardGreeting");
   const first   = !localStorage.getItem("dashboardVisited");
   if (greetEl) {
@@ -9,15 +9,28 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("dashboardVisited", "true");
   }
 
-  // Pull analysis from localStorage
-  const saved = localStorage.getItem("resumeAnalysis");
-  if (!saved) return;  // leaves the "Analyze your resume" CTA visible
+  // 2) Read stored analysis
+  const raw = localStorage.getItem("resumeAnalysis");
+  console.log("🚀 [dashboard] raw resumeAnalysis from localStorage:", raw);
+  if (!raw) {
+    // no analysis yet
+    return;
+  }
 
-  const data = JSON.parse(saved);
-  document.getElementById("no-analysis-cta").style.display  = "none";
-  document.getElementById("resume-analysis").style.display = "block";
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch (e) {
+    console.error("[dashboard] JSON parse error", e);
+    return;
+  }
+  console.log("✅ [dashboard] parsed data:", data);
 
-  // Animate the score circle
+  // 3) Show/hide sections
+  document.getElementById("no-analysis-cta").style.display    = "none";
+  document.getElementById("resume-analysis").style.display   = "block";
+
+  // 4) Animate the score circle
   const circle = document.querySelector(".progress-circle");
   const path   = circle.querySelector(".progress");
   const text   = circle.querySelector(".percentage");
@@ -33,21 +46,18 @@ document.addEventListener("DOMContentLoaded", () => {
     text.textContent = `${curr}%`;
   }, 20);
 
-  // Fill issues & strengths lists
+  // 5) Populate issues & strengths
   const issues    = document.getElementById("top-issues");
   const strengths = document.getElementById("good-points");
   issues.innerHTML    = "";
   strengths.innerHTML = "";
 
   (data.analysis.issues || []).forEach(i => {
-    const li = document.createElement("li");
-    li.textContent = i;
+    const li = document.createElement("li"); li.textContent = i;
     issues.appendChild(li);
   });
-
   (data.analysis.strengths || []).forEach(s => {
-    const li = document.createElement("li");
-    li.textContent = s;
+    const li = document.createElement("li"); li.textContent = s;
     strengths.appendChild(li);
   });
 });
