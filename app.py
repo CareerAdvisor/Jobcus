@@ -275,51 +275,63 @@ def faq():
 
 from flask_login import login_user
 
-@app.route("/account", methods=["GET","POST"])
+@app.route("/account", methods=["GET", "POST"])
 def account():
+    # GET → render the login/sign-up page
     if request.method == "GET":
         return render_template("account.html")
 
-    mode, email, password, name = (
-        request.form["mode"],
-        request.form["email"],
-        request.form["password"],
-        request.form.get("name","")
-    )
+    # POST → always expect JSON
+    data = request.get_json(force=True)
+    mode     = data.get("mode")      # "signup" or "login"
+    email    = data.get("email", "").strip().lower()
+    password = data.get("password", "")
+    name     = data.get("name", "")
 
-    # ── SIGN UP ──
-    if mode == "signup":
-        resp = supabase.auth.sign_up({"email": email, "password": password})
-        if not resp.user:
-            return jsonify(success=False, message=resp.get("error","Sign-up failed"))
+    try:
+        # ── SIGN UP ──
+        if mode == "signup":
+            # 1) Create user in Supabase Auth
+            resp = supabase.auth.sign_up({"email": email, "password": password})
+            if not resp.user:
+                return jsonify(success=False, message=resp.get("error","Sign-up failed.")), 400
 
-        # write into your public.users table
-        hashed_pw = generate_password_hash(password)
-        supabase.table("users").insert({
-            "email":    email,
-            "password": hashed_pw,
-            "fullname": name or email.split("@")[0]
-        }).execute()
+            # 2) Hash & insert into your public.users table
+            hashed = generate_password_hash(password)
+            supabase.table("users").insert({
+                "email":    email,
+                "password": hashed,
+                "fullname": name or email.split("@")[0]
+            }).execute()
 
-        # fetch back that row and log in
-        user = User.get_by_email(email)
-        login_user(user)
+            # 3) Fetch the new row, log in via Flask-Login
+            user = User.get_by_email(email)
+            login_user(user)
 
-        return jsonify(success=True, redirect="/dashboard")
+            return jsonify(success=True, redirect="/dashboard"), 200
 
-    # ── LOGIN ──
-    elif mode == "login":
-        resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
-        if not resp.user:
-            return jsonify(success=False, message="Invalid credentials")
+        # ── LOGIN ──
+        elif mode == "login":
+            # 1) Verify credentials with Supabase Auth
+            resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            if not resp.user:
+                return jsonify(success=False, message="Invalid credentials"), 401
 
-        user = User.get_by_email(email)
-        login_user(user)
+            # 2) Fetch your own users table record
+            user = User.get_by_email(email)
+            if not user:
+                return jsonify(success=False, message="User record not found"), 404
 
-        return jsonify(success=True, redirect="/dashboard")
+            # 3) Log in
+            login_user(user)
+            return jsonify(success=True, redirect="/dashboard"), 200
 
-    else:
-        return jsonify(success=False, message="Invalid mode"), 400
+        else:
+            return jsonify(success=False, message="Invalid mode"), 400
+
+    except Exception as e:
+        logging.exception("Account error")
+        return jsonify(success=False, message="Server error"), 500
 
 
 @app.route("/dashboard")
