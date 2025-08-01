@@ -1,20 +1,5 @@
 // resume-builder.js
 
-console.log("🚀 [resume-builder] script loaded");      // ← top of file
-
-// … rest of file …
-
-      // right after fetch and before saving:
-      const data = await res.json();
-      console.log("📝 [resume-builder] Analysis response:", data);   // ← INSIDE reader.onload
-
-      if (data.error) { … }  
-      localStorage.setItem("resumeAnalysis", JSON.stringify(data));
-      console.log("💾 [resume-builder] Stored resumeAnalysis:",
-                  localStorage.getItem("resumeAnalysis"));           // ← and here
-      window.location.href = "/dashboard";
-
-
 // — Force all fetch() calls to include credentials —
 ;(function(){
   const _fetch = window.fetch.bind(window);
@@ -24,7 +9,9 @@ console.log("🚀 [resume-builder] script loaded");      // ← top of file
   };
 })();
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 [resume-builder] script loaded");
+
   const analyzeBtn     = document.getElementById("analyze-btn");
   const resumeText     = document.getElementById("resume-text");
   const resumeFile     = document.getElementById("resumeFile");
@@ -32,15 +19,31 @@ document.addEventListener("DOMContentLoaded", function () {
   const scoreBar       = document.getElementById("score-bar");
   const keywordList    = document.getElementById("keyword-list");
 
-  // Clean up any old data
+  // Always clear old analysis before a new run
   localStorage.removeItem("resumeAnalysis");
 
+  // Cleans AI-returned HTML down to plain text
+  function cleanAIText(content) {
+    return content
+      .replace(/```html|```/g, "")
+      .replace(/(?:Certainly!|Here's a resume|This HTML).*?\n/gi, "")
+      .trim();
+  }
+
+  // Reads the file, calls the API, stores result, redirects
   async function sendAnalysis(file) {
-    if (!file) { alert("Please select a file."); return; }
+    if (!file) {
+      alert("Please select a file to analyze.");
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result.split(",")[1];
-      if (!base64) { alert("Read error"); return; }
+      if (!base64) {
+        alert("Failed to read file. Try another PDF or TXT.");
+        return;
+      }
 
       try {
         const res = await fetch("/api/resume-analysis", {
@@ -58,29 +61,31 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
 
-        // **Save to LocalStorage for the dashboard**
         localStorage.setItem("resumeAnalysis", JSON.stringify(data));
         console.log("💾 [resume-builder] Stored resumeAnalysis:", localStorage.getItem("resumeAnalysis"));
 
-        // Redirect to dashboard
         window.location.href = "/dashboard";
-
       } catch (err) {
         console.error("⚠️ [resume-builder] Analyzer error:", err);
         alert("Could not analyze resume. Please try again.");
       }
     };
+
     reader.readAsDataURL(file);
   }
 
+  // Wire up the Analyze button
   analyzeBtn.addEventListener("click", () => {
     analyzerResult.innerHTML = "⏳ Analyzing...";
     keywordList.innerHTML    = "";
     scoreBar.style.width     = "0%";
     scoreBar.innerText       = "0%";
 
-    const file = resumeFile.files[0]
-               || new File([new Blob([resumeText.value], { type: "text/plain" })], "resume.txt");
+    // If they pasted text, wrap it in a File object
+    const file = resumeFile.files[0] ||
+                 new File([new Blob([resumeText.value], { type: "text/plain" })],
+                          "resume.txt", { type: "text/plain" });
+
     sendAnalysis(file);
   });
 });
