@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const optimizedOutput    = document.getElementById("analyzerResumeOutput");
   const optimizedDownloads = document.getElementById("optimizedDownloadOptions");
 
-  // — Helpers for rendering lists & animating bars (still used by optimize section) —
+  // — Helpers for list rendering & bar animation —
   function renderList(ul, items) {
     ul.innerHTML = "";
     items.forEach(text => {
@@ -50,13 +50,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 15);
   }
 
-  // — REPLACE THIS with your new store+redirect flow —
+  // — NEW sendAnalysis: stores result in localStorage & redirects to /dashboard —
   async function sendAnalysis(file) {
     if (!file) {
       alert("Please paste your resume or upload a file.");
       return;
     }
-
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result.split(",")[1];
@@ -67,18 +66,15 @@ document.addEventListener("DOMContentLoaded", () => {
           body:    JSON.stringify({ pdf: base64 })
         });
         if (!res.ok) throw new Error("Server returned " + res.status);
-
         const data = await res.json();
         if (data.error) {
           alert("Error analyzing resume: " + data.error);
           return;
         }
-
-        // ✅ Save the analysis into localStorage
+        // ✅ Save analysis for dashboard
         localStorage.setItem("resumeAnalysis", JSON.stringify(data));
-        // 🔄 Redirect to the dashboard
+        // 🔄 Redirect
         window.location.href = "/dashboard";
-
       } catch (err) {
         console.error("Analyzer error:", err);
         alert("Could not analyze resume. Please try again.");
@@ -94,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sendAnalysis(file);
   });
 
-  // — Convert File → base64 helper for optimize flow —
+  // — Helper: File → base64 for optimization —
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
@@ -136,20 +132,18 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) throw new Error(res.statusText);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-
       optimizedLoading.style.display   = "none";
       optimizedOutput.textContent      = data.optimized;
       optimizedOutput.style.display    = "block";
       optimizedDownloads.style.display = "block";
-
     } catch (err) {
-      console.error("⚠️ Optimize error:", err);
+      console.error("Optimize error:", err);
       optimizedLoading.style.display = "none";
       alert("Failed to optimize resume. Try again.");
     }
   });
 
-  // — Download helper (for optimized resume) —
+  // — Download helper for optimized resume —
   function downloadHelper(format, text, filename) {
     if (format === "txt") {
       const blob = new Blob([text], { type: "text/plain" });
@@ -178,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // — Expose download for the optimized resume —
+  // — Expose download for optimized resume —
   window.downloadOptimizedResume = (format) => {
     const text = optimizedOutput.innerText || "";
     downloadHelper(format, text, "resume-optimized");
