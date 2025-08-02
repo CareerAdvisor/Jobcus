@@ -1,19 +1,21 @@
-// dashboard.js
+// static/dashboard.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 1) Greeting
-  const greetEl = document.getElementById("dashboardGreeting");
-  const first   = !localStorage.getItem("dashboardVisited");
+  console.log("🚀 dashboard.js loaded");
+
+  // 1) Dynamic greeting
+  const greetEl    = document.getElementById("dashboardGreeting");
+  const firstVisit = !localStorage.getItem("dashboardVisited");
   if (greetEl) {
-    greetEl.textContent = first ? "Welcome" : "Welcome Back";
+    greetEl.textContent = firstVisit ? "Welcome" : "Welcome Back";
     localStorage.setItem("dashboardVisited", "true");
   }
 
-  // 2) Read stored analysis
+  // 2) Load stored analysis
   const raw = localStorage.getItem("resumeAnalysis");
-  console.log("🚀 [dashboard] raw resumeAnalysis from localStorage:", raw);
+  console.log("🚀 [dashboard] raw resumeAnalysis:", raw);
   if (!raw) {
-    // no analysis yet
+    // No analysis yet – leave CTA visible
     return;
   }
 
@@ -26,54 +28,41 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   console.log("✅ [dashboard] parsed data:", data);
 
-  // dashboard.js
+  // 3) Hide CTA, show analysis section
+  document.getElementById("no-analysis-cta").style.display  = "none";
+  document.getElementById("resume-analysis").style.display = "block";
 
-console.log("🚀 [dashboard] script loaded");            // ← top
-
-document.addEventListener("DOMContentLoaded", () => {
-  const raw = localStorage.getItem("resumeAnalysis");
-  console.log("🚀 [dashboard] raw resumeAnalysis:", raw); // ← immediately
-  if (!raw) return;
-
-  const data = JSON.parse(raw);
-  console.log("✅ [dashboard] parsed data:", data);      // ← and here
-
-  // … rest of your code …
-});
-
-
-  // 3) Show/hide sections
-  document.getElementById("no-analysis-cta").style.display    = "none";
-  document.getElementById("resume-analysis").style.display   = "block";
-
-  // 4) Animate the score circle
+  // 4) Animate the circular score
   const circle = document.querySelector(".progress-circle");
   const path   = circle.querySelector(".progress");
-  const text   = circle.querySelector(".percentage");
-  let score    = data.score || 0,
-      curr     = 0,
-      step     = score > 0 ? 1 : -1;
-
-  circle.dataset.score = score;
-  const ani = setInterval(() => {
-    if (curr === score) return clearInterval(ani);
-    curr += step;
-    path.setAttribute("stroke-dasharray", `${curr},100`);
-    text.textContent = `${curr}%`;
+  const txt    = circle.querySelector(".percentage");
+  let target   = data.score || 0;
+  let current  = 0;
+  const step   = target > 0 ? 1 : -1;
+  circle.dataset.score = target;
+  const iv = setInterval(() => {
+    if (current === target) {
+      clearInterval(iv);
+      return;
+    }
+    current += step;
+    path.setAttribute("stroke-dasharray", `${current},100`);
+    txt.textContent = `${current}%`;
   }, 20);
 
   // 5) Populate issues & strengths
-  const issues    = document.getElementById("top-issues");
-  const strengths = document.getElementById("good-points");
-  issues.innerHTML    = "";
-  strengths.innerHTML = "";
-
+  const issuesUl    = document.getElementById("top-issues");
+  const strengthsUl = document.getElementById("good-points");
+  issuesUl.innerHTML    = "";
+  strengthsUl.innerHTML = "";
   (data.analysis.issues || []).forEach(i => {
-    const li = document.createElement("li"); li.textContent = i;
-    issues.appendChild(li);
+    const li = document.createElement("li");
+    li.textContent = i;
+    issuesUl.appendChild(li);
   });
   (data.analysis.strengths || []).forEach(s => {
-    const li = document.createElement("li"); li.textContent = s;
-    strengths.appendChild(li);
+    const li = document.createElement("li");
+    li.textContent = s;
+    strengthsUl.appendChild(li);
   });
 });
