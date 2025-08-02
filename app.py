@@ -1,11 +1,10 @@
 # app.py
 
 import os
-import base64
 import traceback
 from io import BytesIO
 from collections import Counter
-import re, json
+import re, json, base64, logging
 import requests  # ← added so fetch_* helpers work
 
 from flask import (
@@ -23,7 +22,6 @@ from PyPDF2 import PdfReader
 from supabase import create_client
 from dotenv import load_dotenv
 from openai import OpenAI
-import logging
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -653,20 +651,21 @@ def resume_analysis():
     }
   });
 
+# … your existing app and other imports …
 @app.route("/api/optimize-resume", methods=["POST"])
 def optimize_resume():
     data = request.get_json(force=True)
     resume_text = ""
 
-    # 1) Extract text from PDF or text
+    # 1) Extract text
     if data.get("pdf"):
         try:
-            pdf_bytes = base64.b64decode(data["pdf"])
-            reader    = PdfReader(BytesIO(pdf_bytes))
-            resume_text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            pdf_bytes   = base64.b64decode(data["pdf"])
+            reader      = PdfReader(BytesIO(pdf_bytes))
+            resume_text = "\n".join(p.extract_text() or "" for p in reader.pages)
             if not resume_text.strip():
                 return jsonify({"error": "PDF content empty"}), 400
-        except Exception as e:
+        except Exception:
             logging.exception("PDF Decode Error")
             return jsonify({"error": "Unable to extract PDF text"}), 400
 
@@ -678,7 +677,7 @@ def optimize_resume():
     else:
         return jsonify({"error": "No resume data provided"}), 400
 
-    # 2) Build the “optimize” prompt
+    # 2) Build the optimization prompt
     prompt = (
         "You are an expert ATS resume optimizer.  Rewrite the following resume to be\n"
         "fully ATS-compatible: use strong action verbs, consistent bullets, relevant\n"
@@ -694,12 +693,9 @@ def optimize_resume():
             temperature=0.3
         )
         optimized = resp.choices[0].message.content.strip()
-
-        # 4) Strip any markdown fences
+        # 4) Strip any ``` fences
         optimized = re.sub(r"```(?:[\s\S]*?)```", "", optimized).strip()
-
         return jsonify({"optimized": optimized})
-
     except Exception:
         logging.exception("Resume optimization error")
         return jsonify({"error": "Resume optimization failed"}), 500
