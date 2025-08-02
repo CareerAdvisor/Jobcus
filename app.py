@@ -515,17 +515,19 @@ def get_interview_feedback():
 
 
 # Resume Analysis API
+import re
+
 @app.route("/api/resume-analysis", methods=["POST"])
 def resume_analysis():
     data = request.get_json(force=True)
     resume_text = ""
 
-    # 1) Extract text
+    # --- 1) Extract text from PDF or plain text ---
     if data.get("pdf"):
         try:
             pdf_bytes = base64.b64decode(data["pdf"])
             reader    = PdfReader(BytesIO(pdf_bytes))
-            resume_text = " ".join(page.extract_text() or "" for page in reader.pages)
+            resume_text = " ".join(p.extract_text() or "" for p in reader.pages)
             if not resume_text.strip():
                 return jsonify(error="PDF content empty"), 400
         except Exception:
@@ -540,75 +542,51 @@ def resume_analysis():
     else:
         return jsonify(error="No resume data provided"), 400
 
-    # 2) Rich ATS-focused prompt
+    # --- 2) Build your ATS prompt ---
     prompt = (
-        "You are an ATS-certified resume analyzer. Analyze the following resume and return **only** a JSON object with these keys:\n"
-        "  • score: integer 0–100 (overall ATS compatibility)\n"
-        "  • issues: array of strings (top 5 problems: missing power verbs, repeated words, grammar errors, lack of buzzwords, bullet style inconsistencies)\n"
-        "  • strengths: array of strings (top 3 things done well: clear bullet structure, relevant keywords, concise summary)\n"
-        "  • suggestions: array of short actionable tips (e.g. “Use action verbs like ‘Led’”, “Vary adjectives—avoid ‘responsible for’”, “Include ‘Agile’ once.”)\n\n"
+        "You are an ATS-certified resume analyzer.  Return **only** a JSON object:\n"
+        "  • score: integer 0–100\n"
+        "  • issues: array of strings\n"
+        "  • strengths: array of strings\n"
+        "  • suggestions: array of strings\n\n"
         f"Resume content:\n\n{resume_text}"
     )
 
     try:
-        # 3) Call OpenAI
+        # --- 3) Call OpenAI ---
         resp = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0
         )
-        content = resp.choices[0].message.content.strip()
+        content = resp.choices[0].message.content
 
-        # 4) Strict JSON parse
-        try:
-            parsed = json.loads(content)
-        except json.JSONDecodeError:
-            # 5) Fallback line-by-line parsing
-            score, issues, strengths, suggestions = 0, [], [], []
-            mode = None
-            for line in content.splitlines():
-                ln = line.strip()
-                lw = ln.lower()
-                if lw.startswith("score"):
-                    try:
-                        score = int(ln.split(":",1)[1].strip())
-                    except: pass
-                elif lw.startswith("issues"):
-                    mode = "issues"; continue
-                elif lw.startswith("strengths"):
-                    mode = "strengths"; continue
-                elif lw.startswith("suggestions"):
-                    mode = "suggestions"; continue
-                elif (ln.startswith("-") or ln.startswith("•")) and mode:
-                    item = ln.lstrip("-• ").strip()
-                    if mode == "issues":     issues.append(item)
-                    elif mode == "strengths": strengths.append(item)
-                    else:                    suggestions.append(item)
-                else:
-                    # inline list after header
-                    if mode and ":" in ln:
-                        parts = ln.split(":",1)[1]
-                        arr   = [p.strip() for p in parts.replace(";",",").split(",") if p.strip()]
-                        if mode == "issues":     issues.extend(arr)
-                        elif mode == "strengths": strengths.extend(arr)
-                        else:                    suggestions.extend(arr)
+        # --- 4) Strip code fences and isolate the JSON blob ---
+        # remove any ```json or ``` wrappers
+        content = re.sub(r"```(?:json)?", "", content).strip()
 
-            parsed = {
-                "score": score,
-                "issues": issues,
-                "strengths": strengths,
-                "suggestions": suggestions
-            }
+        # extract from first { to last }
+        start = content.find("{")
+        end   = content.rfind("}")
+        if start != -1 and end != -1:
+            content = content[start:end+1]
 
-        # 6) Normalize shape
+        # --- 5) Parse it!
+        parsed = json.loads(content)
+
+        # --- 6) Return the normalized shape ---
         return jsonify({
-            "score": parsed.get("score", 0),
+            "score":      int(parsed.get("score", 0)),
             "analysis": {
-                "issues":    parsed.get("issues", []),
-                "strengths": parsed.get("strengths", [])
+                "issues":     parsed.get("issues", []),
+                "strengths":  parsed.get("strengths", [])
             },
             "suggestions": parsed.get("suggestions", [])
         })
+
+    except json.JSONDecodeError:
+        logging.exception("Failed to decode JSON from LLM output:\n%s", content)
+        return jsonify(error="Invalid JSON from Analyzer"), 500
 
     except Exception:
         logging.exception("Resume analysis error")
