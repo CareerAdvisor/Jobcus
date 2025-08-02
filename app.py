@@ -5,7 +5,7 @@ import base64
 import traceback
 from io import BytesIO
 from collections import Counter
-import json
+import re, json
 import requests  # ← added so fetch_* helpers work
 
 from flask import (
@@ -515,7 +515,6 @@ def get_interview_feedback():
 
 
 # Resume Analysis API
-import re
 
 @app.route("/api/resume-analysis", methods=["POST"])
 def resume_analysis():
@@ -653,6 +652,57 @@ def resume_analysis():
       alert("Failed to optimize resume. Try again.");
     }
   });
+
+@app.route("/api/optimize-resume", methods=["POST"])
+def optimize_resume():
+    data = request.get_json(force=True)
+    resume_text = ""
+
+    # 1) Extract text from PDF or text
+    if data.get("pdf"):
+        try:
+            pdf_bytes = base64.b64decode(data["pdf"])
+            reader    = PdfReader(BytesIO(pdf_bytes))
+            resume_text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            if not resume_text.strip():
+                return jsonify({"error": "PDF content empty"}), 400
+        except Exception as e:
+            logging.exception("PDF Decode Error")
+            return jsonify({"error": "Unable to extract PDF text"}), 400
+
+    elif data.get("text"):
+        resume_text = data["text"].strip()
+        if not resume_text:
+            return jsonify({"error": "No text provided"}), 400
+
+    else:
+        return jsonify({"error": "No resume data provided"}), 400
+
+    # 2) Build the “optimize” prompt
+    prompt = (
+        "You are an expert ATS resume optimizer.  Rewrite the following resume to be\n"
+        "fully ATS-compatible: use strong action verbs, consistent bullets, relevant\n"
+        "keywords, fix grammar, remove repetition.  Return the optimized resume in plain text.\n\n"
+        f"Original resume:\n\n{resume_text}"
+    )
+
+    try:
+        # 3) Call OpenAI
+        resp = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3
+        )
+        optimized = resp.choices[0].message.content.strip()
+
+        # 4) Strip any markdown fences
+        optimized = re.sub(r"```(?:[\s\S]*?)```", "", optimized).strip()
+
+        return jsonify({"optimized": optimized})
+
+    except Exception:
+        logging.exception("Resume optimization error")
+        return jsonify({"error": "Resume optimization failed"}), 500
 
 # Generate Resume via AI
 @app.route("/generate-resume", methods=["POST"])
