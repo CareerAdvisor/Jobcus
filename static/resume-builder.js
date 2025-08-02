@@ -1,6 +1,6 @@
 // static/resume-builder.js
 
-// — Force cookies on fetch() —
+// — ensure cookies are included on every fetch() —
 ;(function(){
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const optimizedOutput    = document.getElementById("analyzerResumeOutput");
   const optimizedDownloads = document.getElementById("optimizedDownloadOptions");
 
-  // — Helpers —
+  // — Helpers for rendering lists & animating bars (still used by optimize section) —
   function renderList(ul, items) {
     ul.innerHTML = "";
     items.forEach(text => {
@@ -34,95 +34,67 @@ document.addEventListener("DOMContentLoaded", () => {
       ul.appendChild(li);
     });
   }
-
   function animateScore(target) {
     let current = 0;
-    scoreBar.style.width   = "0%";
-    scoreBar.textContent   = "0%";
+    scoreBar.style.width = "0%";
+    scoreBar.textContent = "0%";
     const step = target > 0 ? 1 : -1;
-    const iv   = setInterval(() => {
+    const iv = setInterval(() => {
       if (current === target) {
         clearInterval(iv);
         return;
       }
       current += step;
-      scoreBar.style.width   = `${current}%`;
-      scoreBar.textContent   = `${current}%`;
+      scoreBar.style.width = `${current}%`;
+      scoreBar.textContent = `${current}%`;
     }, 15);
   }
 
-  // — Send resume for ATS analysis —
+  // — REPLACE THIS with your new store+redirect flow —
   async function sendAnalysis(file) {
     if (!file) {
-      alert("Please paste text or upload a file.");
+      alert("Please paste your resume or upload a file.");
       return;
     }
-    analyzerResult.innerHTML     = "<p>⏳ Analyzing…</p>";
-    keywordList.innerHTML        = "";
-    animateScore(0);
-    postAnalysisCTA.style.display = "none";
 
     const reader = new FileReader();
     reader.onload = async () => {
-      const b64 = reader.result.split(",")[1];
+      const base64 = reader.result.split(",")[1];
       try {
         const res = await fetch("/api/resume-analysis", {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ pdf: b64 })
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ pdf: base64 })
         });
-        if (!res.ok) throw new Error(res.statusText);
+        if (!res.ok) throw new Error("Server returned " + res.status);
+
         const data = await res.json();
         if (data.error) {
-          analyzerResult.innerHTML = `<p style="color:red;">${data.error}</p>`;
+          alert("Error analyzing resume: " + data.error);
           return;
         }
 
-        animateScore(data.score || 0);
-        if (Array.isArray(data.keywords)) {
-          renderList(keywordList, data.keywords);
-        }
-
-        analyzerResult.innerHTML = `
-          <div class="analysis-section">
-            <h4>⚠️ Issues Found</h4>
-            <ul id="issues-list"></ul>
-          </div>
-          <div class="analysis-section">
-            <h4>✅ Strengths</h4>
-            <ul id="strengths-list"></ul>
-          </div>
-          ${ data.suggestions?.length
-             ? `<div class="analysis-section">
-                  <h4>💡 Suggestions</h4>
-                  <ul id="suggestions-list"></ul>
-                </div>`
-             : ""
-          }
-        `;
-        renderList(document.getElementById("issues-list"),    data.analysis.issues    || []);
-        renderList(document.getElementById("strengths-list"), data.analysis.strengths || []);
-        if (data.suggestions) {
-          renderList(document.getElementById("suggestions-list"), data.suggestions);
-        }
-        postAnalysisCTA.style.display = "block";
+        // ✅ Save the analysis into localStorage
+        localStorage.setItem("resumeAnalysis", JSON.stringify(data));
+        // 🔄 Redirect to the dashboard
+        window.location.href = "/dashboard";
 
       } catch (err) {
-        console.error("⚠️ analysis error:", err);
-        analyzerResult.innerHTML = `<p style="color:red;">Failed to analyze. Try again.</p>`;
+        console.error("Analyzer error:", err);
+        alert("Could not analyze resume. Please try again.");
       }
     };
     reader.readAsDataURL(file);
   }
 
-  // — Wire up Analyze button —
+  // — Wire up Analyze button to new sendAnalysis —
   analyzeBtn.addEventListener("click", () => {
     const file = resumeFile.files[0]
                || new File([resumeText.value], "resume.txt", { type: "text/plain" });
     sendAnalysis(file);
   });
 
-  // — Convert File → base64 string —
+  // — Convert File → base64 helper for optimize flow —
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
@@ -132,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // — Optimize My Resume flow —
+  // — Optimize My Resume flow (unchanged) —
   optimizeBtn.addEventListener("click", async () => {
     optimizedLoading.style.display    = "block";
     optimizedOutput.style.display     = "none";
@@ -157,18 +129,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const res  = await fetch("/api/optimize-resume", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(payload)
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(payload)
       });
       if (!res.ok) throw new Error(res.statusText);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      optimizedLoading.style.display    = "none";
-      optimizedOutput.textContent       = data.optimized;
-      optimizedOutput.style.display     = "block";
-      optimizedDownloads.style.display  = "block";
+      optimizedLoading.style.display   = "none";
+      optimizedOutput.textContent      = data.optimized;
+      optimizedOutput.style.display    = "block";
+      optimizedDownloads.style.display = "block";
 
     } catch (err) {
       console.error("⚠️ Optimize error:", err);
@@ -177,26 +149,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // — Download helper (TXT, DOCX, PDF) —
+  // — Download helper (for optimized resume) —
   function downloadHelper(format, text, filename) {
     if (format === "txt") {
-      const blob = new Blob([text], {type:"text/plain"});
+      const blob = new Blob([text], { type: "text/plain" });
       saveAs(blob, `${filename}.txt`);
     } else if (format === "docx") {
       const { Document, Packer, Paragraph, TextRun } = window.docx;
       const doc = new Document({
-        sections: [{ children: text.split("\n").map(line =>
-          new Paragraph({children:[new TextRun({text:line})]})
-        )}]
+        sections: [{
+          children: text.split("\n").map(line =>
+            new Paragraph({ children: [new TextRun({ text: line })] })
+          )
+        }]
       });
       Packer.toBlob(doc).then(blob => saveAs(blob, `${filename}.docx`));
     } else if (format === "pdf") {
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({unit:"mm",format:"a4"});
-      const lines = doc.splitTextToSize(text,180);
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const lines = doc.splitTextToSize(text, 180);
       let y = 10;
       lines.forEach(line => {
-        if (y>280){ doc.addPage(); y=10; }
+        if (y > 280) { doc.addPage(); y = 10; }
         doc.text(line, 10, y);
         y += 8;
       });
@@ -204,8 +178,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // — Expose global download for optimized resume —
-  window.downloadOptimizedResume = function(format) {
+  // — Expose download for the optimized resume —
+  window.downloadOptimizedResume = (format) => {
     const text = optimizedOutput.innerText || "";
     downloadHelper(format, text, "resume-optimized");
   };
