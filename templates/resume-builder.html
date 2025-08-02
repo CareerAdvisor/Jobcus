@@ -51,54 +51,6 @@
     style="background-color: #104879; color: white; padding: 12px 24px; border: none; border-radius: 6px; font-weight: 600; font-size: 14px;">
     Analyze Resume
   </button>
-
-  <!-- Score Bar -->
-  <div style="margin-top: 30px;">
-    <label style="font-weight: 600; color: #333; margin-bottom: 8px; display: block;">Resume Score</label>
-    <div id="score-visual" style="background: #e5e7eb; border-radius: 20px; overflow: hidden; height: 20px;">
-      <div id="score-bar"
-        style="height: 100%; width: 0%; background: linear-gradient(to right, #f87171, #facc15, #4ade80); color: #fff; text-align: center; font-size: 12px; line-height: 20px; font-weight: bold; transition: width 1s ease-in-out;">
-        0%
-      </div>
-    </div>
-  </div>
-
-  <!-- Keyword Matches -->
-  <div id="keyword-match" style="margin-top: 30px; padding: 15px; background: #f0f9ff; border-left: 4px solid #38bdf8; border-radius: 6px;">
-    <h4 style="margin-bottom: 10px; color: #104879;">🎯 Matched Keywords</h4>
-    <ul id="keyword-list" style="margin: 0; padding-left: 20px; list-style-type: disc; color: #333;"></ul>
-  </div>
-
-  <!-- AI Analysis Results -->
-  <div id="analyzer-result"
-    style="margin-top: 30px; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.06); color: #333; font-size: 14px; line-height: 1.6;">
-    <!-- Analysis will be injected here -->
-  </div>
-
-<!-- Call to Action After Analysis -->
-<div id="post-analysis-cta" style="display:none; margin-top: 30px; padding: 20px; background: #fefce8; border-left: 4px solid #facc15; border-radius: 6px;">
-  <p style="margin: 0 0 10px; font-weight: 500;">🎯 A score above <strong>75%</strong> significantly increases your chances of being contacted by recruiters.</p>
-  <p style="margin: 0 0 15px;">Want to improve your score instantly?</p>
-  <button id="optimizeResume" class="primary-btn" style="background-color: #104879; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; font-size: 14px;">
-    ✨ Optimize My Resume
-  </button>
-</div>
-
-<!-- Optimized Resume Loading Indicator -->
-<div id="optimizedLoading" style="display: none; text-align: center; margin-top: 20px;">
-  <span style="font-size: 16px;">🤖 Optimizing your resume...</span>
-</div>
-
-<!-- Optimized Resume Output -->
-<div id="analyzerResumeOutput" class="resume-container" style="margin-top: 30px; display: none;"></div>
-
-<!-- Optimized Resume Download Buttons -->
-<div id="optimizedDownloadOptions" style="display: none; margin-top: 1rem; text-align: center;">
-  <button onclick="downloadOptimizedResume('pdf')">⬇️ Download PDF</button>
-  <button onclick="downloadOptimizedResume('docx')">⬇️ Download Word (.docx)</button>
-  <button onclick="downloadOptimizedResume('txt')">⬇️ Download TXT</button>
-</div>
-
 </section>
 
 <!-- 🧠 AI Resume Builder -->
