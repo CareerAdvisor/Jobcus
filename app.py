@@ -592,6 +592,68 @@ def resume_analysis():
         logging.exception("Resume analysis error")
         return jsonify(error="Resume analysis failed"), 500
 
+// résumé-builder.js (append after your sendAnalysis & analyzeBtn code)
+
+  // Helper: turn a File into base64
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result.split(",")[1]);
+      fr.onerror = reject;
+      fr.readAsDataURL(file);
+    });
+  }
+
+  // When user clicks “Optimize My Resume”
+  optimizeBtn.addEventListener("click", async () => {
+    optimizedLoading.style.display     = "block";
+    optimizedOutput.style.display      = "none";
+    optimizedDownloads.style.display   = "none";
+
+    let payload = {};
+    // If they originally uploaded a file, re-use it:
+    if (resumeFile.files.length) {
+      try {
+        const b64 = await fileToBase64(resumeFile.files[0]);
+        payload.pdf = b64;
+      } catch {
+        alert("Failed to read the file again for optimization.");
+        optimizedLoading.style.display = "none";
+        return;
+      }
+    }
+    // Otherwise fall back to pasted text
+    else if (resumeText.value.trim()) {
+      payload.text = resumeText.value.trim();
+    } else {
+      alert("No resume content found to optimize.");
+      optimizedLoading.style.display = "none";
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/optimize-resume", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || res.statusText);
+      }
+
+      // Show the optimized resume
+      optimizedLoading.style.display    = "none";
+      optimizedOutput.textContent       = data.optimized;
+      optimizedOutput.style.display     = "block";
+      optimizedDownloads.style.display  = "block";
+    } catch (err) {
+      console.error("⚠️ Optimize error:", err);
+      optimizedLoading.style.display = "none";
+      alert("Failed to optimize resume. Try again.");
+    }
+  });
+
 # Generate Resume via AI
 @app.route("/generate-resume", methods=["POST"])
 def generate_resume():
