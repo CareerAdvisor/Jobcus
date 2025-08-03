@@ -10,17 +10,15 @@
 })();
 
 document.addEventListener("DOMContentLoaded", () => {
+  //
+  // Part 1: AI‐Resume Analyzer
+  //
   const analyzeBtn         = document.getElementById("analyze-btn");
   const resumeText         = document.getElementById("resume-text");
   const resumeFile         = document.getElementById("resumeFile");
   const analyzingIndicator = document.getElementById("analyzingIndicator");
 
-  if (!analyzeBtn) {
-    console.warn("[resume-builder] No #analyze-btn found, skipping setup.");
-    return;
-  }
-
-  // Helper: File → Base64 string
+  // Helper: File → Base64
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
@@ -30,39 +28,38 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Send to /api/resume-analysis, then stash & redirect
+  // 1) Build payload from pasted text, PDF, or DOCX
+  // 2) POST to /api/resume-analysis
+  // 3) stash results → localStorage → redirect to /dashboard
   async function sendAnalysis(file) {
     let payload;
 
-    // 1) Pasted text only
+    // 1) If nothing uploaded but text pasted:
     if (!file && resumeText.value.trim()) {
       payload = { text: resumeText.value.trim() };
 
-    // 2) Uploaded file (PDF or DOCX)
+    // 2) If a file was chosen:
     } else if (file) {
       const b64 = await fileToBase64(file);
-      // stash the original for optimize flow
+      // stash raw so the dashboard optimizer can reuse it
       localStorage.setItem("resumeBase64", b64);
 
       if (file.type === "application/pdf") {
         payload = { pdf: b64 };
       } else if (
         file.type ===
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       ) {
         payload = { docx: b64 };
       } else {
-        alert("Unsupported file type. Please upload PDF or DOCX.");
-        return;
+        return alert("Unsupported file type. Please upload PDF or DOCX.");
       }
 
-    // 3) Neither: complain
     } else {
-      alert("Please paste your resume or upload a file.");
-      return;
+      return alert("Please paste your resume or upload a file.");
     }
 
-    // show indicator
+    // show spinner
     if (analyzingIndicator) analyzingIndicator.style.display = "block";
 
     try {
@@ -80,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // ✅ Save analysis JSON & redirect
+      // ✅ Save for the dashboard, then go there
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
       window.location.href = "/dashboard";
 
@@ -91,50 +88,59 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Wire the button
-  analyzeBtn.addEventListener("click", () => {
-    const file = resumeFile.files[0]
-               || new File([resumeText.value], "resume.txt", { type: "text/plain" });
-    sendAnalysis(file);
-  });
-});
+  // Wire up the Analyze button
+  if (analyzeBtn) {
+    analyzeBtn.addEventListener("click", () => {
+      const file = resumeFile.files[0]
+                 || null;  // we’ll fallback to pasted text if null
+      sendAnalysis(file);
+    });
+  }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("resumeForm");
-  const output = document.getElementById("builderResumeOutput");
+
+  //
+  // Part 2: “Build Your Resume with AI” form → /generate-resume
+  //
+  const form      = document.getElementById("resumeForm");
+  const output    = document.getElementById("builderResumeOutput");
   const downloads = document.getElementById("resumeDownloadOptions");
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    // collect all form fields
-    const data = {
-      fullName:       form.fullName.value,
-      title:          form.title.value,
-      contact:        form.contac.value,
-      summary:        form.summary.value,
-      education:      form.education.value,
-      experience:     form.experience.value,
-      skills:         form.skills.value,
-      certifications: form.certifications.value,
-      portfolio:      form.portfolio.value
-    };
-    try {
-      const res = await fetch("/generate-resume", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(data)
-      });
-      if (!res.ok) throw new Error(res.statusText);
-      const json = await res.json();
-      if (json.error) throw new Error(json.error);
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-      // display the returned HTML
-      output.innerHTML = json.formatted_resume;
-      // show download buttons
-      downloads.style.display = "block";
-    } catch (err) {
-      console.error("Resume gen error:", err);
-      alert("Failed to generate resume. Please try again.");
-    }
-  });
+      // Gather every field by name
+      const data = {
+        fullName:       form.elements["fullName"].value.trim(),
+        title:          form.elements["title"].value.trim(),
+        contact:        form.elements["contact"].value.trim(),
+        summary:        form.elements["summary"].value.trim(),
+        education:      form.elements["education"].value.trim(),
+        experience:     form.elements["experience"].value.trim(),
+        skills:         form.elements["skills"].value.trim(),
+        certifications: form.elements["certifications"].value.trim(),
+        portfolio:      form.elements["portfolio"].value.trim()
+      };
+
+      try {
+        const res = await fetch("/generate-resume", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error(res.statusText);
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+
+        // Display the AI-formatted HTML
+        output.innerHTML = json.formatted_resume;
+        // Reveal the download buttons
+        downloads.style.display = "block";
+
+      } catch (err) {
+        console.error("Resume gen error:", err);
+        alert("Failed to generate resume. Please try again.");
+      }
+    });
+  }
 });
