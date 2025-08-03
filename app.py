@@ -22,6 +22,7 @@ from PyPDF2 import PdfReader
 from supabase import create_client
 from dotenv import load_dotenv
 from openai import OpenAI
+import docx 
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -513,31 +514,32 @@ def get_interview_feedback():
 
 
 # Resume Analysis API
-
 @app.route("/api/resume-analysis", methods=["POST"])
 def resume_analysis():
     data = request.get_json(force=True)
     resume_text = ""
 
-    # --- 1) Extract text from PDF or plain text ---
+    # PDF path
     if data.get("pdf"):
-        try:
-            pdf_bytes = base64.b64decode(data["pdf"])
-            reader    = PdfReader(BytesIO(pdf_bytes))
-            resume_text = " ".join(p.extract_text() or "" for p in reader.pages)
-            if not resume_text.strip():
-                return jsonify(error="PDF content empty"), 400
-        except Exception:
-            logging.exception("PDF Decode Error")
-            return jsonify(error="Unable to extract PDF text"), 400
+        pdf_bytes = base64.b64decode(data["pdf"])
+        reader = PdfReader(BytesIO(pdf_bytes))
+        resume_text = "\n".join(p.extract_text() or "" for p in reader.pages)
 
+    # DOCX path
+    elif data.get("docx"):
+        docx_bytes = base64.b64decode(data["docx"])
+        doc = docx.Document(BytesIO(docx_bytes))
+        resume_text = "\n".join(p.text for p in doc.paragraphs)
+
+    # Plain-text path
     elif data.get("text"):
         resume_text = data["text"].strip()
-        if not resume_text:
-            return jsonify(error="No text provided"), 400
 
     else:
         return jsonify(error="No resume data provided"), 400
+
+    if not resume_text:
+        return jsonify(error="Could not extract any text"), 400
 
     # --- 2) Build your ATS prompt ---
     prompt = (
