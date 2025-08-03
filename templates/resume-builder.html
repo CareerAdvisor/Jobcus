@@ -101,20 +101,18 @@
     </div>
   <div id="builderResumeOutput" class="resume-container" style="margin-top: 30px;"></div>
 
-  <!-- Download Buttons (show after generation) -->
-  <div id="resumeDownloadOptions" style="display: none; margin-top: 1rem; text-align: center;">
+  <!-- Download / Sign-up CTA -->
+<div id="resumeDownloadOptions" style="display: none; margin-top: 1rem; text-align: center;">
+  {% if current_user.is_authenticated %}
     <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
-    <button onclick="downloadResume('docx')">⬇️ Download Word (.docx)</button>
     <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
-  </div>
-</section>
-
-<!-- Template Gallery -->
-<section class="resume-gallery">
-  <h2 style="color: #104879;">Explore Our Templates</h2>
-  <div class="template-grid">
-    <img src="{{ url_for('static', filename='images/template3.png') }}" alt="Template 3" class="template-img" style="width: 100%; height: auto;">
-  </div>
+  {% else %}
+    <p style="margin-bottom: 1rem;">
+      Want to download your AI-generated resume?
+      <a href="/account" class="cta-primary">Sign up or log in</a> first.
+    </p>
+  {% endif %}
+</div>
 </section>
 
 {% endblock %}
