@@ -93,10 +93,12 @@
 
 </section>
 <!-- Download Buttons -->
-<div id="download-options" class="download-buttons hidden">
-  <button id="download-txt" class="primary-btn">⬇️ Download .txt</button>
-  <button id="download-pdf" class="primary-btn">⬇️ Download .pdf</button>
-</div>
+{% if current_user.is_authenticated %}
+  <div id="download-options" class="download-buttons hidden">
+    <button id="download-txt" class="primary-btn">⬇️ Download .txt</button>
+    <button id="download-pdf" class="primary-btn">⬇️ Download .pdf</button>
+  </div>
+{% else %}
 
 {% endblock %}
 
