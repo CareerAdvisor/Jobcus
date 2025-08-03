@@ -1,71 +1,116 @@
 // static/dashboard.js
 
 document.addEventListener("DOMContentLoaded", () => {
-  // --- 1) greeting + circle + issues/strengths (your existing code) ---
+  //
+  // 1) Greeting
+  //
   const greetEl = document.getElementById("dashboardGreeting");
-  const first   = !localStorage.getItem("dashboardVisited");
   if (greetEl) {
+    const first = !localStorage.getItem("dashboardVisited");
     greetEl.textContent = first ? "Welcome" : "Welcome Back";
     localStorage.setItem("dashboardVisited", "true");
   }
 
+  //
+  // 2) Load analysis JSON
+  //
   const raw = localStorage.getItem("resumeAnalysis");
-  if (!raw) return;  // no analysis yet
+  if (!raw) {
+    // no analysis → leave CTA visible
+    return;
+  }
 
-  const data = JSON.parse(raw);
-  // show/hide
-  document.getElementById("no-analysis-cta").style.display  = "none";
-  document.getElementById("resume-analysis").style.display = "block";
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    console.error("Could not parse resumeAnalysis");
+    return;
+  }
 
-  // animate the circle
+  //
+  // 3) Hide the “no-analysis” CTA, show the analysis section
+  //
+  const noCTA = document.getElementById("no-analysis-cta");
+  if (noCTA) noCTA.style.display = "none";
+
+  const analysisSection = document.getElementById("resume-analysis");
+  if (analysisSection) analysisSection.style.display = "block";
+
+  //
+  // 4) Animate the circle
+  //
   const circle = document.querySelector(".progress-circle");
-  const path   = circle.querySelector(".progress");
-  const txt    = circle.querySelector(".percentage");
-  let score    = data.score || 0, curr = 0;
-  const step   = score > 0 ? 1 : -1;
-  circle.dataset.score = score;
-  const iv = setInterval(() => {
-    if (curr === score) return clearInterval(iv);
-    curr += step;
-    path.setAttribute("stroke-dasharray", `${curr},100`);
-    txt.textContent = `${curr}%`;
-  }, 20);
+  if (circle) {
+    const path = circle.querySelector(".progress");
+    const text = circle.querySelector(".percentage");
+    const target = data.score || 0;
+    let current = 0;
+    const step = target > 0 ? 1 : -1;
+    circle.dataset.score = target;
+    const iv = setInterval(() => {
+      if (current === target) return clearInterval(iv);
+      current += step;
+      path.setAttribute("stroke-dasharray", `${current},100`);
+      text.textContent = `${current}%`;
+    }, 20);
+  }
 
-  // fill issues & strengths
-  const issues    = document.getElementById("top-issues");
-  const strengths = document.getElementById("good-points");
-  issues.innerHTML    = "";
-  strengths.innerHTML = "";
-  (data.analysis.issues || []).forEach(i => {
-    const li = document.createElement("li"); li.textContent = i;
-    issues.appendChild(li);
-  });
-  (data.analysis.strengths || []).forEach(s => {
-    const li = document.createElement("li"); li.textContent = s;
-    strengths.appendChild(li);
-  });
-
-  // --- 2) optimize-resume wiring ---
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const fr = new FileReader();
-      fr.onload  = () => resolve(fr.result.split(",")[1]);
-      fr.onerror = reject;
-      fr.readAsDataURL(file);
+  //
+  // 5) Populate Issues, Strengths, Suggestions
+  //
+  const issuesUL = document.getElementById("top-issues");
+  if (issuesUL) {
+    issuesUL.innerHTML = "";
+    (data.analysis.issues || []).forEach(i => {
+      const li = document.createElement("li");
+      li.textContent = i;
+      issuesUL.appendChild(li);
     });
   }
 
+  const strengthsUL = document.getElementById("good-points");
+  if (strengthsUL) {
+    strengthsUL.innerHTML = "";
+    (data.analysis.strengths || []).forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = s;
+      strengthsUL.appendChild(li);
+    });
+  }
+
+  const suggestionsUL = document.getElementById("suggestions-list");
+  if (suggestionsUL) {
+    suggestionsUL.innerHTML = "";
+    (data.suggestions || []).forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = s;
+      suggestionsUL.appendChild(li);
+    });
+  }
+
+  //
+  // 6) Optimize-flow: wire up #optimize-btn
+  //
   const optimizeBtn = document.getElementById("optimize-btn");
   const loadingEl   = document.getElementById("optimized-loading");
   const outputEl    = document.getElementById("optimized-output");
   const downloadsEl = document.getElementById("optimized-downloads");
-  const resumeBase64= localStorage.getItem("resumeBase64");
+  // Make sure you saved this in resume-builder.js:
+  //   localStorage.setItem("resumeBase64", b64);
+  const resumeBase64 = localStorage.getItem("resumeBase64");
 
-  if (optimizeBtn && resumeBase64) {
+  if (optimizeBtn) {
     optimizeBtn.addEventListener("click", async () => {
-      loadingEl.style.display   = "block";
-      outputEl.style.display    = "none";
-      downloadsEl.style.display = "none";
+      if (loadingEl)   loadingEl.style.display    = "block";
+      if (outputEl)    outputEl.style.display     = "none";
+      if (downloadsEl) downloadsEl.style.display  = "none";
+
+      if (!resumeBase64) {
+        alert("Missing your original resume data for optimization.");
+        if (loadingEl) loadingEl.style.display = "none";
+        return;
+      }
 
       try {
         const res = await fetch("/api/optimize-resume", {
@@ -73,51 +118,22 @@ document.addEventListener("DOMContentLoaded", () => {
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({ pdf: resumeBase64 })
         });
-        if (!res.ok) throw new Error(res.statusText);
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
+        const js = await res.json();
+        if (!res.ok || js.error) throw new Error(js.error || res.statusText);
 
-        loadingEl.style.display   = "none";
-        outputEl.textContent       = data.optimized;
-        outputEl.style.display     = "block";
-        downloadsEl.style.display  = "block";
+        if (loadingEl)   loadingEl.style.display   = "none";
+        if (outputEl) {
+          outputEl.textContent    = js.optimized;
+          outputEl.style.display  = "block";
+        }
+        if (downloadsEl) downloadsEl.style.display = "block";
+
       } catch (err) {
         console.error("Optimize error:", err);
-        loadingEl.style.display = "none";
+        if (loadingEl) loadingEl.style.display = "none";
         alert("Failed to optimize resume. Try again.");
       }
     });
   }
+
 });
-
-// Download helper for optimized resume
-function downloadHelper(format, text, filename) {
-  if (format === "txt") {
-    const blob = new Blob([text], { type: "text/plain" });
-    saveAs(blob, `${filename}.txt`);
-  } else if (format === "docx") {
-    const { Document, Packer, Paragraph, TextRun } = window.docx;
-    const doc = new Document({
-      sections: [{ children: text.split("\n").map(line =>
-        new Paragraph({ children: [ new TextRun({ text: line }) ] })
-      ) }]
-    });
-    Packer.toBlob(doc).then(blob => saveAs(blob, `${filename}.docx`));
-  } else if (format === "pdf") {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ unit:"mm", format:"a4" });
-    const lines = pdf.splitTextToSize(text, 180);
-    let y = 10;
-    lines.forEach(line => {
-      if (y > 280) { pdf.addPage(); y = 10; }
-      pdf.text(line, 10, y);
-      y += 8;
-    });
-    pdf.save(`${filename}.pdf`);
-  }
-}
-
-window.downloadOptimizedResume = format => {
-  const text = document.getElementById("optimized-output").innerText || "";
-  downloadHelper(format, text, "resume-optimized");
-};
