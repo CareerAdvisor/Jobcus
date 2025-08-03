@@ -1,4 +1,3 @@
-<!-- resume-builder.html -->
 {% extends "base.html" %}
 
 {% block title %}Resume Builder – Jobcus{% endblock %}
@@ -6,127 +5,117 @@
 {% block content %}
 
 <!-- Hero Section -->
-<div class="interview-container" style="padding: 30px 10px; width: 100%; background: #104879;">
-  <section class="interview-hero-with-image" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-    <h5 style="color: #ffc957; font-weight: 600; font-size: 14px; letter-spacing: 1px;">AI RESUME BUILDER</h5>
-    
-    <h1 style="font-size: 28px; font-weight: 700; color: white; margin: 10px 0;">
-      Get Hired 2x Faster <br>with an <span style="color: #ffc957;">Optimized Resume</span>
-    </h1>
-    
-    <p style="max-width: 420px; color: white; font-size: 16px; margin: 10px 0 20px;">
-      Improve your resume with AI suggestions<br>and a recruiter-friendly format.
-    </p>
-    
-    <ul style="list-style: none; padding: 0; margin-bottom: 15px; color: #fff; font-weight: bold;">
-      <li style="margin-bottom: 8px;">✅ ATS Resume Templates</li>
-      <li style="margin-bottom: 8px;">✅ Resume Score</li>
-      <li>✅ One Click Optimizer</li>
-    </ul>
-    
-    <a href="#resume-analyzer" class="primary-btn"
-       style="background-color: #ffc957; padding: 12px 24px; color: #104879; border-radius: 6px; text-decoration: none; font-weight: 600;">
-      ANALYZE MY RESUME
-    </a>
-    
-    <div style="margin-top: 20px; margin-bottom: 20px;">
-      <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
-    </div>
-  </section>
+<div class="interview-container" style="padding:30px 10px; background:#104879; text-align:center;">
+  <h5 style="color:#ffc957; font-weight:600; letter-spacing:1px;">AI RESUME BUILDER</h5>
+  <h1 style="color:white; font-size:28px; font-weight:700; margin:10px 0;">
+    Get Hired 2x Faster<br>with an <span style="color:#ffc957;">Optimized Resume</span>
+  </h1>
+  <p style="color:white; max-width:420px; margin:10px auto 20px;">
+    Improve your resume with AI suggestions<br>and a recruiter-friendly format.
+  </p>
+  <a href="#resume-analyzer" class="primary-btn" 
+     style="background:#ffc957; color:#104879; padding:12px 24px; border-radius:6px; font-weight:600; text-decoration:none;">
+    ANALYZE MY RESUME
+  </a>
+  <div style="margin:20px 0;">
+    <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" 
+         alt="Upload Resume" style="max-width:180px; height:auto;" />
+  </div>
 </div>
 
 <!-- Resume Analyzer Section -->
-<section id="resume-analyzer" style="padding: 40px 20px; background: #f9fafb; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-  <h2 style="color: #104879; font-size: 24px; margin-bottom: 10px;">🔍 AI Resume Analyzer</h2>
-  <p style="color: #555; margin-bottom: 20px;">Paste or upload your resume to get a personalised score, keyword analysis, and improvement suggestions.</p>
+<section id="resume-analyzer" style="padding:40px 20px; background:#f9fafb; font-family:'Segoe UI',sans-serif;">
+  <h2 style="color:#104879; font-size:24px; margin-bottom:10px;">🔍 AI Resume Analyzer</h2>
+  <p style="color:#555; margin-bottom:20px;">
+    Paste or upload your resume to get a personalised score, keyword analysis, and improvement suggestions.
+  </p>
 
-  <!-- Textarea + File Upload -->
-  <textarea id="resume-text" placeholder="Paste your resume text here..." 
-    style="width: 100%; height: 150px; padding: 12px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; font-size: 14px;"></textarea>
+  <textarea id="resume-text" placeholder="Paste your resume text here…" 
+    style="width:100%; height:150px; padding:12px; border:1px solid #ccc; border-radius:8px; margin-bottom:10px; font-size:14px;"></textarea>
 
   <input type="file" id="resumeFile" accept=".pdf,.txt,.docx" 
-    style="display: block; margin-bottom: 15px; font-size: 14px;">
+    style="display:block; margin-bottom:15px;">
 
   <button id="analyze-btn" class="primary-btn"
-    style="background-color: #104879; color: white; padding: 12px 24px; border: none; border-radius: 6px; font-weight: 600; font-size: 14px;">
+    style="background:#104879; color:white; padding:12px 24px; border:none; border-radius:6px; font-weight:600; font-size:14px;">
     Analyze Resume
   </button>
 
-  <!-- new: simple processing indicator -->
   <div id="analyzingIndicator" style="display:none; margin-top:1rem; color:#555;">
     🤖 Analyzing your resume, please wait…
   </div>
 </section>
 
-<!-- 🧠 AI Resume Builder -->
-<section id="resume-builder" style="background-color: #ffc957; padding: 20px; border-radius: 8px;">
-  <h2 style="color: #104879;">📄 Build Your Resume with AI</h2>
-  <p style="color: #333; margin-bottom: 20px;">
+<!-- AI Resume Builder Section -->
+<section id="resume-builder" style="background:#ffc957; padding:20px; border-radius:8px; margin-top:2rem;">
+  <h2 style="color:#104879;">📄 Build Your Resume with AI</h2>
+  <p style="color:#333; margin-bottom:20px;">
     Quickly generate a professional resume with the power of AI. Fill in your details and let us handle the formatting.
   </p>
 
-  <form id="resumeForm" method="POST" action="javascript:void(0);">
-    <label for="fullName">Full Name</label>
-    <textarea name="fullName" id="fullName" placeholder="John Doe" required /></textarea>
+  <form id="resumeForm" style="display:grid; gap:10px;">
+    <label>Full Name</label>
+    <textarea name="fullName" required style="padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
 
-    <label for="title">Job Title(s)</label>
-    <textarea name="title" id="title" placeholder="e.g. IT Support | Project Manager" required /></textarea>
+    <label>Job Title(s)</label>
+    <textarea name="title" required style="padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
 
-    <label for="contact">Contact Info</label>
-    <textarea name="contact" id="contact" placeholder="City | Phone Number | Email" required /></textarea>
+    <label>Contact Info</label>
+    <textarea name="contact" required style="padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
 
-    <label for="summary">Professional Summary</label>
-    <textarea name="summary" placeholder="Tell us about your background"></textarea>
+    <label>Professional Summary</label>
+    <textarea name="summary" style="padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
 
-    <label for="education">Education</label>
-    <textarea name="education" placeholder="List your academic background"></textarea>
+    <label>Education</label>
+    <textarea name="education" style="padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
 
-    <label for="experience">Work Experience</label>
-    <textarea name="experience" placeholder="Include your relevant job roles"></textarea>
+    <label>Work Experience</label>
+    <textarea name="experience" style="padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
 
-    <label for="skills">Skills</label>
-    <textarea name="skills" placeholder="List your top skills"></textarea>
+    <label>Skills</label>
+    <textarea name="skills" style="padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
 
-    <label for="certifications">Certifications</label>
-    <textarea name="certifications" placeholder="Any relevant licenses or certifications?"></textarea>
+    <label>Certifications</label>
+    <textarea name="certifications" style="padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
 
-    <label for="portfolio">LinkedIn or Portfolio</label>
-    <textarea name="portfolio" placeholder="Link to your profile or personal website" /></textarea>
+    <label>LinkedIn or Portfolio</label>
+    <textarea name="portfolio" style="padding:8px; border:1px solid #ccc; border-radius:4px;"></textarea>
 
-    <button type="submit" style="background-color: #104879; color: white; padding: 10px 20px; margin-top: 10px; border-radius: 5px;">✨ Generate Resume</button>
+    <button type="submit" style="background:#104879; color:white; padding:10px 20px; border:none; border-radius:5px; font-weight:600;">
+      ✨ Generate Resume
+    </button>
   </form>
-  <!-- New: simple processing indicator for the builder -->
-    <div id="analyzingIndicator" style="display:none; margin-top:1rem; color:#555;">
+
+  <!-- White results container with embedded “Generating…” indicator -->
+  <div id="builderResumeOutput"
+       class="resume-container"
+       style="background:white; padding:20px; border-radius:6px; margin-top:30px;">
+    <div id="builderGeneratingIndicator" style="display:none; color:#555; margin-bottom:1rem;">
       🤖 Generating your resume, please wait…
     </div>
-  <div id="builderResumeOutput" class="resume-container" style="margin-top: 30px;"></div>
+    <!-- AI-generated HTML will be injected here -->
+  </div>
 
   <!-- Download / Sign-up CTA -->
-<div id="resumeDownloadOptions" style="display: none; margin-top: 1rem; text-align: center;">
-  {% if current_user.is_authenticated %}
-    <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
-    <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
-  {% else %}
-    <p style="margin-bottom: 1rem;">
-      Want to download your AI-generated resume?
-      <strong><a href="/account" style="color: #104879; text-decoration: none;">Sign up or log in</a></strong> first.
-    </p>
-  {% endif %}
-</div>
+  <div id="resumeDownloadOptions" style="display:none; margin-top:1rem; text-align:center;">
+    {% if current_user.is_authenticated %}
+      <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
+      <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
+    {% else %}
+      <p style="margin-bottom:1rem;">
+        Want to download your AI-generated resume?
+        <strong><a href="/account" style="color:#104879; text-decoration:none;">Sign up or log in</a></strong> first.
+      </p>
+    {% endif %}
+  </div>
 </section>
 
 {% endblock %}
 
 {% block scripts %}
-
-<!-- 3rd-party libs -->
-
-<!-- 📄 DOCX Export Support -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-<!-- 🧾 PDF Export Support -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
+  <!-- DOCX + FileSaver + jsPDF libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="{{ url_for('static', filename='resume-builder.js') }}"></script>
 {% endblock %}
