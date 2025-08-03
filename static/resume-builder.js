@@ -109,6 +109,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // collect all form fields
     const data = {
       fullName:       form.fullName.value,
+      title:          form.title.value,
+      contact:        form.contac.value,
       summary:        form.summary.value,
       education:      form.education.value,
       experience:     form.experience.value,
