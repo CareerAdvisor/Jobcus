@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 1) turn file or pasted text into base64,
-  // 2) call the API, 
+  // 2) call the API,
   // 3) stash result + redirect
   async function sendAnalysis(file) {
     if (!file) {
@@ -42,6 +42,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const b64 = await fileToBase64(file);
+      // optionally also stash the raw Base64 for later optimization:
+      localStorage.setItem("resumeBase64", b64);
+
       const res = await fetch("/api/resume-analysis", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
