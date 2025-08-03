@@ -93,17 +93,9 @@
 
 </section>
 <!-- Download Buttons -->
-{% if current_user.is_authenticated %}
-  <div id="download-options" class="download-buttons hidden">
+  <div id="download-options" style="display:none; margin-top:1rem;">
     <button id="download-txt" class="primary-btn">⬇️ Download .txt</button>
     <button id="download-pdf" class="primary-btn">⬇️ Download .pdf</button>
-  </div>
-{% else %}
- <div style="margin-top:1rem; text-align:center;">
-    <p>
-      To download your optimized resume, 
-      <strong><a href="/account" style="color: #104879; text-decoration: none;">Sign up or log in</a></strong>.
-    </p>
   </div>
 
 {% endblock %}
