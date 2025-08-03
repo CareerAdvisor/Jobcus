@@ -566,6 +566,65 @@ header {
   background: #f0f0f0;
 }
 
+.analysis-section {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
+}
+.analysis-section h2 {
+  color: #104879;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+.analysis-block {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: 6px;
+}
+.analysis-block h3 {
+  margin-bottom: 0.75rem;
+  font-size: 1.2rem;
+}
+.analysis-block.issues {
+  background: #fef2f2;
+  border-left: 4px solid #f87171;
+}
+.analysis-block.strengths {
+  background: #ecfdf5;
+  border-left: 4px solid #22c55e;
+}
+.analysis-block.suggestions {
+  background: #f0f9ff;
+  border-left: 4px solid #3b82f6;
+}
+.analysis-block ul {
+  list-style: disc inside;
+  color: #333;
+  line-height: 1.5;
+}
+.analysis-block ul li + li {
+  margin-top: 0.5rem;
+}
+
+.analysis-cta {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+.btn-optimize {
+  background: #104879;
+  color: #ffc957;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-optimize:hover {
+  opacity: 0.9;
+}
+
 /* === CHAT PAGE STYLE === */
 main {
   display: flex;
