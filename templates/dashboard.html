@@ -64,35 +64,37 @@
     </div>
 
     <!-- ↓↓↓ Optimize UI ↓↓↓ -->
-    <div
-      id="optimize-section"
-      style="margin-top:2rem; display:flex; flex-direction:column; align-items:center;"
-    >
-      <button id="optimize-btn" class="cta-primary" style="margin-bottom:1rem;">
-        ✨ Optimize My Resume
-      </button>
-      <div id="optimized-loading" style="display:none; color:#555;">
-        🤖 Optimising your resume, please wait…
-      </div>
-      <pre
-        id="optimized-output"
-        style="display:none; white-space:pre-wrap; background:#f9f9f9;
-               padding:1rem; border-radius:6px;"
-      ></pre>
-      <div id="optimized-downloads" style="display:none; margin-top:1rem;">
-        <button onclick="downloadOptimizedResume('pdf')">⬇️ Download PDF</button>
-        <button onclick="downloadOptimizedResume('docx')">⬇️ Download Docx</button>
-        <button onclick="downloadOptimizedResume('txt')">⬇️ Download TXT</button>
-      </div>
+    <div class="analysis-cta">
+      <p>Want us to apply these fixes automatically? ✨</p>
+      <button id="optimize-btn" class="btn-optimize">Optimize My Resume</button>
     </div>
-    <!-- ↑↑↑ End Optimize UI ↑↑↑ -->
+
+    <div id="optimize-section" style="margin-top:2rem; display:flex; flex-direction:column; align-items:center;">
+      <div id="optimized-loading" style="display:none; color:#555;">
+        🤖 Optimizing your resume, please wait…
+      </div>
+      <pre id="optimized-output" style="display:none; white-space:pre-wrap; background:#f9f9f9; padding:1rem; border-radius:6px;"></pre>
+
+      {% if current_user.is_authenticated %}
+        <div id="optimized-downloads" style="display:none; margin-top:1rem;">
+          <button onclick="downloadOptimizedResume('pdf')">⬇️ Download PDF</button>
+          <button onclick="downloadOptimizedResume('txt')">⬇️ Download TXT</button>
+        </div>
+      {% else %}
+        <div style="margin-top:1rem; text-align:center;">
+          <p>
+            To download your optimized resume, 
+            <strong><a href="/account" style="color: #104879; text-decoration: none;">Sign up or log in</a></strong>.
+          </p>
+        </div>
+      {% endif %}
+    </div>
   </section>
 
-  <!-- Always show signup CTA -->
   <div style="text-align:center; margin:3rem 0;">
     <p>
       Want to <strong>save</strong> your results and track progress over time?
-      <a href="/account">Sign up or log in</a>
+      <strong><a href="/account" style="color: #104879; text-decoration: none;">Sign up or log in</a></strong>
     </p>
   </div>
 </section>
