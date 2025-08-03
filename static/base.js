@@ -1,4 +1,4 @@
-// base.js
+// static/base.js
 
 // 1) Initialize AOS
 AOS.init();
@@ -19,54 +19,63 @@ function toggleMobileMenu() {
   document.getElementById('mobileMenu')?.classList.toggle('show');
 }
 
-// 4) Global click handler for closing menus
-document.addEventListener('click', (e) => {
-  // a) Close mobile menu if click outside
-  const mobileMenu = document.getElementById('mobileMenu'),
-        hamburger = document.querySelector('.hamburger');
-  if (
-    mobileMenu?.classList.contains('show') &&
-    !mobileMenu.contains(e.target) &&
-    !hamburger.contains(e.target)
-  ) {
-    mobileMenu.classList.remove('show');
-  }
+document.addEventListener('DOMContentLoaded', () => {
+  // 4) Global click handler for closing various menus
+  document.addEventListener('click', (e) => {
+    // a) Close mobile menu
+    const mobileMenu = document.getElementById('mobileMenu'),
+          hamburger = document.querySelector('.hamburger');
+    if (
+      mobileMenu?.classList.contains('show') &&
+      !mobileMenu.contains(e.target) &&
+      !hamburger.contains(e.target)
+    ) {
+      mobileMenu.classList.remove('show');
+    }
 
-  // b) Close features dropdowns
-  document.querySelectorAll('.dropdown-content').forEach(drop => {
-    const btn = drop.previousElementSibling;
-    if (!drop.contains(e.target) && !btn.contains(e.target)) {
-      drop.style.display = 'none';
+    // b) Close features dropdowns
+    document.querySelectorAll('.dropdown-content').forEach(drop => {
+      const btn = drop.previousElementSibling;
+      if (!drop.contains(e.target) && !btn.contains(e.target)) {
+        drop.style.display = 'none';
+      }
+    });
+
+    // c) Close user menu if clicked outside
+    const userMenu = document.getElementById('userMenu'),
+          userIcon = document.getElementById('userIcon');
+    if (
+      userMenu?.classList.contains('show') &&
+      !userMenu.contains(e.target) &&
+      !userIcon.contains(e.target)
+    ) {
+      userMenu.classList.remove('show');
     }
   });
 
-  // c) Close user menu
-  const userMenu = document.getElementById('userMenu'),
-        userIcon = document.getElementById('userIcon');
-  if (
-    userMenu?.classList.contains('show') &&
-    !userMenu.contains(e.target) &&
-    !userIcon.contains(e.target)
-  ) {
-    userMenu.classList.remove('show');
-  }
-});
-
-// 5) Features dropdown toggle
-document.querySelectorAll('.dropbtn').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    const drop = e.target.nextElementSibling;
-    drop.style.display = drop.style.display === 'flex' ? 'none' : 'flex';
+  // 5) Features dropdown toggle
+  document.querySelectorAll('.dropbtn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const drop = e.target.nextElementSibling;
+      drop.style.display = (drop.style.display === 'flex') ? 'none' : 'flex';
+    });
   });
-});
 
-// 6) User‐icon dropdown toggle
-document.getElementById('userIcon')?.addEventListener('click', (e) => {
-  e.stopPropagation();
-  document.getElementById('userMenu')?.classList.toggle('show');
-});
+  // ───── User Menu Toggle ─────
+  const userIcon = document.getElementById('userIcon');
+  const userMenu = document.getElementById('userMenu');
+  if (userIcon && userMenu) {
+    // Toggle when clicking the icon
+    userIcon.addEventListener('click', e => {
+      e.stopPropagation();
+      userMenu.classList.toggle('show');
+    });
 
-// 7) Hide user menu on scroll
-window.addEventListener('scroll', () => {
-  document.getElementById('userMenu')?.classList.remove('show');
+    // Also hide on scroll
+    window.addEventListener('scroll', () => {
+      if (userMenu.classList.contains('show')) {
+        userMenu.classList.remove('show');
+      }
+    });
+  }
 });
