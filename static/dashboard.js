@@ -136,3 +136,40 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// — Download helper for optimized resume —
+function downloadHelper(format, text, filename) {
+  if (format === "txt") {
+    const blob = new Blob([text], { type: "text/plain" });
+    saveAs(blob, `${filename}.txt`);
+  } else if (format === "docx") {
+    const { Document, Packer, Paragraph, TextRun } = window.docx;
+    const doc = new Document({
+      sections: [{
+        children: text.split("\n").map(line =>
+          new Paragraph({ children: [new TextRun({ text: line })] })
+        )
+      }]
+    });
+    Packer.toBlob(doc).then(blob => saveAs(blob, `${filename}.docx`));
+  } else if (format === "pdf") {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: "mm", format: "a4" });
+    const lines = pdf.splitTextToSize(text, 180);
+    let y = 10;
+    lines.forEach(line => {
+      if (y > 280) { pdf.addPage(); y = 10; }
+      pdf.text(line, 10, y);
+      y += 8;
+    });
+    pdf.save(`${filename}.pdf`);
+  }
+}
+
+// Expose globally for your dashboard buttons
+window.downloadOptimizedResume = function(format) {
+  // Make sure this matches the ID in your dashboard HTML!
+  const text = document.getElementById("optimized-output").innerText || "";
+  downloadHelper(format, text, "resume-optimized");
+};
+
