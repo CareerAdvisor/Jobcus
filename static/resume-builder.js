@@ -155,5 +155,3 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = optimizedOutput.innerText || "";
     downloadHelper(format, text, "resume-optimized");
   };
-
-});  // ← this single brace closes the DOMContentLoaded listener
