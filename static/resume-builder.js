@@ -10,12 +10,17 @@
 })();
 
 document.addEventListener("DOMContentLoaded", () => {
+  // — Element refs —
   const analyzeBtn         = document.getElementById("analyze-btn");
+  const optimizeBtn        = document.getElementById("optimizeResume");
   const resumeText         = document.getElementById("resume-text");
   const resumeFile         = document.getElementById("resumeFile");
   const analyzingIndicator = document.getElementById("analyzingIndicator");
+  const optimizedLoading   = document.getElementById("optimizedLoading");
+  const optimizedOutput    = document.getElementById("analyzerResumeOutput");
+  const optimizedDownloads = document.getElementById("optimizedDownloadOptions");
 
-  // Helper to read any File or Blob as base64 → string:
+  // — Helper: turn a File into a Base64 string —
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
@@ -25,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Send to /api/resume-analysis, then stash & redirect:
+  // — Submit resume for analysis, store result & redirect —
   async function sendAnalysis(file) {
     if (!file) {
       alert("Please paste your resume or upload a file.");
@@ -49,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Save analysis for dashboard then redirect:
+      // Save and go to dashboard
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
       window.location.href = "/dashboard";
 
@@ -60,12 +65,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // — Wire up the Analyze button —
   analyzeBtn.addEventListener("click", () => {
     const file = resumeFile.files[0]
                || new File([resumeText.value], "resume.txt", { type: "text/plain" });
     sendAnalysis(file);
   });
-});
 
   // — Optimize My Resume flow —
   optimizeBtn.addEventListener("click", async () => {
@@ -112,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // — Download helper for optimized resume —
+  // — Download helper for the optimized resume —
   function downloadHelper(format, text, filename) {
     if (format === "txt") {
       const blob = new Blob([text], { type: "text/plain" });
@@ -141,9 +146,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // — expose a global for your download buttons —
-  window.downloadOptimizedResume = format => {
+  // — Expose downloadOptimizedResume globally —
+  window.downloadOptimizedResume = (format) => {
     const text = optimizedOutput.innerText || "";
     downloadHelper(format, text, "resume-optimized");
   };
-});
+
+});  // ← this single brace closes the DOMContentLoaded listener
