@@ -98,3 +98,41 @@ document.addEventListener("DOMContentLoaded", () => {
     sendAnalysis(file);
   });
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("resumeForm");
+  const output = document.getElementById("builderResumeOutput");
+  const downloads = document.getElementById("resumeDownloadOptions");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    // collect all form fields
+    const data = {
+      fullName:       form.fullName.value,
+      summary:        form.summary.value,
+      education:      form.education.value,
+      experience:     form.experience.value,
+      skills:         form.skills.value,
+      certifications: form.certifications.value,
+      portfolio:      form.portfolio.value
+    };
+    try {
+      const res = await fetch("/generate-resume", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error(res.statusText);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+
+      // display the returned HTML
+      output.innerHTML = json.formatted_resume;
+      // show download buttons
+      downloads.style.display = "block";
+    } catch (err) {
+      console.error("Resume gen error:", err);
+      alert("Failed to generate resume. Please try again.");
+    }
+  });
+});
