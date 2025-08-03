@@ -94,17 +94,21 @@
     <textarea name="portfolio" placeholder="Link to your profile or personal website" /></textarea>
 
     <button type="submit" style="background-color: #104879; color: white; padding: 10px 20px; margin-top: 10px; border-radius: 5px;">✨ Generate Resume</button>
+  <!-- New: simple processing indicator for the builder -->
+    <div id="builderGeneratingIndicator" style="display:none; margin-top:1rem; color:#555;">
+      🤖 Generating your resume, please wait…
+    </div>
   </form>
 
   <div id="builderResumeOutput" class="resume-container" style="margin-top: 30px;"></div>
-</section>
 
-<!-- Download Buttons -->
-<div id="resumeDownloadOptions" style="display: none; margin-top: 1rem; text-align: center;">
-  <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
-  <button onclick="downloadResume('docx')">⬇️ Download Word (.docx)</button>
-  <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
-</div>
+  <!-- Download Buttons (show after generation) -->
+  <div id="resumeDownloadOptions" style="display: none; margin-top: 1rem; text-align: center;">
+    <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
+    <button onclick="downloadResume('docx')">⬇️ Download Word (.docx)</button>
+    <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
+  </div>
+</section>
 
 <!-- Template Gallery -->
 <section class="resume-gallery">
