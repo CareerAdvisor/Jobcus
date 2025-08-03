@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // Helper: File → Base64
+  // Helper: File → Base64 string
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
@@ -30,25 +30,46 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 1) turn file or pasted text into base64,
-  // 2) call the API,
-  // 3) stash result + redirect
+  // Send to /api/resume-analysis, then stash & redirect
   async function sendAnalysis(file) {
-    if (!file) {
+    let payload;
+
+    // 1) Pasted text only
+    if (!file && resumeText.value.trim()) {
+      payload = { text: resumeText.value.trim() };
+
+    // 2) Uploaded file (PDF or DOCX)
+    } else if (file) {
+      const b64 = await fileToBase64(file);
+      // stash the original for optimize flow
+      localStorage.setItem("resumeBase64", b64);
+
+      if (file.type === "application/pdf") {
+        payload = { pdf: b64 };
+      } else if (
+        file.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
+        payload = { docx: b64 };
+      } else {
+        alert("Unsupported file type. Please upload PDF or DOCX.");
+        return;
+      }
+
+    // 3) Neither: complain
+    } else {
       alert("Please paste your resume or upload a file.");
       return;
     }
+
+    // show indicator
     if (analyzingIndicator) analyzingIndicator.style.display = "block";
 
     try {
-      const b64 = await fileToBase64(file);
-      // optionally also stash the raw Base64 for later optimization:
-      localStorage.setItem("resumeBase64", b64);
-
       const res = await fetch("/api/resume-analysis", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ pdf: b64 })
+        body:    JSON.stringify(payload)
       });
       if (!res.ok) throw new Error("Server returned " + res.status);
 
@@ -59,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // ✅ Save & redirect
+      // ✅ Save analysis JSON & redirect
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
       window.location.href = "/dashboard";
 
@@ -70,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Wire the button
   analyzeBtn.addEventListener("click", () => {
     const file = resumeFile.files[0]
                || new File([resumeText.value], "resume.txt", { type: "text/plain" });
