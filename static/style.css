@@ -836,6 +836,10 @@ main {
   border-bottom: none;
 }
 
+.user-menu li + li {
+  border-top: 1px solid #eee;
+}
+
 .user-dropdown li a {
   display: block;
   padding: 10px;
