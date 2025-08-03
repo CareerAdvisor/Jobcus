@@ -10,17 +10,18 @@
 })();
 
 document.addEventListener("DOMContentLoaded", () => {
-  // — Element refs —
+  // grab only the elements we actually use on this page
   const analyzeBtn         = document.getElementById("analyze-btn");
-  const optimizeBtn        = document.getElementById("optimizeResume");
   const resumeText         = document.getElementById("resume-text");
   const resumeFile         = document.getElementById("resumeFile");
   const analyzingIndicator = document.getElementById("analyzingIndicator");
-  const optimizedLoading   = document.getElementById("optimizedLoading");
-  const optimizedOutput    = document.getElementById("analyzerResumeOutput");
-  const optimizedDownloads = document.getElementById("optimizedDownloadOptions");
 
-  // — Helper: turn a File into a Base64 string —
+  if (!analyzeBtn) {
+    console.warn("[resume-builder] No #analyze-btn found, skipping setup.");
+    return;
+  }
+
+  // Helper: File → Base64 string
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
@@ -30,13 +31,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // — Submit resume for analysis, store result & redirect —
+  // Send resume to the API, store result, then redirect
   async function sendAnalysis(file) {
     if (!file) {
       alert("Please paste your resume or upload a file.");
       return;
     }
-    analyzingIndicator.style.display = "block";
+    // show the little “analyzing” message
+    if (analyzingIndicator) analyzingIndicator.style.display = "block";
 
     try {
       const b64 = await fileToBase64(file);
@@ -50,27 +52,29 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       if (data.error) {
         alert("Error analyzing resume: " + data.error);
-        analyzingIndicator.style.display = "none";
+        if (analyzingIndicator) analyzingIndicator.style.display = "none";
         return;
       }
 
-      // Save and go to dashboard
+      // ✅ stash it and send the user to the dashboard
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
       window.location.href = "/dashboard";
 
     } catch (err) {
       console.error("Analyzer error:", err);
       alert("Could not analyze resume. Please try again.");
-      analyzingIndicator.style.display = "none";
+      if (analyzingIndicator) analyzingIndicator.style.display = "none";
     }
   }
 
-  // — Wire up the Analyze button —
+  // wire up the Analyze button
   analyzeBtn.addEventListener("click", () => {
+    // either the uploaded file or the pasted text
     const file = resumeFile.files[0]
                || new File([resumeText.value], "resume.txt", { type: "text/plain" });
     sendAnalysis(file);
   });
+});
 
   // — Optimize My Resume flow —
   optimizeBtn.addEventListener("click", async () => {
