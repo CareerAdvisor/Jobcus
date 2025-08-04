@@ -1,1 +1,66 @@
+<!-- pricing.html -->
+{% extends "base.html" %}
 
+{% block title %}Pricing – Jobcus{% endblock %}
+
+{% block content %}
+<section class="pricing-hero" style="text-align:center; padding:4rem 1rem; background:#f9fafb;">
+  <h1>Find the Plan That's Right for You</h1>
+  <p>Whether you're a job seeker or an enterprise, Jobcus has a plan to accelerate your career.</p>
+</section>
+
+<section class="pricing-table" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:2rem; padding:2rem;">
+
+  <!-- Free Tier -->
+  <div class="plan-card">
+    <h2>Free</h2>
+    <p class="price">$0 / month</p>
+    <ul>
+      <li>AI Resume Builder & Analyzer</li>
+      <li>Basic Resume Score & Insights</li>
+      <li>Job Search (up to 10 jobs/mo)</li>
+      <li>Community FAQ & Resources</li>
+    </ul>
+    <a href="/account?plan=free" class="btn">Get Started</a>
+  </div>
+
+  <!-- Pro Tier -->
+  <div class="plan-card featured">
+    <h2>Pro</h2>
+    <p class="price">$19 / month</p>
+    <ul>
+      <li>Unlimited Resume Analyses</li>
+      <li>Advanced Keyword & ATS Optimization</li>
+      <li>Interactive Career Path Recommendations</li>
+      <li>Job Market Analytics & Salary Trends</li>
+    </ul>
+    <a href="/account?plan=pro" class="btn btn-primary">Start Pro</a>
+  </div>
+
+  <!-- Business Tier -->
+  <div class="plan-card">
+    <h2>Business</h2>
+    <p class="price">$49 / month</p>
+    <ul>
+      <li>Team Management Dashboard</li>
+      <li>Bulk Resume Analysis & Reporting</li>
+      <li>Employer Branding & Outreach Tools</li>
+      <li>Dedicated Customer Support</li>
+    </ul>
+    <a href="/account?plan=business" class="btn">Contact Sales</a>
+  </div>
+
+</section>
+
+<section class="premium-features" style="padding:2rem 1rem; background:#fff;">
+  <h2>Premium Pages & Features to Come</h2>
+  <ul>
+    <li><strong>Interview Simulator</strong> – AI-driven mock interviews with real-time feedback.</li>
+    <li><strong>Resume Repository</strong> – Store, version, and manage past resumes securely.</li>
+    <li><strong>1:1 Career Coaching</strong> – Book sessions with expert advisors.</li>
+    <li><strong>Course Library</strong> – Curated skill-up courses & certifications.</li>
+    <li><strong>API Access</strong> – Integrate Jobcus insights into your own app.</li>
+    <li><strong>Enterprise Insights</strong> – Deep analytics for HR teams & recruiters.</li>
+  </ul>
+</section>
+{% endblock %}
