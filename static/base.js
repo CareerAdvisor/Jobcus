@@ -39,3 +39,29 @@ document.querySelectorAll('.dropbtn').forEach(btn => {
     drop.style.display = drop.style.display === 'flex' ? 'none' : 'flex';
   });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const userIcon = document.getElementById('userIcon');
+  const userMenu = document.getElementById('userMenu');
+
+  if (userIcon && userMenu) {
+    // Toggle dropdown on icon click
+    userIcon.addEventListener('click', e => {
+      e.stopPropagation();
+      userMenu.style.display =
+        userMenu.style.display === 'block' ? 'none' : 'block';
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', e => {
+      if (
+        userMenu.style.display === 'block' &&
+        !userMenu.contains(e.target) &&
+        !userIcon.contains(e.target)
+      ) {
+        userMenu.style.display = 'none';
+      }
+    });
+  }
+});
+
