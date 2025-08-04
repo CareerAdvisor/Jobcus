@@ -752,11 +752,6 @@ main {
 }
 
 /* style.css */
-.user-dropdown {
-  position: relative;
-  display: inline-block;
-}
-
 .header-user-icon {
   width: 28px;
   height: 28px;
@@ -766,7 +761,7 @@ main {
 
 .user-menu {
   display: none; /* This must be present */
-  position: absolute;
+  position: relative;
   right: 0;
   top: 36px;
   background-color: #fff;
@@ -798,11 +793,6 @@ main {
 
 .user-menu a:hover {
   background-color: #f3f3f3;
-}
-
-.user-menu {
-  position: relative;
-  display: inline-block;
 }
 
 .user-icon {
