@@ -370,6 +370,14 @@ header {
   color: #104879;
 }
 
+/* Dashboard Resume Score Card */
+.dashboard-card .progress-circle {
+  background: #104879;
+  padding: 1rem;
+  border-radius: 50%;
+  display: inline-block;      /* shrink-wrap the SVG */
+}
+
 /* Progress Bar */
 .progress-bar {
   width: 100%;
