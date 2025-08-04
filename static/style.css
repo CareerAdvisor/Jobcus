@@ -378,6 +378,14 @@ header {
   display: inline-block;      /* shrink-wrap the SVG */
 }
 
+.dashboard-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: #104879;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 /* Progress Bar */
 .progress-bar {
   width: 100%;
@@ -408,18 +416,26 @@ header {
   transform: rotate(-90deg);
 }
 
+/* The static track behind the progress */
 .progress-circle .bg {
   fill: none;
-  stroke: #eee;
-  stroke-width: 3.8;
+  stroke: white;        /* white track against blue */
+  stroke-width: 3.8;      /* feel free to adjust thickness */
 }
 
+/* The animated progress slice */
 .progress-circle .progress {
   fill: none;
-  stroke: #104879;
+  stroke: #f9a006;      /* gold slice */
   stroke-width: 3.8;
-  stroke-linecap: round;
-  transition: stroke-dasharray 1s ease;
+  transition: stroke-dasharray 0.3s ease;
+}
+
+/* The percentage text in the center */
+.progress-circle .percentage {
+  fill: white;
+  font-size: 0.6em;     /* adjust for legibility */
+  text-anchor: middle;
 }
 
 .percentage {
@@ -433,14 +449,6 @@ header {
   margin-top: 10px;
   color: #666;
   font-size: 0.9em;
-}
-
-.dashboard-link {
-  display: inline-block;
-  margin-top: 10px;
-  color: #104879;
-  font-weight: 600;
-  text-decoration: none;
 }
 
 .resume-score {
