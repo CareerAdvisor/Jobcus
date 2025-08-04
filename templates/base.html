@@ -1,3 +1,5 @@
+### base.html
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,17 +21,32 @@
       </div>
 
       <div class="header-logo">
-        <a href="/"><img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" /></a>
+        <a href="/">
+          <img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" />
+        </a>
       </div>
 
       <div class="header-right">
-        {% if current_user.is_authenticated %}
-          <a href="/dashboard" class="header-link">👤 Profile</a>
-          <a href="/logout"    class="header-link">🚪 Log out</a>
-        {% else %}
-          <a href="/account"   class="header-link">🔑 Sign up / Log in</a>
-        {% endif %}
+        <!-- User icon + dropdown -->
+        <div class="user-menu">
+          <img
+            id="userIcon"
+            src="{{ url_for('static', filename='icons/user.svg') }}"
+            alt="User menu"
+            class="user-icon"
+            onclick="toggleUserMenu()"
+          />
+          <div id="userDropdown" class="user-dropdown">
+            {% if current_user.is_authenticated %}
+              <a href="/dashboard">👤 Profile</a>
+              <a href="/logout">🚪 Log out</a>
+            {% else %}
+              <a href="/account">🔑 Sign up / Log in</a>
+            {% endif %}
+          </div>
+        </div>
 
+        <!-- Hamburger stays as is -->
         <div class="hamburger" onclick="toggleMobileMenu()">
           <div></div><div></div><div></div>
         </div>
