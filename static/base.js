@@ -1,6 +1,5 @@
-
 ### base.js
-```js
+
 // static/base.js
 
 // ───── 1) Initialize AOS ─────
