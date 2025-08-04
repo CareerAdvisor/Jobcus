@@ -752,49 +752,6 @@ main {
 }
 
 /* style.css */
-.header-user-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.user-menu {
-  display: none; /* This must be present */
-  position: relative;
-  right: 0;
-  top: 36px;
-  background-color: #fff;
-  min-width: 160px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.user-menu.show {
-  display: block;
-}
-
-.user-menu a {
-  display: block;
-  padding: 10px 16px;
-  text-decoration: none;
-  color: #333;
-  font-size: 14px;
-}
-
-.user-menu a:last-child {
-  border-bottom: none;
-}
-
-.user-menu a:hover {
-  background-color: #f3f3f3;
-}
-
 .user-icon {
   width: 24px;
   height: 24px;
@@ -846,10 +803,6 @@ main {
 
 .user-dropdown li:last-child {
   border-bottom: none;
-}
-
-.user-menu li + li {
-  border-top: 1px solid #eee;
 }
 
 .user-dropdown li a {
