@@ -797,25 +797,6 @@ main {
   background: #f3f3f3;
 }
 
-.user-dropdown li {
-  border-bottom: 1px solid #eee;
-}
-
-.user-dropdown li:last-child {
-  border-bottom: none;
-}
-
-.user-dropdown li a {
-  display: block;
-  padding: 10px;
-  color: #333;
-  text-decoration: none;
-}
-
-.user-dropdown li a:hover {
-  background: #f0f0f0;
-}
-
 /* === SCROLL DOWN ICON === */
 .scroll-down-icon {
   position: fixed;
