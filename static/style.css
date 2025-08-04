@@ -331,7 +331,8 @@ header {
 }
 
 .dashboard-card {
-  background: #fff;
+  background: #104879;
+  color: #fff;           /* make all text inside white by default */
   border-radius: 12px;
   padding: 20px;
   flex: 1 1 280px;
@@ -372,10 +373,9 @@ header {
 
 /* Dashboard Resume Score Card */
 .dashboard-card .progress-circle {
-  background: #104879;
-  padding: 1rem;
-  border-radius: 50%;
-  display: inline-block;      /* shrink-wrap the SVG */
+  background: none;
+  padding: 0;
+  border-radius: 0;
 }
 
 .dashboard-link {
