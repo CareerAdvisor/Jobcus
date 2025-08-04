@@ -24,76 +24,11 @@
 
       <div class="header-right">
         {% if current_user.is_authenticated %}
-  <div class="user-dropdown" style="position: relative;">
-    <img
-      id="userIcon"
-      src="{{ url_for('static', filename='icons/user.svg') }}"
-      alt="Account"
-      class="header-user-icon"
-      title="Account"
-      style="cursor: pointer;"
-    />
-    <div
-      id="userMenu"
-      class="user-menu"
-      style="
-        display: none;
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background: #fff;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        min-width: 160px;
-        z-index: 100;
-      "
-    >
-      <a href="/dashboard" class="dropdown-item" style="display:block; padding: 8px 12px; text-decoration:none; color:#333;">
-        👤 Dashboard
-      </a>
-      <a href="/account" class="dropdown-item" style="display:block; padding: 8px 12px; text-decoration:none; color:#333;">
-        ⚙️ Profile
-      </a>
-      <a href="/logout" class="dropdown-item" style="display:block; padding: 8px 12px; text-decoration:none; color:#333;">
-        🚪 Log out
-      </a>
-    </div>
-  </div>
-{% endif %}
-  
-{% else %}
-  <div class="user-dropdown" style="position: relative;">
-    <img
-      id="userIcon"
-      src="{{ url_for('static', filename='icons/user.svg') }}"
-      alt="Sign In / Sign Up"
-      class="header-user-icon"
-      title="Sign up / Log in"
-      style="cursor: pointer;"
-    />
-    <div
-      id="userMenu"
-      class="user-menu"
-      style="
-        display: none;
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background: #fff;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        min-width: 160px;
-        z-index: 100;
-      "
-    >
-      <a href="/account" class="dropdown-item" style="display:block; padding: 8px 12px; text-decoration:none; color:#333;">
-        🔑 Sign up / Log in
-      </a>
-    </div>
-  </div>
-{% endif %}
+          <a href="/dashboard" class="header-link">👤 Profile</a>
+          <a href="/logout"    class="header-link">🚪 Log out</a>
+        {% else %}
+          <a href="/account"   class="header-link">🔑 Sign up / Log in</a>
+        {% endif %}
 
         <div class="hamburger" onclick="toggleMobileMenu()">
           <div></div><div></div><div></div>
