@@ -1317,9 +1317,10 @@ textarea#userInput {
   padding-left: 10px;
 }
 
-.header-logo .logo-img {
+.header-logo img {
   max-height: 40px;   /* or whatever height you prefer */
   width: auto;
+  display: block;
 }
 
 /* On chat page: center the logo */
