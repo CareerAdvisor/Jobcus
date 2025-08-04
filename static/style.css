@@ -418,14 +418,23 @@ header {
 
 /* The static track behind the progress */
 .progress-circle .bg {
+  fill: #222;
   stroke: white;        /* white track against blue */
   stroke-width: 3.8;      /* feel free to adjust thickness */
 }
 
 /* The animated progress slice */
 .progress-circle .progress {
+  fill: #222;
   stroke: #f9a006;      /* gold slice */
   stroke-width: 3.8;
+}
+
+/* The percentage text in the center */
+.progress-circle .percentage {
+  fill: white;
+  font-size: 0.6em;     /* adjust for legibility */
+  text-anchor: middle;
 }
 
 .percentage {
