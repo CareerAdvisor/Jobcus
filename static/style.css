@@ -330,14 +330,14 @@ header {
   margin-bottom: 2rem;
 }
 
+/* 1) Make the card a nice blue rectangle */
 .dashboard-card {
   background: #104879;
-  color: #fff;           /* make all text inside white by default */
+  color: #fff;
   border-radius: 12px;
-  padding: 20px;
-  flex: 1 1 280px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  text-align: center;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: center;          /* center everything inside */
 }
 
 .dashboard-cards {
@@ -371,11 +371,13 @@ header {
   color: #104879;
 }
 
-/* Dashboard Resume Score Card */
+/* 2) Center and size the SVG ring */
 .dashboard-card .progress-circle {
-  background: none;
-  padding: 0;
-  border-radius: 0;
+  display: inline-block;       /* shrink-wrap to SVG */
+  margin: 1rem auto;           /* spacing and centering */
+  width: 150px;                /* fixed size for consistency */
+  height: 150px;
+  position: relative;
 }
 
 .dashboard-link {
@@ -418,23 +420,42 @@ header {
 
 /* The static track behind the progress */
 .progress-circle .bg {
-  fill: #222;
+  fill: none;
   stroke: white;        /* white track against blue */
   stroke-width: 3.8;      /* feel free to adjust thickness */
 }
 
 /* The animated progress slice */
 .progress-circle .progress {
-  fill: #222;
+  fill: none;
   stroke: #f9a006;      /* gold slice */
   stroke-width: 3.8;
+  transition: stroke-dasharray 0.3s ease;
 }
 
 /* The percentage text in the center */
 .progress-circle .percentage {
   fill: white;
-  font-size: 0.6em;     /* adjust for legibility */
+  font-size: 0.8em;     /* adjust for legibility */
   text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+/* 5) White-out the “Last analyzed” note */
+.dashboard-card .metric-note {
+  color: #fff;
+  margin-top: 0.5rem;
+  font-size: 0.9em;
+}
+
+/* 6) Ensure the title icon and text stay white */
+.dashboard-card h3 {
+  color: #fff;
+  margin-bottom: 1rem;
+}
+.dashboard-card h3 img {
+  vertical-align: middle;
+  margin-right: 0.5rem;
 }
 
 .percentage {
