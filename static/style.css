@@ -193,7 +193,7 @@ header {
   color: #104879;
 }
 
-.dropdown:hover .dropdown-content {
+.dropdown-content.show {
   display: flex;
 }
 
@@ -3134,3 +3134,4 @@ button {
   50% { background-color: #ffe082; }
   100% { background-color: transparent; }
 }
+
