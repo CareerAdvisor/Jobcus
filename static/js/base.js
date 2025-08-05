@@ -1,4 +1,4 @@
-// static/base.js
+// static/js/base.js
 
 // ───── 1) Initialize AOS ─────
 AOS.init();
@@ -13,7 +13,16 @@ function toggleMobileMenu() {
   document.getElementById('mobileMenu')?.classList.toggle('show');
 }
 
-// ───── 4) Global click handler ─────
+// ───── 4) Features submenu toggle ─────
+document.querySelectorAll('.dropbtn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const menu = btn.nextElementSibling; // .dropdown-content
+    menu.classList.toggle('show');
+  });
+});
+
+// ───── 5) Global click handler ─────
 //    - Closes mobile menu if clicking outside
 //    - Closes any open Features or User dropdowns
 document.addEventListener('click', (e) => {
@@ -31,8 +40,12 @@ document.addEventListener('click', (e) => {
   // b) Features dropdown(s)
   document.querySelectorAll('.dropdown-content').forEach(drop => {
     const btn = drop.previousElementSibling;
-    if (!drop.contains(e.target) && !btn.contains(e.target)) {
-      drop.style.display = 'none';
+    if (
+      drop.classList.contains('show') &&
+      !drop.contains(e.target) &&
+      !btn.contains(e.target)
+    ) {
+      drop.classList.remove('show');
     }
   });
 
