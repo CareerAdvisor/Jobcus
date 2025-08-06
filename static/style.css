@@ -3145,7 +3145,7 @@ button {
 
 /* Make the welcome text itself larger and bolder */
 .welcome-banner p {
-  font-size: 1.25rem;               /* increase font size */
+  font-size: 1.25rem;               /* increase font size to 24px */
   font-weight: 600;                 /* semi-bold */
   margin: 0 0 12px;                 /* bottom space before chips */
   color: #104879;                   /* match your brand color */
@@ -3179,3 +3179,4 @@ button {
   background: #0a2e5f;
   outline: none;
 }
+
