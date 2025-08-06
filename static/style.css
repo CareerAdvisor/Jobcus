@@ -243,9 +243,9 @@ header {
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  background: #f5f7fa;
+  background: #fff;
   min-height: calc(100vh - 80px);
-  width: 100%;
+  width: 1000px;
 }
 
 .auth-card {
@@ -254,7 +254,7 @@ header {
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.05);
   max-width: 800px;
-  width: 100%;
+  width: 800px;
   text-align: center;
 }
 
@@ -3433,6 +3433,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
