@@ -151,7 +151,17 @@ window.addEventListener("DOMContentLoaded", () => {
       // 2) Display user message
       const userMsg = document.createElement("div");
       userMsg.className = "chat-entry user";
-      userMsg.innerHTML = `<p><strong>${message}</strong></p>`;
+      userMsg.innerHTML = `
+        <h2 style="
+          font-size: 1.5rem;
+          font-weight: 600;
+          margin: 0 0 0.5rem;
+          color: #104879;
+        ">
+          ${message}
+        </h2>
+      `;
+
       chatboxEl.appendChild(userMsg);
 
       // 3) Clear & resize input
