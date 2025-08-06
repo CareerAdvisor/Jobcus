@@ -237,6 +237,173 @@ header {
   }
 }
 
+/* === Auth page wrapper === */
+.auth-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: #f5f7fa;
+  min-height: calc(100vh - 80px);
+}
+
+.auth-card {
+  background: #ffffff;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+}
+
+.auth-logo {
+  max-width: 100px;
+  margin-bottom: 20px;
+}
+
+.auth-card h2 {
+  font-size: 1.75rem;
+  margin-bottom: 8px;
+  color: #104879;
+}
+
+.auth-subtitle {
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+  color: #666;
+}
+
+.flash-message {
+  margin-bottom: 16px;
+  color: #d32f2f;
+}
+
+/* === Form styles === */
+.auth-form .form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.auth-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: #333;
+  font-weight: 600;
+}
+
+.input-with-icon {
+  position: relative;
+}
+
+.input-with-icon input {
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.input-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  opacity: 0.6;
+}
+
+/* hide full-name field on login */
+.hidden { display: none; }
+
+/* Primary button */
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 12px 0;
+  background-color: #104879;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #0e3c6c;
+}
+
+/* Toggle between login/signup */
+.toggle-text {
+  margin-top: 16px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.toggle-link {
+  color: #104879;
+  margin-left: 4px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.toggle-link:hover {
+  text-decoration: underline;
+}
+
+/* OR divider */
+.or-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0 16px;
+}
+
+.or-divider::before,
+.or-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #ddd;
+}
+
+.or-divider span {
+  padding: 0 12px;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+/* Social buttons */
+.social-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.social-btn {
+  padding: 8px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.social-btn.fb    { color: #3b5998; }
+.social-btn.google{ color: #db4437; }
+.social-btn.linkedin{ color: #0077b5; }
+.social-btn.apple { color: #000; }
+
+.social-btn:hover {
+  background: #f0f0f0;
+  border-color: #ccc;
+}
+
 .auth-section {
   background-color: #f9fafb;
   padding: 40px 20px;
@@ -3271,4 +3438,5 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
