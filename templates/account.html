@@ -4,35 +4,81 @@
 {% block body_class %}account-page{% endblock %}
 
 {% block content %}
-<section class="auth-section">
-  <h2 id="formTitle">Sign In to Jobcus</h2>
-  <div id="flashMessages" class="flash-message"></div>
+<section class="auth-wrapper">
+  <div class="auth-card">
+    <img src="{{ url_for('static', filename='jobcus-logo.png') }}"
+         alt="Jobcus logo"
+         class="auth-logo" />
 
-  <form id="accountForm" class="auth-form" autocomplete="on">
-    <input type="hidden" name="mode" id="mode" value="login" />
+    <h2 id="formTitle">Sign In to Jobcus</h2>
+    <p class="auth-subtitle">Good to see you again! Welcome back.</p>
 
-    <div class="form-group">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" placeholder="you@example.com" required />
-    </div>
+    <div id="flashMessages" class="flash-message"></div>
 
-    <div class="form-group">
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" placeholder="Enter your password" required />
-    </div>
+    <form id="accountForm" class="auth-form" autocomplete="on">
+      <input type="hidden" name="mode" id="mode" value="login" />
 
-    <div class="form-group hidden" id="nameGroup">
-      <label for="name">Full Name</label>
-      <input type="text" id="name" name="name" placeholder="Your full name" />
-    </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <div class="input-with-icon">
+          <input type="email"
+                 id="email"
+                 name="email"
+                 placeholder="you@example.com"
+                 required />
+          <img src="{{ url_for('static', filename='icons/mail.svg') }}"
+               alt="Email icon"
+               class="input-icon" />
+        </div>
+      </div>
 
-    <button type="submit" class="cta-primary" id="submitButton">Sign In</button>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-with-icon">
+          <input type="password"
+                 id="password"
+                 name="password"
+                 placeholder="Enter your password"
+                 required />
+          <img src="{{ url_for('static', filename='icons/lock.svg') }}"
+               alt="Password icon"
+               class="input-icon" />
+        </div>
+      </div>
 
-    <p class="toggle-text">
-      <span id="togglePrompt">Don’t have an account?</span>
-      <a href="#" id="toggleMode" class="toggle-link">Sign Up</a>
-    </p>
-  </form>
+      <!-- hidden on login -->
+      <div class="form-group hidden" id="nameGroup">
+        <label for="name">Full Name</label>
+        <div class="input-with-icon">
+          <input type="text"
+                 id="name"
+                 name="name"
+                 placeholder="Your full name" />
+          <img src="{{ url_for('static', filename='icons/user.svg') }}"
+               alt="Name icon"
+               class="input-icon" />
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary" id="submitButton">
+        Sign In
+      </button>
+
+      <p class="toggle-text">
+        <span id="togglePrompt">Don’t have an account?</span>
+        <a href="#" id="toggleMode" class="toggle-link">Sign Up</a>
+      </p>
+
+      <div class="or-divider"><span>OR</span></div>
+
+      <div class="social-buttons">
+        <button type="button" class="social-btn fb">Facebook</button>
+        <button type="button" class="social-btn google">Google</button>
+        <button type="button" class="social-btn linkedin">LinkedIn</button>
+        <button type="button" class="social-btn apple">Apple</button>
+      </div>
+    </form>
+  </div>
 </section>
 {% endblock %}
 
