@@ -873,6 +873,16 @@ main {
   z-index: 999;
 }
 
+.footer-note-static .footer-link {
+  color: #104879;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.footer-note-static .footer-link:hover {
+  text-decoration: underline;
+}
+
 img {
   max-width: 100%;
   height: auto;
@@ -3210,6 +3220,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
