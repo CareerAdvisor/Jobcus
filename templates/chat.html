@@ -21,26 +21,80 @@
   <div class="chat-wrapper">
     <div class="chatbox" id="chatbox">
       <!-- Welcome banner + suggestions -->
-      <div id="welcomeBanner" class="welcome-banner">
+      <div id="welcomeBanner" style="
+           padding:24px 16px;
+           background:#f0f8ff;
+           border-bottom:1px solid #ddd;
+           text-align:center;
+         ">
         {% if current_user.is_authenticated and current_user.first_name %}
-          <p>👋 Welcome {{ current_user.first_name }}! How can I help you today?</p>
+          <p style="
+             font-size:1.5rem;
+             font-weight:600;
+             margin:0 0 16px;
+             color:#104879;
+           ">
+            👋 Welcome {{ current_user.first_name }}! How can I help you today?
+          </p>
         {% else %}
-          <p>👋 Welcome! How can I help you today?</p>
+          <p style="
+             font-size:1.5rem;
+             font-weight:600;
+             margin:0 0 16px;
+             color:#104879;
+           ">
+            👋 Welcome! How can I help you today?
+          </p>
         {% endif %}
-        <div class="suggestion-chips">
-          <button type="button" onclick="insertSuggestion('How do I improve my resume?')">
+
+        <div class="suggestion-chips" style="
+             display:flex;
+             flex-wrap:wrap;
+             justify-content:center;
+             gap:12px;
+           ">
+          <button type="button" onclick="insertSuggestion('How do I improve my resume?')" style="
+             padding:10px 20px;
+             border:none;
+             border-radius:20px;
+             background:#104879;
+             color:#fff;
+             font-size:1rem;
+             font-weight:500;
+             white-space:nowrap;
+             cursor:pointer;
+           ">
             Improve my resume
           </button>
-          <button type="button" onclick="insertSuggestion('Interview tips for a UX role')">
+          <button type="button" onclick="insertSuggestion('Interview tips for a UX role')" style="
+             padding:10px 20px;
+             border:none;
+             border-radius:20px;
+             background:#104879;
+             color:#fff;
+             font-size:1rem;
+             font-weight:500;
+             white-space:nowrap;
+             cursor:pointer;
+           ">
             Interview tips
           </button>
-          <button type="button" onclick="insertSuggestion('Show me job market insights for London')">
+          <button type="button" onclick="insertSuggestion('Show me job market insights for London')" style="
+             padding:10px 20px;
+             border:none;
+             border-radius:20px;
+             background:#104879;
+             color:#fff;
+             font-size:1rem;
+             font-weight:500;
+             white-space:nowrap;
+             cursor:pointer;
+           ">
             Job insights
           </button>
         </div>
       </div>
     </div>
-
     <div id="job-results" class="job-results"></div>
   </div>
 
