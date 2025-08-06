@@ -271,6 +271,9 @@ def price():
 def faq():
     return render_template("faq.html")
 
+@app.route('/privacy-policy')
+def privacy_policy():
+    return render_template("privacy-policy.html")
 
 from flask_login import login_user
 
