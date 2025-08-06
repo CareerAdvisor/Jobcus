@@ -1008,6 +1008,22 @@ img {
   justify-content: flex-start;
 }
 
+/* On wide screens, switch to a horizontal scrollable row */
+@media (min-width: 768px) {
+  .features {
+    display: flex;
+    flex-wrap: nowrap;                     
+    overflow-x: auto;                      
+    -webkit-overflow-scrolling: touch;      
+    gap: 24px;                             
+    padding: 40px 16px;   /* keep same vertical padding */
+  }
+  .features .feature-link {
+    flex: 0 0 auto;                        
+    min-width: 260px;  /* match roughly your card’s width */
+  }
+}
+
 /* === AI-Powered Assistance Section === */
 .ai-assistance {
   background: #fff;
@@ -3187,6 +3203,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
