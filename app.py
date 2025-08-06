@@ -279,6 +279,10 @@ def privacy_policy():
 def terms_of_service():
     return render_template('terms-of-service.html')
 
+@app.route('/manifest.json')
+def manifest():
+    return app.send_static_file('manifest.json')
+
 from flask_login import login_user
 
 @app.route("/account", methods=["GET", "POST"])
