@@ -968,9 +968,8 @@ img {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 24px;          /* space between cards */
   max-width: 1200px;  /* optional cap on very large screens */
-  margin: 2rem auto;
+  margin: 0 auto;
   text-align: center;  /* center block and vertical spacing */
-  box-sizing: border-box; /* include padding in width calc */
 }
 
 .feature-box {
@@ -3188,6 +3187,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
