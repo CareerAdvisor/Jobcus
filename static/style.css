@@ -983,6 +983,9 @@ img {
   max-width: 1200px;  /* optional cap on very large screens */
   margin: 0 auto;
   text-align: center;  /* center block and vertical spacing */
+  /* NEW: center the grid tracks */
+  justify-content: center;    /* horizontally center the columns */
+  align-items: start;         /* align boxes at the top of each row */
 }
 
 .feature-box {
@@ -1025,6 +1028,7 @@ img {
 @media (min-width: 1024px) {
   .features {
     grid-template-columns: repeat(3, 1fr) !important;
+    justify-content: center;  /* ensure the three columns sit centered */
   }
 }
 
@@ -3207,6 +3211,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
