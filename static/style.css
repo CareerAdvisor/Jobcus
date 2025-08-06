@@ -73,7 +73,7 @@ header {
 }
 
 .hamburger {
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 4px;
   cursor: pointer;
@@ -3205,6 +3205,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
