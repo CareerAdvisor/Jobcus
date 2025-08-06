@@ -75,11 +75,16 @@
       {% block content %}{% endblock %}
     </main>
 
-    {% if show_footer | default(true) %}
-      <footer class="footer-note-static">
-        &copy; 2025 Jobcus – Your AI Career Advisor
-      </footer>
-    {% endif %}
+{% if show_footer | default(true) %}
+  <footer class="footer-note-static">
+    &copy; 2025 Jobcus – Your AI Career Advisor  
+    &nbsp;|&nbsp;
+    <a href="/privacy-policy" class="footer-link">Privacy Policy</a>
+    &nbsp;|&nbsp;
+    <a href="/terms-of-service" class="footer-link">Terms of Service</a>
+  </footer>
+{% endif %}
+
   </div>
 
   {% if body_class != 'chat-page' %}
