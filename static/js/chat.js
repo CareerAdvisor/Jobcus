@@ -186,8 +186,10 @@ window.addEventListener("DOMContentLoaded", () => {
         </div>
         <hr class="response-separator" />
       `;
+      // after aiBlock.innerHTML setup...
       const targetDiv = document.getElementById(copyId);
       let i = 0, buffer = "";
+
       (function typeWriter() {
         if (i < raw.length) {
           buffer += raw[i++];
@@ -195,7 +197,12 @@ window.addEventListener("DOMContentLoaded", () => {
           scrollToAI(aiBlock);
           setTimeout(typeWriter, 5);
         } else {
-          targetDiv.innerHTML = window.marked.parse(buffer);
+          // use marked if available, otherwise plain text
+          if (window.marked && typeof window.marked.parse === 'function') {
+            targetDiv.innerHTML = window.marked.parse(buffer);
+          } else {
+            targetDiv.textContent = buffer;
+          }
           saveChatToStorage();
           scrollToAI(aiBlock);
         }
