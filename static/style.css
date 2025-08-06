@@ -122,18 +122,13 @@ header {
   color: #ffffff !important;
 }
 
-/* 1) Hide the desktop nav by default */
-.desktop-nav {
-  display: none;
-}
-
 /* On screens ≥ 768px, switch */
 @media (min-width: 768px) {
   /* Show desktop, hide mobile/hamburger */
   .desktop-nav {
     display: flex;
     align-items: center;
-    gap: 24px;                   /* space between links */
+    gap: 24px;   /* space between links */
   }
   .desktop-nav a,
   .desktop-nav .dropbtn {
@@ -3205,6 +3200,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
