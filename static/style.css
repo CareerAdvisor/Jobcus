@@ -3135,3 +3135,23 @@ button {
   100% { background-color: transparent; }
 }
 
+/* style.css */
+
+.welcome-banner {
+  padding: 16px;
+  text-align: center;
+  background: #f0f8ff;
+  border-bottom: 1px solid #ddd;
+}
+.suggestion-chips button {
+  margin: 4px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 16px;
+  background: #e0f2ff;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+.suggestion-chips button:hover {
+  background: #c0e8ff;
+}
