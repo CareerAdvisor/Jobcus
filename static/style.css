@@ -3135,48 +3135,44 @@ button {
   100% { background-color: transparent; }
 }
 
-/* === Welcome Banner Styling === */
+/* === Chat Welcome Banner & Chips Enhancements === */
 .welcome-banner {
-  padding: 24px 16px;               /* more breathing room */
-  background: #f0f8ff;              /* light accent */
-  border-bottom: 1px solid #ddd;
-  text-align: center;
+  padding: 24px 16px !important;       /* ensure extra padding */
+  background: #f0f8ff !important;      /* light-blue background */
+  border-bottom: 1px solid #ddd !important;
+  text-align: center !important;
 }
 
-/* Make the welcome text itself larger and bolder */
-.welcome-banner p {
-  font-size: 1.25rem;               /* increase font size to 24px */
-  font-weight: 600;                 /* semi-bold */
-  margin: 0 0 12px;                 /* bottom space before chips */
-  color: #104879;                   /* match your brand color */
+/* if you kept a <p> with class welcome-text */
+.welcome-banner > p {
+  font-size: 1.5rem !important;        /* large text (~24px) */
+  font-weight: 600 !important;
+  margin: 0 0 16px !important;         /* space below */
+  color: #104879 !important;
 }
 
-/* === Suggestion Chips Container === */
 .suggestion-chips {
-  display: flex;
-  flex-wrap: wrap;                  /* wrap onto multiple lines */
-  justify-content: center;
-  gap: 8px;                         /* uniform spacing between chips */
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 12px !important;                /* more breathing room */
 }
 
-/* === Individual Chips === */
 .suggestion-chips button {
-  padding: 8px 16px;                /* larger tap area */
-  border: none;
-  border-radius: 20px;
-  background: #104879;              /* your deep-blue */
-  color: #fff;                      /* white text */
-  font-size: 1rem;                  /* legible on small screens */
-  font-weight: 500;
+  padding: 10px 20px !important;       /* larger tap targets */
+  border-radius: 20px !important;
+  background: #104879 !important;
+  color: #fff !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
   line-height: 1.2;
   cursor: pointer;
-  white-space: nowrap;              /* keep each chip on one line */
+  border: none;
 }
 
-/* Hover/focus state */
-.suggestion-chips button:hover,
-.suggestion-chips button:focus {
-  background: #0a2e5f;
-  outline: none;
+.suggestion-chips button:hover {
+  background: #0a2e5f !important;
 }
+
 
