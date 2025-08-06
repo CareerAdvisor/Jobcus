@@ -966,7 +966,7 @@ img {
   padding: 40px 20px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
+  gap: 24px;
   max-width: 1000px;
   margin: 0 auto;
   text-align: center;
@@ -993,6 +993,19 @@ img {
 .feature-box p {
   font-size: 0.95rem;
   line-height: 1.5;
+}
+
+/* Ensure each feature link fills its grid cell */
+.features .feature-link {
+  display: block;
+}
+
+/* If you want the boxes themselves to stretch equally in height: */
+.features .feature-box {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 /* === AI-Powered Assistance Section === */
@@ -3174,5 +3187,6 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
