@@ -3044,6 +3044,57 @@ button {
   animation: progressBar 2s infinite linear;
 }
 
+/* === Legal Pages === */
+.legal-page {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  line-height: 1.6;
+  color: #333;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.legal-title {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: #104879;
+}
+
+.legal-updated {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.legal-page h2 {
+  font-size: 1.25rem;
+  margin-top: 1.5rem;
+  color: #104879;
+}
+
+.legal-page p,
+.legal-page ul {
+  margin-bottom: 1rem;
+}
+
+.legal-page ul {
+  padding-left: 1.2em;
+}
+
+.legal-page ul li {
+  margin-bottom: 0.5rem;
+}
+
+.legal-page a {
+  color: #007bff;
+  text-decoration: none;
+}
+.legal-page a:hover {
+  text-decoration: underline;
+}
+
 /* ==== FAQ PAGE STYLES ==== */
 .faq-header {
   text-align: left;
@@ -3220,17 +3271,3 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
