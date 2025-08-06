@@ -293,7 +293,7 @@ header {
 }
 
 .input-with-icon {
-  position: relative;
+  display: none !important;
 }
 
 .input-with-icon input {
@@ -372,16 +372,19 @@ header {
 .social-buttons {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 16px;
 }
 
 .social-btn {
-  padding: 8px 0;
-  border: 1px solid #ddd;
+  background: #dfe6f0;
+  border: none;
+  padding: 12px;
   border-radius: 6px;
-  font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.2s;
 }
 
 .social-btn.fb    { color: #3b5998; }
@@ -390,7 +393,7 @@ header {
 .social-btn.apple { color: #000; }
 
 .social-btn:hover {
-  background: #f0f0f0;
+  background: #cfd8e1;
   border-color: #ccc;
 }
 
@@ -3428,6 +3431,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
