@@ -245,8 +245,7 @@ header {
   padding: 60px 20px;
   background: #fff;
   min-height: calc(100vh - 80px);
-  width: 100%;
-  max-width: 100%;
+  max-width: 1000px;
 }
 
 .auth-card {
@@ -254,8 +253,14 @@ header {
   padding: 40px 30px;
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-  width: 100%;
   text-align: center;
+  max-width: 380px;
+  width: 100%
+}
+
+/* Pale-blue modifier */
+.auth-card--blue {
+  background: #dfe6f0;
 }
 
 .auth-logo {
@@ -269,29 +274,29 @@ header {
   color: #104879;
 }
 
+/* Two-line, larger heading */
+.auth-title {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 8px;
+  color: #104879;
+  text-align: center;
+}
+
+/* Subtitle under heading */
 .auth-subtitle {
   font-size: 0.95rem;
   margin-bottom: 24px;
-  color: #666;
+  color: #444;
+  text-align: center;
 }
 
+/* Flash messages (errors) */
 .flash-message {
   margin-bottom: 16px;
   color: #d32f2f;
-}
-
-/* === Form styles === */
-.auth-form .form-group {
-  margin-bottom: 20px;
-  text-align: left;
-  width: 100%;
-}
-
-.auth-form label {
-  display: block;
-  margin-bottom: 6px;
-  color: #333;
-  font-weight: 600;
+  text-align: center;
 }
 
 .input-with-icon {
@@ -372,18 +377,18 @@ header {
 
 /* Social buttons */
 .social-buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  justify-content: space-between;
   gap: 16px;
 }
 
 .social-btn {
-  background: #dfe6ef;
+  background: #dfe6f0;
   border: none;
   padding: 12px;
   border-radius: 6px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   justify-content: center;
   align-items: center;
   transition: background 0.2s;
@@ -399,20 +404,23 @@ header {
   border-color: #ccc;
 }
 
-.auth-section {
-  background-color: #f9fafb;
-  padding: 40px 20px;
-  max-width: 450px;
-  margin: 60px auto;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+.social-btn img {
+  width: 24px;
+  height: 24px;
 }
 
-.auth-section h2 {
-  font-size: 1.8em;
+/* === Form styles === */
+.auth-form .form-group {
   margin-bottom: 20px;
-  text-align: center;
-  color: #104879;
+  text-align: left;
+  width: 100%;
+}
+
+.auth-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: #333;
+  font-weight: 600;
 }
 
 .auth-form {
@@ -426,6 +434,7 @@ header {
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 1em;
+  width: 100%;
 }
 
 .auth-form button {
@@ -451,6 +460,22 @@ header {
   color: #104879;
   cursor: pointer;
   margin-top: 10px;
+}
+
+.auth-section {
+  background-color: #f9fafb;
+  padding: 40px 20px;
+  max-width: 450px;
+  margin: 60px auto;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.auth-section h2 {
+  font-size: 1.8em;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #104879;
 }
 
 .input-icon-group {
@@ -3433,6 +3458,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
