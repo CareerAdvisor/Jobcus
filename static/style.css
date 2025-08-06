@@ -283,6 +283,7 @@ header {
 .auth-form .form-group {
   margin-bottom: 20px;
   text-align: left;
+  width: 100%;
 }
 
 .auth-form label {
@@ -373,6 +374,7 @@ header {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
+  background: #dfe6f0;
 }
 
 .social-btn {
@@ -386,11 +388,6 @@ header {
   align-items: center;
   transition: background 0.2s;
 }
-
-.social-btn.fb    { color: #3b5998; }
-.social-btn.google{ color: #db4437; }
-.social-btn.linkedin{ color: #0077b5; }
-.social-btn.apple { color: #000; }
 
 .social-btn:hover {
   background: #cfd8e1;
@@ -3431,6 +3428,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
