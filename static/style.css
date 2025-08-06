@@ -122,21 +122,39 @@ header {
   color: #ffffff !important;
 }
 
-@media (max-width: 768px) {
-  .desktop-nav {
-    display: none;
-  }
-
-  .hamburger {
-    display: flex;
-  }
+/* 1) Hide the desktop nav by default */
+.desktop-nav {
+  display: none;
 }
 
-/* Only apply hover dropdown on screens wider than 768px */
+/* On screens ≥ 768px, switch */
 @media (min-width: 768px) {
-  .hamburger {
-    display: none; /* Optional: hide hamburger if showing dropdown on hover */
+  /* Show desktop, hide mobile/hamburger */
+  .desktop-nav {
+    display: flex;
+    align-items: center;
+    gap: 24px;                   /* space between links */
   }
+  .desktop-nav a,
+  .desktop-nav .dropbtn {
+    color: #104879;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 12px 8px;
+  }
+  .desktop-nav a:hover,
+  .desktop-nav .dropbtn:hover {
+    color: #fff;
+    background: #104879;
+    border-radius: 4px;
+  }
+
+  /* Hide mobile nav & hamburger on desktop */
+  .hamburger,
+  .mobile-nav {
+    display: none;
+  }
+}
 
   .site-header:hover #mobileMenu {
     display: flex;
@@ -3187,6 +3205,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
