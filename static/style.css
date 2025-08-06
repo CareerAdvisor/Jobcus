@@ -245,6 +245,7 @@ header {
   padding: 60px 20px;
   background: #f5f7fa;
   min-height: calc(100vh - 80px);
+  width: 100%;
 }
 
 .auth-card {
@@ -252,7 +253,7 @@ header {
   padding: 40px 30px;
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-  max-width: 380px;
+  max-width: 800px;
   width: 100%;
   text-align: center;
 }
@@ -388,6 +389,11 @@ header {
   align-items: center;
   transition: background 0.2s;
 }
+
+.social-btn.fb    { color: #fff; }
+.social-btn.google{ color: #fff; }
+.social-btn.linkedin{ color: #fff; }
+.social-btn.apple { color: #fff; }
 
 .social-btn:hover {
   background: #cfd8e1;
@@ -3428,6 +3434,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
