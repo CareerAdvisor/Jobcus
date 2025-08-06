@@ -985,7 +985,6 @@ img {
   text-align: center;  /* center block and vertical spacing */
   /* NEW: center the grid tracks */
   justify-content: center;    /* horizontally center the columns */
-  align-items: start;         /* align boxes at the top of each row */
 }
 
 .feature-box {
@@ -3211,6 +3210,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
