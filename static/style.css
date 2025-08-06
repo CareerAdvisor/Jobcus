@@ -305,16 +305,6 @@ header {
   box-sizing: border-box;
 }
 
-.input-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  opacity: 0.6;
-}
-
 /* hide full-name field on login */
 .hidden { display: none; }
 
@@ -3438,5 +3428,6 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
