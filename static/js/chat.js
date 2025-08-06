@@ -1,21 +1,13 @@
-// static/js/chat.js
-
-// === Utility: remove welcome once chat starts ===
-function removeWelcome() {
-  const banner = document.getElementById("welcomeBanner");
-  if (banner) banner.remove();
-}
 
 // === Chat Suggestions Insertion ===
 function insertSuggestion(text) {
-  const input = document.getElementById("userInput");
-  input.value = text;
-  input.focus();
+  document.getElementById("userInput").value = text;
+  document.getElementById("userInput").focus();
 }
 
 // === Toggle Mobile Menu ===
-const hamburger   = document.getElementById("hamburger");
-const mobileMenu  = document.getElementById("mobileMenu");
+const hamburger = document.getElementById("hamburger");
+const mobileMenu = document.getElementById("mobileMenu");
 const menuOverlay = document.getElementById("menuOverlay");
 
 if (hamburger && mobileMenu && menuOverlay) {
@@ -23,6 +15,7 @@ if (hamburger && mobileMenu && menuOverlay) {
     mobileMenu.classList.toggle("active");
     menuOverlay.classList.toggle("active");
   });
+
   menuOverlay.addEventListener("click", () => {
     mobileMenu.classList.remove("active");
     menuOverlay.classList.remove("active");
@@ -35,21 +28,135 @@ function sharePage() {
   alert("Link copied!");
 }
 
-// === Auto-resize textarea ===
+// === Chat Form Submission ===
+const form = document.getElementById("chat-form");
+const input = document.getElementById("userInput");
+const chatboxEl = document.getElementById("chatbox");
+
+if (form && input && chatboxEl) {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = input.value.trim();
+    if (!message) return;
+
+    input.value = "";
+    autoResize(input);
+
+    const aiBlock = document.createElement("div");
+    aiBlock.className = "chat-entry ai-answer";
+    const userMsg = document.createElement("div");
+    userMsg.className = "chat-entry user";
+    userMsg.innerHTML = `<p style="font-size: 1.1em;"><strong>${message}</strong></p>`;
+    chatboxEl.appendChild(userMsg);
+    chatboxEl.appendChild(aiBlock);
+    scrollToAI(aiBlock);
+
+    const res = await fetch("/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+
+    const data = await res.json();
+    const rawText = data.reply;
+    const copyId = `ai-${Date.now()}`;
+
+    aiBlock.innerHTML = `
+      <div id="${copyId}" class="markdown"></div>
+      <div class="response-footer">
+        <span class="copy-wrapper">
+          <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
+          <span class="copy-text">Copy</span>
+        </span>
+      </div>
+      <hr class="response-separator" />
+    `;
+
+    const targetDiv = document.getElementById(copyId);
+    let i = 0;
+    let buffer = "";
+
+    function typeWriterEffect() {
+      if (i < rawText.length) {
+        buffer += rawText[i];
+        targetDiv.textContent = buffer;
+        i++;
+        scrollToAI(aiBlock);
+        setTimeout(typeWriterEffect, 5);
+      } else {
+        targetDiv.innerHTML = marked.parse(buffer);
+        saveChatToStorage();
+        scrollToAI(aiBlock);
+      }
+    }
+
+    typeWriterEffect();
+
+    if (data.suggestJobs) await fetchJobs(message, aiBlock);
+
+    saveChatToStorage();
+    maybeShowScrollIcon();
+  });
+}
+
 function autoResize(textarea) {
   textarea.style.height = "auto";
   textarea.style.height = textarea.scrollHeight + "px";
 }
 
-// === Copy to clipboard for AI replies ===
+// === On Page Load Restore Chat ===
+window.addEventListener("DOMContentLoaded", () => {
+  if (!chatboxEl) return;
+
+  const saved = localStorage.getItem("chatHistory");
+  if (saved) {
+    chatboxEl.innerHTML = saved;
+  }
+
+  maybeShowScrollIcon();
+});
+
+// === Scroll Observer ===
+const observer = new MutationObserver(() => {
+  if (chatboxEl) {
+    chatboxEl.scrollTop = chatboxEl.scrollHeight;
+  }
+});
+if (chatboxEl) {
+  observer.observe(chatboxEl, { childList: true, subtree: true });
+}
+
+function saveChatToStorage() {
+  localStorage.setItem("chatHistory", chatboxEl.innerHTML);
+}
+
+function scrollToAI(element) {
+  if (!element) return;
+  element.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function maybeShowScrollIcon() {
+  const scrollIcon = document.getElementById("scrollDown");
+  if (!scrollIcon) return;
+
+  if (chatboxEl.scrollHeight > chatboxEl.clientHeight + 20) {
+    scrollIcon.style.display = "block";
+  } else {
+    scrollIcon.style.display = "none";
+  }
+}
+
 function copyToClipboard(id) {
   const el = document.getElementById(id);
   if (!el) return;
   const text = el.innerText;
+
   navigator.clipboard.writeText(text).then(() => {
     const wrapper = el.parentElement.querySelector(".copy-wrapper");
     if (!wrapper) return;
+
     wrapper.innerHTML = `<span class="copied-msg">Copied!</span>`;
+
     setTimeout(() => {
       wrapper.innerHTML = `
         <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${id}')">
@@ -59,23 +166,20 @@ function copyToClipboard(id) {
   });
 }
 
-// === Clear chat history ===
 function clearChat() {
-  const chatboxEl = document.getElementById("chatbox");
   chatboxEl.innerHTML = "";
   document.getElementById("job-results").innerHTML = "";
   localStorage.removeItem("chatHistory");
 }
 
-// === Mic & Attach placeholders ===
 function handleMic() {
   alert("Voice input coming soon!");
 }
+
 function handleAttach() {
   alert("File upload coming soon!");
 }
 
-// === Fetch job suggestions after AI reply ===
 async function fetchJobs(query, aiBlock) {
   try {
     const res = await fetch("/jobs", {
@@ -93,12 +197,16 @@ async function fetchJobs(query, aiBlock) {
 function displayJobs(data, aiBlock) {
   const jobsContainer = document.createElement("div");
   jobsContainer.className = "job-listings";
+
   const allJobs = [...(data.remotive || []), ...(data.adzuna || []), ...(data.jsearch || [])];
-  if (!allJobs.length) return;
+
+  if (allJobs.length === 0) return;
+
   const heading = document.createElement("p");
   heading.innerHTML = `<strong>Here are some job opportunities that match your interest:</strong>`;
   heading.style.marginTop = "16px";
   jobsContainer.appendChild(heading);
+
   allJobs.forEach(job => {
     const jobCard = document.createElement("div");
     jobCard.className = "job-card";
@@ -109,118 +217,17 @@ function displayJobs(data, aiBlock) {
     `;
     jobsContainer.appendChild(jobCard);
   });
+
   aiBlock.appendChild(jobsContainer);
   saveChatToStorage();
   scrollToAI(aiBlock);
 }
 
-// === Save & restore chat history ===
-function saveChatToStorage() {
-  const chatboxEl = document.getElementById("chatbox");
-  localStorage.setItem("chatHistory", chatboxEl.innerHTML);
-}
-
-// === Scroll helpers ===
-function scrollToAI(el) {
-  if (!el) return;
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-function maybeShowScrollIcon() {
-  const chatboxEl = document.getElementById("chatbox");
-  const scrollIcon = document.getElementById("scrollDown");
-  if (!chatboxEl || !scrollIcon) return;
-  scrollIcon.style.display =
-    chatboxEl.scrollHeight > chatboxEl.clientHeight + 20 ? "block" : "none";
-}
-
-// === Main chat logic ===
-window.addEventListener("DOMContentLoaded", () => {
-  const form      = document.getElementById("chat-form");
-  const input     = document.getElementById("userInput");
-  const chatboxEl = document.getElementById("chatbox");
-
-  if (form && input && chatboxEl) {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const message = input.value.trim();
-      if (!message) return;
-
-      // 1) Remove welcome banner & suggestions
-      removeWelcome();
-
-      // 2) Display user message
-      const userMsg = document.createElement("div");
-      userMsg.className = "chat-entry user";
-      userMsg.innerHTML = `<p><strong>${message}</strong></p>`;
-      chatboxEl.appendChild(userMsg);
-
-      // 3) Clear & resize input
-      input.value = "";
-      autoResize(input);
-
-      // 4) Placeholder for AI response
-      const aiBlock = document.createElement("div");
-      aiBlock.className = "chat-entry ai-answer";
-      chatboxEl.appendChild(aiBlock);
-      scrollToAI(aiBlock);
-
-      // 5) Fetch AI reply
-      const res  = await fetch("/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
-      });
-      const data = await res.json();
-      const raw  = data.reply || "";
-
-      // 6) Typewriter effect + markdown
-      const copyId = `ai-${Date.now()}`;
-      aiBlock.innerHTML = `
-        <div id="${copyId}" class="markdown"></div>
-        <div class="response-footer">
-          <span class="copy-wrapper">
-            <img src="/static/icons/copy.svg" class="copy-icon"
-                 title="Copy" onclick="copyToClipboard('${copyId}')">
-            <span class="copy-text">Copy</span>
-          </span>
-        </div>
-        <hr class="response-separator" />
-      `;
-      const targetDiv = document.getElementById(copyId);
-      let i = 0, buffer = "";
-      (function typeWriter() {
-        if (i < raw.length) {
-          buffer += raw[i++];
-          targetDiv.textContent = buffer;
-          scrollToAI(aiBlock);
-          setTimeout(typeWriter, 5);
-        } else {
-          targetDiv.innerHTML = window.marked.parse(buffer);
-          saveChatToStorage();
-          scrollToAI(aiBlock);
-        }
-      })();
-
-      // 7) Job suggestions if present
-      if (data.suggestJobs) await fetchJobs(message, aiBlock);
-
-      // 8) Finalize storage & scroll
-      saveChatToStorage();
-      maybeShowScrollIcon();
+document.addEventListener("DOMContentLoaded", () => {
+  const sendBtn = document.getElementById("sendButton");
+  if (sendBtn) {
+    sendBtn.addEventListener("click", () => {
+      form.dispatchEvent(new Event("submit"));
     });
-
-    // Wire the send button (for mobile icon)
-    const sendBtn = document.getElementById("sendButton");
-    if (sendBtn) sendBtn.addEventListener("click", () => form.dispatchEvent(new Event("submit")));
-
-    // Restore saved history
-    const saved = localStorage.getItem("chatHistory");
-    if (saved) chatboxEl.innerHTML = saved;
-    maybeShowScrollIcon();
-
-    // Auto-scroll on new messages
-    new MutationObserver(() => {
-      chatboxEl.scrollTop = chatboxEl.scrollHeight;
-    }).observe(chatboxEl, { childList: true, subtree: true });
   }
 });
