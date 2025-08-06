@@ -275,6 +275,10 @@ def faq():
 def privacy_policy():
     return render_template("privacy-policy.html")
 
+@app.route('/terms-of-service')
+def terms_of_service():
+    return render_template('terms-of-service.html')
+
 from flask_login import login_user
 
 @app.route("/account", methods=["GET", "POST"])
