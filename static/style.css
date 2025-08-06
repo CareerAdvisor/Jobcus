@@ -375,11 +375,10 @@ header {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  background: #dfe6f0;
 }
 
 .social-btn {
-  background: #dfe6f0;
+  background: #dfe6ef;
   border: none;
   padding: 12px;
   border-radius: 6px;
@@ -3434,6 +3433,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
