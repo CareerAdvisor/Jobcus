@@ -5,11 +5,19 @@
 
 {% block content %}
 <section class="auth-wrapper">
-  <div class="auth-card">
-    <img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus logo" class="auth-logo" />
-
-    <h2 id="formTitle">Sign In to Jobcus</h2>
-    <p class="auth-subtitle">Good to see you again! Welcome back.</p>
+  <div class="auth-card auth-card--blue">
+    {# -- Two-line, larger heading -- #}
+    {% if mode == 'login' %}
+      <h2 class="auth-title">
+        Sign In to<br>Jobcus
+      </h2>
+      <p class="auth-subtitle">Good to see you again! Welcome back.</p>
+    {% else %}
+      <h2 class="auth-title">
+        Sign Up to<br>Jobcus
+      </h2>
+      <p class="auth-subtitle">Create a free account to get started.</p>
+    {% endif %}
 
     <div id="flashMessages" class="flash-message"></div>
 
@@ -49,12 +57,16 @@
       </div>
 
       <button type="submit" class="btn-primary" id="submitButton">
-        Sign In
+        {% if mode == 'login' %}Sign In{% else %}Sign Up{% endif %}
       </button>
 
       <p class="toggle-text">
-        <span id="togglePrompt">Don’t have an account?</span>
-        <a href="#" id="toggleMode" class="toggle-link">Sign Up</a>
+        <span id="togglePrompt">
+          {% if mode=='login' %}Don’t have an account?{% else %}Already have an account?{% endif %}
+        </span>
+        <a href="#" id="toggleMode" class="toggle-link">
+          {% if mode=='login' %}Sign Up{% else %}Sign In{% endif %}
+        </a>
       </p>
 
       <div class="or-divider"><span>OR</span></div>
