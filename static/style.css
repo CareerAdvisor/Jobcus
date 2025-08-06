@@ -3143,6 +3143,15 @@ button {
   background: #f0f8ff;
   border-bottom: 1px solid #ddd;
 }
+
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+  
 .suggestion-chips button {
   margin: 4px;
   padding: 6px 12px;
@@ -3155,3 +3164,4 @@ button {
 .suggestion-chips button:hover {
   background: #c0e8ff;
 }
+
