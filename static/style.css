@@ -130,6 +130,7 @@ header {
     align-items: center;
     gap: 24px;   /* space between links */
   }
+  
   .desktop-nav a,
   .desktop-nav .dropbtn {
     color: #104879;
@@ -147,7 +148,7 @@ header {
   /* Hide mobile nav & hamburger on desktop */
   .hamburger,
   .mobile-nav {
-    display: none !important;
+    display: none;
   }
 }
 
@@ -3449,4 +3450,5 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
