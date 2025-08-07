@@ -7,24 +7,9 @@ from collections import Counter
 import re, json, base64, logging
 import requests  # ← for your fetch_* helpers
 
-from flask import (
-    Flask,
-    request,
-    jsonify,
-    render_template,
-    redirect,
-    session,
-    flash,
-)
+from flask import Flask, request, jsonify, render_template, redirect, session, flash
 from flask_cors import CORS
-from flask_login import (
-    LoginManager,
-    login_user,
-    logout_user,
-    current_user,
-    login_required,
-    UserMixin,
-)
+from flask_login import LoginManager, login_user, logout_user, current_user, login_required, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from postgrest.exceptions import APIError
 from PyPDF2 import PdfReader
@@ -32,12 +17,6 @@ from supabase import create_client
 from dotenv import load_dotenv
 from openai import OpenAI
 import docx
-
-# ← your real model import:
-from models import User
-
-# ← your real supabase client import:
-from supabase_client import supabase
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -49,6 +28,33 @@ logging.basicConfig(level=logging.INFO)
 # --- OpenAI client ---
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+class User(UserMixin):
+    def __init__(self, id, email, fullname, password_hash):
+        self.id = id
+        self.email = email
+        self.fullname = fullname
+        self.password_hash = password_hash
+
+    @staticmethod
+    def get_by_email(email):
+        resp = supabase.table("users") \
+                       .select("*") \
+                       .eq("email", email) \
+                       .single() \
+                       .execute()
+        data = resp.data or {}
+        if not data:
+            return None
+        return User(
+            id=data["id"],
+            email=data["email"],
+            fullname=data.get("fullname", ""),
+            password_hash=data["password"]
+        )
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+        
 # --- Supabase client ---
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
