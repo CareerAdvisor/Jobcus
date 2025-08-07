@@ -261,14 +261,32 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    r = supabase.table("users")\
-                 .select("*")\
-                 .eq("id", user_id)\
-                 .maybe_single()\
-                 .execute()
-    d = r.data
-    return User(d["id"], d["email"], d["password"], d.get("fullname")) if d else None
+    try:
+        # Fetch up to one row without using .single()
+        resp = (
+            supabase
+            .table("users")
+            .select("*")
+            .eq("id", int(user_id))
+            .limit(1)
+            .execute()
+        )
+    except Exception:
+        app.logger.exception("Error loading user from Supabase")
+        return None
 
+    rows = resp.data or []
+    if not rows:
+        return None
+
+    row = rows[0]
+    return User(
+        id=row["id"],
+        email=row["email"],
+        fullname=row.get("fullname", ""),
+        auth_id=row.get("auth_id")
+    )
+ if d else None
 
 # -------- Routes --------
 
