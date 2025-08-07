@@ -28,9 +28,6 @@ logging.basicConfig(level=logging.INFO)
 # --- OpenAI client ---
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Supabase client
-supabase = create_client(…)
-
 # Flask-Login init
 login_manager = LoginManager(app)
 login_manager.login_view = 'account'
