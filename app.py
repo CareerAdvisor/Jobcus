@@ -359,7 +359,7 @@ def account():
                 app.logger.info("Did sign up; resp: %r", resp)
             except Exception as err:
                 app.logger.exception("Signup failed at supabase.auth.sign_up")
-                return jsonify(success=False, message=str(err)), 400
+                return jsonify(success=False, message="Email is already registered."), 400
 
             # 2) Extract the new Supabase user
             new_user = resp.user if hasattr(resp, "user") else resp.get("data", {}).get("user")
@@ -380,7 +380,7 @@ def account():
                 app.logger.info("Inserted user; trying User.get_by_auth_id(ext_id)")
             except Exception as db_err:
                 app.logger.exception("Error inserting into users table")
-                return jsonify(success=False, message="Failed to insert user."), 400
+                return jsonify(success=False, message="User profile already exists."), 400
 
             # 4) Fetch & log in
             user = User.get_by_auth_id(ext_id)
