@@ -289,7 +289,7 @@ from flask_login import login_user
 def account():
     # GET → render the login/sign-up page
     if request.method == "GET":
-        return render_template("account.html")
+        return render_template("account.html", mode="signup")
 
     # POST → always expect JSON
     data = request.get_json(force=True)
