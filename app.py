@@ -29,36 +29,36 @@ logging.basicConfig(level=logging.INFO)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Flask-Login init
-login_manager = LoginManager(app)
-login_manager.login_view = 'account'
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "account"
 
-class User(UserMixin):
-    def __init__(self, id, email, fullname, auth_id):
-        self.id       = id
-        self.email    = email
-        self.fullname = fullname
-        self.auth_id  = auth_id
+@login_manager.user_loader
+def load_user(user_id):
+    try:
+        uid = int(user_id)
+    except (TypeError, ValueError):
+        return None
 
-    @staticmethod
-    def get_by_email(email):
-        resp = (
-            supabase
-            .table("users")
-            .select("*")
-            .eq("email", email)
-            .limit(1)
-            .execute()
-        )
-        rows = resp.data or []
-        if not rows:
-            return None
-        row = rows[0]
-        return User(
-            id       = row["id"],
-            email    = row["email"],
-            fullname = row.get("fullname",""),
-            auth_id  = row.get("auth_id")
-        )
+    resp = (
+        supabase
+        .table("users")
+        .select("*")
+        .eq("id", uid)
+        .limit(1)
+        .execute()
+    )
+    rows = resp.data or []
+    if not rows:
+        return None
+
+    row = rows[0]
+    return User(
+        id=row["id"],
+        email=row["email"],
+        fullname=row.get("fullname",""),
+        auth_id=row.get("auth_id")
+    )
 
     @staticmethod
     def get_by_auth_id(auth_id):
