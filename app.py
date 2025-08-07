@@ -33,35 +33,18 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "account"
 
-@login_manager.user_loader
-def load_user(user_id):
-    try:
-        uid = int(user_id)
-    except (TypeError, ValueError):
-        return None
+from flask_login import UserMixin
 
-    resp = (
-        supabase
-        .table("users")
-        .select("*")
-        .eq("id", uid)
-        .limit(1)
-        .execute()
-    )
-    rows = resp.data or []
-    if not rows:
-        return None
-
-    row = rows[0]
-    return User(
-        id=row["id"],
-        email=row["email"],
-        fullname=row.get("fullname",""),
-        auth_id=row.get("auth_id")
-    )
+class User(UserMixin):
+    def __init__(self, id, email, fullname, auth_id):
+        self.id = id
+        self.email = email
+        self.fullname = fullname
+        self.auth_id = auth_id
 
     @staticmethod
     def get_by_auth_id(auth_id):
+        # Query Supabase for user with this auth_id
         resp = (
             supabase
             .table("users")
@@ -75,11 +58,68 @@ def load_user(user_id):
             return None
         row = rows[0]
         return User(
-            id       = row["id"],
-            email    = row["email"],
-            fullname = row.get("fullname",""),
-            auth_id  = row.get("auth_id")
+            id=row["id"],
+            email=row["email"],
+            fullname=row.get("fullname", ""),
+            auth_id=row.get("auth_id")
         )
+
+    @staticmethod
+    def get_by_email(email):
+        # Query Supabase for user with this email
+        resp = (
+            supabase
+            .table("users")
+            .select("*")
+            .eq("email", email)
+            .limit(1)
+            .execute()
+        )
+        rows = resp.data or []
+        if not rows:
+            return None
+        row = rows[0]
+        return User(
+            id=row["id"],
+            email=row["email"],
+            fullname=row.get("fullname", ""),
+            auth_id=row.get("auth_id")
+        )
+
+# --- Flask-Login loader function ---
+@login_manager.user_loader
+def load_user(user_id):
+    """
+    Flask-Login callback to reload the user object from the session user_id.
+    """
+    try:
+        # Ensure we have an integer ID for the filter (adjust if your ID is string in Supabase)
+        uid = int(user_id)
+    except (TypeError, ValueError):
+        return None
+
+    try:
+        resp = (
+            supabase
+            .table("users")
+            .select("*")
+            .eq("id", uid)
+            .limit(1)
+            .execute()
+        )
+        rows = resp.data or []
+        if not rows:
+            return None
+        row = rows[0]
+        return User(
+            id=row["id"],
+            email=row["email"],
+            fullname=row.get("fullname", ""),
+            auth_id=row.get("auth_id")
+        )
+    except Exception:
+        # Log the error if you like
+        return None
         
 # --- Supabase client ---
 supabase_url = os.getenv("SUPABASE_URL")
@@ -302,7 +342,6 @@ def account():
         mode = request.args.get("mode", "signup")
         return render_template("account.html", mode=mode)
 
-    # ── POST ──
     try:
         data     = request.get_json(force=True) or {}
         mode     = data.get("mode")
@@ -310,55 +349,50 @@ def account():
         password = data.get("password", "")
         name     = data.get("name", "").strip()
 
-        if mode == "login":
-            # 1) Delegate login to Supabase
-            try:
-                session = supabase.auth.sign_in({
-                    "email":    email,
-                    "password": password
-                })
-            except Exception as err:
-                return jsonify(success=False, message=str(err)), 400
-
-            # 2) Grab Supabase user ID
-            ext_id = session.user.id
-
-            # 3) Lookup your local user by auth_id
-            user = User.get_by_auth_id(ext_id)
-            if not user:
-                return jsonify(success=False, message="No local profile found."), 404
-
-            login_user(user)
-            return jsonify(success=True, redirect="/dashboard"), 200
-
-        elif mode == "signup":
+        if mode == "signup":
             # 1) Create user in Supabase Auth
             try:
                 resp = supabase.auth.sign_up({
                     "email":    email,
                     "password": password
                 })
+                app.logger.info("Did sign up; resp: %r", resp)
             except Exception as err:
+                app.logger.exception("Signup failed at supabase.auth.sign_up")
                 return jsonify(success=False, message=str(err)), 400
 
             # 2) Extract the new Supabase user
             new_user = resp.user if hasattr(resp, "user") else resp.get("data", {}).get("user")
             if not new_user:
+                app.logger.error("No new_user found after signup: %r", resp)
                 return jsonify(success=False, message="Sign-up failed."), 400
 
             ext_id = new_user.id
+            app.logger.info("Extracted ext_id: %r", ext_id)
 
             # 3) Insert only auth_id, email, fullname locally
-            supabase.table("users").insert({
-                "auth_id":  ext_id,
-                "email":    email,
-                "fullname": name or email.split("@")[0]
-            }).execute()
+            try:
+                supabase.table("users").insert({
+                    "auth_id":  ext_id,
+                    "email":    email,
+                    "fullname": name or email.split("@")[0]
+                }).execute()
+                app.logger.info("Inserted user; trying User.get_by_auth_id(ext_id)")
+            except Exception as db_err:
+                app.logger.exception("Error inserting into users table")
+                return jsonify(success=False, message="Failed to insert user."), 400
 
             # 4) Fetch & log in
             user = User.get_by_auth_id(ext_id)
+            app.logger.info("Got user: %r", user)
+            if not user:
+                app.logger.error("User not found after insert, ext_id=%r", ext_id)
+                return jsonify(success=False, message="No local profile found."), 404
+
             login_user(user)
             return jsonify(success=True, redirect="/dashboard"), 200
+
+        # ... login branch goes here ...
 
         else:
             return jsonify(success=False, message="Invalid mode"), 400
