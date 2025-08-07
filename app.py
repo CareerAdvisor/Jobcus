@@ -33,9 +33,11 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import docx
 
-# — your application’s own modules —
-from your_models import User
-from your_supabase_client import supabase
+# ← your real model import:
+from models import User
+
+# ← your real supabase client import:
+from supabase_client import supabase
 
 # --- Environment & app setup ---
 load_dotenv()
