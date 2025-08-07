@@ -8,3 +8,4 @@ supabase
 PyPDF2>=3.0.0
 Flask-Login==0.6.3
 python-docx
+Authlib
