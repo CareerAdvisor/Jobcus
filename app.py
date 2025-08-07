@@ -28,12 +28,14 @@ logging.basicConfig(level=logging.INFO)
 # --- OpenAI client ---
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+from flask_login import UserMixin
+
 class User(UserMixin):
-    def __init__(self, id, email, fullname, password_hash):
-        self.id = id
-        self.email = email
+    def __init__(self, id, email, fullname, auth_id):
+        self.id       = id        # your local BIGINT key
+        self.email    = email
         self.fullname = fullname
-        self.password_hash = password_hash
+        self.auth_id  = auth_id   # the Supabase Auth UUID
 
     @staticmethod
     def get_by_email(email):
@@ -46,14 +48,28 @@ class User(UserMixin):
         if not data:
             return None
         return User(
-            id=data["id"],
-            email=data["email"],
-            fullname=data.get("fullname", ""),
-            password_hash=data["password"]
+            id       = data["id"],
+            email    = data["email"],
+            fullname = data.get("fullname",""),
+            auth_id  = data["auth_id"]
         )
 
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+    @staticmethod
+    def get_by_auth_id(auth_id):
+        resp = supabase.table("users") \
+                       .select("*") \
+                       .eq("auth_id", auth_id) \
+                       .single() \
+                       .execute()
+        data = resp.data or {}
+        if not data:
+            return None
+        return User(
+            id       = data["id"],
+            email    = data["email"],
+            fullname = data.get("fullname",""),
+            auth_id  = data["auth_id"]
+        )
         
 # --- Supabase client ---
 supabase_url = os.getenv("SUPABASE_URL")
