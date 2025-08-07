@@ -254,7 +254,7 @@ header {
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.05);
   text-align: center;
-  max-width: 380px;
+  max-width: 800px;
   width: 100%
 }
 
@@ -439,7 +439,7 @@ header {
 
 .auth-form button {
   padding: 12px;
-  background-color: #104879;
+  background-color: #dfe6f0;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -3458,6 +3458,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
