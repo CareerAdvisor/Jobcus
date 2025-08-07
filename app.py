@@ -328,43 +328,46 @@ def account():
             login_user(user)
             return jsonify(success=True, redirect="/dashboard"), 200
 
-        elif mode == "signup":
-            # ─── Sign-Up branch ───
+       elif mode == "signup":
+    # 1) Sign up via Supabase
+    try:
+        resp = supabase.auth.sign_up({
+            "email":    email,
+            "password": password
+        })
+    except Exception as err:
+        return jsonify(success=False, message=str(err)), 400
 
-            # 1) Create user in Supabase Auth (pass a single dict)
-            try:
-                resp = supabase.auth.sign_up({
-                    "email":    email,
-                    "password": password
-                })
-            except Exception as err:
-                # supabase-py will raise on errors like “user already exists”
-                return jsonify(success=False, message=str(err)), 400
+    # 2) Pull out the new user
+    new_user = None
+    if hasattr(resp, "user"):
+        new_user = resp.user
+    elif isinstance(resp, dict):
+        new_user = resp.get("data", {}).get("user")
 
-            # 2) Extract the new user object
-            new_user = None
-            if hasattr(resp, "user"):
-                new_user = resp.user
-            elif isinstance(resp, dict):
-                new_user = resp.get("data", {}).get("user")
+    if not new_user:
+        return jsonify(success=False, message="Sign-up failed."), 400
 
-            if not new_user:
-                return jsonify(success=False, message="Sign-up failed."), 400
+    # 3) Grab the UID correctly
+    if isinstance(new_user, dict):
+        uid = new_user.get("id")
+    else:
+        # Pydantic model always has an .id attribute
+        uid = new_user.id
 
-            # 3) Insert into your own 'users' table (with hashed password)
-            uid = getattr(new_user, "id", new_user.get("id"))
-            supabase.table("users").insert({
-                "id":       uid,
-                "email":    email,
-                "password": generate_password_hash(password),
-                "fullname": name or email.split("@")[0]
-            }).execute()
+    # 4) Insert into your own users table
+    supabase.table("users").insert({
+        "id":       uid,
+        "email":    email,
+        "password": generate_password_hash(password),
+        "fullname": name or email.split("@")[0]
+    }).execute()
 
-            # 4) Log them in via Flask-Login
-            user = User.get_by_email(email)
-            login_user(user)
+    # 5) Log them in
+    user = User.get_by_email(email)
+    login_user(user)
 
-            return jsonify(success=True, redirect="/dashboard"), 200
+    return jsonify(success=True, redirect="/dashboard"), 200
 
         else:
             return jsonify(success=False, message="Invalid mode"), 400
