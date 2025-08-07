@@ -307,7 +307,6 @@ def manifest():
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
-        # default to "signup"; you can also read request.args.get("mode") if you like
         mode = request.args.get("mode", "signup")
         return render_template("account.html", mode=mode)
 
@@ -320,7 +319,6 @@ def account():
         name = data.get("name", "").strip()
 
         if mode == "login":
-            # ─── Login branch ───
             user = User.get_by_email(email)
             if not user or not user.check_password(password):
                 return jsonify(success=False, message="Invalid credentials"), 400
@@ -328,55 +326,55 @@ def account():
             login_user(user)
             return jsonify(success=True, redirect="/dashboard"), 200
 
-       elif mode == "signup":
-    # 1) Sign up via Supabase
-    try:
-        resp = supabase.auth.sign_up({
-            "email":    email,
-            "password": password
-        })
-    except Exception as err:
-        return jsonify(success=False, message=str(err)), 400
+        elif mode == "signup":
+            # 1) Sign up via Supabase
+            try:
+                resp = supabase.auth.sign_up({
+                    "email":    email,
+                    "password": password
+                })
+            except Exception as err:
+                return jsonify(success=False, message=str(err)), 400
 
-    # 2) Pull out the new user
-    new_user = None
-    if hasattr(resp, "user"):
-        new_user = resp.user
-    elif isinstance(resp, dict):
-        new_user = resp.get("data", {}).get("user")
+            # 2) Extract new_user
+            new_user = None
+            if hasattr(resp, "user"):
+                new_user = resp.user
+            elif isinstance(resp, dict):
+                new_user = resp.get("data", {}).get("user")
 
-    if not new_user:
-        return jsonify(success=False, message="Sign-up failed."), 400
+            if not new_user:
+                return jsonify(success=False, message="Sign-up failed."), 400
 
-    # 3) Grab the UID correctly
-    if isinstance(new_user, dict):
-        uid = new_user.get("id")
-    else:
-        # Pydantic model always has an .id attribute
-        uid = new_user.id
+            # 3) Grab UID correctly
+            if isinstance(new_user, dict):
+                uid = new_user.get("id")
+            else:
+                uid = new_user.id
 
-    # 4) Insert into your own users table
-    supabase.table("users").insert({
-        "id":       uid,
-        "email":    email,
-        "password": generate_password_hash(password),
-        "fullname": name or email.split("@")[0]
-    }).execute()
+            # 4) Insert into your users table
+            supabase.table("users").insert({
+                "id":       uid,
+                "email":    email,
+                "password": generate_password_hash(password),
+                "fullname": name or email.split("@")[0]
+            }).execute()
 
-    # 5) Log them in
-    user = User.get_by_email(email)
-    login_user(user)
+            # 5) Log them in
+            user = User.get_by_email(email)
+            login_user(user)
 
-    return jsonify(success=True, redirect="/dashboard"), 200
+            return jsonify(success=True, redirect="/dashboard"), 200
 
         else:
             return jsonify(success=False, message="Invalid mode"), 400
 
     except Exception:
         app.logger.exception("Error in /account POST")
-        return jsonify(success=False,
-                       message="Server error. Please try again later."), 500
-
+        return jsonify(
+            success=False,
+            message="Server error. Please try again later."
+        ), 500
 
 @app.route("/dashboard")
 def dashboard():
