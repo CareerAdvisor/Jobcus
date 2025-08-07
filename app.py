@@ -28,6 +28,13 @@ logging.basicConfig(level=logging.INFO)
 # --- OpenAI client ---
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Supabase client
+supabase = create_client(…)
+
+# Flask-Login init
+login_manager = LoginManager(app)
+login_manager.login_view = 'account'
+
 class User(UserMixin):
     def __init__(self, id, email, fullname, auth_id):
         self.id       = id
@@ -241,67 +248,6 @@ def fetch_location_counts():
     except:
         pass
     return freq.most_common(5)
-
-
-# --- Flask-Login setup ---
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'account'
-
-class User(UserMixin):
-    def __init__(self, user_id, email, password, fullname=None):
-        self.id = user_id
-        self.email = email
-        self.password = password
-        self.fullname = fullname
-
-    @staticmethod
-    def get_by_email(email: str):
-        r = supabase.table("users")\
-                     .select("*")\
-                     .eq("email", email)\
-                     .maybe_single()\
-                     .execute()
-        d = r.data
-        return User(d["id"], d["email"], d["password"], d.get("fullname")) if d else None
-
-@login_manager.user_loader
-def load_user(user_id):
-    """
-    Flask-Login callback to reload the user object from the session user_id.
-    Uses .limit(1) instead of .single() to avoid 406 errors.
-    """
-    try:
-        # Ensure we have an integer ID for the filter
-        uid = int(user_id)
-    except (TypeError, ValueError):
-        return None
-
-    try:
-        resp = (
-            supabase
-            .table("users")
-            .select("*")
-            .eq("id", uid)
-            .limit(1)
-            .execute()
-        )
-    except Exception:
-        app.logger.exception("Error loading user from Supabase")
-        return None
-
-    rows = resp.data or []
-    if not rows:
-        return None
-
-    row = rows[0]
-    # Return your User model instance
-    return User(
-        id=row["id"],
-        email=row["email"],
-        fullname=row.get("fullname", ""),
-        auth_id=row.get("auth_id")
-    )
 
 # -------- Routes --------
 
