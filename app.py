@@ -261,13 +261,22 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
+    """
+    Flask-Login callback to reload the user object from the session user_id.
+    Uses .limit(1) instead of .single() to avoid 406 errors.
+    """
     try:
-        # Fetch up to one row without using .single()
+        # Ensure we have an integer ID for the filter
+        uid = int(user_id)
+    except (TypeError, ValueError):
+        return None
+
+    try:
         resp = (
             supabase
             .table("users")
             .select("*")
-            .eq("id", int(user_id))
+            .eq("id", uid)
             .limit(1)
             .execute()
         )
@@ -280,13 +289,13 @@ def load_user(user_id):
         return None
 
     row = rows[0]
+    # Return your User model instance
     return User(
         id=row["id"],
         email=row["email"],
         fullname=row.get("fullname", ""),
         auth_id=row.get("auth_id")
     )
- if d else None
 
 # -------- Routes --------
 
