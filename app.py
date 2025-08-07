@@ -307,61 +307,72 @@ def manifest():
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
-        # Default to "signup"; you could read ?mode=login|signup if you like
+        # default to "signup"; you can also read request.args.get("mode") if you like
         mode = request.args.get("mode", "signup")
         return render_template("account.html", mode=mode)
 
-    # — POST: handle JSON body from account.js —
-    data = request.get_json() or {}
-    mode = data.get("mode")
-    email = data.get("email", "").strip().lower()
-    password = data.get("password", "")
-    name = data.get("name", "").strip()
+    # ── POST ──
+    try:
+        data = request.get_json(force=True) or {}
+        mode = data.get("mode")
+        email = data.get("email", "").strip().lower()
+        password = data.get("password", "")
+        name = data.get("name", "").strip()
 
-    if mode == "login":
-        # your existing login logic here…
-        user = User.get_by_email(email)
-        if not user or not user.check_password(password):
-            return jsonify(success=False, message="Invalid credentials"), 400
-        login_user(user)
-        return jsonify(success=True, redirect="/dashboard"), 200
+        if mode == "login":
+            # ─── Login branch ───
+            user = User.get_by_email(email)
+            if not user or not user.check_password(password):
+                return jsonify(success=False, message="Invalid credentials"), 400
 
-    elif mode == "signup":
-        # — 1) Create user in Supabase Auth —
-        resp = supabase.auth.sign_up(email=email, password=password)
+            login_user(user)
+            return jsonify(success=True, redirect="/dashboard"), 200
 
-        # Handle both dict- and attribute-style responses
-        new_user = None
-        if hasattr(resp, "user"):
-            new_user = resp.user
-        elif isinstance(resp, dict):
-            new_user = resp.get("data", {}).get("user")
+        elif mode == "signup":
+            # ─── Sign-Up branch ───
 
-        if not new_user:
-            # pick up the real error message if it exists
-            err = None
-            if isinstance(resp, dict):
-                err = resp.get("error", {}).get("message")
-            return jsonify(success=False, message=err or "Sign-up failed."), 400
+            # 1) Create user in Supabase Auth (pass a single dict)
+            try:
+                resp = supabase.auth.sign_up({
+                    "email":    email,
+                    "password": password
+                })
+            except Exception as err:
+                # supabase-py will raise on errors like “user already exists”
+                return jsonify(success=False, message=str(err)), 400
 
-        # — 2) Hash & insert into your public.users table —
-        uid = getattr(new_user, "id", new_user.get("id"))
-        supabase.table("users").insert({
-            "id":       uid,
-            "email":    email,
-            "password": generate_password_hash(password),
-            "fullname": name or email.split("@")[0]
-        }).execute()
+            # 2) Extract the new user object
+            new_user = None
+            if hasattr(resp, "user"):
+                new_user = resp.user
+            elif isinstance(resp, dict):
+                new_user = resp.get("data", {}).get("user")
 
-        # — 3) Fetch the new row, log in —
-        user = User.get_by_email(email)
-        login_user(user)
+            if not new_user:
+                return jsonify(success=False, message="Sign-up failed."), 400
 
-        return jsonify(success=True, redirect="/dashboard"), 200
+            # 3) Insert into your own 'users' table (with hashed password)
+            uid = getattr(new_user, "id", new_user.get("id"))
+            supabase.table("users").insert({
+                "id":       uid,
+                "email":    email,
+                "password": generate_password_hash(password),
+                "fullname": name or email.split("@")[0]
+            }).execute()
 
-    else:
-        # this should never happen once your GET always passes mode
-        return jsonify(success=False, message="Invalid mode"), 400
+            # 4) Log them in via Flask-Login
+            user = User.get_by_email(email)
+            login_user(user)
+
+            return jsonify(success=True, redirect="/dashboard"), 200
+
+        else:
+            return jsonify(success=False, message="Invalid mode"), 400
+
+    except Exception:
+        app.logger.exception("Error in /account POST")
+        return jsonify(success=False,
+                       message="Server error. Please try again later."), 500
 
 
 @app.route("/dashboard")
