@@ -28,47 +28,53 @@ logging.basicConfig(level=logging.INFO)
 # --- OpenAI client ---
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-from flask_login import UserMixin
-
 class User(UserMixin):
     def __init__(self, id, email, fullname, auth_id):
-        self.id       = id        # your local BIGINT key
+        self.id       = id
         self.email    = email
         self.fullname = fullname
-        self.auth_id  = auth_id   # the Supabase Auth UUID
+        self.auth_id  = auth_id
 
     @staticmethod
     def get_by_email(email):
-        resp = supabase.table("users") \
-                       .select("*") \
-                       .eq("email", email) \
-                       .single() \
-                       .execute()
-        data = resp.data or {}
-        if not data:
+        resp = (
+            supabase
+            .table("users")
+            .select("*")
+            .eq("email", email)
+            .limit(1)
+            .execute()
+        )
+        rows = resp.data or []
+        if not rows:
             return None
+        row = rows[0]
         return User(
-            id       = data["id"],
-            email    = data["email"],
-            fullname = data.get("fullname",""),
-            auth_id  = data["auth_id"]
+            id       = row["id"],
+            email    = row["email"],
+            fullname = row.get("fullname",""),
+            auth_id  = row.get("auth_id")
         )
 
     @staticmethod
     def get_by_auth_id(auth_id):
-        resp = supabase.table("users") \
-                       .select("*") \
-                       .eq("auth_id", auth_id) \
-                       .single() \
-                       .execute()
-        data = resp.data or {}
-        if not data:
+        resp = (
+            supabase
+            .table("users")
+            .select("*")
+            .eq("auth_id", auth_id)
+            .limit(1)
+            .execute()
+        )
+        rows = resp.data or []
+        if not rows:
             return None
+        row = rows[0]
         return User(
-            id       = data["id"],
-            email    = data["email"],
-            fullname = data.get("fullname",""),
-            auth_id  = data["auth_id"]
+            id       = row["id"],
+            email    = row["email"],
+            fullname = row.get("fullname",""),
+            auth_id  = row.get("auth_id")
         )
         
 # --- Supabase client ---
