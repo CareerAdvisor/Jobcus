@@ -7,16 +7,24 @@
 {% block content %}
 <section class="auth-wrapper">
   <div class="auth-card auth-card--blue">
-    {# — Two-line, larger heading — #}
-    {% if mode == 'login' %}
-      <h2 class="auth-title">Sign In to<br>Jobcus</h2>
-      <p class="auth-subtitle">Good to see you again! Welcome back.</p>
-    {% else %}
-      <h2 class="auth-title">Sign Up to<br>Jobcus</h2>
-      <p class="auth-subtitle">Create a free account to get started.</p>
-    {% endif %}
 
-    {# — Flash messages go here — #}
+    {# — Heading & subtitle; initial state based on `mode` from Flask — #}
+    <h2 class="auth-title">
+      {% if mode == 'login' %}
+        Sign In to<br>Jobcus
+      {% else %}
+        Sign Up to<br>Jobcus
+      {% endif %}
+    </h2>
+    <p class="auth-subtitle">
+      {% if mode == 'login' %}
+        Good to see you again! Welcome back.
+      {% else %}
+        Create a free account to get started.
+      {% endif %}
+    </p>
+
+    {# — Flash messages container — #}
     <div id="flashMessages" class="flash-message">
       {% for msg in get_flashed_messages() %}
         <div class="flash-item">{{ msg }}</div>
@@ -26,19 +34,16 @@
     <form id="accountForm" class="auth-form" autocomplete="on">
       <input type="hidden" name="mode" id="mode" value="{{ mode }}" />
 
-      {# — Only show Full Name on Sign-Up — #}
-      {% if mode == 'signup' %}
-      <div class="form-group">
+      {# — Full Name only shown by JS when mode==='signup' — #}
+      <div class="form-group" id="nameGroup">
         <label for="name">Full Name</label>
         <input
           type="text"
           id="name"
           name="name"
           placeholder="Your full name"
-          required
         />
       </div>
-      {% endif %}
 
       <div class="form-group">
         <label for="email">Email</label>
