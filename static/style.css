@@ -245,7 +245,7 @@ header {
   padding: 30px 20px;
   background: #fff;
   min-height: calc(100vh - 80px);
-  max-width: 400px;
+  max-width: 700px;
   width: 100%
   margin: 0 auto;
 }
@@ -3467,6 +3467,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
