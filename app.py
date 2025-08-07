@@ -5,16 +5,25 @@ import traceback
 from io import BytesIO
 from collections import Counter
 import re, json, base64, logging
-import requests  # ← added so fetch_* helpers work
+import requests  # ← for your fetch_* helpers
 
 from flask import (
-    Flask, request, jsonify, render_template,
-    redirect, session
+    Flask,
+    request,
+    jsonify,
+    render_template,
+    redirect,
+    session,
+    flash,
 )
 from flask_cors import CORS
 from flask_login import (
-    LoginManager, login_user, logout_user,
-    current_user, login_required, UserMixin
+    LoginManager,
+    login_user,
+    logout_user,
+    current_user,
+    login_required,
+    UserMixin,
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from postgrest.exceptions import APIError
@@ -22,7 +31,11 @@ from PyPDF2 import PdfReader
 from supabase import create_client
 from dotenv import load_dotenv
 from openai import OpenAI
-import docx 
+import docx
+
+# — your application’s own modules —
+from your_models import User
+from your_supabase_client import supabase
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -283,66 +296,64 @@ def terms_of_service():
 def manifest():
     return app.send_static_file('manifest.json')
 
-from flask_login import login_user
-
 @app.route("/account", methods=["GET", "POST"])
 def account():
-    # GET → render the login/sign-up page
     if request.method == "GET":
-         # default to “signup”; you could also read ?mode=login|signup
-         return render_template("account.html", mode="signup")
+        # Default to "signup"; you could read ?mode=login|signup if you like
+        mode = request.args.get("mode", "signup")
+        return render_template("account.html", mode=mode)
 
-    # POST → always expect JSON
-    data = request.get_json(force=True)
-    mode     = data.get("mode")      # "signup" or "login"
-    email    = data.get("email", "").strip().lower()
+    # — POST: handle JSON body from account.js —
+    data = request.get_json() or {}
+    mode = data.get("mode")
+    email = data.get("email", "").strip().lower()
     password = data.get("password", "")
-    name     = data.get("name", "")
+    name = data.get("name", "").strip()
 
-    try:
-        # ── SIGN UP ──
-        if mode == "signup":
-            # 1) Create user in Supabase Auth
-            resp = supabase.auth.sign_up({"email": email, "password": password})
-            if not resp.user:
-                return jsonify(success=False, message=resp.get("error","Sign-up failed.")), 400
+    if mode == "login":
+        # your existing login logic here…
+        user = User.get_by_email(email)
+        if not user or not user.check_password(password):
+            return jsonify(success=False, message="Invalid credentials"), 400
+        login_user(user)
+        return jsonify(success=True, redirect="/dashboard"), 200
 
-            # 2) Hash & insert into your public.users table
-            hashed = generate_password_hash(password)
-            supabase.table("users").insert({
-                "email":    email,
-                "password": hashed,
-                "fullname": name or email.split("@")[0]
-            }).execute()
+    elif mode == "signup":
+        # — 1) Create user in Supabase Auth —
+        resp = supabase.auth.sign_up(email=email, password=password)
 
-            # 3) Fetch the new row, log in via Flask-Login
-            user = User.get_by_email(email)
-            login_user(user)
+        # Handle both dict- and attribute-style responses
+        new_user = None
+        if hasattr(resp, "user"):
+            new_user = resp.user
+        elif isinstance(resp, dict):
+            new_user = resp.get("data", {}).get("user")
 
-            return jsonify(success=True, redirect="/dashboard"), 200
+        if not new_user:
+            # pick up the real error message if it exists
+            err = None
+            if isinstance(resp, dict):
+                err = resp.get("error", {}).get("message")
+            return jsonify(success=False, message=err or "Sign-up failed."), 400
 
-        # ── LOGIN ──
-        elif mode == "login":
-            # 1) Verify credentials with Supabase Auth
-            resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            if not resp.user:
-                return jsonify(success=False, message="Invalid credentials"), 401
+        # — 2) Hash & insert into your public.users table —
+        uid = getattr(new_user, "id", new_user.get("id"))
+        supabase.table("users").insert({
+            "id":       uid,
+            "email":    email,
+            "password": generate_password_hash(password),
+            "fullname": name or email.split("@")[0]
+        }).execute()
 
-            # 2) Fetch your own users table record
-            user = User.get_by_email(email)
-            if not user:
-                return jsonify(success=False, message="User record not found"), 404
+        # — 3) Fetch the new row, log in —
+        user = User.get_by_email(email)
+        login_user(user)
 
-            # 3) Log in
-            login_user(user)
-            return jsonify(success=True, redirect="/dashboard"), 200
+        return jsonify(success=True, redirect="/dashboard"), 200
 
-        else:
-            return jsonify(success=False, message="Invalid mode"), 400
-
-    except Exception as e:
-        logging.exception("Account error")
-        return jsonify(success=False, message="Server error"), 500
+    else:
+        # this should never happen once your GET always passes mode
+        return jsonify(success=False, message="Invalid mode"), 400
 
 
 @app.route("/dashboard")
