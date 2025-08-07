@@ -328,22 +328,35 @@ def account():
 
     # ── POST ──
     try:
-        data = request.get_json(force=True) or {}
-        mode = data.get("mode")
-        email = data.get("email", "").strip().lower()
+        data     = request.get_json(force=True) or {}
+        mode     = data.get("mode")
+        email    = data.get("email", "").strip().lower()
         password = data.get("password", "")
-        name = data.get("name", "").strip()
+        name     = data.get("name", "").strip()
 
         if mode == "login":
-            user = User.get_by_email(email)
-            if not user or not user.check_password(password):
-                return jsonify(success=False, message="Invalid credentials"), 400
+            # 1) Delegate login to Supabase
+            try:
+                session = supabase.auth.sign_in({
+                    "email":    email,
+                    "password": password
+                })
+            except Exception as err:
+                return jsonify(success=False, message=str(err)), 400
+
+            # 2) Grab Supabase user ID
+            ext_id = session.user.id
+
+            # 3) Lookup your local user by auth_id
+            user = User.get_by_auth_id(ext_id)
+            if not user:
+                return jsonify(success=False, message="No local profile found."), 404
 
             login_user(user)
             return jsonify(success=True, redirect="/dashboard"), 200
 
         elif mode == "signup":
-            # 1) Sign up via Supabase
+            # 1) Create user in Supabase Auth
             try:
                 resp = supabase.auth.sign_up({
                     "email":    email,
@@ -352,34 +365,23 @@ def account():
             except Exception as err:
                 return jsonify(success=False, message=str(err)), 400
 
-            # 2) Extract new_user
-            new_user = None
-            if hasattr(resp, "user"):
-                new_user = resp.user
-            elif isinstance(resp, dict):
-                new_user = resp.get("data", {}).get("user")
-
+            # 2) Extract the new Supabase user
+            new_user = resp.user if hasattr(resp, "user") else resp.get("data", {}).get("user")
             if not new_user:
                 return jsonify(success=False, message="Sign-up failed."), 400
 
-            # 3) Grab UID correctly
-            if isinstance(new_user, dict):
-                uid = new_user.get("id")
-            else:
-                uid = new_user.id
+            ext_id = new_user.id
 
-            # 4) Insert into your users table
+            # 3) Insert only auth_id, email, fullname locally
             supabase.table("users").insert({
-                "id":       uid,
+                "auth_id":  ext_id,
                 "email":    email,
-                "password": generate_password_hash(password),
                 "fullname": name or email.split("@")[0]
             }).execute()
 
-            # 5) Log them in
-            user = User.get_by_email(email)
+            # 4) Fetch & log in
+            user = User.get_by_auth_id(ext_id)
             login_user(user)
-
             return jsonify(success=True, redirect="/dashboard"), 200
 
         else:
