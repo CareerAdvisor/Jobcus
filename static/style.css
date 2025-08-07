@@ -260,7 +260,9 @@ header {
 
 /* Pale-blue modifier */
 .auth-card--blue {
-  background: #dfe6f0;
+  background: #fff;
+  max-width: 800px;
+  width: 100%
 }
 
 .auth-logo {
@@ -3458,6 +3460,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
