@@ -86,7 +86,7 @@ header {
 }
 
 .mobile-nav {
-  display: none;
+  display: none; 
   flex-direction: column;
   background: #ffffff;
   border: 1px solid #ccc;
@@ -147,7 +147,7 @@ header {
   /* Hide mobile nav & hamburger on desktop */
   .hamburger,
   .mobile-nav {
-    display: none;
+    display: none !important;
   }
 }
 
@@ -165,7 +165,7 @@ header {
   #mobileMenu {
     display: none; /* hidden by default */
   }
-}
+
 
 /*=== Dropdown Menu Styling ===*/
 .dropdown {
@@ -3460,15 +3460,3 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
-
-
-
-
-
-
-
-
-
-
-
-
