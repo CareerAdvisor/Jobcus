@@ -1,6 +1,6 @@
-// static/account.js
+// static/js/account.js
 
-// Force cookies on every fetch (so if you later protect endpoints, they’ll work)
+// ─── 1) Force cookies on every fetch ───
 ;(function(){
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
@@ -10,38 +10,50 @@
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
-  const form        = document.getElementById('accountForm');
-  const toggleLink  = document.getElementById('toggleMode');
-  const formTitle   = document.getElementById('formTitle');
-  const submitBtn   = document.getElementById('submitButton');
-  const modeInput   = document.getElementById('mode');
-  const nameGroup   = document.getElementById('nameGroup');
-  const flash       = document.getElementById('flashMessages');
+  // ─── 2) Grab all the elements we need ───
+  const form         = document.getElementById('accountForm');
+  const toggleLink   = document.getElementById('toggleMode');
+  const formTitle    = document.querySelector('.auth-title');
+  const subtitle     = document.querySelector('.auth-subtitle');
+  const submitBtn    = document.getElementById('submitButton');
+  const modeInput    = document.getElementById('mode');
+  const nameGroup    = document.getElementById('nameGroup');
+  const flash        = document.getElementById('flashMessages');
+  const togglePrompt = document.getElementById('togglePrompt');
 
-  let isSignup = false;
-
-  // Toggle between Sign In / Sign Up
-  toggleLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    isSignup = !isSignup;
-    if (isSignup) {
-      formTitle.textContent      = 'Sign Up for Jobcus';
-      submitBtn.textContent      = 'Sign Up';
-      toggleLink.textContent     = 'Sign In';
-      modeInput.value            = 'signup';
-      nameGroup.classList.remove('hidden');
-    } else {
-      formTitle.textContent      = 'Sign In to Jobcus';
-      submitBtn.textContent      = 'Sign In';
-      toggleLink.textContent     = 'Sign Up';
-      modeInput.value            = 'login';
+  // ─── 3) updateView() swaps between login/signup UI ───
+  function updateView() {
+    const mode = modeInput.value;
+    if (mode === 'login') {
       nameGroup.classList.add('hidden');
+      formTitle.innerHTML = 'Sign In to<br>Jobcus';
+      subtitle.textContent = 'Good to see you again! Welcome back.';
+      submitBtn.textContent = 'Sign In';
+      togglePrompt.textContent = "Don’t have an account?";
+      toggleLink.textContent = 'Sign Up';
+    } else {
+      nameGroup.classList.remove('hidden');
+      formTitle.innerHTML = 'Sign Up to<br>Jobcus';
+      subtitle.textContent = 'Create a free account to get started.';
+      submitBtn.textContent = 'Sign Up';
+      togglePrompt.textContent = 'Already have an account?';
+      toggleLink.textContent = 'Sign In';
     }
-    flash.textContent = '';  // clear any old messages
+    flash.textContent = '';  // clear old errors
+  }
+
+  // ─── 4) When the “Sign Up” / “Sign In” link is clicked ───
+  toggleLink.addEventListener('click', e => {
+    e.preventDefault();
+    modeInput.value = (modeInput.value === 'login' ? 'signup' : 'login');
+    updateView();
   });
 
-  // Handle form submit via fetch(JSON)
-  form.addEventListener('submit', async (e) => {
+  // ─── 5) Initialize on load ───
+  updateView();
+
+  // ─── 6) Submit the form via fetch(JSON) ───
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     flash.textContent = '';
 
@@ -59,10 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
 
       if (data.success) {
-        // Redirect to dashboard on success
+        // on success, redirect as instructed by server
         window.location.href = data.redirect;
       } else {
-        // Show error message returned by server
+        // show server-returned error
         flash.textContent = data.message || 'Something went wrong. Please try again.';
       }
     } catch (err) {
