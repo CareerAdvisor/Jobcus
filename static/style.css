@@ -148,7 +148,7 @@ header {
   /* Hide mobile nav & hamburger on desktop */
   .hamburger,
   .mobile-nav {
-    display: none;
+    display: none !important;
   }
 }
 
@@ -156,6 +156,16 @@ header {
     display: none; /* hidden by default */
   }
 
+.site-header:hover #mobileMenu {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    right: 10px;
+    top: 60px;
+    background-color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+  }
 
 /*=== Dropdown Menu Styling ===*/
 .dropdown {
@@ -3450,5 +3460,6 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
