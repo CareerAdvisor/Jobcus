@@ -340,153 +340,42 @@ def account():
         mode = request.args.get("mode", "signup")
         return render_template("account.html", mode=mode)
 
+    # POST logic (login/signup) — Supabase-based
     try:
-        data     = request.get_json(force=True) or {}
-        mode     = data.get("mode")
-        email    = data.get("email", "").strip().lower()
+        data = request.get_json()
+        mode = data.get("mode")
+        email = data.get("email", "").strip().lower()
         password = data.get("password", "")
-        name     = data.get("name", "").strip()
-
-        if mode == "signup":
-            # 1) Create user in Supabase Auth
-            try:
-                resp = supabase.auth.sign_up({
-                    "email":    email,
-                    "password": password
-                })
-                app.logger.info("Did sign up; resp: %r", resp)
-            except Exception as err:
-                app.logger.exception("Signup failed at supabase.auth.sign_up")
-                return jsonify(success=False, message="Email is already registered."), 400
-
-            # 2) Extract the new Supabase user
-            new_user = resp.user if hasattr(resp, "user") else resp.get("data", {}).get("user")
-            if not new_user:
-                app.logger.error("No new_user found after signup: %r", resp)
-                return jsonify(success=False, message="Sign-up failed."), 400
-
-            ext_id = new_user.id
-            app.logger.info("Extracted ext_id: %r", ext_id)
-
-            # 3) Insert only auth_id, email, fullname locally
-            try:
-                supabase.table("users").insert({
-                    "auth_id":  ext_id,
-                    "email":    email,
-                    "fullname": name or email.split("@")[0]
-                }).execute()
-                app.logger.info("Inserted user; trying User.get_by_auth_id(ext_id)")
-            except Exception as db_err:
-                app.logger.exception("Error inserting into users table")
-                return jsonify(success=False, message="User profile already exists."), 400
-
-            # 4) Fetch & log in
-            user = User.get_by_auth_id(ext_id)
-            app.logger.info("Got user: %r", user)
-            if not user:
-                app.logger.error("User not found after insert, ext_id=%r", ext_id)
-                return jsonify(success=False, message="No local profile found."), 404
-
-            login_user(user)
-            return jsonify(success=True, redirect="/dashboard"), 200
-
-        elif mode == "login":
-            # 1) Authenticate with Supabase
-            try:
-                auth_resp = supabase.auth.sign_in_with_password({
-                    "email": email,
-                    "password": password
-                })
-                user_data = auth_resp.user if hasattr(auth_resp, "user") else auth_resp.get("data", {}).get("user")
-                if not user_data:
-                    return jsonify(success=False, message="Login failed. Please try again."), 400
-            except Exception as e:
-                app.logger.exception("Login error")
-                return jsonify(success=False, message="Incorrect email or password."), 401
-
-            # 2) Get local user profile
-            ext_id = user_data.id
-            user = User.get_by_auth_id(ext_id)
-            if not user:
-                return jsonify(success=False, message="No user profile found."), 404
-
-            # 3) Log user in
-            login_user(user)
-            return jsonify(success=True, redirect="/dashboard")
-
-        else:
-            return jsonify(success=False, message="Invalid mode"), 400
-
-    except Exception:
-        app.logger.exception("Error in /account POST")
-        return jsonify(
-            success=False,
-            message="Server error. Please try again later."
-        ), 500
-
-@app.route("/account", methods=["POST"])
-def account():
-    try:
-        data     = request.get_json(force=True) or {}
-        mode     = data.get("mode")
-        email    = data.get("email", "").strip().lower()
-        password = data.get("password", "")
-        name     = data.get("name", "").strip()
+        name = data.get("name", "").strip()
 
         if not email or not password:
-            return jsonify(success=False, message="Email and password are required."), 400
+            return jsonify(success=False, message="Email and password are required.")
 
         if mode == "signup":
-            try:
-                resp = app.supabase.auth.sign_up({"email": email, "password": password})
-            except Exception:
-                return jsonify(success=False, message="Email is already registered."), 400
-
-            new_user = resp.user if hasattr(resp, "user") else resp.get("data", {}).get("user")
-            if not new_user:
-                return jsonify(success=False, message="Sign-up failed."), 400
-
-            ext_id = new_user.id
-            try:
-                app.supabase.table("users").insert({
-                    "auth_id": ext_id,
-                    "email": email,
-                    "fullname": name or email.split("@")[0]
-                }).execute()
-            except Exception:
-                return jsonify(success=False, message="User profile already exists."), 400
-
-            user = User.get_by_auth_id(ext_id)
+            response = supabase.auth.sign_up({"email": email, "password": password})
+            user = response.user
             if not user:
-                return jsonify(success=False, message="No local profile found."), 404
-
-            login_user(user)
-            return jsonify(success=True, redirect="/dashboard"), 200
+                return jsonify(success=False, message="Signup failed.")
+            supabase.table("users").insert({
+                "auth_id": user["id"],
+                "email": email,
+                "fullname": name
+            }).execute()
+            login_user(User(user["id"], email))
+            return jsonify(success=True, redirect=url_for("dashboard"))
 
         elif mode == "login":
-            try:
-                auth_resp = app.supabase.auth.sign_in_with_password({
-                    "email": email,
-                    "password": password
-                })
-                user_data = auth_resp.user if hasattr(auth_resp, "user") else auth_resp.get("data", {}).get("user")
-                if not user_data:
-                    return jsonify(success=False, message="Login failed. Please try again."), 400
-            except Exception:
-                return jsonify(success=False, message="Incorrect email or password."), 401
-
-            ext_id = user_data.id
-            user = User.get_by_auth_id(ext_id)
+            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            user = response.user
             if not user:
-                return jsonify(success=False, message="No user profile found."), 404
+                return jsonify(success=False, message="Invalid login credentials.")
+            login_user(User(user["id"], email))
+            return jsonify(success=True, redirect=url_for("dashboard"))
 
-            login_user(user)
-            return jsonify(success=True, redirect="/dashboard"), 200
-
-        return jsonify(success=False, message="Invalid request."), 400
-
-    except Exception:
-        return jsonify(success=False, message="Server error. Please try again later."), 500
+        return jsonify(success=False, message="Unknown mode.")
+    except Exception as e:
+        print("Error:", e)
+        return jsonify(success=False, message="Server error.")
 
 @app.route("/dashboard")
 def dashboard():
