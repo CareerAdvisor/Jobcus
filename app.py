@@ -352,17 +352,27 @@ def account():
             return jsonify(success=False, message="Email and password are required.")
 
         if mode == "signup":
-            response = supabase.auth.sign_up({"email": email, "password": password})
-            user = response.user
-            if not user:
-                return jsonify(success=False, message="Signup failed.")
-            supabase.table("users").insert({
-                "auth_id": user["id"],
-                "email": email,
-                "fullname": name
-            }).execute()
-            login_user(User(user["id"], email))
-            return jsonify(success=True, redirect=url_for("dashboard"))
+            try:
+                response = supabase.auth.sign_up({"email": email, "password": password})
+                user = response.user
+                user_data = user.model_dump() if hasattr(user, 'model_dump') else user
+                auth_id = user_data["id"]
+
+                if not auth_id:
+                    return jsonify(success=False, message="Signup failed.")
+
+                supabase.table("users").insert({
+                    "auth_id": auth_id,
+                    "email": email,
+                    "fullname": name
+                }).execute()
+
+                login_user(User(id=None, email=email, fullname=name, auth_id=auth_id))
+                return jsonify(success=True, redirect=url_for("dashboard"))
+    
+            except Exception as e:
+                print("Sign-up error:", e)
+                return jsonify(success=False, message="Email already exists or signup failed.")
 
         elif mode == "login":
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
