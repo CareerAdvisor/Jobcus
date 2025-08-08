@@ -1,38 +1,107 @@
+{# templates/account.html #}
 {% extends "base.html" %}
 
 {% block title %}Jobcus – Sign In / Sign Up{% endblock %}
 {% block body_class %}account-page{% endblock %}
 
 {% block content %}
-<section class="auth-section" style="width: 100%; max-width: 1200px;">
-  <h2 id="formTitle">Sign In to Jobcus</h2>
-  <div id="flashMessages" class="flash-message"></div>
+<section class="auth-wrapper">
+  <div class="auth-card auth-card--blue">
 
-  <form id="accountForm" class="auth-form" autocomplete="on">
-    <input type="hidden" name="mode" id="mode" value="login" />
-
-    <div class="form-group">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" placeholder="you@example.com" required />
-    </div>
-
-    <div class="form-group">
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" placeholder="Enter your password" required />
-    </div>
-
-    <div class="form-group hidden" id="nameGroup">
-      <label for="name">Full Name</label>
-      <input type="text" id="name" name="name" placeholder="Your full name" />
-    </div>
-
-    <button type="submit" class="cta-primary" id="submitButton">Sign In</button>
-
-    <p class="toggle-text">
-      <span id="togglePrompt">Don’t have an account?</span>
-      <a href="#" id="toggleMode" class="toggle-link">Sign Up</a>
+    {# — Heading & subtitle; initial state based on `mode` from Flask — #}
+    <h2 class="auth-title">
+      {% if mode == 'login' %}
+        Sign In to<br>Jobcus
+      {% else %}
+        Sign Up to<br>Jobcus
+      {% endif %}
+    </h2>
+    <p class="auth-subtitle">
+      {% if mode == 'login' %}
+        Good to see you again! Welcome back.
+      {% else %}
+        Create a free account to get started.
+      {% endif %}
     </p>
-  </form>
+
+    {# — Flash messages container — #}
+    <div id="flashMessages" class="flash-message">
+      {% for msg in get_flashed_messages() %}
+        <div class="flash-item">{{ msg }}</div>
+      {% endfor %}
+    </div>
+
+    <form id="accountForm" class="auth-form" autocomplete="on">
+      <input type="hidden" name="mode" id="mode" value="{{ mode }}" />
+
+      {# — Full Name only shown by JS when mode==='signup' — #}
+      <div class="form-group" id="nameGroup">
+        <label for="name">Full Name</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="Your full name"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="you@example.com"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Enter your password"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn-primary" id="submitButton">
+        {% if mode=='login' %}Sign In{% else %}Sign Up{% endif %}
+      </button>
+
+      <p class="toggle-text">
+        <span id="togglePrompt">
+          {% if mode=='login' %}
+            Don’t have an account?
+          {% else %}
+            Already have an account?
+          {% endif %}
+        </span>
+        <a href="#" id="toggleMode" class="toggle-link">
+          {% if mode=='login' %}Sign Up{% else %}Sign In{% endif %}
+        </a>
+      </p>
+
+      <div class="or-divider"><span>OR</span></div>
+
+      <div class="social-buttons">
+        <button type="button" class="social-btn fb">
+          <img src="{{ url_for('static', filename='icons/facebook.svg') }}" alt="Facebook">
+        </button>
+        <button type="button" class="social-btn google">
+          <img src="{{ url_for('static', filename='icons/google.png') }}" alt="Google">
+        </button>
+        <button type="button" class="social-btn linkedin">
+          <img src="{{ url_for('static', filename='icons/linkedin.svg') }}" alt="LinkedIn">
+        </button>
+        <button type="button" class="social-btn apple">
+          <img src="{{ url_for('static', filename='icons/apple.svg') }}" alt="Apple">
+        </button>
+      </div>
+    </form>
+  </div>
 </section>
 {% endblock %}
 
