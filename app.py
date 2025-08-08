@@ -392,7 +392,29 @@ def account():
             login_user(user)
             return jsonify(success=True, redirect="/dashboard"), 200
 
-        # ... login branch goes here ...
+        elif mode == "login":
+            # 1) Authenticate with Supabase
+            try:
+                auth_resp = supabase.auth.sign_in_with_password({
+                    "email": email,
+                    "password": password
+                })
+                user_data = auth_resp.user if hasattr(auth_resp, "user") else auth_resp.get("data", {}).get("user")
+                if not user_data:
+                    return jsonify(success=False, message="Login failed. Please try again."), 400
+            except Exception as e:
+                app.logger.exception("Login error")
+                return jsonify(success=False, message="Incorrect email or password."), 401
+
+            # 2) Get local user profile
+            ext_id = user_data.id
+            user = User.get_by_auth_id(ext_id)
+            if not user:
+                return jsonify(success=False, message="No user profile found."), 404
+
+            # 3) Log user in
+            login_user(user)
+            return jsonify(success=True, redirect="/dashboard")
 
         else:
             return jsonify(success=False, message="Invalid mode"), 400
