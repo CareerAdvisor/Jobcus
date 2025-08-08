@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="center-box">
+  <h2>Verifying your email...</h2>
+  <p>Please wait while we log you in...</p>
+</div>
+
+<script>
+  // Extract token from URL hash
+  const hash = window.location.hash.substring(1);
+  const params = new URLSearchParams(hash);
+  const accessToken = params.get("access_token");
+
+  if (accessToken) {
+    // Save token in localStorage or send to backend (optional)
+    fetch("/verify_token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ token: accessToken })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        window.location.href = "/dashboard";
+      } else {
+        alert("Login failed. Please try manually.");
+        window.location.href = "/account";
+      }
+    });
+  } else {
+    alert("Invalid confirmation link.");
+    window.location.href = "/account";
+  }
+</script>
+{% endblock %}
