@@ -368,7 +368,7 @@ def account():
                 }).execute()
 
                 login_user(User(id=None, email=email, fullname=name, auth_id=auth_id))
-                return jsonify(success=True, redirect=url_for("dashboard"))
+                return jsonify(success=True, redirect="/dashboard")
     
             except Exception as e:
                 print("Sign-up error:", e)
@@ -380,7 +380,7 @@ def account():
             if not user:
                 return jsonify(success=False, message="Invalid login credentials.")
             login_user(User(user["id"], email))
-            return jsonify(success=True, redirect=url_for("dashboard"))
+            return jsonify(success=True, redirect="/dashboard")
 
         return jsonify(success=False, message="Unknown mode.")
     except Exception as e:
