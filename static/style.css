@@ -157,7 +157,7 @@ header {
   }
 
 .site-header:hover #mobileMenu {
-    display: flex;
+    display: none !important;
     flex-direction: column;
     position: absolute;
     right: 10px;
@@ -3464,6 +3464,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
