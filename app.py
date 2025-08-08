@@ -330,7 +330,7 @@ def terms_of_service():
 
 @app.route("/check-email")
 def check_email():
-    return render_template("check_email.html")
+    return render_template("check-email.html")
 
 @app.route("/account", methods=["GET", "POST"])
 def account():
