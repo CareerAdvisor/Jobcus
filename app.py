@@ -17,7 +17,6 @@ from supabase import create_client
 from dotenv import load_dotenv
 from openai import OpenAI
 import docx
-from app import app
 
 # --- Environment & app setup ---
 load_dotenv()
