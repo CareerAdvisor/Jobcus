@@ -1,4 +1,4 @@
-// static/dashboard.js
+// static/js/dashboard.js
 
 document.addEventListener("DOMContentLoaded", () => {
   //
@@ -11,12 +11,18 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("dashboardVisited", "true");
   }
 
-  //
-  // 2) Load analysis JSON
-  //
+  // 2) Show proper dashboard state
   const raw = localStorage.getItem("resumeAnalysis");
+  const card = document.getElementById("resume-score-card");
+  const noCTA = document.getElementById("no-analysis-cta");
+  const analysisSection = document.getElementById("resume-analysis");
+  const metricNote = document.getElementById("metric-note");
+
   if (!raw) {
-    // no analysis → leave CTA visible
+    // Hide progress circle & analysis
+    if (card) card.style.display = "none";
+    if (analysisSection) analysisSection.style.display = "none";
+    if (noCTA) noCTA.style.display = "block";
     return;
   }
 
@@ -25,21 +31,18 @@ document.addEventListener("DOMContentLoaded", () => {
     data = JSON.parse(raw);
   } catch {
     console.error("Could not parse resumeAnalysis");
+    if (card) card.style.display = "none";
+    if (analysisSection) analysisSection.style.display = "none";
+    if (noCTA) noCTA.style.display = "block";
     return;
   }
 
-  //
-  // 3) Hide the “no-analysis” CTA, show the analysis section
-  //
-  const noCTA = document.getElementById("no-analysis-cta");
+  // Show card and analysis, hide CTA
+  if (card) card.style.display = "block";
   if (noCTA) noCTA.style.display = "none";
-
-  const analysisSection = document.getElementById("resume-analysis");
   if (analysisSection) analysisSection.style.display = "block";
 
-  //
-  // 4) Animate the circle
-  //
+  // 3) Animate progress circle
   const circle = document.querySelector(".progress-circle");
   if (circle) {
     const path = circle.querySelector(".progress");
@@ -48,21 +51,26 @@ document.addEventListener("DOMContentLoaded", () => {
     let current = 0;
     const step = target > 0 ? 1 : -1;
     circle.dataset.score = target;
+
+    // Animate score up to value
     const iv = setInterval(() => {
       if (current === target) return clearInterval(iv);
       current += step;
       path.setAttribute("stroke-dasharray", `${current},100`);
       text.textContent = `${current}%`;
     }, 20);
+
+    // Update last analyzed
+    if (metricNote && data.lastAnalyzed) {
+      metricNote.textContent = `Last analyzed: ${data.lastAnalyzed}`;
+    }
   }
 
-  //
-  // 5) Populate Issues, Strengths, Suggestions
-  //
+  // 4) Populate Issues, Strengths, Suggestions
   const issuesUL = document.getElementById("top-issues");
   if (issuesUL) {
     issuesUL.innerHTML = "";
-    (data.analysis.issues || []).forEach(i => {
+    (data.analysis?.issues || []).forEach(i => {
       const li = document.createElement("li");
       li.textContent = i;
       issuesUL.appendChild(li);
@@ -72,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const strengthsUL = document.getElementById("good-points");
   if (strengthsUL) {
     strengthsUL.innerHTML = "";
-    (data.analysis.strengths || []).forEach(s => {
+    (data.analysis?.strengths || []).forEach(s => {
       const li = document.createElement("li");
       li.textContent = s;
       strengthsUL.appendChild(li);
@@ -89,15 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  //
-  // 6) Optimize-flow: wire up #optimize-btn
-  //
+  // 5) Optimize-flow: wire up #optimize-btn
   const optimizeBtn = document.getElementById("optimize-btn");
   const loadingEl   = document.getElementById("optimized-loading");
   const outputEl    = document.getElementById("optimized-output");
   const downloadsEl = document.getElementById("optimized-downloads");
-  // Make sure you saved this in resume-builder.js:
-  //   localStorage.setItem("resumeBase64", b64);
   const resumeBase64 = localStorage.getItem("resumeBase64");
 
   if (optimizeBtn) {
@@ -166,10 +170,7 @@ function downloadHelper(format, text, filename) {
   }
 }
 
-// Expose globally for your dashboard buttons
 window.downloadOptimizedResume = function(format) {
-  // Make sure this matches the ID in your dashboard HTML!
   const text = document.getElementById("optimized-output").innerText || "";
   downloadHelper(format, text, "resume-optimized");
 };
-
