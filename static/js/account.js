@@ -60,35 +60,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ─── 6) Form submit via fetch(JSON) ───
   form.addEventListener('submit', async e => {
-    e.preventDefault();
-    flash.innerHTML = '';
+  e.preventDefault();
+  flash.innerHTML = '';
 
-    const payload = {
-      mode:     modeInput.value,
-      email:    document.getElementById('email').value.trim(),
-      password: document.getElementById('password').value,
-      name:     document.getElementById('name')?.value.trim() || ''
-    };
+  const payload = {
+    mode:     modeInput.value,  // "login" or "signup"
+    email:    document.getElementById('email').value.trim(),
+    password: document.getElementById('password').value,
+    name:     document.getElementById('name')?.value.trim() || ''
+  };
 
-    try {
-      const res  = await fetch('/account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
+  try {
+    const res  = await fetch('/account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
 
-      if (data.success) {
-        // on success, redirect
-        window.location.href = data.redirect;
-      } else {
-        // show server-returned error
-        flash.textContent = data.message || 'Something went wrong. Please try again.';
-      }
-
-    } catch (err) {
-      console.error('Account request failed:', err);
-      flash.textContent = 'Server error. Please try again later.';
+    if (data.success) {
+      window.location.href = data.redirect;
+    } else if (payload.mode === "signup" && data.message && data.message.toLowerCase().includes("already exist")) {
+      // Switch to login mode, inform user
+      modeInput.value = "login";
+      updateView();
+      flash.textContent = "Account already exists. Please log in.";
+      // Optionally: document.getElementById('email').value = payload.email;
+    } else {
+      flash.textContent = data.message || 'Something went wrong. Please try again.';
     }
-  });
+  } catch (err) {
+    console.error('Account request failed:', err);
+    flash.textContent = 'Server error. Please try again later.';
+  }
 });
