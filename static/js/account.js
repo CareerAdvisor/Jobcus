@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // clear any old flash messages
     flash.innerHTML = '';
   }
+}
 
   // ─── 4) Toggle link click handler ───
   toggleLink.addEventListener('click', e => {
