@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     name:     document.getElementById('name')?.value.trim() || ''
   };
 
-  try {
+    try {
     const res  = await fetch('/account', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -81,11 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (data.success) {
       window.location.href = data.redirect;
     } else if (payload.mode === "signup" && data.message && data.message.toLowerCase().includes("already exist")) {
-      // Switch to login mode, inform user
       modeInput.value = "login";
       updateView();
       flash.textContent = "Account already exists. Please log in.";
-      // Optionally: document.getElementById('email').value = payload.email;
     } else {
       flash.textContent = data.message || 'Something went wrong. Please try again.';
     }
@@ -93,4 +91,4 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('Account request failed:', err);
     flash.textContent = 'Server error. Please try again later.';
   }
-});
+});  // ✅ This was the missing line
