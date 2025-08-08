@@ -247,20 +247,17 @@ header {
   min-height: calc(100vh - 80px);
   width: 100%;
   margin: 0 auto;
-  max-width: 1200px;
 }
 
-@media (min-width: 768px) {
-  .auth-wrapper {
-    max-width: 1200px; /* or 1200px like you had */
-  }
-}
 .auth-card {
   background: #ffffff;
   padding: 40px 30px;
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.05);
   text-align: center;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .auth-card h2 {
@@ -3467,6 +3464,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
