@@ -263,13 +263,6 @@ header {
   text-align: center;
 }
 
-/* Pale-blue modifier */
-.auth-card--blue {
-  background: #fff;
-  width: 100%;
-  max-width: 800px;
-}
-
 .auth-card h2 {
   font-size: 1.75rem;
   margin-bottom: 8px;
@@ -3474,6 +3467,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
