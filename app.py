@@ -365,7 +365,8 @@ def account():
                     "fullname": name
                 }).execute()
 
-                return jsonify(success=True, message="Sign-up successful! Please check your email to confirm your address before logging in.")
+                return jsonify(success=True, redirect="/check-email")
+
             except Exception as e:
                 print("Sign-up error:", e)
                 return jsonify(success=False, message="Email already exists or signup failed.")
