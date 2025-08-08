@@ -332,6 +332,10 @@ def terms_of_service():
 def check_email():
     return render_template("check-email.html")
 
+@app.route("/confirm")
+def confirm_email():
+    return render_template("confirm.html")
+
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
@@ -392,6 +396,30 @@ def account():
 def logout():
     logout_user()
     return redirect(url_for("account"))
+
+@app.route("/verify_token", methods=["POST"])
+def verify_token():
+    token = request.json.get("token")
+    try:
+        user = supabase.auth.get_user(token).user
+        user_data = user.model_dump() if hasattr(user, 'model_dump') else user
+        auth_id = user_data["id"]
+        email = user_data["email"]
+
+        # Optionally fetch extra user info
+        db_user = supabase.table("users").select("*").eq("auth_id", auth_id).limit(1).execute()
+        db_user_data = db_user.data[0] if db_user.data else {}
+
+        login_user(User(
+            id=db_user_data.get("id"),
+            email=email,
+            fullname=db_user_data.get("fullname", ""),
+            auth_id=auth_id
+        ))
+        return jsonify(success=True)
+    except Exception as e:
+        print("Token verification failed:", e)
+        return jsonify(success=False)
 
 @app.route("/dashboard")
 @login_required
