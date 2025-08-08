@@ -12,7 +12,7 @@ html, body {
   font-family: 'Segoe UI', sans-serif;
   background-color: #f9fbf9;
   color: #333;
-  max-width: 100%
+  max-width: 100%;
   overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
@@ -242,12 +242,12 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 15px 15px;
+  padding: 60px 20px;
   background: #fff;
   min-height: calc(100vh - 80px);
   width: 100%;
   margin: 0 auto;
-  max-width: 800px;
+  max-width: 1200px;
 }
 
 @media (min-width: 768px) {
@@ -3474,5 +3474,6 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
