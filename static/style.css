@@ -152,9 +152,19 @@ header {
   }
 }
 
-  #mobileMenu {
-    display: none; /* hidden by default */
-  }
+#mobileMenu {
+  display: none; /* Hide by default */
+}
+#mobileMenu.show {
+  display: flex; /* Show on click */
+  flex-direction: column;
+  position: absolute;
+  right: 10px;
+  top: 60px;
+  background-color: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
 
 /*=== Dropdown Menu Styling ===*/
 .dropdown {
@@ -3453,6 +3463,7 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
 
 
 
