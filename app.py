@@ -33,6 +33,25 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "account"
 
+# --- Supabase client ---
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
+supabase = create_client(supabase_url, supabase_key)
+
+# --- External API constants ---
+REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
+ADZUNA_API_URL   = "https://api.adzuna.com/v1/api/jobs"
+ADZUNA_APP_ID    = os.getenv("ADZUNA_APP_ID")
+ADZUNA_APP_KEY   = os.getenv("ADZUNA_APP_KEY")
+JSEARCH_API_KEY  = os.getenv("JSEARCH_API_KEY")
+JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
+
+JOB_TITLES = [
+    "Software Engineer", "Data Analyst",
+    "Project Manager", "UX Designer", "Cybersecurity Analyst"
+]
+KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
+
 class User(UserMixin):
     def __init__(self, id, email, fullname, auth_id):
         self.id = id
@@ -119,28 +138,7 @@ def load_user(user_id):
         # Log the error if you like
         return None
         
-# --- Supabase client ---
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
-supabase = create_client(supabase_url, supabase_key)
-
-# --- External API constants ---
-REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
-ADZUNA_API_URL   = "https://api.adzuna.com/v1/api/jobs"
-ADZUNA_APP_ID    = os.getenv("ADZUNA_APP_ID")
-ADZUNA_APP_KEY   = os.getenv("ADZUNA_APP_KEY")
-JSEARCH_API_KEY  = os.getenv("JSEARCH_API_KEY")
-JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
-
-JOB_TITLES = [
-    "Software Engineer", "Data Analyst",
-    "Project Manager", "UX Designer", "Cybersecurity Analyst"
-]
-KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
-
-
 # --- Helpers ---
-
 def get_user_resume_text(user_id: str) -> str:
     """Fetch the latest stored resume text for a user from Supabase."""
     res = supabase.table("resumes")\
@@ -330,17 +328,13 @@ def privacy_policy():
 def terms_of_service():
     return render_template('terms-of-service.html')
 
-@app.route('/manifest.json')
-def manifest():
-    return app.send_static_file('manifest.json')
-
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
         mode = request.args.get("mode", "signup")
         return render_template("account.html", mode=mode)
 
-    # POST logic (login/signup) — Supabase-based
+    # POST logic
     try:
         data = request.get_json()
         mode = data.get("mode")
@@ -369,7 +363,6 @@ def account():
 
                 login_user(User(id=None, email=email, fullname=name, auth_id=auth_id))
                 return jsonify(success=True, redirect="/dashboard")
-    
             except Exception as e:
                 print("Sign-up error:", e)
                 return jsonify(success=False, message="Email already exists or signup failed.")
@@ -377,26 +370,29 @@ def account():
         elif mode == "login":
             response = supabase.auth.sign_in_with_password({"email": email, "password": password})
             user = response.user
+            user_data = user.model_dump() if hasattr(user, 'model_dump') else user
+            auth_id = user_data["id"]
             if not user:
                 return jsonify(success=False, message="Invalid login credentials.")
-            login_user(User(user["id"], email))
+            login_user(User(id=None, email=email, fullname=name, auth_id=auth_id))
             return jsonify(success=True, redirect="/dashboard")
 
         return jsonify(success=False, message="Unknown mode.")
+
     except Exception as e:
         print("Error:", e)
         return jsonify(success=False, message="Server error.")
-
-@app.route("/dashboard")
-def dashboard():
-    return render_template("dashboard.html")
 
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
-    return redirect("/")
+    return redirect(url_for("account"))
 
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html")
 
 @app.route("/ask", methods=["POST"])
 def ask():
