@@ -17,6 +17,8 @@ from supabase import create_client
 from dotenv import load_dotenv
 from openai import OpenAI
 import docx
+from app import app
+from models import User  # assuming you're using a User model with Supabase structure
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -32,8 +34,6 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "account"
-
-from flask_login import UserMixin
 
 class User(UserMixin):
     def __init__(self, id, email, fullname, auth_id):
@@ -425,6 +425,70 @@ def account():
             success=False,
             message="Server error. Please try again later."
         ), 500
+
+@app.route("/account", methods=["POST"])
+def account():
+    try:
+        data     = request.get_json(force=True) or {}
+        mode     = data.get("mode")
+        email    = data.get("email", "").strip().lower()
+        password = data.get("password", "")
+        name     = data.get("name", "").strip()
+
+        if not email or not password:
+            return jsonify(success=False, message="Email and password are required."), 400
+
+        if mode == "signup":
+            try:
+                resp = app.supabase.auth.sign_up({"email": email, "password": password})
+            except Exception:
+                return jsonify(success=False, message="Email is already registered."), 400
+
+            new_user = resp.user if hasattr(resp, "user") else resp.get("data", {}).get("user")
+            if not new_user:
+                return jsonify(success=False, message="Sign-up failed."), 400
+
+            ext_id = new_user.id
+            try:
+                app.supabase.table("users").insert({
+                    "auth_id": ext_id,
+                    "email": email,
+                    "fullname": name or email.split("@")[0]
+                }).execute()
+            except Exception:
+                return jsonify(success=False, message="User profile already exists."), 400
+
+            user = User.get_by_auth_id(ext_id)
+            if not user:
+                return jsonify(success=False, message="No local profile found."), 404
+
+            login_user(user)
+            return jsonify(success=True, redirect="/dashboard"), 200
+
+        elif mode == "login":
+            try:
+                auth_resp = app.supabase.auth.sign_in_with_password({
+                    "email": email,
+                    "password": password
+                })
+                user_data = auth_resp.user if hasattr(auth_resp, "user") else auth_resp.get("data", {}).get("user")
+                if not user_data:
+                    return jsonify(success=False, message="Login failed. Please try again."), 400
+            except Exception:
+                return jsonify(success=False, message="Incorrect email or password."), 401
+
+            ext_id = user_data.id
+            user = User.get_by_auth_id(ext_id)
+            if not user:
+                return jsonify(success=False, message="No user profile found."), 404
+
+            login_user(user)
+            return jsonify(success=True, redirect="/dashboard"), 200
+
+        return jsonify(success=False, message="Invalid request."), 400
+
+    except Exception:
+        return jsonify(success=False, message="Server error. Please try again later."), 500
 
 @app.route("/dashboard")
 def dashboard():
