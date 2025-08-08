@@ -328,6 +328,10 @@ def privacy_policy():
 def terms_of_service():
     return render_template('terms-of-service.html')
 
+@app.route("/check-email")
+def check_email():
+    return render_template("check_email.html")
+
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
@@ -361,8 +365,7 @@ def account():
                     "fullname": name
                 }).execute()
 
-                login_user(User(id=None, email=email, fullname=name, auth_id=auth_id))
-                return jsonify(success=True, redirect="/dashboard")
+                return jsonify(success=True, message="Sign-up successful! Please check your email to confirm your address before logging in.")
             except Exception as e:
                 print("Sign-up error:", e)
                 return jsonify(success=False, message="Email already exists or signup failed.")
