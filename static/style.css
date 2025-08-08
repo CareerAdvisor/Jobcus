@@ -247,6 +247,7 @@ header {
   min-height: calc(100vh - 80px);
   width: 100%;
   margin: 0 auto;
+  max-width: 100%;
 }
 
 @media (min-width: 768px) {
@@ -260,20 +261,13 @@ header {
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.05);
   text-align: center;
-  max-width: none;
   width: 100%;
 }
 
 /* Pale-blue modifier */
 .auth-card--blue {
   background: #fff;
-  max-width: none;
   width: 100%;
-}
-
-.auth-logo {
-  max-width: 100px;
-  margin-bottom: 20px;
 }
 
 .auth-card h2 {
@@ -3480,3 +3474,4 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
