@@ -18,7 +18,6 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import docx
 from app import app
-from models import User  # assuming you're using a User model with Supabase structure
 
 # --- Environment & app setup ---
 load_dotenv()
