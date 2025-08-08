@@ -46,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // clear any old flash messages
     flash.innerHTML = '';
   }
-}
 
   // ─── 4) Toggle link click handler ───
   toggleLink.addEventListener('click', e => {
@@ -93,3 +92,4 @@ document.addEventListener('DOMContentLoaded', () => {
     flash.textContent = 'Server error. Please try again later.';
   }
 });  // ✅ This was the missing line
+}
