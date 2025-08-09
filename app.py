@@ -20,13 +20,20 @@ import docx
 
 # --- Environment & app setup ---
 load_dotenv()
+
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
+
 CORS(app)
 logging.basicConfig(level=logging.INFO)
 
 # --- OpenAI client ---
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# ---- session cookie hardening (place RIGHT AFTER app = Flask(...)) ----
+app.config.update(
+    SESSION_COOKIE_SECURE=True,   # send cookies only over HTTPS (Render uses HTTPS)
+    SESSION_COOKIE_SAMESITE="Lax",  # allow top-level redirects to keep the cookie
 
 # Flask-Login init
 login_manager = LoginManager()
@@ -53,90 +60,27 @@ JOB_TITLES = [
 KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
 
 class User(UserMixin):
-    def __init__(self, id, email, fullname, auth_id):
-        self.id = id
+    def __init__(self, auth_id: str, email: str, fullname: str | None = None):
+        self.id = auth_id          # Flask-Login session id (Supabase auth UUID)
         self.email = email
         self.fullname = fullname
-        self.auth_id = auth_id
 
-    @staticmethod
-    def get_by_auth_id(auth_id):
-        # Query Supabase for user with this auth_id
-        resp = (
-            supabase
-            .table("users")
-            .select("*")
-            .eq("auth_id", auth_id)
-            .limit(1)
-            .execute()
-        )
-        rows = resp.data or []
-        if not rows:
-            return None
-        row = rows[0]
-        return User(
-            id=row["id"],
-            email=row["email"],
-            fullname=row.get("fullname", ""),
-            auth_id=row.get("auth_id")
-        )
-
-    @staticmethod
-    def get_by_email(email):
-        # Query Supabase for user with this email
-        resp = (
-            supabase
-            .table("users")
-            .select("*")
-            .eq("email", email)
-            .limit(1)
-            .execute()
-        )
-        rows = resp.data or []
-        if not rows:
-            return None
-        row = rows[0]
-        return User(
-            id=row["id"],
-            email=row["email"],
-            fullname=row.get("fullname", ""),
-            auth_id=row.get("auth_id")
-        )
-
-# --- Flask-Login loader function ---
 @login_manager.user_loader
-def load_user(user_id):
-    """
-    Flask-Login callback to reload the user object from the session user_id.
-    """
+def load_user(user_id: str):
     try:
-        # Ensure we have an integer ID for the filter (adjust if your ID is string in Supabase)
-        uid = int(user_id)
-    except (TypeError, ValueError):
-        return None
-
-    try:
-        resp = (
-            supabase
-            .table("users")
-            .select("*")
-            .eq("id", uid)
-            .limit(1)
+        res = (
+            supabase.table("users")
+            .select("auth_id,email,fullname")
+            .eq("auth_id", user_id)
+            .single()
             .execute()
         )
-        rows = resp.data or []
-        if not rows:
-            return None
-        row = rows[0]
-        return User(
-            id=row["id"],
-            email=row["email"],
-            fullname=row.get("fullname", ""),
-            auth_id=row.get("auth_id")
-        )
-    except Exception:
-        # Log the error if you like
-        return None
+        row = res.data
+        if row:
+            return User(auth_id=row["auth_id"], email=row["email"], fullname=row.get("fullname"))
+    except Exception as e:
+        print("load_user error:", e)
+    return None
         
 # --- Helpers ---
 def get_user_resume_text(user_id: str) -> str:
@@ -328,103 +272,159 @@ def privacy_policy():
 def terms_of_service():
     return render_template('terms-of-service.html')
 
+# ----------------------------
+# Email confirmation
+# ----------------------------
 @app.route("/check-email")
 def check_email():
-    return render_template("check-email.html")
+    """Simple page telling users to confirm their email."""
+    return render_template("check-mail.html")
 
 @app.route("/confirm")
-def confirm_email():
+def confirm_page():
+    """
+    This serves a page with JS that reads the hash fragment from the Supabase confirmation link
+    (access_token, refresh_token) and POSTs it to /verify_token.
+    After we verify, we return {ok:true} and the JS redirects to /dashboard.
+    """
     return render_template("confirm.html")
 
+# ----------------------------
+# Account routes (signup/login)
+# ----------------------------
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
+        # Render a combined Sign up / Log in page. It should post JSON to this same route.
         mode = request.args.get("mode", "signup")
         return render_template("account.html", mode=mode)
 
-    # POST logic
-    try:
-        data = request.get_json()
-        mode = data.get("mode")
-        email = data.get("email", "").strip().lower()
-        password = data.get("password", "")
-        name = data.get("name", "").strip()
+    # POST: handle signup or login (expects JSON from /static/js/account.js)
+    data = request.get_json(force=True)
+    mode = (data.get("mode") or "").lower()
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+    name = (data.get("name") or "").strip()
 
-        if not email or not password:
-            return jsonify(success=False, message="Email and password are required.")
+    if not email or not password:
+        return jsonify(success=False, message="Email and password are required."), 400
 
-        if mode == "signup":
+    # ------------- SIGN UP -------------
+    if mode == "signup":
+        try:
+            resp = supabase.auth.sign_up({"email": email, "password": password})
+            user = resp.user
+            if not user:
+                return jsonify(success=False, message="Signup failed."), 400
+
+            # Supabase Python SDK v2 returns a user object; get the UUID id
+            user_data = user.model_dump() if hasattr(user, "model_dump") else user
+            auth_id = user_data["id"]
+
+            # create our local row if not present
             try:
-                response = supabase.auth.sign_up({"email": email, "password": password})
-                user = response.user
-                user_data = user.model_dump() if hasattr(user, 'model_dump') else user
-                auth_id = user_data["id"]
-
-                if not auth_id:
-                    return jsonify(success=False, message="Signup failed.")
-
                 supabase.table("users").insert({
                     "auth_id": auth_id,
                     "email": email,
-                    "fullname": name
+                    "fullname": name,
                 }).execute()
+            except Exception as db_err:
+                # Unique constraint might already exist; that's ok for idempotency
+                print("users insert warn:", db_err)
 
-                return jsonify(success=True, redirect="/check-email")
+            # If you have email confirmations ON (recommended), Supabase won't create a session yet
+            # so we send the user to a friendly page telling them to check email.
+            # If confirmations are OFF, you could log them in immediately instead.
+            email_confirmed = bool(user_data.get("email_confirmed_at"))
+            if not email_confirmed:
+                return jsonify(success=True, redirect=url_for("check_email"))
 
-            except Exception as e:
-                print("Sign-up error:", e)
-                return jsonify(success=False, message="Email already exists or signup failed.")
+            # If confirmations are off and we HAVE a session already, log in immediately
+            login_user(User(auth_id=auth_id, email=email, fullname=name))
+            return jsonify(success=True, redirect=url_for("dashboard"))
 
-        elif mode == "login":
-            response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-            user = response.user
-            user_data = user.model_dump() if hasattr(user, 'model_dump') else user
-            auth_id = user_data["id"]
+        except Exception as e:
+            print("Sign-up error:", e)
+            return jsonify(success=False, message="Email already exists or signup failed."), 400
+
+    # ------------- LOG IN -------------
+    elif mode == "login":
+        try:
+            resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            user = resp.user
             if not user:
-                return jsonify(success=False, message="Invalid login credentials.")
-            login_user(User(id=None, email=email, fullname=name, auth_id=auth_id))
-            return jsonify(success=True, redirect="/dashboard")
+                return jsonify(success=False, message="Invalid login credentials."), 400
 
-        return jsonify(success=False, message="Unknown mode.")
+            user_data = user.model_dump() if hasattr(user, "model_dump") else user
+            auth_id = user_data["id"]
 
-    except Exception as e:
-        print("Error:", e)
-        return jsonify(success=False, message="Server error.")
+            # pull fullname from our local table (optional)
+            try:
+                db = supabase.table("users").select("fullname").eq("auth_id", auth_id).single().execute()
+                fullname = (db.data or {}).get("fullname")
+            except Exception:
+                fullname = None
 
+            login_user(User(auth_id=auth_id, email=email, fullname=fullname))
+            return jsonify(success=True, redirect=url_for("dashboard"))
+
+        except Exception as e:
+            print("Login error:", e)
+            return jsonify(success=False, message="Invalid login credentials."), 400
+
+    return jsonify(success=False, message="Unknown mode."), 400 
+            
+# ----------------------------
+# Logout / Dashboard
+# ----------------------------
 @app.route("/logout")
 @login_required
 def logout():
-    logout_user()
-    return redirect(url_for("account"))
-
-@app.route("/verify_token", methods=["POST"])
-def verify_token():
-    token = request.json.get("token")
     try:
-        user = supabase.auth.get_user(token).user
-        user_data = user.model_dump() if hasattr(user, 'model_dump') else user
-        auth_id = user_data["id"]
-        email = user_data["email"]
-
-        # Optionally fetch extra user info
-        db_user = supabase.table("users").select("*").eq("auth_id", auth_id).limit(1).execute()
-        db_user_data = db_user.data[0] if db_user.data else {}
-
-        login_user(User(
-            id=db_user_data.get("id"),
-            email=email,
-            fullname=db_user_data.get("fullname", ""),
-            auth_id=auth_id
-        ))
-        return jsonify(success=True)
-    except Exception as e:
-        print("Token verification failed:", e)
-        return jsonify(success=False)
+        # also sign out of Supabase (optional but good hygiene)
+        try:
+            supabase.auth.sign_out()
+        except Exception:
+            pass
+        logout_user()
+    finally:
+        return redirect(url_for("account"))
 
 @app.route("/dashboard")
 @login_required
 def dashboard():
     return render_template("dashboard.html")
+
+@app.route("/verify_token", methods=["POST"])
+def verify_token():
+    data = request.get_json(force=True)
+    access_token = data.get("access_token")
+    refresh_token = data.get("refresh_token")
+    if not access_token:
+        return jsonify(ok=False, error="Missing access_token"), 400
+
+    try:
+        # Validate token & fetch user from Supabase
+        user_resp = supabase.auth.get_user(access_token)
+        user_obj = user_resp.user if hasattr(user_resp, "user") else user_resp
+        user_data = user_obj.model_dump() if hasattr(user_obj, "model_dump") else user_obj
+        auth_id = user_data["id"]
+        email = user_data.get("email")
+
+        # Ensure local row exists
+        try:
+            row = supabase.table("users").select("auth_id").eq("auth_id", auth_id).maybe_single().execute()
+            if not row.data:
+                supabase.table("users").insert({"auth_id": auth_id, "email": email}).execute()
+        except Exception as e:
+            print("users upsert warn:", e)
+
+        # Log user in for this Flask session
+        login_user(User(auth_id=auth_id, email=email))
+        return jsonify(ok=True)
+    except Exception as e:
+        print("verify_token error:", e)
+        return jsonify(ok=False, error="Token verification failed"), 400
 
 @app.route("/ask", methods=["POST"])
 def ask():
