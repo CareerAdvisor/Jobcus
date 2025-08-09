@@ -293,14 +293,15 @@ def confirm_page():
 # ----------------------------
 # Account routes (signup/login)
 # ----------------------------
+# top of file (add import)
+from gotrue.errors import AuthApiError
+
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
-        # Render a combined Sign up / Log in page. It should post JSON to this same route.
         mode = request.args.get("mode", "signup")
         return render_template("account.html", mode=mode)
 
-    # POST: handle signup or login (expects JSON from /static/js/account.js)
     data = request.get_json(force=True)
     mode = (data.get("mode") or "").lower()
     email = (data.get("email") or "").strip().lower()
@@ -310,7 +311,6 @@ def account():
     if not email or not password:
         return jsonify(success=False, message="Email and password are required."), 400
 
-    # ------------- SIGN UP -------------
     if mode == "signup":
         try:
             resp = supabase.auth.sign_up({"email": email, "password": password})
@@ -318,37 +318,35 @@ def account():
             if not user:
                 return jsonify(success=False, message="Signup failed."), 400
 
-            # Supabase Python SDK v2 returns a user object; get the UUID id
-            user_data = user.model_dump() if hasattr(user, "model_dump") else user
-            auth_id = user_data["id"]
+            ud = user.model_dump() if hasattr(user, "model_dump") else user
+            auth_id = ud["id"]
 
-            # create our local row if not present
+            # create local user row if missing
             try:
                 supabase.table("users").insert({
-                    "auth_id": auth_id,
-                    "email": email,
-                    "fullname": name,
+                    "auth_id": auth_id, "email": email, "fullname": name
                 }).execute()
-            except Exception as db_err:
-                # Unique constraint might already exist; that's ok for idempotency
-                print("users insert warn:", db_err)
+            except Exception:
+                pass  # ignore unique violations
 
-            # If you have email confirmations ON (recommended), Supabase won't create a session yet
-            # so we send the user to a friendly page telling them to check email.
-            # If confirmations are OFF, you could log them in immediately instead.
-            email_confirmed = bool(user_data.get("email_confirmed_at"))
-            if not email_confirmed:
-                return jsonify(success=True, redirect=url_for("check_email"))
+            if not ud.get("email_confirmed_at"):
+                # tell the UI to show check-email page
+                return jsonify(success=True, redirect=url_for("check_email")), 200
 
-            # If confirmations are off and we HAVE a session already, log in immediately
+            # (if confirmations are OFF)
             login_user(User(auth_id=auth_id, email=email, fullname=name))
-            return jsonify(success=True, redirect=url_for("dashboard"))
+            return jsonify(success=True, redirect=url_for("dashboard")), 200
 
-        except Exception as e:
-            print("Sign-up error:", e)
-            return jsonify(success=False, message="Email already exists or signup failed."), 400
+        except AuthApiError as e:
+            msg = str(e).lower()
+            if "user already registered" in msg or "already registered" in msg:
+                return jsonify(
+                    success=False,
+                    code="user_exists",
+                    message="Account already exists. Please log in."
+                ), 409
+            return jsonify(success=False, message="Signup failed."), 400
 
-    # ------------- LOG IN -------------
     elif mode == "login":
         try:
             resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
@@ -356,22 +354,31 @@ def account():
             if not user:
                 return jsonify(success=False, message="Invalid login credentials."), 400
 
-            user_data = user.model_dump() if hasattr(user, "model_dump") else user
-            auth_id = user_data["id"]
+            ud = user.model_dump() if hasattr(user, "model_dump") else user
+            auth_id = ud["id"]
 
-            # pull fullname from our local table (optional)
+            # optionally fetch fullname
             try:
-                db = supabase.table("users").select("fullname").eq("auth_id", auth_id).single().execute()
-                fullname = (db.data or {}).get("fullname")
+                r = supabase.table("users").select("fullname").eq("auth_id", auth_id).single().execute()
+                fullname = (r.data or {}).get("fullname")
             except Exception:
                 fullname = None
 
             login_user(User(auth_id=auth_id, email=email, fullname=fullname))
-            return jsonify(success=True, redirect=url_for("dashboard"))
+            return jsonify(success=True, redirect=url_for("dashboard")), 200
 
-        except Exception as e:
-            print("Login error:", e)
-            return jsonify(success=False, message="Invalid login credentials."), 400
+        except AuthApiError as e:
+            msg = str(e).lower()
+            if "email not confirmed" in msg or "not confirmed" in msg:
+                return jsonify(
+                    success=False,
+                    code="email_not_confirmed",
+                    message="Please confirm your email to continue.",
+                    redirect=url_for("check_email")
+                ), 403
+            if "invalid login credentials" in msg:
+                return jsonify(success=False, message="Invalid email or password."), 401
+            return jsonify(success=False, message="Login failed."), 400
 
     return jsonify(success=False, message="Unknown mode."), 400 
             
