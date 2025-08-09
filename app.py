@@ -34,6 +34,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 app.config.update(
     SESSION_COOKIE_SECURE=True,   # send cookies only over HTTPS (Render uses HTTPS)
     SESSION_COOKIE_SAMESITE="Lax",  # allow top-level redirects to keep the cookie
+)
 
 # Flask-Login init
 login_manager = LoginManager()
