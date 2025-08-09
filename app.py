@@ -24,17 +24,17 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
-CORS(app)
-logging.basicConfig(level=logging.INFO)
-
-# --- OpenAI client ---
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 # ---- session cookie hardening (place RIGHT AFTER app = Flask(...)) ----
 app.config.update(
     SESSION_COOKIE_SECURE=True,   # send cookies only over HTTPS (Render uses HTTPS)
     SESSION_COOKIE_SAMESITE="Lax",  # allow top-level redirects to keep the cookie
 )
+
+CORS(app)
+logging.basicConfig(level=logging.INFO)
+
+# --- OpenAI client ---
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Flask-Login init
 login_manager = LoginManager()
