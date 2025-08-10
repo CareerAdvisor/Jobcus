@@ -1,16 +1,12 @@
-# blueprints/resumes.py
-from flask import Blueprint, jsonify, request, current_app
+from flask import current_app
 import base64, re, json, logging
 from io import BytesIO
 from PyPDF2 import PdfReader
 import docx
 
-resumes_bp = Blueprint("resumes", __name__)
-
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
 def resume_analysis():
     client = current_app.config["OPENAI_CLIENT"]
-    # if you need supabase: supabase = current_app.config["SUPABASE"]
     data = request.get_json(force=True)
     resume_text = ""
 
