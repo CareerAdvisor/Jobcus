@@ -71,6 +71,8 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id: str):
+    if not user_id or user_id == "None":
+        return None
     try:
         res = (
             supabase.table("users")
