@@ -1,9 +1,67 @@
-from flask import current_app
-import base64, re, json, logging
+# blueprints/resumes.py
+from flask import Blueprint, render_template, request, make_response, send_file, jsonify, current_app
+from weasyprint import HTML
+from docxtpl import DocxTemplate
 from io import BytesIO
 from PyPDF2 import PdfReader
-import docx
+import base64, re, json, logging, os, docx
 
+resumes_bp = Blueprint("resumes", __name__)
+
+# ---------- 1) Template-based resume (HTML/PDF) ----------
+@resumes_bp.post("/build-resume")
+def build_resume():
+    data  = request.get_json(force=True)
+    theme = data.get("theme", "modern")      # 'modern' or 'minimal'
+    fmt   = data.get("format", "html")       # 'html' or 'pdf'
+
+    context = {
+        "name":       data.get("fullName", ""),
+        "title":      data.get("title", ""),
+        "contact":    data.get("contact", ""),
+        "summary":    data.get("summary", ""),
+        "education":  data.get("education", []),
+        "experience": data.get("experience", []),
+        "skills":     data.get("skills", []),
+        "links":      data.get("links", []),
+    }
+
+    html = render_template(f"resumes/{theme}.html", **context)
+
+    if fmt == "pdf":
+        pdf_bytes = HTML(string=html, base_url=request.host_url).write_pdf()
+        resp = make_response(pdf_bytes)
+        resp.headers["Content-Type"] = "application/pdf"
+        resp.headers["Content-Disposition"] = "inline; filename=resume.pdf"
+        return resp
+
+    resp = make_response(html)
+    resp.headers["Content-Type"] = "text/html; charset=utf-8"
+    return resp
+
+# ---------- 2) Template-based resume (DOCX) ----------
+@resumes_bp.post("/build-resume-docx")
+def build_resume_docx():
+    data = request.get_json(force=True)
+    tpl_path = os.path.join(current_app.root_path, "templates", "resumes", "clean.docx")
+
+    tpl = DocxTemplate(tpl_path)
+    tpl.render({
+        "name":       data.get("fullName", ""),
+        "title":      data.get("title", ""),
+        "summary":    data.get("summary", ""),
+        "experience": data.get("experience", []),
+        "education":  data.get("education", []),
+        "skills":     data.get("skills", []),
+        "contact":    data.get("contact", ""),
+        "links":      data.get("links", []),
+    })
+
+    buf = BytesIO()
+    tpl.save(buf); buf.seek(0)
+    return send_file(buf, as_attachment=True, download_name="resume.docx")
+
+# ---------- 3) AI resume analysis ----------
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
 def resume_analysis():
     client = current_app.config["OPENAI_CLIENT"]
@@ -13,21 +71,21 @@ def resume_analysis():
     if data.get("pdf"):
         pdf_bytes = base64.b64decode(data["pdf"])
         reader = PdfReader(BytesIO(pdf_bytes))
-        resume_text = "\n".join(p.extract_text() or "" for p in reader.pages)
+        resume_text = "\n".join((p.extract_text() or "") for p in reader.pages)
     elif data.get("docx"):
         docx_bytes = base64.b64decode(data["docx"])
-        doc = docx.Document(BytesIO(docx_bytes))
-        resume_text = "\n".join(p.text for p in doc.paragraphs)
+        d = docx.Document(BytesIO(docx_bytes))
+        resume_text = "\n".join(p.text for p in d.paragraphs)
     elif data.get("text"):
         resume_text = data["text"].strip()
     else:
         return jsonify(error="No resume data provided"), 400
 
-    if not resume_text:
+    if not resume_text.strip():
         return jsonify(error="Could not extract any text"), 400
 
     prompt = (
-        "You are an ATS-certified resume analyzer. Return only JSON with keys: "
+        "You are an ATS-certified resume analyzer. Return only a JSON object with:\n"
         "score (0–100), issues[], strengths[], suggestions[].\n\n"
         f"Resume content:\n\n{resume_text}"
     )
@@ -41,6 +99,7 @@ def resume_analysis():
         content = re.sub(r"```(?:json)?", "", content).strip()
         start, end = content.find("{"), content.rfind("}")
         parsed = json.loads(content[start:end+1])
+
         return jsonify({
             "score": int(parsed.get("score", 0)),
             "analysis": {
@@ -56,7 +115,7 @@ def resume_analysis():
         logging.exception("Resume analysis error")
         return jsonify(error="Resume analysis failed"), 500
 
-
+# ---------- 4) AI resume optimization ----------
 @resumes_bp.route("/api/optimize-resume", methods=["POST"])
 def optimize_resume():
     client = current_app.config["OPENAI_CLIENT"]
@@ -67,22 +126,22 @@ def optimize_resume():
         try:
             pdf_bytes = base64.b64decode(data["pdf"])
             reader = PdfReader(BytesIO(pdf_bytes))
-            resume_text = "\n".join(p.extract_text() or "" for p in reader.pages)
+            resume_text = "\n".join((p.extract_text() or "") for p in reader.pages)
             if not resume_text.strip():
-                return jsonify({"error": "PDF content empty"}), 400
+                return jsonify(error="PDF content empty"), 400
         except Exception:
             logging.exception("PDF Decode Error")
-            return jsonify({"error": "Unable to extract PDF text"}), 400
+            return jsonify(error="Unable to extract PDF text"), 400
     elif data.get("text"):
         resume_text = data["text"].strip()
         if not resume_text:
-            return jsonify({"error": "No text provided"}), 400
+            return jsonify(error="No text provided"), 400
     else:
-        return jsonify({"error": "No resume data provided"}), 400
+        return jsonify(error="No resume data provided"), 400
 
     prompt = (
         "You are an expert ATS resume optimizer. Rewrite the following resume in plain text, "
-        "using strong action verbs, consistent bullets, relevant keywords, fixing grammar and repetition.\n\n"
+        "using strong action verbs, consistent bullets, relevant keywords, and fixing grammar/repetition.\n\n"
         f"Original resume:\n\n{resume_text}"
     )
     try:
@@ -96,9 +155,9 @@ def optimize_resume():
         return jsonify({"optimized": optimized})
     except Exception:
         logging.exception("Resume optimization error")
-        return jsonify({"error": "Resume optimization failed"}), 500
+        return jsonify(error="Resume optimization failed"), 500
 
-
+# ---------- 5) AI generate resume (HTML snippet) ----------
 @resumes_bp.route("/generate-resume", methods=["POST"])
 def generate_resume():
     client = current_app.config["OPENAI_CLIENT"]
@@ -114,7 +173,7 @@ Certifications: {data.get('certifications')}
 Portfolio: {data.get('portfolio')}
 """
     try:
-        resp = client.chat.completions.create(
+        resp = client.chat(completions=None).completions.create(  # if you're on openai>=1.0, use chat.completions
             model="gpt-4o",
             messages=[{"role":"user","content":prompt}],
             temperature=0.7
