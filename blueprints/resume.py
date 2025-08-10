@@ -158,26 +158,56 @@ def optimize_resume():
         return jsonify(error="Resume optimization failed"), 500
 
 # ---------- 5) AI generate resume (HTML snippet) ----------
-@resumes_bp.route("/generate-resume", methods=["POST"])
+@resumes_bp.post("/generate-resume")
 def generate_resume():
+    from flask import jsonify, request, current_app
+    import re, json
+
     client = current_app.config["OPENAI_CLIENT"]
     data = request.json or {}
+
+    # Ask the model to return ONLY JSON in your template schema
     prompt = f"""
-Create a professional, modern UK resume in HTML format:
-Full Name: {data.get('fullName')}
-Summary: {data.get('summary')}
-Education: {data.get('education')}
-Experience: {data.get('experience')}
-Skills: {data.get('skills')}
-Certifications: {data.get('certifications')}
-Portfolio: {data.get('portfolio')}
+Return ONLY valid JSON (no backticks) for a resume with this schema:
+
+{{
+  "name": "...",
+  "title": "...",
+  "contact": "...",
+  "summary": "...",
+  "education": [{{"degree":"...", "school":"...", "year":""}}],
+  "experience": [{{"title":"...", "company":"...", "dates":"", "bullets":["..."]}}],
+  "skills": ["..."],
+  "links": [{{"url":"...", "label":""}}]
+}}
+
+User input:
+fullName: {data.get('fullName',"")}
+title: {data.get('title',"")}
+contact: {data.get('contact',"")}
+summary: {data.get('summary',"")}
+education (free text): {data.get('education',"")}
+experience (free text): {data.get('experience',"")}
+skills (free text): {data.get('skills',"")}
+certifications (free text): {data.get('certifications',"")}
+portfolio: {data.get('portfolio',"")}
 """
+
     try:
-        resp = client.chat(completions=None).completions.create(  # if you're on openai>=1.0, use chat.completions
+        resp = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role":"user","content":prompt}],
-            temperature=0.7
+            temperature=0.2
         )
-        return jsonify(formatted_resume=resp.choices[0].message.content)
+        content = resp.choices[0].message.content.strip()
+        content = re.sub(r"```(?:json)?", "", content).strip()
+        ctx = json.loads(content)
+
+        # tiny fallback so template never breaks
+        if not ctx.get("name"):  ctx["name"]  = data.get("fullName","")
+        if not ctx.get("title"): ctx["title"] = data.get("title","")
+        if not ctx.get("contact"): ctx["contact"] = data.get("contact","")
+
+        return jsonify(context=ctx)  # <-- front-end will hand this to /build-resume
     except Exception as e:
-        return jsonify(error=str(e)), 500
+        return jsonify(error=f"Generation failed: {e}"), 500
