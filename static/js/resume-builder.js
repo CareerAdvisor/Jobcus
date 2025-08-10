@@ -1,4 +1,4 @@
-// — ensure cookies on fetch()
+// Ensure cookies on every fetch (keeps session with SameSite/Lax)
 ;(function(){
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
@@ -34,10 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("resumeBase64", b64);
       if (file.type === "application/pdf") {
         payload = { pdf: b64 };
-      } else if (
-        file.type ===
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      ) {
+      } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
         payload = { docx: b64 };
       } else {
         return alert("Unsupported type. Upload PDF or DOCX.");
@@ -53,9 +50,8 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error(res.statusText);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) throw new Error(data.error || res.statusText);
 
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
       window.location.href = "/dashboard";
@@ -72,22 +68,99 @@ document.addEventListener("DOMContentLoaded", () => {
     sendAnalysis(file);
   });
 
-
   //
-  // Part 2: “Build Your Resume with AI”
+  // Part 2: “Build Your Resume with AI” (JSON -> template)
   //
-  const form                  = document.getElementById("resumeForm");
-  const builderIndicator      = document.getElementById("builderGeneratingIndicator");
-  const outputContainer       = document.getElementById("builderGeneratedContent");
-  const downloadOptions       = document.getElementById("resumeDownloadOptions");
+  const form             = document.getElementById("resumeForm");
+  const builderIndicator = document.getElementById("builderGeneratingIndicator");
+  const outputContainer  = document.getElementById("builderGeneratedContent");
+  const downloadOptions  = document.getElementById("resumeDownloadOptions");
 
+  const previewBtn = document.getElementById("previewTemplate");
+  const pdfBtn     = document.getElementById("downloadTemplatePdf");
+
+  const previewWrap = document.getElementById("resumePreviewWrap");
+  const previewEl   = document.getElementById("resumePreview");
+
+  // Default theme; if you later add <select id="themeSelect">, we'll pick that.
+  function getTheme() {
+    return document.getElementById("themeSelect")?.value || "modern";
+  }
+
+  // Coerce the simple form fields into a minimal context your template understands.
+  // (Good for previewing layout even before AI generation.)
+  function coerceFormToTemplateContext() {
+    const f = form;
+    const name    = f.elements["fullName"].value.trim();
+    const title   = f.elements["title"].value.trim();
+    const contact = f.elements["contact"].value.trim();
+    const summary = f.elements["summary"].value.trim();
+    const eduTxt  = f.elements["education"].value.trim();
+    const expTxt  = f.elements["experience"].value.trim();
+    const skills  = f.elements["skills"].value.split(",").map(s => s.trim()).filter(Boolean);
+    const portfolio = f.elements["portfolio"].value.trim();
+
+    const education = eduTxt
+      ? [{ degree: "", school: eduTxt, year: "" }]
+      : [];
+
+    const experience = expTxt
+      ? [{
+          title: title || "Experience",
+          company: "",
+          dates: "",
+          bullets: expTxt.split("\n").map(b => b.trim()).filter(Boolean)
+        }]
+      : [];
+
+    const links = portfolio ? [{ url: portfolio, label: "Portfolio" }] : [];
+
+    return { name, title, contact, summary, education, experience, skills, links };
+  }
+
+  async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
+    if (format === "pdf") {
+      const res = await fetch("/build-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format: "pdf", theme, ...ctx })
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`PDF build failed: ${res.status} ${t}`);
+      }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "resume.pdf"; a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    // HTML
+    const res = await fetch("/build-resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ format: "html", theme, ...ctx })
+    });
+    const html = await res.text();
+    if (!res.ok) throw new Error(`HTML build failed: ${res.status} ${html}`);
+
+    outputContainer.innerHTML = html;
+    if (previewWrap && previewEl) {
+      previewWrap.style.display = "block";
+      previewEl.innerHTML = html;
+    }
+  }
+
+  // Submit → use AI to structure JSON, then render via template
   form?.addEventListener("submit", async e => {
     e.preventDefault();
     builderIndicator.style.display = "block";
     outputContainer.innerHTML = "";
     downloadOptions.style.display = "none";
 
-    const data = {
+    const payload = {
       fullName:       form.elements["fullName"].value.trim(),
       title:          form.elements["title"].value.trim(),
       contact:        form.elements["contact"].value.trim(),
@@ -100,49 +173,110 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      const res  = await fetch("/generate-resume", {
-        method:  "POST",
+      // 1) Get structured context from AI
+      const gen = await fetch("/generate-resume", {
+        method: "POST",
         headers: { "Content-Type":"application/json" },
-        body:    JSON.stringify(data)
+        body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error(res.statusText);
-      const json = await res.json();
-      if (json.error) throw new Error(json.error);
+      const genJson = await gen.json().catch(() => ({}));
+      if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
-      outputContainer.innerHTML = json.formatted_resume;
+      const ctx = genJson.context;
+      window._resumeCtx = ctx; // save for PDF/preview later
+
+      // 2) Render HTML via server template
+      await renderWithTemplateFromContext(ctx, "html", getTheme());
+
+      // Show authenticated-only download CTA if present
       downloadOptions.style.display = "block";
-
     } catch (err) {
-      console.error("Generate error:", err);
+      console.error("Generate/build error:", err);
       alert("Resume generation failed.");
+    } finally {
+      builderIndicator.style.display = "none";
+    }
+  });
+
+  // Preview button → template render from AI context if available, else coerce form
+  previewBtn?.addEventListener("click", async () => {
+    try {
+      builderIndicator.style.display = "block";
+      const ctx = window._resumeCtx || coerceFormToTemplateContext();
+      await renderWithTemplateFromContext(ctx, "html", getTheme());
+      downloadOptions.style.display = "block";
+    } catch (e) {
+      console.error(e);
+      alert(e.message || "Preview failed");
+    } finally {
+      builderIndicator.style.display = "none";
+    }
+  });
+
+  // PDF button → template render as PDF from AI context if available, else coerce form
+  pdfBtn?.addEventListener("click", async () => {
+    try {
+      builderIndicator.style.display = "block";
+      const ctx = window._resumeCtx || coerceFormToTemplateContext();
+      await renderWithTemplateFromContext(ctx, "pdf", getTheme());
+    } catch (e) {
+      console.error(e);
+      alert(e.message || "PDF build failed");
     } finally {
       builderIndicator.style.display = "none";
     }
   });
 });
 
-// — Simple download helper for the generated resume —
-function downloadResume(format) {
-  const text = document.getElementById("builderGeneratedContent")?.innerText || "";
+// Legacy downloads (TXT keeps client-side; PDF now uses server template)
+async function downloadResume(format) {
+  const container = document.getElementById("builderGeneratedContent");
+  const text = container?.innerText || "";
+
   if (format === "txt") {
-    saveAs(new Blob([text], {type:"text/plain"}), `resume.${format}`);
-  } else if (format === "docx") {
-    const { Document,Packer,Paragraph,TextRun } = window.docx;
-    const doc = new Document({
-      sections:[{
-        children:text.split("\n").map(l=>new Paragraph({children:[new TextRun(l)]}))
-      }]
-    });
-    Packer.toBlob(doc).then(b=>saveAs(b,`resume.${format}`));
-  } else if (format === "pdf") {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({unit:"mm",format:"a4"});
-    const lines = pdf.splitTextToSize(text,180);
-    let y=10;
-    lines.forEach(line=>{
-      if(y>280){pdf.addPage();y=10}
-      pdf.text(line,10,y); y+=8;
-    });
-    pdf.save(`resume.${format}`);
+    saveAs(new Blob([text], {type:"text/plain"}), "resume.txt");
+    return;
+  }
+
+  if (format === "pdf") {
+    const theme = document.getElementById("themeSelect")?.value || "modern";
+    const ctx = window._resumeCtx || (() => {
+      // last resort: coerce from current form
+      const f = document.getElementById("resumeForm");
+      if (!f) return {};
+      const skills = f.elements["skills"].value.split(",").map(s=>s.trim()).filter(Boolean);
+      return {
+        name: f.elements["fullName"].value.trim(),
+        title: f.elements["title"].value.trim(),
+        contact: f.elements["contact"].value.trim(),
+        summary: f.elements["summary"].value.trim(),
+        education: [{ degree:"", school: f.elements["education"].value.trim(), year:"" }],
+        experience: [{
+          title: f.elements["title"].value.trim() || "Experience",
+          company: "",
+          dates: "",
+          bullets: f.elements["experience"].value.split("\n").map(b=>b.trim()).filter(Boolean)
+        }],
+        skills,
+        links: f.elements["portfolio"].value ? [{ url: f.elements["portfolio"].value.trim(), label: "Portfolio" }] : []
+      };
+    })();
+
+    try {
+      const res = await fetch("/build-resume", {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({ format:"pdf", theme, ...ctx })
+      });
+      if (!res.ok) throw new Error("PDF build failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "resume.pdf"; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert("Unable to download PDF.");
+    }
   }
 }
