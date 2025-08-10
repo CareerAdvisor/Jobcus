@@ -118,6 +118,19 @@
     </button>
   </form>
 
+  <!-- INSERTED TEMPLATE PREVIEW BUTTONS -->
+<div style="display:flex; gap:.5rem; margin-top:10px;">
+  <button type="button" id="previewTemplate">🔎 Preview in Template</button>
+  <button type="button" id="downloadTemplatePdf">⬇️ Download PDF</button>
+</div>
+
+<!-- Where the HTML preview renders -->
+<div id="resumePreviewWrap" style="display:none; margin-top:1rem;">
+  <h3 style="color:#104879;">Preview</h3>
+  <div id="resumePreview" style="background:#fff; border:1px solid #eee; border-radius:8px; padding:16px;"></div>
+</div>
+<!-- END INSERTION -->
+  
   <!-- output + spinner container -->
   <div id="builderResumeOutput" class="resume-container"
        style="background:#fff;padding:20px;border-radius:8px;min-height:150px;
