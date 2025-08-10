@@ -23,13 +23,14 @@
     })
     .then(res => res.json())
     .then(data => {
-      if (data.success) {
+      if (data.ok) {
         window.location.href = "/dashboard";
       } else {
         alert("Login failed. Please try manually.");
         window.location.href = "/account";
       }
     });
+
   } else {
     alert("Invalid confirmation link.");
     window.location.href = "/account";
