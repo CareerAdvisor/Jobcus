@@ -110,3 +110,4 @@ document.addEventListener('DOMContentLoaded', () => {
     flash.textContent = 'Server error. Please try again later.';
   }
 });
+});
