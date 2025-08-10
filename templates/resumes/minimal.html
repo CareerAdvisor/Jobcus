@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Minimal Resume – Jobcus{% endblock %}
+
+{% block body_class %}resume-template{% endblock %}
+
+{% block content %}
+<div class="resume-preview minimal-style">
+  <style>
+    .minimal-style {
+      max-width: 800px;
+      margin: auto;
+      font-family: Inter, Arial, sans-serif;
+      background: #fff;
+      padding: 2rem;
+      color: #222;
+    }
+    .minimal-header {
+      border-bottom: 2px solid #000;
+      margin-bottom: 1rem;
+      padding-bottom: .5rem;
+    }
+    .minimal-header h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: bold;
+    }
+    .minimal-header p {
+      margin: .25rem 0;
+      font-size: 13px;
+      color: #555;
+    }
+    h2 {
+      font-size: 14px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #ddd;
+      margin-top: 1.5rem;
+      margin-bottom: .5rem;
+    }
+    .item {
+      margin-bottom: .75rem;
+    }
+    .item h3 {
+      margin: 0;
+      font-size: 15px;
+    }
+    .meta {
+      font-size: 12px;
+      color: #555;
+    }
+    ul { margin: .25rem 0 0 1rem; }
+    .skills span {
+      display: inline-block;
+      margin: 2px 4px;
+      padding: 2px 6px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 11px;
+    }
+  </style>
+
+  <div class="minimal-header">
+    <h1>{{ name }}</h1>
+    {% if title %}<p>{{ title }}</p>{% endif %}
+    <p>{{ contact }}</p>
+  </div>
+
+  {% if summary %}
+  <section>
+    <h2>Summary</h2>
+    <p>{{ summary }}</p>
+  </section>
+  {% endif %}
+
+  {% if experience %}
+  <section>
+    <h2>Experience</h2>
+    {% for job in experience %}
+    <div class="item">
+      <h3>{{ job.role }} – {{ job.company }}</h3>
+      <div class="meta">{{ job.location }} · {{ job.start }} – {{ job.end or 'Present' }}</div>
+      {% if job.bullets %}
+      <ul>{% for b in job.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if education %}
+  <section>
+    <h2>Education</h2>
+    {% for edu in education %}
+    <div class="item">
+      <h3>{{ edu.degree }} – {{ edu.school }}</h3>
+      <div class="meta">{{ edu.location }} · {{ edu.graduated }}</div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if skills %}
+  <section>
+    <h2>Skills</h2>
+    <div class="skills">
+      {% for s in skills %}<span>{{ s }}</span>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
