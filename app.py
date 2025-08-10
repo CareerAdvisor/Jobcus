@@ -7,7 +7,7 @@ from collections import Counter
 import re, json, base64, logging
 import requests  # ← for your fetch_* helpers
 
-from flask import Flask, request, jsonify, render_template, redirect, session, flash
+from flask import Flask, request, jsonify, render_template, redirect, session, flash, flash, url_for
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
