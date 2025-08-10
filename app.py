@@ -336,7 +336,7 @@ def account():
 
             if not ud.get("email_confirmed_at"):
                 # tell the UI to show check-email page
-                return jsonify(success=True, redirect=url_for("check_email")), 200
+                return jsonify(success=True, redirect="/check-email"), 200
 
             # (if confirmations are OFF)
             login_user(User(auth_id=auth_id, email=email, fullname=name))
