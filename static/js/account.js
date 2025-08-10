@@ -55,42 +55,58 @@ document.addEventListener('DOMContentLoaded', () => {
   updateView();
 
   // ─── 6) Form submit via fetch(JSON) ───
-  form.addEventListener('submit', async e => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    flash.innerHTML = '';
+    if (flash) flash.textContent = '';
 
-    const payload = {
-      mode:     modeInput.value,
-      email:    document.getElementById('email').value.trim(),
-      password: document.getElementById('password').value,
-      name:     document.getElementById('name')?.value.trim() || ''
-    };
+  const payload = {
+    mode:     modeInput.value,
+    email:    document.getElementById('email').value.trim(),
+    password: document.getElementById('password').value,
+    name:     document.getElementById('name')?.value.trim() || ''
+  };
 
-    try {
-      const res  = await fetch('/account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
+  let data = {};
+  try {
+    const res = await fetch('/account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-      if (data.success) {
-        // ✅ Clear any stored resume data from other users
-        localStorage.removeItem("resumeAnalysis");
-        localStorage.removeItem("resumeBase64");
-        localStorage.removeItem("dashboardVisited");
-        window.location.href = data.redirect;
-      } else if (payload.mode === "signup" && data.message && data.message.toLowerCase().includes("already exist")) {
-        modeInput.value = "login";
+    // Try to parse JSON even on error responses
+    try { data = await res.json(); } catch { data = {}; }
+
+    // Handle known failure shapes
+    if (!res.ok || data.success === false) {
+      if (data.code === 'user_exists') {
+        modeInput.value = 'login';
         updateView();
-        flash.textContent = "Account already exists. Please log in.";
-      } else {
-        flash.textContent = data.message || 'Something went wrong. Please try again.';
+        document.getElementById('email').value = payload.email;
+        alert(data.message || 'Account already exists. Please log in.');
+        return;
       }
-
-    } catch (err) {
-      console.error('Account request failed:', err);
-      flash.textContent = 'Server error. Please try again later.';
+      if (data.code === 'email_not_confirmed' && data.redirect) {
+        window.location.assign(data.redirect); // /check-email
+        return;
+      }
+      flash.textContent = data.message || 'Request failed. Please try again.';
+      return;
     }
-  });
+
+    // Success → redirect (single call)
+    if (data.redirect) {
+      // clear any previous anon data
+      localStorage.removeItem('resumeAnalysis');
+      localStorage.removeItem('resumeBase64');
+      localStorage.removeItem('dashboardVisited');
+      window.location.assign(data.redirect);
+      return;
+    }
+
+    flash.textContent = 'Unexpected response. Please try again.';
+  } catch (err) {
+    console.error('Account request failed:', err);
+    flash.textContent = 'Server error. Please try again later.';
+  }
 });
