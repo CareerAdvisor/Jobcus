@@ -82,15 +82,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const previewWrap = document.getElementById("resumePreviewWrap");
   const previewEl   = document.getElementById("resumePreview");
 
-  // Default theme; if you later add <select id="themeSelect">, we'll pick that.
+  // Default theme; if you add <select id="themeSelect"> the JS will use it.
   function getTheme() {
     return document.getElementById("themeSelect")?.value || "modern";
   }
 
-  // Coerce the simple form fields into a minimal context your template understands.
-  // (Good for previewing layout even before AI generation.)
+  // ▼▼▼ YOUR COERCE FUNCTION (inserted) ▼▼▼
   function coerceFormToTemplateContext() {
-    const f = form;
+    const f = document.getElementById("resumeForm");
     const name    = f.elements["fullName"].value.trim();
     const title   = f.elements["title"].value.trim();
     const contact = f.elements["contact"].value.trim();
@@ -100,23 +99,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const skills  = f.elements["skills"].value.split(",").map(s => s.trim()).filter(Boolean);
     const portfolio = f.elements["portfolio"].value.trim();
 
-    const education = eduTxt
-      ? [{ degree: "", school: eduTxt, year: "" }]
-      : [];
+    const education = eduTxt ? [{ degree: "", school: eduTxt, location: "", graduated: "" }] : [];
 
-    const experience = expTxt
-      ? [{
-          title: title || "Experience",
-          company: "",
-          dates: "",
-          bullets: expTxt.split("\n").map(b => b.trim()).filter(Boolean)
-        }]
-      : [];
+    const experience = expTxt ? [{
+      role: title || "Experience",
+      company: "",
+      location: "",
+      start: "",
+      end: "",
+      bullets: expTxt.split("\n").map(b => b.trim()).filter(Boolean)
+    }] : [];
 
     const links = portfolio ? [{ url: portfolio, label: "Portfolio" }] : [];
 
     return { name, title, contact, summary, education, experience, skills, links };
   }
+  // ▲▲▲ END INSERTION ▲▲▲
 
   async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
     if (format === "pdf") {
@@ -188,7 +186,6 @@ document.addEventListener("DOMContentLoaded", () => {
       // 2) Render HTML via server template
       await renderWithTemplateFromContext(ctx, "html", getTheme());
 
-      // Show authenticated-only download CTA if present
       downloadOptions.style.display = "block";
     } catch (err) {
       console.error("Generate/build error:", err);
@@ -240,27 +237,7 @@ async function downloadResume(format) {
 
   if (format === "pdf") {
     const theme = document.getElementById("themeSelect")?.value || "modern";
-    const ctx = window._resumeCtx || (() => {
-      // last resort: coerce from current form
-      const f = document.getElementById("resumeForm");
-      if (!f) return {};
-      const skills = f.elements["skills"].value.split(",").map(s=>s.trim()).filter(Boolean);
-      return {
-        name: f.elements["fullName"].value.trim(),
-        title: f.elements["title"].value.trim(),
-        contact: f.elements["contact"].value.trim(),
-        summary: f.elements["summary"].value.trim(),
-        education: [{ degree:"", school: f.elements["education"].value.trim(), year:"" }],
-        experience: [{
-          title: f.elements["title"].value.trim() || "Experience",
-          company: "",
-          dates: "",
-          bullets: f.elements["experience"].value.split("\n").map(b=>b.trim()).filter(Boolean)
-        }],
-        skills,
-        links: f.elements["portfolio"].value ? [{ url: f.elements["portfolio"].value.trim(), label: "Portfolio" }] : []
-      };
-    })();
+    const ctx = window._resumeCtx || coerceFormToTemplateContext();
 
     try {
       const res = await fetch("/build-resume", {
