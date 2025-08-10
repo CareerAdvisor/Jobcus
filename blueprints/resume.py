@@ -166,19 +166,23 @@ def generate_resume():
     client = current_app.config["OPENAI_CLIENT"]
     data = request.json or {}
 
-    # Ask the model to return ONLY JSON in your template schema
-    prompt = f"""
-Return ONLY valid JSON (no backticks) for a resume with this schema:
+# Ask the model to return ONLY JSON in your template schema
+prompt = f"""
+Return ONLY valid JSON (no backticks) with this exact schema:
 
 {{
   "name": "...",
   "title": "...",
   "contact": "...",
   "summary": "...",
-  "education": [{{"degree":"...", "school":"...", "year":""}}],
-  "experience": [{{"title":"...", "company":"...", "dates":"", "bullets":["..."]}}],
   "skills": ["..."],
-  "links": [{{"url":"...", "label":""}}]
+  "links": [{{"url":"...", "label":""}}],
+  "experience": [
+    {{"role":"...", "company":"...", "location":"", "start":"", "end":"", "bullets":["..."]}}
+  ],
+  "education": [
+    {{"degree":"...", "school":"...", "location":"", "graduated":""}}
+  ]
 }}
 
 User input:
@@ -192,7 +196,6 @@ skills (free text): {data.get('skills',"")}
 certifications (free text): {data.get('certifications',"")}
 portfolio: {data.get('portfolio',"")}
 """
-
     try:
         resp = client.chat.completions.create(
             model="gpt-4o",
@@ -211,3 +214,4 @@ portfolio: {data.get('portfolio',"")}
         return jsonify(context=ctx)  # <-- front-end will hand this to /build-resume
     except Exception as e:
         return jsonify(error=f"Generation failed: {e}"), 500
+
