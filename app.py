@@ -18,6 +18,9 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import docx
 
+from routes_resume import bp as resumes_bp
+app.register_blueprint(resumes_bp)
+
 # --- Environment & app setup ---
 load_dotenv()
 
