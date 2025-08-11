@@ -9,35 +9,36 @@ import base64, re, json, logging, os, docx
 resumes_bp = Blueprint("resumes", __name__)
 
 # ---------- 1) Template-based resume (HTML/PDF) ----------
+# blueprints/resumes.py
 @resumes_bp.post("/build-resume")
 def build_resume():
     data  = request.get_json(force=True)
-    theme = data.get("theme", "modern")      # 'modern' or 'minimal'
-    fmt   = data.get("format", "html")       # 'html' or 'pdf'
+    theme = data.get("theme", "modern")
+    fmt   = data.get("format", "html")
 
     context = {
-        "name":       data.get("fullName", ""),
-        "title":      data.get("title", ""),
-        "contact":    data.get("contact", ""),
-        "summary":    data.get("summary", ""),
+        "name":       data.get("name") or data.get("fullName",""),
+        "title":      data.get("title",""),
+        "contact":    data.get("contact",""),
+        "summary":    data.get("summary",""),
         "education":  data.get("education", []),
         "experience": data.get("experience", []),
         "skills":     data.get("skills", []),
         "links":      data.get("links", []),
+        "for_pdf":    (fmt == "pdf"),
     }
 
     html = render_template(f"resumes/{theme}.html", **context)
 
     if fmt == "pdf":
-        pdf_bytes = HTML(string=html, base_url=request.host_url).write_pdf()
+        # Use the local filesystem as base_url so relative URIs resolve without HTTP
+        pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf()
         resp = make_response(pdf_bytes)
         resp.headers["Content-Type"] = "application/pdf"
         resp.headers["Content-Disposition"] = "inline; filename=resume.pdf"
         return resp
 
-    resp = make_response(html)
-    resp.headers["Content-Type"] = "text/html; charset=utf-8"
-    return resp
+    return make_response(html, 200, {"Content-Type":"text/html; charset=utf-8"})
 
 # ---------- 2) Template-based resume (DOCX) ----------
 @resumes_bp.post("/build-resume-docx")
@@ -235,3 +236,4 @@ portfolio: {data.get('portfolio',"")}
     except Exception as e:
         logging.error("Generation failed", exc_info=True)
         return jsonify(context=naive_context(data), aiUsed=False, error_code="quota_or_error"))
+
