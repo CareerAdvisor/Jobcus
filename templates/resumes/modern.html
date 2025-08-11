@@ -1,157 +1,72 @@
-{% extends "base.html" %}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>{{ name }} – {{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-{% block title %}Modern Resume – Jobcus{% endblock %}
-{% block body_class %}resume-template{% endblock %}
+  {# Use HTTP URLs in preview; use local paths for PDF so WeasyPrint doesn't fetch over the network #}
+  {% set css_href = url_for('static', filename='resumes/modern.css') if not for_pdf else 'static/resumes/modern.css' %}
+  <link rel="stylesheet" href="{{ css_href }}">
 
-{% block content %}
-<div class="modern-resume">
-  <style>
-    .modern-resume {
-      max-width: 860px;
-      margin: 24px auto;
-      background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.06);
-      overflow: hidden;
-      font-family: Inter, system-ui, -apple-system, Arial, sans-serif;
-      color: #0f172a;
-    }
-    .mr-header {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      padding: 28px 28px 18px;
-      background: linear-gradient(135deg, #104879 0%, #0b385e 100%);
-      color: #fff;
-    }
-    .mr-name { font-size: 28px; font-weight: 800; letter-spacing: .2px; margin: 0; }
-    .mr-title { font-size: 14px; opacity: .95; margin: 8px 0 0; }
-    .mr-contact {
-      font-size: 12px;
-      opacity: .95;
-      display: flex;
-      align-items: flex-start;
-      justify-content: flex-end;
-      text-align: right;
-      white-space: pre-wrap;
-    }
-
-    .mr-body {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      gap: 24px;
-      padding: 24px 28px 28px;
-    }
-    .mr-section-title {
-      font-size: 12px; text-transform: uppercase; letter-spacing: .8px;
-      color: #104879; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin: 0 0 12px;
-      font-weight: 700;
-    }
-
-    /* Sidebar */
-    .mr-sidebar .chip {
-      display: inline-block; font-size: 11px; padding: 6px 10px; margin: 4px 6px 0 0;
-      border: 1px solid #e5e7eb; border-radius: 999px; background: #f8fafc;
-    }
-    .mr-links a {
-      display: block;
-      color: #104879; text-decoration: none; font-size: 12px; margin: 6px 0;
-      word-break: break-word;
-    }
-
-    /* Main column */
-    .mr-summary p { margin: 0; line-height: 1.5; color: #334155; font-size: 14px; }
-
-    .mr-item { margin: 12px 0 18px; }
-    .mr-item h3 {
-      margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;
-    }
-    .mr-meta { font-size: 12px; color: #64748b; margin: 6px 0 0; }
-    .mr-bullets { margin: 8px 0 0 18px; }
-    .mr-bullets li { margin: 4px 0; font-size: 13px; color: #1f2937; }
-
-    /* Print/PDF tweaks */
-    @media print {
-      .modern-resume { box-shadow:none; border-radius:0; }
-    }
-  </style>
-
-  <!-- Header -->
-  <header class="mr-header">
-    <div>
-      <h1 class="mr-name">{{ name }}</h1>
-      {% if title %}<div class="mr-title">{{ title }}</div>{% endif %}
+  {% if not for_pdf %}
+    <script defer src="{{ url_for('static', filename='resumes/modern.js') }}"></script>
+  {% endif %}
+</head>
+<body>
+  <div class="resume sheet">
+    <div class="hero">
+      <h1>{{ name or 'Your Name' }}</h1>
+      {% if title %}<div class="title">{{ title }}</div>{% endif %}
+      <div class="contact">
+        {% if contact %}<span>{{ contact }}</span>{% endif %}
+        {% for l in links %}
+          {% if l.url %} • <span><a href="{{ l.url }}">{{ l.label or l.url }}</a></span>{% endif %}
+        {% endfor %}
+      </div>
     </div>
-    <div class="mr-contact">{{ contact }}</div>
-  </header>
 
-  <!-- Body -->
-  <section class="mr-body">
-    <!-- Sidebar -->
-    <aside class="mr-sidebar">
-      {% if skills %}
-        <h2 class="mr-section-title">Skills</h2>
-        <div>
-          {% for s in skills %}<span class="chip">{{ s }}</span>{% endfor %}
-        </div>
-      {% endif %}
+    {% if summary %}
+    <section class="section">
+      <h2>SUMMARY</h2><div class="rule"></div>
+      <div class="summary">{{ summary }}</div>
+    </section>
+    {% endif %}
 
-      {% if links %}
-        <h2 class="mr-section-title" style="margin-top:18px;">Links</h2>
-        <div class="mr-links">
-          {% for l in links %}
-            <a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.label }} — {{ l.url }}</a>
-          {% endfor %}
-        </div>
-      {% endif %}
-    </aside>
+    {% if skills %}
+    <section class="section">
+      <h2>SKILLS</h2><div class="rule"></div>
+      <div class="skills">{% for s in skills %}<span class="chip">{{ s }}</span>{% endfor %}</div>
+    </section>
+    {% endif %}
 
-    <!-- Main -->
-    <main>
-      {% if summary %}
-      <section class="mr-summary">
-        <h2 class="mr-section-title">Summary</h2>
-        <p>{{ summary }}</p>
-      </section>
-      {% endif %}
-
-      {% if experience %}
-      <section class="mr-experience" style="margin-top:18px;">
-        <h2 class="mr-section-title">Experience</h2>
-        {% for job in experience %}
-          <div class="mr-item">
-            <h3>{{ job.role }} – {{ job.company }}</h3>
-            <div class="mr-meta">
-              {{ job.location }}
-              {% if job.location and (job.start or job.end) %} · {% endif %}
-              {{ job.start }}{% if job.end %} – {{ job.end }}{% else %} – Present{% endif %}
-            </div>
-            {% if job.bullets %}
-              <ul class="mr-bullets">
-                {% for b in job.bullets %}<li>{{ b }}</li>{% endfor %}
-              </ul>
-            {% endif %}
+    {% if experience %}
+    <section class="section">
+      <h2>EXPERIENCE</h2><div class="rule"></div>
+      {% for e in experience %}
+        <article class="exp-item">
+          <div class="role">{{ e.role }}</div>
+          <div class="meta">
+            {{ e.company }}{% if e.location %} • {{ e.location }}{% endif %}
+            {% if e.start or e.end %} • {{ e.start }}{% if e.end %} – {{ e.end }}{% endif %}{% endif %}
           </div>
-        {% endfor %}
-      </section>
-      {% endif %}
+          {% if e.bullets %}<ul class="bullets">{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+        </article>
+      {% endfor %}
+    </section>
+    {% endif %}
 
-      {% if education %}
-      <section class="mr-education" style="margin-top:18px;">
-        <h2 class="mr-section-title">Education</h2>
-        {% for edu in education %}
-          <div class="mr-item">
-            <h3>{{ edu.degree }} – {{ edu.school }}</h3>
-            <div class="mr-meta">
-              {{ edu.location }}
-              {% if edu.location and edu.graduated %} · {% endif %}
-              {{ edu.graduated }}
-            </div>
-          </div>
-        {% endfor %}
-      </section>
-      {% endif %}
-    </main>
-  </section>
-</div>
-{% endblock %}
+    {% if education %}
+    <section class="section">
+      <h2>EDUCATION</h2><div class="rule"></div>
+      {% for ed in education %}
+        <article class="exp-item">
+          <div class="role">{{ ed.degree }}</div>
+          <div class="meta">{{ ed.school }}{% if ed.location %} • {{ ed.location }}{% endif %}{% if ed.graduated %} • {{ ed.graduated }}{% endif %}</div>
+        </article>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </div>
+</body>
+</html>
