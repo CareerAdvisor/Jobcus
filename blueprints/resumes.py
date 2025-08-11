@@ -52,8 +52,8 @@ def naive_context(data: dict) -> dict:
 @resumes_bp.post("/build-resume")
 def build_resume():
     data  = request.get_json(force=True)
-    theme = data.get("theme", "modern")    # 'modern' or 'minimal'
-    fmt   = data.get("format", "html")     # 'html' or 'pdf'
+    theme = data.get("theme", "modern")
+    fmt   = data.get("format", "html")
 
     context = {
         "name":       data.get("fullName", ""),
@@ -66,22 +66,22 @@ def build_resume():
         "links":      data.get("links", []),
     }
 
-    # Pass for_pdf to let base.html skip external CSS/JS when generating a PDF
     html = render_template(f"resumes/{theme}.html", for_pdf=(fmt == "pdf"), **context)
 
     if fmt == "pdf":
-        # Optional: include a small local, print-friendly stylesheet
-        stylesheets = []
-        try:
-            with current_app.open_resource("static/pdf.css") as f:
-                stylesheets = [CSS(string=f.read().decode("utf-8"))]
-        except Exception:
-            # no pdf.css present is fine; your templates already include inline styles
-            stylesheets = []
+        # Build a list of local CSS files to include
+        css_files = [
+            os.path.join(current_app.root_path, "static", "resumes", f"{theme}.css")
+        ]
+        pdf_css_path = os.path.join(current_app.root_path, "static", "pdf.css")
+        if os.path.exists(pdf_css_path):
+            css_files.append(pdf_css_path)
+
+        stylesheets = [CSS(filename=p) for p in css_files if os.path.exists(p)]
 
         pdf_bytes = HTML(
             string=html,
-            base_url=current_app.root_path  # local filesystem base, no network fetches
+            base_url=current_app.root_path  # enables relative 'static/...' paths
         ).write_pdf(stylesheets=stylesheets)
 
         resp = make_response(pdf_bytes)
@@ -89,7 +89,7 @@ def build_resume():
         resp.headers["Content-Disposition"] = "inline; filename=resume.pdf"
         return resp
 
-    # HTML preview path
+    # HTML preview
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
@@ -272,3 +272,4 @@ portfolio: {data.get('portfolio',"")}
     except Exception:
         logging.exception("Generation failed")
         return jsonify(context=naive_context(data), aiUsed=False, error_code="error")
+
