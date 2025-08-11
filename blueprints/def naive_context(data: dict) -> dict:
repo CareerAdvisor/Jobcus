@@ -4,43 +4,51 @@ from weasyprint import HTML, CSS
 from docxtpl import DocxTemplate
 from io import BytesIO
 from PyPDF2 import PdfReader
+from openai import RateLimitError
 import base64, re, json, logging, os, docx
 
 resumes_bp = Blueprint("resumes", __name__)
 
-# ---------- 1) Template-based resume (HTML/PDF) ----------
-# blueprints/resumes.py
-@resumes_bp.post("/build-resume")
-def build_resume():
-    data  = request.get_json(force=True)
-    theme = data.get("theme", "modern")
-    fmt   = data.get("format", "html")
+# ---------- Helper: fallback context if OpenAI is unavailable ----------
+def naive_context(data: dict) -> dict:
+    """Fallback: coerce raw form fields into your template context."""
+    name      = (data.get("fullName") or "").strip()
+    title     = (data.get("title") or "").strip()
+    contact   = (data.get("contact") or "").strip()
+    summary   = (data.get("summary") or "").strip()
+    edu_txt   = (data.get("education") or "").strip()
+    exp_txt   = (data.get("experience") or "").strip()
+    skills_s  = (data.get("skills") or "")
+    portfolio = (data.get("portfolio") or "").strip()
 
-    context = {
-        "name":       data.get("name") or data.get("fullName",""),
-        "title":      data.get("title",""),
-        "contact":    data.get("contact",""),
-        "summary":    data.get("summary",""),
-        "education":  data.get("education", []),
-        "experience": data.get("experience", []),
-        "skills":     data.get("skills", []),
-        "links":      data.get("links", []),
-        "for_pdf":    (fmt == "pdf"),
+    skills = [s.strip() for s in skills_s.replace("\n", ",").split(",") if s.strip()]
+
+    education = []
+    if edu_txt:
+        education = [{
+            "degree": edu_txt, "school": "", "location": "", "graduated": ""
+        }]
+
+    experience = []
+    if exp_txt:
+        bullets = [re.sub(r'^[\-\•]\s*', '', ln).strip()
+                   for ln in exp_txt.splitlines() if ln.strip()]
+        experience = [{
+            "role": title or "Experience",
+            "company": "", "location": "",
+            "start": "", "end": "",
+            "bullets": bullets
+        }]
+
+    links = [{"url": portfolio, "label": "Portfolio"}] if portfolio else []
+
+    return {
+        "name": name, "title": title, "contact": contact, "summary": summary,
+        "skills": skills, "links": links,
+        "experience": experience, "education": education
     }
 
-    html = render_template(f"resumes/{theme}.html", **context)
-
-    if fmt == "pdf":
-        # Use the local filesystem as base_url so relative URIs resolve without HTTP
-        pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf()
-        resp = make_response(pdf_bytes)
-        resp.headers["Content-Type"] = "application/pdf"
-        resp.headers["Content-Disposition"] = "inline; filename=resume.pdf"
-        return resp
-
-    return make_response(html, 200, {"Content-Type":"text/html; charset=utf-8"})
-
-# ---------- 2) Template-based resume (DOCX) ----------
+# ---------- 1) Template-based resume (HTML/PDF) ----------
 @resumes_bp.post("/build-resume")
 def build_resume():
     data  = request.get_json(force=True)
@@ -85,6 +93,28 @@ def build_resume():
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
+
+# ---------- 2) Template-based resume (DOCX) ----------
+@resumes_bp.post("/build-resume-docx")
+def build_resume_docx():
+    data = request.get_json(force=True)
+    tpl_path = os.path.join(current_app.root_path, "templates", "resumes", "clean.docx")
+
+    tpl = DocxTemplate(tpl_path)
+    tpl.render({
+        "name":       data.get("fullName", ""),
+        "title":      data.get("title", ""),
+        "summary":    data.get("summary", ""),
+        "experience": data.get("experience", []),
+        "education":  data.get("education", []),
+        "skills":     data.get("skills", []),
+        "contact":    data.get("contact", ""),
+        "links":      data.get("links", []),
+    })
+
+    buf = BytesIO()
+    tpl.save(buf); buf.seek(0)
+    return send_file(buf, as_attachment=True, download_name="resume.docx")
 
 # ---------- 3) AI resume analysis ----------
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
@@ -158,7 +188,7 @@ def optimize_resume():
             logging.exception("PDF Decode Error")
             return jsonify(error="Unable to extract PDF text"), 400
     elif data.get("text"):
-        resume_text = data["text"].strip()
+        resume_text = data.get("text", "").strip()
         if not resume_text:
             return jsonify(error="No text provided"), 400
     else:
@@ -185,32 +215,8 @@ def optimize_resume():
 # ---------- 5) AI generate resume (JSON for template) ----------
 @resumes_bp.post("/generate-resume")
 def generate_resume():
-    import re, json, logging
     client = current_app.config["OPENAI_CLIENT"]
     data = request.get_json(force=True) or {}
-
-    def naive_context(d):
-        skills = [s.strip() for s in (d.get("skills","")).split(",") if s.strip()]
-        exp_bullets = [b.strip() for b in (d.get("experience","")).split("\n") if b.strip()]
-        education = ([{
-            "degree": "", "school": d.get("education",""), "location": "", "graduated": ""
-        }] if d.get("education") else [])
-        experience = ([{
-            "role": d.get("title","") or "Experience",
-            "company": "", "location": "", "start": "", "end": "",
-            "bullets": exp_bullets
-        }] if (exp_bullets or d.get("title")) else [])
-        links = ([{"url": d.get("portfolio"), "label":"Portfolio"}] if d.get("portfolio") else [])
-        return {
-            "name": d.get("fullName",""),
-            "title": d.get("title",""),
-            "contact": d.get("contact",""),
-            "summary": d.get("summary",""),
-            "skills": skills,
-            "links": links,
-            "experience": experience,
-            "education": education,
-        }
 
     prompt = f"""
 Return ONLY valid JSON (no backticks) with this exact schema:
@@ -240,7 +246,7 @@ experience (free text): {data.get('experience',"")}
 skills (free text): {data.get('skills',"")}
 certifications (free text): {data.get('certifications',"")}
 portfolio: {data.get('portfolio',"")}
-"""
+""".strip()
 
     try:
         resp = client.chat.completions.create(
@@ -252,14 +258,17 @@ portfolio: {data.get('portfolio',"")}
         content = re.sub(r"```(?:json)?", "", content).strip()
         ctx = json.loads(content)
 
-        ctx.setdefault("name", data.get("fullName",""))
-        ctx.setdefault("title", data.get("title",""))
-        ctx.setdefault("contact", data.get("contact",""))
+        # tiny fallback so template never breaks
+        ctx.setdefault("name",  (data.get("fullName") or ""))
+        ctx.setdefault("title", (data.get("title") or ""))
+        ctx.setdefault("contact", (data.get("contact") or ""))
 
         return jsonify(context=ctx, aiUsed=True)
-    except Exception as e:
-        logging.error("Generation failed", exc_info=True)
+
+    except RateLimitError:
+        current_app.logger.error("OpenAI quota/429 in /generate-resume")
         return jsonify(context=naive_context(data), aiUsed=False, error_code="quota_or_error")
 
-
-
+    except Exception:
+        logging.exception("Generation failed")
+        return jsonify(context=naive_context(data), aiUsed=False, error_code="error")
