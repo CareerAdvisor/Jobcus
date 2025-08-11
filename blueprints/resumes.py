@@ -157,17 +157,15 @@ def optimize_resume():
         logging.exception("Resume optimization error")
         return jsonify(error="Resume optimization failed"), 500
 
-# ---------- 5) AI generate resume (HTML snippet) ----------
+# ---------- 5) AI generate resume (JSON for template) ----------
 @resumes_bp.post("/generate-resume")
 def generate_resume():
-    from flask import jsonify, request, current_app
     import re, json
-
     client = current_app.config["OPENAI_CLIENT"]
-    data = request.json or {}
+    data = request.get_json(force=True) or {}
 
-# Ask the model to return ONLY JSON in your template schema
-prompt = f"""
+    # Ask the model to return ONLY JSON in your template schema
+    prompt = f"""
 Return ONLY valid JSON (no backticks) with this exact schema:
 
 {{
@@ -196,22 +194,26 @@ skills (free text): {data.get('skills',"")}
 certifications (free text): {data.get('certifications',"")}
 portfolio: {data.get('portfolio',"")}
 """
+
     try:
         resp = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role":"user","content":prompt}],
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.2
         )
         content = resp.choices[0].message.content.strip()
         content = re.sub(r"```(?:json)?", "", content).strip()
         ctx = json.loads(content)
 
-        # tiny fallback so template never breaks
-        if not ctx.get("name"):  ctx["name"]  = data.get("fullName","")
-        if not ctx.get("title"): ctx["title"] = data.get("title","")
-        if not ctx.get("contact"): ctx["contact"] = data.get("contact","")
+        # tiny fallbacks so the template never breaks
+        ctx.setdefault("name",  data.get("fullName",""))
+        ctx.setdefault("title", data.get("title",""))
+        ctx.setdefault("contact", data.get("contact",""))
 
-        return jsonify(context=ctx)  # <-- front-end will hand this to /build-resume
+        return jsonify(context=ctx)
     except Exception as e:
+        logging.exception("Generation failed")
         return jsonify(error=f"Generation failed: {e}"), 500
+
+
 
