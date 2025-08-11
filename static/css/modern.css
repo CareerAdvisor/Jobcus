@@ -1,0 +1,74 @@
+/* =========================================================
+   Modern Theme (accent header band)
+   Depends on resume-base.css being loaded first.
+   ========================================================= */
+
+:root{
+  --accent: #104879;             /* Jobcus blue */
+  --accent-2: #1e6bb8;           /* lighter blend */
+  --header-fg: #ffffff;
+  --header-bg: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+/* Header block with accent background */
+.resume.resume--modern .hero{
+  background: var(--header-bg);
+  color: var(--header-fg);
+  border-radius: 6px;
+  padding: 10mm 12mm;
+  margin: -2mm -2mm 8mm -2mm;    /* bleed a little to feel full-width inside page padding */
+}
+@media screen and (max-width: 768px){
+  .resume.resume--modern .hero{
+    padding: 8mm 9mm;
+    margin: -4mm -4mm 8mm -4mm;  /* a little more bleed on small screens */
+  }
+}
+
+.resume.resume--modern .resume-name{
+  color: var(--header-fg);
+}
+.resume.resume--modern .resume-title{
+  color: rgba(255,255,255,.85);
+}
+.resume.resume--modern .resume-contact{
+  color: rgba(255,255,255,.85);
+  border-top: 1px solid rgba(255,255,255,.25);
+  padding-top: 3mm;
+}
+
+/* Outside the hero, keep clean dividers */
+.resume.resume--modern .rule{
+  background: var(--rule);
+  height: 1px;
+}
+
+/* Section headings in accent color */
+.resume.resume--modern .section h2{
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+/* Experience items: emphasize role/company row */
+.resume.resume--modern .item-title{
+  font-weight: 700;
+}
+.resume.resume--modern .item-meta{
+  color: var(--muted);
+}
+
+/* Skills: brighter chips */
+.resume.resume--modern .chip{
+  border-color:#e2ebf6;
+  background:#f2f7fd;
+}
+
+/* Optional “card” sections (if you wrap some blocks) */
+.resume.resume--modern .card{
+  border:1px solid #eaf0f7;
+  background:#fbfdff;
+  border-radius:6px;
+  padding:5mm;
+}
+.resume.resume--modern .card + .card{ margin-top: 4mm; }
