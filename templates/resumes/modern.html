@@ -5,7 +5,6 @@
   <title>{{ name }} – {{ title }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  {# A4 base + theme CSS (local paths when for_pdf to avoid network fetches) #}
   {% set base_css  = url_for('static', filename='css/resume-base.css') if not for_pdf else 'static/css/resume-base.css' %}
   {% set theme_css = url_for('static', filename='css/modern.css')      if not for_pdf else 'static/css/modern.css' %}
   <link rel="stylesheet" href="{{ base_css }}">
@@ -17,8 +16,6 @@
 </head>
 <body>
   <div class="resume-page resume resume--modern">
-
-    <!-- ▼ INSERTED HERO HEADER HERE ▼ -->
     <header class="resume-header hero">
       <div class="resume-name">{{ name or 'Your Name' }}</div>
       {% if title %}<div class="resume-title">{{ title }}</div>{% endif %}
@@ -29,7 +26,6 @@
         {% endfor %}
       </div>
     </header>
-    <!-- ▲ INSERTED HERO HEADER ▲ -->
 
     {% if summary %}
     <section class="section">
@@ -86,7 +82,6 @@
       {% endfor %}
     </section>
     {% endif %}
-
   </div>
 </body>
 </html>
