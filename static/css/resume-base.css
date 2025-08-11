@@ -1,52 +1,134 @@
-:root { --brand:#103c7b; --brand2:#1e6bb8; --text:#1f2937; --muted:#64748b; }
+/* =========================================================
+   Resume Base (A4 + shared styles for all themes)
+   ========================================================= */
+:root{
+  /* A4 page + spacing */
+  --page-w: 210mm;
+  --page-h: 297mm;
+  --page-pad: 16mm;
 
-html, body { margin:0; padding:0; background:#f7f7f7; color:var(--text);
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  /* Palette & type */
+  --text: #111;
+  --muted: #5b6773;
+  --rule: #e6e8eb;
+  --accent: #104879;           /* may be overridden by theme */
+  --font: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", sans-serif;
 
-/* Shared resume shell */
-.resume.sheet {
-  max-width: 840px; margin:24px auto; background:#fff; border-radius:16px;
-  box-shadow:0 8px 24px rgba(0,0,0,.06); overflow:hidden;
-}
-.resume .hero { padding:28px 32px; color:#fff; }
-.resume .hero h1 { margin:0 0 4px; font-size:28px; line-height:1.15; }
-.resume .title { font-weight:600; }
-.resume .contact { display:flex; gap:16px; flex-wrap:wrap; margin-top:6px; font-size:14px; }
-
-.resume .section { padding:24px 32px; }
-.resume h2 { font-size:14px; letter-spacing:.12em; color:var(--brand); margin:0 0 10px; }
-.resume .rule { height:2px; background:#e5e7eb; margin:0 0 16px; }
-.resume .summary { line-height:1.55; }
-.resume .skills { display:flex; flex-wrap:wrap; gap:10px; }
-.resume .chip { padding:6px 10px; border-radius:999px; background:#f1f5f9; border:1px solid #e5e7eb; font-size:13px; }
-.resume .exp-item { margin-bottom:18px; }
-.resume .role { font-weight:700; }
-.resume .meta { color:var(--muted); font-size:13px; margin-top:2px; }
-.resume .bullets { margin:8px 0 0 18px; }
-.resume .bullets li { margin-bottom:6px; }
-
-/* Theme: modern */
-.resume.resume--modern .hero {
-  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  /* Sizing */
+  --h1: 18pt;      /* name */
+  --h2: 11.5pt;    /* section headings */
+  --body: 11pt;
+  --small: 10pt;
+  --line: 1.35;
 }
 
-/* Theme: minimal */
-.resume.resume--minimal .hero {
-  background:#0f172a; /* deep slate */
-}
-.resume.resume--minimal .section { padding:22px 28px; }
-.resume.resume--minimal h2 { color:#0f172a; }
-
-/* Mobile */
-@media (max-width:768px){
-  html, body { background:#fff; }
-  .resume.sheet { box-shadow:none; border-radius:0; margin:0; }
-  .resume .hero { padding:20px 18px; }
-  .resume .section { padding:18px; }
+html, body{
+  background:#f4f6f8;
+  color:var(--text);
+  font: var(--body)/var(--line) var(--font);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  margin:0;
+  padding:0;
 }
 
-/* Print */
+/* A4 canvas */
+.resume-page{
+  box-sizing:border-box;
+  width:var(--page-w);
+  min-height:var(--page-h);
+  margin:12px auto;
+  background:#fff;
+  box-shadow:0 4px 20px rgba(0,0,0,.08);
+  padding:var(--page-pad);
+  overflow:hidden;
+}
+
+/* Basic structure */
+.resume-header{ margin-bottom:10mm; }
+.resume-name{ font-size:var(--h1); font-weight:700; color:var(--accent); line-height:1.15; }
+.resume-title{ font-size:10.5pt; color:var(--muted); margin-top:2mm; }
+.resume-contact{ margin-top:3mm; color:var(--muted); font-size:var(--small); display:flex; flex-wrap:wrap; gap:6px 14px; }
+
+.section{ margin-top:7mm; break-inside: avoid; page-break-inside: avoid; }
+.section h2{ font-size:var(--h2); margin:0 0 4mm; color:var(--accent); letter-spacing:.02em; }
+.rule{ height:1px; background:var(--rule); margin:3.5mm 0 0; }
+
+/* Lists */
+.ul, ul{ margin:0; padding-left:5mm; }
+.li, li{ margin:1.4mm 0; }
+
+/* Experience/Education items */
+.item{ margin:0 0 5mm; }
+.item-header{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+  flex-wrap:wrap;
+}
+.item-title{ font-weight:700; }
+.item-meta{ color:var(--muted); font-size:var(--small); }
+
+.bullets{ margin:2mm 0 0 5mm; }
+.bullets li{ margin:1.4mm 0; }
+
+/* Chips for skills */
+.skills{ display:flex; flex-wrap:wrap; gap:6px; margin-top:2mm; }
+.chip{
+  border:1px solid var(--rule);
+  background:#f7f9fb;
+  border-radius:999px;
+  font-size:9.5pt;
+  padding:4px 8px;
+}
+
+/* Two-column helper (optional for some sections) */
+.grid-2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8mm 6mm;
+}
+@media screen and (max-width: 900px){
+  .grid-2{ grid-template-columns:1fr; }
+}
+
+/* Links */
+a{ color:inherit; text-decoration:underline; text-decoration-thickness: from-font; }
+a:hover{ text-decoration:none; }
+
+/* Print: force A4 without extra margins (we add padding on the canvas) */
+@page{
+  size: A4;
+  margin: 0;
+}
+
+/* Print tweaks */
 @media print{
-  html, body { background:#fff; }
-  .resume.sheet { box-shadow:none; margin:0; }
+  html, body{ background:#fff; }
+  .resume-page{
+    width:auto;
+    min-height:auto;
+    margin:0;
+    box-shadow:none;
+    padding:var(--page-pad);
+  }
+  .no-print{ display:none !important; }
+  a{ text-decoration:none; }
 }
+
+/* Screen responsiveness: keep mobile tidy */
+@media screen and (max-width: 768px){
+  .resume-page{
+    width:100%;
+    min-height:auto;
+    margin:0;
+    box-shadow:none;
+    padding:12mm;
+  }
+}
+
+/* Page-break utilities (WeasyPrint supports modern break-* props) */
+.page-break{ break-before: page; page-break-before: always; }
+.avoid-break{ break-inside: avoid; page-break-inside: avoid; }
+
+/* Small helpers */
+.muted{ color:var(--muted); }
+.small{ font-size: var(--small); }
