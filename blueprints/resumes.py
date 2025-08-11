@@ -259,6 +259,7 @@ portfolio: {data.get('portfolio',"")}
         return jsonify(context=ctx, aiUsed=True)
     except Exception as e:
         logging.error("Generation failed", exc_info=True)
-        return jsonify(context=naive_context(data), aiUsed=False, error_code="quota_or_error"))
+        return jsonify(context=naive_context(data), aiUsed=False, error_code="quota_or_error")
+
 
 
