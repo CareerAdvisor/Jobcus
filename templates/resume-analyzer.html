@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Resume Analyzer – Jobcus{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="interview-container" style="padding:30px 10px;width:100%;background:#104879;">
+  <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+    <h5 style="color:#ffc957;font-weight:600;font-size:14px;letter-spacing:1px;">AI RESUME ANALYZER</h5>
+    <h1 style="font-size:28px;font-weight:700;color:#fff;margin:10px 0;">
+      Improve your <span style="color:#ffc957;">resume</span> with instant feedback
+    </h1>
+    <p style="max-width:420px;color:#fff;font-size:16px;margin:10px 0 20px;">
+      Get a score, keyword insights and actionable suggestions.
+    </p>
+  </section>
+</div>
+
+<!-- Analyzer -->
+<section id="resume-analyzer" style="padding:40px 20px; background:#f9fafb;">
+  <div style="max-width:880px;margin:0 auto;">
+    <h2 style="color:#104879;margin:0 0 10px;">🔍 AI Resume Analyzer</h2>
+    <p style="color:#555;margin:0 0 16px;">
+      Paste your resume text or upload a PDF / DOCX for analysis.
+    </p>
+
+    <textarea id="resume-text"
+      placeholder="Paste your resume text here…"
+      style="width:100%;height:160px;padding:12px;border:1px solid #ccc;border-radius:8px;margin-bottom:10px;font-size:14px;"></textarea>
+
+    <input type="file" id="resumeFile" accept=".pdf,.docx"
+           style="display:block;margin-bottom:12px;">
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button id="analyze-btn" class="primary-btn"
+        style="background:#104879;color:#fff;padding:12px 20px;border:none;border-radius:6px;font-weight:600;font-size:14px;">
+        Analyze Resume
+      </button>
+
+      <a href="/resume-builder" class="primary-btn"
+        style="background:#ffc957;color:#104879;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;">
+        Go to Builder
+      </a>
+    </div>
+
+    <div id="analyzingIndicator" style="display:none;margin-top:12px;color:#555;">🤖 Analyzing your resume, please wait…</div>
+
+    <!-- Results -->
+    <div id="analysisResults" style="display:none;margin-top:18px;background:#fff;border:1px solid #ececec;border-radius:8px;padding:16px;">
+      <h3 style="margin:0 0 8px;color:#104879;">Results</h3>
+      <div id="analysisSummary" style="font-size:14px;color:#333;"></div>
+
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button id="rebuildButton" class="primary-btn"
+          style="background:#104879;color:#fff;padding:10px 16px;border:none;border-radius:6px;font-weight:600;">
+          Rebuild with AI
+        </button>
+        <a href="/resume-builder" id="goBuilderLink"
+          style="display:inline-block;background:#ffc957;color:#104879;padding:10px 16px;border-radius:6px;text-decoration:none;font-weight:600;">
+          Open Builder
+        </a>
+      </div>
+      <div style="font-size:12px;color:#666;margin-top:8px;">
+        Tip: If you pasted text, we’ll carry it over to pre-fill the builder.
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script defer src="{{ url_for('static', filename='js/resume-analyzer.js') }}"></script>
+{% endblock %}
