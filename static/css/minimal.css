@@ -1,0 +1,63 @@
+/* =========================================================
+   Minimal Theme (monochrome, understated)
+   Depends on resume-base.css being loaded first.
+   ========================================================= */
+
+:root{
+  --accent: #0f172a;   /* deep slate */
+}
+
+/* Header: simple text stack, thin divider */
+.resume.resume--minimal .resume-header{
+  margin-bottom: 9mm;
+}
+.resume.resume--minimal .resume-name{
+  color: var(--accent);
+}
+.resume.resume--minimal .resume-title{
+  color: var(--muted);
+}
+.resume.resume--minimal .resume-contact{
+  border-top: 1px solid var(--rule);
+  padding-top: 3mm;
+}
+
+/* Section headings: small-caps feel without relying on font-variant */
+.resume.resume--minimal .section h2{
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  font-size: 10.8pt;     /* slightly smaller than base for restraint */
+  margin-bottom: 3mm;
+}
+
+/* Dividers are lighter */
+.resume.resume--minimal .rule{
+  background: #edf0f3;
+  height: 1px;
+}
+
+/* Experience/Education layout: clean lines */
+.resume.resume--minimal .item-title{
+  font-weight: 700;
+}
+.resume.resume--minimal .item-meta{
+  color: var(--muted);
+}
+
+/* Skills: very subtle chips */
+.resume.resume--minimal .chip{
+  border-color:#eef1f4;
+  background:#fafbfd;
+}
+
+/* Tighten spacing slightly for minimal */
+.resume.resume--minimal .section{ margin-top: 6.5mm; }
+.resume.resume--minimal .bullets li{ margin: 1.2mm 0; }
+
+/* Optional subtle horizontal rules between items */
+.resume.resume--minimal .item + .item{
+  border-top: 1px solid #f1f3f6;
+  padding-top: 4mm;
+}
