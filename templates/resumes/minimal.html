@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="{{ theme_css }}">
 
   {% if not for_pdf %}
-    <script defer src="{{ url_for('static', filename='js/minimal.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/minimal.js') }}"></script>
   {% endif %}
 </head>
 <body>
