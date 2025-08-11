@@ -1,6 +1,6 @@
 # blueprints/resumes.py
 from flask import Blueprint, render_template, request, make_response, send_file, jsonify, current_app
-from weasyprint import HTML
+from weasyprint import HTML, CSS
 from docxtpl import DocxTemplate
 from io import BytesIO
 from PyPDF2 import PdfReader
@@ -41,26 +41,50 @@ def build_resume():
     return make_response(html, 200, {"Content-Type":"text/html; charset=utf-8"})
 
 # ---------- 2) Template-based resume (DOCX) ----------
-@resumes_bp.post("/build-resume-docx")
-def build_resume_docx():
-    data = request.get_json(force=True)
-    tpl_path = os.path.join(current_app.root_path, "templates", "resumes", "clean.docx")
+@resumes_bp.post("/build-resume")
+def build_resume():
+    data  = request.get_json(force=True)
+    theme = data.get("theme", "modern")    # 'modern' or 'minimal'
+    fmt   = data.get("format", "html")     # 'html' or 'pdf'
 
-    tpl = DocxTemplate(tpl_path)
-    tpl.render({
+    context = {
         "name":       data.get("fullName", ""),
         "title":      data.get("title", ""),
-        "summary":    data.get("summary", ""),
-        "experience": data.get("experience", []),
-        "education":  data.get("education", []),
-        "skills":     data.get("skills", []),
         "contact":    data.get("contact", ""),
+        "summary":    data.get("summary", ""),
+        "education":  data.get("education", []),
+        "experience": data.get("experience", []),
+        "skills":     data.get("skills", []),
         "links":      data.get("links", []),
-    })
+    }
 
-    buf = BytesIO()
-    tpl.save(buf); buf.seek(0)
-    return send_file(buf, as_attachment=True, download_name="resume.docx")
+    # Pass for_pdf to let base.html skip external CSS/JS when generating a PDF
+    html = render_template(f"resumes/{theme}.html", for_pdf=(fmt == "pdf"), **context)
+
+    if fmt == "pdf":
+        # Optional: include a small local, print-friendly stylesheet
+        stylesheets = []
+        try:
+            with current_app.open_resource("static/pdf.css") as f:
+                stylesheets = [CSS(string=f.read().decode("utf-8"))]
+        except Exception:
+            # no pdf.css present is fine; your templates already include inline styles
+            stylesheets = []
+
+        pdf_bytes = HTML(
+            string=html,
+            base_url=current_app.root_path  # local filesystem base, no network fetches
+        ).write_pdf(stylesheets=stylesheets)
+
+        resp = make_response(pdf_bytes)
+        resp.headers["Content-Type"] = "application/pdf"
+        resp.headers["Content-Disposition"] = "inline; filename=resume.pdf"
+        return resp
+
+    # HTML preview path
+    resp = make_response(html)
+    resp.headers["Content-Type"] = "text/html; charset=utf-8"
+    return resp
 
 # ---------- 3) AI resume analysis ----------
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
@@ -236,4 +260,5 @@ portfolio: {data.get('portfolio',"")}
     except Exception as e:
         logging.error("Generation failed", exc_info=True)
         return jsonify(context=naive_context(data), aiUsed=False, error_code="quota_or_error"))
+
 
