@@ -1,25 +1,25 @@
 # app.py
-
 import os
 import traceback
 from io import BytesIO
 from collections import Counter
-import re, json, base64, logging
-import requests  # ← for your fetch_* helpers
+import re, json, base64, logging, requests
 
-from flask import Flask, request, jsonify, render_template, redirect, session, flash, flash, url_for
+from flask import (
+    Flask, request, jsonify, render_template, redirect,
+    session, flash, url_for, current_app
+)
 from flask_cors import CORS
-from flask_login import LoginManager, login_user, logout_user, current_user, login_required, UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
-from postgrest.exceptions import APIError
-from PyPDF2 import PdfReader
-from supabase import create_client
+from flask_login import (
+    login_user, logout_user, current_user,
+    login_required, UserMixin
+)
+from gotrue.errors import AuthApiError
 from dotenv import load_dotenv
-from openai import OpenAI
-import docx
 
-from routes_resume import bp as resumes_bp
-app.register_blueprint(resumes_bp)
+# Local modules
+from extensions import login_manager, init_supabase, init_openai
+from blueprints.resumes import resumes_bp  # <-- your blueprint with all resume endpoints
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -27,29 +27,28 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
-# ---- session cookie hardening (place RIGHT AFTER app = Flask(...)) ----
+# Session cookie hardening
 app.config.update(
-    SESSION_COOKIE_SECURE=True,   # send cookies only over HTTPS (Render uses HTTPS)
-    SESSION_COOKIE_SAMESITE="Lax",  # allow top-level redirects to keep the cookie
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE="Lax",
 )
 
 CORS(app)
 logging.basicConfig(level=logging.INFO)
 
-# --- OpenAI client ---
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# --- External clients (shared via app.config so blueprints can access) ---
+app.config["SUPABASE"] = init_supabase()
+app.config["OPENAI_CLIENT"] = init_openai()
 
-# Flask-Login init
-login_manager = LoginManager()
+# Short aliases if you want to use them in this file
+supabase = app.config["SUPABASE"]
+client   = app.config["OPENAI_CLIENT"]
+
+# --- Flask-Login init ---
 login_manager.init_app(app)
 login_manager.login_view = "account"
 
-# --- Supabase client ---
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
-supabase = create_client(supabase_url, supabase_key)
-
-# --- External API constants ---
+# --- Constants for Job Insights ---
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
 ADZUNA_API_URL   = "https://api.adzuna.com/v1/api/jobs"
 ADZUNA_APP_ID    = os.getenv("ADZUNA_APP_ID")
@@ -63,9 +62,10 @@ JOB_TITLES = [
 ]
 KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
 
+# --- User model ---
 class User(UserMixin):
     def __init__(self, auth_id: str, email: str, fullname: str | None = None):
-        self.id = auth_id          # Flask-Login session id (Supabase auth UUID)
+        self.id = auth_id
         self.email = email
         self.fullname = fullname
 
@@ -74,12 +74,13 @@ def load_user(user_id: str):
     if not user_id or user_id == "None":
         return None
     try:
+        sb = current_app.config["SUPABASE"]
         res = (
-            supabase.table("users")
-            .select("auth_id,email,fullname")
-            .eq("auth_id", user_id)
-            .single()
-            .execute()
+            sb.table("users")
+              .select("auth_id,email,fullname")
+              .eq("auth_id", user_id)
+              .single()
+              .execute()
         )
         row = res.data
         if row:
@@ -87,20 +88,27 @@ def load_user(user_id: str):
     except Exception as e:
         print("load_user error:", e)
     return None
-        
-# --- Helpers ---
-def get_user_resume_text(user_id: str) -> str:
+
+# --- Helpers (jobs / analytics) ---
+def get_user_resume_text(user_id: str) -> str | None:
     """Fetch the latest stored resume text for a user from Supabase."""
-    res = supabase.table("resumes")\
-                  .select("text")\
-                  .eq("user_id", user_id)\
-                  .maybe_single()\
-                  .execute()
-    data = res.data
-    return data.get("text") if data and "text" in data else None
+    try:
+        supabase = current_app.config["SUPABASE"]
+        res = (
+            supabase.table("resumes")
+            .select("text,created_at")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(1)
+            .maybe_single()
+            .execute()
+        )
+        data = res.data or {}
+        return data.get("text")
+    except Exception as e:
+        current_app.logger.warning("get_user_resume_text error: %s", e)
+        return None
 
-
-# Job-search helpers for /jobs
 def fetch_remotive_jobs(query: str):
     try:
         r = requests.get(REMOTIVE_API_URL, params={"search": query})
@@ -166,8 +174,6 @@ def fetch_jsearch_jobs(query: str):
     except:
         return []
 
-
-# Analytics helpers
 def fetch_salary_data():
     data = []
     country = "gb"
@@ -232,8 +238,7 @@ def fetch_location_counts():
         pass
     return freq.most_common(5)
 
-# -------- Routes --------
-
+# -------- Basic pages --------
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -283,24 +288,15 @@ def terms_of_service():
 # ----------------------------
 @app.route("/check-email")
 def check_email():
-    """Simple page telling users to confirm their email."""
     return render_template("check-mail.html")
 
 @app.route("/confirm")
 def confirm_page():
-    """
-    This serves a page with JS that reads the hash fragment from the Supabase confirmation link
-    (access_token, refresh_token) and POSTs it to /verify_token.
-    After we verify, we return {ok:true} and the JS redirects to /dashboard.
-    """
     return render_template("confirm.html")
 
 # ----------------------------
 # Account routes (signup/login)
 # ----------------------------
-# top of file (add import)
-from gotrue.errors import AuthApiError
-
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
@@ -326,25 +322,22 @@ def account():
             ud = user.model_dump() if hasattr(user, "model_dump") else user
             auth_id = ud["id"]
 
-            # create local user row if missing
             try:
                 supabase.table("users").insert({
                     "auth_id": auth_id, "email": email, "fullname": name
                 }).execute()
             except Exception:
-                pass  # ignore unique violations
+                pass
 
             if not ud.get("email_confirmed_at"):
-                # tell the UI to show check-email page
                 return jsonify(success=True, redirect="/check-email"), 200
 
-            # (if confirmations are OFF)
             login_user(User(auth_id=auth_id, email=email, fullname=name))
             return jsonify(success=True, redirect=url_for("dashboard")), 200
 
         except AuthApiError as e:
             msg = str(e).lower()
-            if "user already registered" in msg or "already registered" in msg:
+            if "already registered" in msg:
                 return jsonify(
                     success=False,
                     code="user_exists",
@@ -362,7 +355,6 @@ def account():
             ud = user.model_dump() if hasattr(user, "model_dump") else user
             auth_id = ud["id"]
 
-            # optionally fetch fullname
             try:
                 r = supabase.table("users").select("fullname").eq("auth_id", auth_id).single().execute()
                 fullname = (r.data or {}).get("fullname")
@@ -385,8 +377,8 @@ def account():
                 return jsonify(success=False, message="Invalid email or password."), 401
             return jsonify(success=False, message="Login failed."), 400
 
-    return jsonify(success=False, message="Unknown mode."), 400 
-            
+    return jsonify(success=False, message="Unknown mode."), 400
+
 # ----------------------------
 # Logout / Dashboard
 # ----------------------------
@@ -394,7 +386,6 @@ def account():
 @login_required
 def logout():
     try:
-        # also sign out of Supabase (optional but good hygiene)
         try:
             supabase.auth.sign_out()
         except Exception:
@@ -412,19 +403,16 @@ def dashboard():
 def verify_token():
     data = request.get_json(force=True)
     access_token = data.get("access_token")
-    refresh_token = data.get("refresh_token")
     if not access_token:
         return jsonify(ok=False, error="Missing access_token"), 400
 
     try:
-        # Validate token & fetch user from Supabase
         user_resp = supabase.auth.get_user(access_token)
         user_obj = user_resp.user if hasattr(user_resp, "user") else user_resp
         user_data = user_obj.model_dump() if hasattr(user_obj, "model_dump") else user_obj
         auth_id = user_data["id"]
         email = user_data.get("email")
 
-        # Ensure local row exists
         try:
             row = supabase.table("users").select("auth_id").eq("auth_id", auth_id).maybe_single().execute()
             if not row.data:
@@ -432,13 +420,15 @@ def verify_token():
         except Exception as e:
             print("users upsert warn:", e)
 
-        # Log user in for this Flask session
         login_user(User(auth_id=auth_id, email=email))
         return jsonify(ok=True)
     except Exception as e:
         print("verify_token error:", e)
         return jsonify(ok=False, error="Token verification failed"), 400
 
+# ----------------------------
+# Chat & Jobs & Insights
+# ----------------------------
 @app.route("/ask", methods=["POST"])
 def ask():
     user_msg = request.json.get("message", "")
@@ -453,7 +443,6 @@ def ask():
         return jsonify(reply=ai_msg, suggestJobs=suggest)
     except Exception as e:
         return jsonify(reply=f"⚠️ Server Error: {str(e)}", suggestJobs=False)
-
 
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
@@ -471,8 +460,6 @@ def get_jobs():
     except:
         return jsonify(remotive=[], adzuna=[], jsearch=[])
 
-
-# Job Insights APIs
 @app.route("/api/salary")
 def get_salary_data():
     return jsonify(labels=JOB_TITLES, salaries=fetch_salary_data())
@@ -491,8 +478,9 @@ def get_location_data():
     locs = fetch_location_counts()
     return jsonify(labels=[l[0] for l in locs], counts=[l[1] for l in locs])
 
-
-# Skill Gap API
+# ----------------------------
+# Skill Gap & Interview Coach
+# ----------------------------
 @app.route("/api/skill-gap", methods=["POST"])
 def skill_gap_api():
     try:
@@ -504,23 +492,17 @@ def skill_gap_api():
             return jsonify({"error": "Missing required input"}), 400
 
         messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a helpful AI assistant that performs skill gap analysis.\n"
-                    "The user will provide their career goal and current skills.\n"
-                    "Your job is to:\n"
-                    "1. Identify the missing skills.\n"
-                    "2. Suggest learning resources for each missing skill.\n"
-                    "Format the result as a list of missing skills and a short learning plan."
-                )
+            {"role": "system", "content":
+                "You are a helpful AI assistant that performs skill gap analysis.\n"
+                "The user will provide their career goal and current skills.\n"
+                "Your job is to:\n"
+                "1. Identify the missing skills.\n"
+                "2. Suggest learning resources for each missing skill.\n"
+                "Format the result as a list of missing skills and a short learning plan."
             },
-            {
-                "role": "user",
-                "content": (
-                    f"My goal is to become a {goal}. My current skills include: {skills}.\n"
-                    "What skills am I missing, and how can I bridge the gap?"
-                )
+            {"role": "user", "content":
+                f"My goal is to become a {goal}. My current skills include: {skills}.\n"
+                "What skills am I missing, and how can I bridge the gap?"
             }
         ]
 
@@ -529,16 +511,13 @@ def skill_gap_api():
             messages=messages,
             temperature=0.6
         )
-
         reply = response.choices[0].message.content
         return jsonify({"result": reply})
 
     except Exception as e:
-        print("Skill Gap Error:", e)
-        traceback.print_exc()
+        logging.exception("Skill Gap Error")
         return jsonify({"error": "Server error"}), 500
 
-# Interview Coach APIs
 @app.route("/api/interview", methods=["POST"])
 def interview_coach_api():
     try:
@@ -549,14 +528,12 @@ def interview_coach_api():
             return jsonify(error="Missing role or experience"), 400
 
         msgs = [
-            {"role":"system","content":(
-                "You are an AI Interview Coach. Provide at least 3 Q&A samples."
-            )},
+            {"role":"system","content":"You are an AI Interview Coach. Provide at least 3 Q&A samples."},
             {"role":"user","content":f"Role: {role}. Experience: {exp}."}
         ]
         resp = client.chat.completions.create(model="gpt-4o", messages=msgs, temperature=0.7)
         return jsonify(result=resp.choices[0].message.content)
-    except Exception as e:
+    except Exception:
         logging.exception("Interview coach error")
         return jsonify(error="Server error"), 500
 
@@ -571,14 +548,12 @@ def get_interview_question():
             return jsonify(error="Missing inputs"), 400
 
         msgs = [
-            {"role":"system","content":(
-                "You are a virtual interview coach. Ask one job-specific question."
-            )},
+            {"role":"system","content":"You are a virtual interview coach. Ask one job-specific question."},
             {"role":"user","content":f"Was {prev}, applying for {target}. Experience: {exp}."}
         ]
         resp = client.chat.completions.create(model="gpt-4o", messages=msgs, temperature=0.7)
         return jsonify(question=resp.choices[0].message.content)
-    except Exception as e:
+    except Exception:
         logging.exception("Interview question error")
         return jsonify(error="Unable to generate question"), 500
 
@@ -589,9 +564,7 @@ def get_interview_feedback():
         question = data.get("question","")
         answer   = data.get("answer","")
         msgs = [
-            {"role":"system","content":(
-                "You are an interview coach. Give feedback and 2–3 fallback suggestions."
-            )},
+            {"role":"system","content":"You are an interview coach. Give feedback and 2–3 fallback suggestions."},
             {"role":"user","content":f"Q: {question}\nA: {answer}"}
         ]
         resp = client.chat.completions.create(model="gpt-4o", messages=msgs, temperature=0.7)
@@ -603,193 +576,49 @@ def get_interview_feedback():
             feedback=feedback,
             fallbacks=[t.lstrip("-• ").strip() for t in tips if t.strip()]
         )
-    except Exception as e:
+    except Exception:
         logging.exception("Interview feedback error")
         return jsonify(error="Error generating feedback"), 500
 
+# --- Register the resume blueprint last (after app/config exists) ---
+app.register_blueprint(resumes_bp)
 
-# Resume Analysis API
-@app.route("/api/resume-analysis", methods=["POST"])
-def resume_analysis():
-    data = request.get_json(force=True)
-    resume_text = ""
+# ---- Employer inquiry endpoints ----
 
-    # PDF path
-    if data.get("pdf"):
-        pdf_bytes = base64.b64decode(data["pdf"])
-        reader = PdfReader(BytesIO(pdf_bytes))
-        resume_text = "\n".join(p.extract_text() or "" for p in reader.pages)
-
-    # DOCX path
-    elif data.get("docx"):
-        docx_bytes = base64.b64decode(data["docx"])
-        doc = docx.Document(BytesIO(docx_bytes))
-        resume_text = "\n".join(p.text for p in doc.paragraphs)
-
-    # Plain-text path
-    elif data.get("text"):
-        resume_text = data["text"].strip()
-
-    else:
-        return jsonify(error="No resume data provided"), 400
-
-    if not resume_text:
-        return jsonify(error="Could not extract any text"), 400
-
-    # --- 2) Build your ATS prompt ---
-    prompt = (
-        "You are an ATS-certified resume analyzer.  Return **only** a JSON object:\n"
-        "  • score: integer 0–100\n"
-        "  • issues: array of strings\n"
-        "  • strengths: array of strings\n"
-        "  • suggestions: array of strings\n\n"
-        f"Resume content:\n\n{resume_text}"
-    )
-
-    try:
-        # --- 3) Call OpenAI ---
-        resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.0
-        )
-        content = resp.choices[0].message.content
-
-        # --- 4) Strip code fences and isolate the JSON blob ---
-        # remove any ```json or ``` wrappers
-        content = re.sub(r"```(?:json)?", "", content).strip()
-
-        # extract from first { to last }
-        start = content.find("{")
-        end   = content.rfind("}")
-        if start != -1 and end != -1:
-            content = content[start:end+1]
-
-        # --- 5) Parse it!
-        parsed = json.loads(content)
-
-        # --- 6) Return the normalized shape ---
-        return jsonify({
-            "score":      int(parsed.get("score", 0)),
-            "analysis": {
-                "issues":     parsed.get("issues", []),
-                "strengths":  parsed.get("strengths", [])
-            },
-            "suggestions": parsed.get("suggestions", [])
-        })
-
-    except json.JSONDecodeError:
-        logging.exception("Failed to decode JSON from LLM output:\n%s", content)
-        return jsonify(error="Invalid JSON from Analyzer"), 500
-
-    except Exception:
-        logging.exception("Resume analysis error")
-        return jsonify(error="Resume analysis failed"), 500
-
-# … your existing app and other imports …
-@app.route("/api/optimize-resume", methods=["POST"])
-def optimize_resume():
-    data = request.get_json(force=True)
-    resume_text = ""
-
-    # 1) Extract text
-    if data.get("pdf"):
-        try:
-            pdf_bytes   = base64.b64decode(data["pdf"])
-            reader      = PdfReader(BytesIO(pdf_bytes))
-            resume_text = "\n".join(p.extract_text() or "" for p in reader.pages)
-            if not resume_text.strip():
-                return jsonify({"error": "PDF content empty"}), 400
-        except Exception:
-            logging.exception("PDF Decode Error")
-            return jsonify({"error": "Unable to extract PDF text"}), 400
-
-    elif data.get("text"):
-        resume_text = data["text"].strip()
-        if not resume_text:
-            return jsonify({"error": "No text provided"}), 400
-
-    else:
-        return jsonify({"error": "No resume data provided"}), 400
-
-    # 2) Build the optimization prompt
-    prompt = (
-        "You are an expert ATS resume optimizer.  Rewrite the following resume to be\n"
-        "fully ATS-compatible: use strong action verbs, consistent bullets, relevant\n"
-        "keywords, fix grammar, remove repetition.  Return the optimized resume in plain text.\n\n"
-        f"Original resume:\n\n{resume_text}"
-    )
-
-    try:
-        # 3) Call OpenAI
-        resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
-        optimized = resp.choices[0].message.content.strip()
-        # 4) Strip any ``` fences
-        optimized = re.sub(r"```(?:[\s\S]*?)```", "", optimized).strip()
-        return jsonify({"optimized": optimized})
-    except Exception:
-        logging.exception("Resume optimization error")
-        return jsonify({"error": "Resume optimization failed"}), 500
-
-# Generate Resume via AI
-@app.route("/generate-resume", methods=["POST"])
-def generate_resume():
-    data = request.json or {}
-    prompt = f"""
-Create a professional, modern UK resume in HTML format:
-Full Name: {data.get('fullName')}
-Summary: {data.get('summary')}
-Education: {data.get('education')}
-Experience: {data.get('experience')}
-Skills: {data.get('skills')}
-Certifications: {data.get('certifications')}
-Portfolio: {data.get('portfolio')}
-"""
-    try:
-        resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role":"user","content":prompt}],
-            temperature=0.7
-        )
-        return jsonify(formatted_resume=resp.choices[0].message.content)
-    except Exception as e:
-        return jsonify(error=str(e)), 500
-
-
-# Employer inquiry endpoints
-@app.route("/api/employer-inquiry", methods=["POST"])
+@app.post("/api/employer-inquiry")
 def employer_inquiry():
     try:
-        data = request.json
+        supabase = current_app.config["SUPABASE"]
+        data = request.get_json(force=True) or {}
         supabase.table("employer_inquiries").insert({
-            "company":    data.get("company"),
-            "name":       data.get("name"),
-            "email":      data.get("email"),
-            "phone":      data.get("phone"),
-            "job_roles":  data.get("job_roles"),
-            "message":    data.get("message")
+            "company":   data.get("company"),
+            "name":      data.get("name"),
+            "email":     data.get("email"),
+            "phone":     data.get("phone"),
+            "job_roles": data.get("job_roles"),
+            "message":   data.get("message"),
         }).execute()
         return jsonify(success=True, message="Inquiry submitted"), 200
     except Exception as e:
-        logging.exception("Employer inquiry error")
+        current_app.logger.exception("Employer inquiry error")
         return jsonify(success=False, error=str(e)), 500
 
-@app.route("/api/employer/submit", methods=["POST"])
+
+@app.post("/api/employer/submit")
 def submit_employer_form():
     try:
-        data = request.get_json()
-        job_title          = data.get("jobTitle")
-        company            = data.get("company")
-        role_summary       = data.get("summary")
-        location           = data.get("location")
-        employmentType     = data.get("employmentType")
-        salaryRange        = data.get("salaryRange")
-        applicationDeadline= data.get("applicationDeadline")
-        applicationEmail   = data.get("applicationEmail")
+        client   = current_app.config["OPENAI_CLIENT"]
+        supabase = current_app.config["SUPABASE"]
+
+        data = request.get_json(force=True) or {}
+        job_title           = data.get("jobTitle")
+        company             = data.get("company")
+        role_summary        = data.get("summary")
+        location            = data.get("location")
+        employmentType      = data.get("employmentType")
+        salaryRange         = data.get("salaryRange")
+        applicationDeadline = data.get("applicationDeadline")
+        applicationEmail    = data.get("applicationEmail")
 
         if not job_title or not company:
             return jsonify(success=False, message="Job title and company are required."), 400
@@ -809,14 +638,15 @@ Summary: {role_summary}
 Include: About the Company, Job Summary, Key Responsibilities,
 Required Qualifications, Preferred Skills, and How to Apply.
 """
+
         resp = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role":"user","content":prompt}],
-            temperature=0.6
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.6,
         )
         job_desc = resp.choices[0].message.content
 
-        # Optionally save
+        # Optional: persist in DB
         try:
             supabase.table("job_posts").insert({
                 "job_title": job_title,
@@ -826,18 +656,18 @@ Required Qualifications, Preferred Skills, and How to Apply.
                 "employment_type": employmentType,
                 "salary_range": salaryRange,
                 "application_deadline": applicationDeadline,
-                "application_email": applicationEmail
+                "application_email": applicationEmail,
             }).execute()
         except Exception as db_e:
-            logging.warning("Job post save failed: %s", db_e)
+            current_app.logger.warning("Job post save failed: %s", db_e)
 
         return jsonify(success=True, jobDescription=job_desc), 200
 
-    except Exception as e:
-        logging.exception("Employer submission error")
+    except Exception:
+        current_app.logger.exception("Employer submission error")
         return jsonify(success=False, message="Server error generating job post."), 500
 
-
+# --- Entrypoint ---
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
