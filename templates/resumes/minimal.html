@@ -16,8 +16,6 @@
 </head>
 <body>
   <div class="resume-page resume resume--minimal">
-
-    <!-- ▼ INSERTED MINIMAL HEADER HERE ▼ -->
     <header class="resume-header">
       <div class="resume-name">{{ name or 'Your Name' }}</div>
       {% if title %}<div class="resume-title">{{ title }}</div>{% endif %}
@@ -28,7 +26,6 @@
         {% endfor %}
       </div>
     </header>
-    <!-- ▲ INSERTED MINIMAL HEADER ▲ -->
 
     {% if summary %}
     <section class="section">
@@ -85,7 +82,6 @@
       {% endfor %}
     </section>
     {% endif %}
-
   </div>
 </body>
 </html>
