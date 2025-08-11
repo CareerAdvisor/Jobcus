@@ -127,10 +127,11 @@
     <button type="button" id="downloadTemplatePdf">⬇️ Download PDF</button>
   </div>
 
-  <!-- Where the HTML preview renders -->
+  <!-- Preview (isolated in an iframe) -->
   <div id="resumePreviewWrap" style="display:none; margin-top:1rem;">
     <h3 style="color:#104879;">Preview</h3>
-    <div id="resumePreview" style="background:#fff; border:1px solid #eee; border-radius:8px; padding:16px;"></div>
+    <!-- Replace your preview <div> with: -->
+    <iframe id="resumePreview" class="resume-preview" style="width:100%; height:100vh; border:0; background:#fff;"></iframe>
   </div>
 
   <!-- output + spinner container -->
