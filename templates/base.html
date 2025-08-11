@@ -5,25 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Jobcus{% endblock %}</title>
 
-  <!-- Favicon & fonts -->
-  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  {# Only load network assets when NOT generating a PDF #}
+  {% if not for_pdf %}
+    <!-- Favicon & fonts -->
+    <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Core CSS + AOS + Manifest -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+    <!-- Core CSS + AOS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+  {% endif %}
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
   <div class="page-container">
 
+    {% if not for_pdf %}
     <header class="site-header">
       <div class="header-left">
         {% block header_icon %}{% endblock %}
       </div>
 
       <div class="header-logo">
-        <a href="/"><img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" /></a>
+        <a href="/">
+          <img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" />
+        </a>
       </div>
 
       <div class="header-right">
@@ -85,12 +91,13 @@
         <a href="/faq">FAQs</a>
       </nav>
     </header>
+    {% endif %}
 
     <main>
       {% block content %}{% endblock %}
     </main>
 
-    {% if show_footer | default(true) %}
+    {% if not for_pdf and (show_footer | default(true)) %}
       <footer class="footer-note-static">
         &copy; 2025 Jobcus – Your AI Career Advisor
         </br>
@@ -101,23 +108,23 @@
     {% endif %}
   </div>
 
-  {# Chat bubble (hidden on chat-page) #}
-  {% if body_class != 'chat-page' %}
+  {# Chat bubble (hidden on chat-page and always hidden for PDF) #}
+  {% if not for_pdf and body_class != 'chat-page' %}
     <a href="/chat" class="chat-float-button" title="Chat with Jobcus">
       <img src="{{ url_for('static', filename='icons/pencilchat.svg') }}" alt="Chat Icon" />
     </a>
   {% endif %}
 
-  <!-- AOS -->
-  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-  <script>
-    AOS.init();
-  </script>
+  {% if not for_pdf %}
+    <!-- AOS -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+      AOS.init();
+    </script>
 
-  <!-- Base JS -->
-  <script src="{{ url_for('static', filename='js/base.js') }}"></script>
-  {% block scripts %}{% endblock %}
-
- 
+    <!-- Base JS -->
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    {% block scripts %}{% endblock %}
+  {% endif %}
 </body>
 </html>
