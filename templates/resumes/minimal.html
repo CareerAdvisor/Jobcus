@@ -1,111 +1,91 @@
-{% extends "base.html" %}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>{{ name }} – {{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-{% block title %}Minimal Resume – Jobcus{% endblock %}
+  {% set base_css  = url_for('static', filename='css/resume-base.css') if not for_pdf else 'static/css/resume-base.css' %}
+  {% set theme_css = url_for('static', filename='css/minimal.css')     if not for_pdf else 'static/css/minimal.css' %}
+  <link rel="stylesheet" href="{{ base_css }}">
+  <link rel="stylesheet" href="{{ theme_css }}">
 
-{% block body_class %}resume-template{% endblock %}
+  {% if not for_pdf %}
+    <script defer src="{{ url_for('static', filename='js/minimal.js') }}"></script>
+  {% endif %}
+</head>
+<body>
+  <div class="resume-page resume resume--minimal">
 
-{% block content %}
-<div class="resume-preview minimal-style">
-  <style>
-    .minimal-style {
-      max-width: 800px;
-      margin: auto;
-      font-family: Inter, Arial, sans-serif;
-      background: #fff;
-      padding: 2rem;
-      color: #222;
-    }
-    .minimal-header {
-      border-bottom: 2px solid #000;
-      margin-bottom: 1rem;
-      padding-bottom: .5rem;
-    }
-    .minimal-header h1 {
-      margin: 0;
-      font-size: 26px;
-      font-weight: bold;
-    }
-    .minimal-header p {
-      margin: .25rem 0;
-      font-size: 13px;
-      color: #555;
-    }
-    h2 {
-      font-size: 14px;
-      text-transform: uppercase;
-      border-bottom: 1px solid #ddd;
-      margin-top: 1.5rem;
-      margin-bottom: .5rem;
-    }
-    .item {
-      margin-bottom: .75rem;
-    }
-    .item h3 {
-      margin: 0;
-      font-size: 15px;
-    }
-    .meta {
-      font-size: 12px;
-      color: #555;
-    }
-    ul { margin: .25rem 0 0 1rem; }
-    .skills span {
-      display: inline-block;
-      margin: 2px 4px;
-      padding: 2px 6px;
-      border: 1px solid #ccc;
-      border-radius: 3px;
-      font-size: 11px;
-    }
-  </style>
+    <!-- ▼ INSERTED MINIMAL HEADER HERE ▼ -->
+    <header class="resume-header">
+      <div class="resume-name">{{ name or 'Your Name' }}</div>
+      {% if title %}<div class="resume-title">{{ title }}</div>{% endif %}
+      <div class="resume-contact">
+        {% if contact %}{{ contact }}{% endif %}
+        {% for l in links %}
+          {% if l.url %} · <a href="{{ l.url }}">{{ l.label or l.url }}</a>{% endif %}
+        {% endfor %}
+      </div>
+    </header>
+    <!-- ▲ INSERTED MINIMAL HEADER ▲ -->
 
-  <div class="minimal-header">
-    <h1>{{ name }}</h1>
-    {% if title %}<p>{{ title }}</p>{% endif %}
-    <p>{{ contact }}</p>
+    {% if summary %}
+    <section class="section">
+      <h2>Summary</h2>
+      <div class="rule"></div>
+      <div class="summary">{{ summary }}</div>
+    </section>
+    {% endif %}
+
+    {% if skills %}
+    <section class="section">
+      <h2>Skills</h2>
+      <div class="rule"></div>
+      <div class="skills">
+        {% for s in skills %}<span class="chip">{{ s }}</span>{% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if experience %}
+    <section class="section">
+      <h2>Experience</h2>
+      <div class="rule"></div>
+      {% for e in experience %}
+        <article class="item">
+          <div class="item-header">
+            <div class="item-title">{{ e.role }}{% if e.company %} · {{ e.company }}{% endif %}</div>
+            <div class="item-meta">
+              {% if e.location %}{{ e.location }} · {% endif %}
+              {% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}
+            </div>
+          </div>
+          {% if e.bullets %}<ul class="bullets">{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+        </article>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if education %}
+    <section class="section">
+      <h2>Education</h2>
+      <div class="rule"></div>
+      {% for ed in education %}
+        <article class="item">
+          <div class="item-header">
+            <div class="item-title">{{ ed.degree }}</div>
+            <div class="item-meta">
+              {% if ed.school %}{{ ed.school }}{% endif %}
+              {% if ed.location %} · {{ ed.location }}{% endif %}
+              {% if ed.graduated %} · {{ ed.graduated }}{% endif %}
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </section>
+    {% endif %}
+
   </div>
-
-  {% if summary %}
-  <section>
-    <h2>Summary</h2>
-    <p>{{ summary }}</p>
-  </section>
-  {% endif %}
-
-  {% if experience %}
-  <section>
-    <h2>Experience</h2>
-    {% for job in experience %}
-    <div class="item">
-      <h3>{{ job.role }} – {{ job.company }}</h3>
-      <div class="meta">{{ job.location }} · {{ job.start }} – {{ job.end or 'Present' }}</div>
-      {% if job.bullets %}
-      <ul>{% for b in job.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </section>
-  {% endif %}
-
-  {% if education %}
-  <section>
-    <h2>Education</h2>
-    {% for edu in education %}
-    <div class="item">
-      <h3>{{ edu.degree }} – {{ edu.school }}</h3>
-      <div class="meta">{{ edu.location }} · {{ edu.graduated }}</div>
-    </div>
-    {% endfor %}
-  </section>
-  {% endif %}
-
-  {% if skills %}
-  <section>
-    <h2>Skills</h2>
-    <div class="skills">
-      {% for s in skills %}<span>{{ s }}</span>{% endfor %}
-    </div>
-  </section>
-  {% endif %}
-</div>
-{% endblock %}
+</body>
+</html>
