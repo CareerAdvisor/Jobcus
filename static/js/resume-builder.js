@@ -80,14 +80,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const pdfBtn     = document.getElementById("downloadTemplatePdf");
 
   const previewWrap = document.getElementById("resumePreviewWrap");
-  const previewEl   = document.getElementById("resumePreview");
+  const previewEl   = document.getElementById("resumePreview"); // <iframe>
 
-  // Default theme; if you add <select id="themeSelect"> the JS will use it.
   function getTheme() {
     return document.getElementById("themeSelect")?.value || "modern";
   }
 
-  // ▼▼▼ YOUR COERCE FUNCTION (inserted) ▼▼▼
+  // ▼▼ Coerce form values into a minimal template context ▼▼
   function coerceFormToTemplateContext() {
     const f = document.getElementById("resumeForm");
     const name    = f.elements["fullName"].value.trim();
@@ -100,7 +99,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const portfolio = f.elements["portfolio"].value.trim();
 
     const education = eduTxt ? [{ degree: "", school: eduTxt, location: "", graduated: "" }] : [];
-
     const experience = expTxt ? [{
       role: title || "Experience",
       company: "",
@@ -109,12 +107,11 @@ document.addEventListener("DOMContentLoaded", () => {
       end: "",
       bullets: expTxt.split("\n").map(b => b.trim()).filter(Boolean)
     }] : [];
-
     const links = portfolio ? [{ url: portfolio, label: "Portfolio" }] : [];
 
     return { name, title, contact, summary, education, experience, skills, links };
   }
-  // ▲▲▲ END INSERTION ▲▲▲
+  // ▲▲ END coerce ▲▲
 
   async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
     if (format === "pdf") {
@@ -135,23 +132,26 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // HTML
-    const res = await fetch("/build-resume", {
+    // HTML preview
+    const r = await fetch("/build-resume", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ format: "html", theme, ...ctx })
     });
-    const html = await res.text();
-    if (!res.ok) throw new Error(`HTML build failed: ${res.status} ${html}`);
+    const html = await r.text();
+    if (!r.ok) throw new Error(`HTML build failed: ${r.status} ${html}`);
 
-    outputContainer.innerHTML = html;
+    // Do NOT inline into the page to avoid duplication; use the iframe instead.
+    outputContainer.innerHTML = "";
+
     if (previewWrap && previewEl) {
       previewWrap.style.display = "block";
-      previewEl.innerHTML = html;
+      // isolate the resume page (no duplication / no CSS collisions)
+      previewEl.srcdoc = html;
     }
   }
 
-  // Submit → use AI to structure JSON, then render via template
+  // Submit
   form?.addEventListener("submit", async e => {
     e.preventDefault();
     builderIndicator.style.display = "block";
@@ -171,7 +171,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      // 1) Get structured context from AI
       const gen = await fetch("/generate-resume", {
         method: "POST",
         headers: { "Content-Type":"application/json" },
@@ -181,11 +180,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
       const ctx = genJson.context;
-      window._resumeCtx = ctx; // save for PDF/preview later
+      window._resumeCtx = ctx;
 
-      // 2) Render HTML via server template
       await renderWithTemplateFromContext(ctx, "html", getTheme());
-
       downloadOptions.style.display = "block";
     } catch (err) {
       console.error("Generate/build error:", err);
@@ -195,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Preview button → template render from AI context if available, else coerce form
+  // Preview button
   previewBtn?.addEventListener("click", async () => {
     try {
       builderIndicator.style.display = "block";
@@ -210,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // PDF button → template render as PDF from AI context if available, else coerce form
+  // PDF button
   pdfBtn?.addEventListener("click", async () => {
     try {
       builderIndicator.style.display = "block";
@@ -237,7 +234,15 @@ async function downloadResume(format) {
 
   if (format === "pdf") {
     const theme = document.getElementById("themeSelect")?.value || "modern";
-    const ctx = window._resumeCtx || coerceFormToTemplateContext();
+    const ctx = window._resumeCtx || (function coerce(){
+      // tiny fallback if preview wasn't used yet
+      const f = document.getElementById("resumeForm");
+      return {
+        fullName: f.elements["fullName"].value.trim(),
+        title:    f.elements["title"].value.trim(),
+        contact:  f.elements["contact"].value.trim(),
+      };
+    })();
 
     try {
       const res = await fetch("/build-resume", {
