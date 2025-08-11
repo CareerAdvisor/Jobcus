@@ -160,11 +160,33 @@ def optimize_resume():
 # ---------- 5) AI generate resume (JSON for template) ----------
 @resumes_bp.post("/generate-resume")
 def generate_resume():
-    import re, json
+    import re, json, logging
     client = current_app.config["OPENAI_CLIENT"]
     data = request.get_json(force=True) or {}
 
-    # Ask the model to return ONLY JSON in your template schema
+    def naive_context(d):
+        skills = [s.strip() for s in (d.get("skills","")).split(",") if s.strip()]
+        exp_bullets = [b.strip() for b in (d.get("experience","")).split("\n") if b.strip()]
+        education = ([{
+            "degree": "", "school": d.get("education",""), "location": "", "graduated": ""
+        }] if d.get("education") else [])
+        experience = ([{
+            "role": d.get("title","") or "Experience",
+            "company": "", "location": "", "start": "", "end": "",
+            "bullets": exp_bullets
+        }] if (exp_bullets or d.get("title")) else [])
+        links = ([{"url": d.get("portfolio"), "label":"Portfolio"}] if d.get("portfolio") else [])
+        return {
+            "name": d.get("fullName",""),
+            "title": d.get("title",""),
+            "contact": d.get("contact",""),
+            "summary": d.get("summary",""),
+            "skills": skills,
+            "links": links,
+            "experience": experience,
+            "education": education,
+        }
+
     prompt = f"""
 Return ONLY valid JSON (no backticks) with this exact schema:
 
@@ -198,22 +220,18 @@ portfolio: {data.get('portfolio',"")}
     try:
         resp = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role":"user","content":prompt}],
             temperature=0.2
         )
         content = resp.choices[0].message.content.strip()
         content = re.sub(r"```(?:json)?", "", content).strip()
         ctx = json.loads(content)
 
-        # tiny fallbacks so the template never breaks
-        ctx.setdefault("name",  data.get("fullName",""))
+        ctx.setdefault("name", data.get("fullName",""))
         ctx.setdefault("title", data.get("title",""))
         ctx.setdefault("contact", data.get("contact",""))
 
-        return jsonify(context=ctx)
+        return jsonify(context=ctx, aiUsed=True)
     except Exception as e:
-        logging.exception("Generation failed")
-        return jsonify(error=f"Generation failed: {e}"), 500
-
-
-
+        logging.error("Generation failed", exc_info=True)
+        return jsonify(context=naive_context(data), aiUsed=False, error_code="quota_or_error"))
