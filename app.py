@@ -247,8 +247,12 @@ def index():
 def chat():
     return render_template("chat.html")
 
-@app.route("/resume-builder")
-def resume_builder():
+@app.get("/resume-analyzer")
+def page_resume_analyzer():
+    return render_template("resume-analyzer.html")
+
+@app.get("/resume-builder")
+def page_resume_builder():
     return render_template("resume-builder.html")
 
 @app.route("/interview-coach")
