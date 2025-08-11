@@ -69,24 +69,24 @@ class User(UserMixin):
         self.email = email
         self.fullname = fullname
 
+# app.py
 @login_manager.user_loader
 def load_user(user_id: str):
     if not user_id or user_id == "None":
         return None
     try:
-        sb = current_app.config["SUPABASE"]
         res = (
-            sb.table("users")
-              .select("auth_id,email,fullname")
-              .eq("auth_id", user_id)
-              .single()
-              .execute()
+            supabase.table("users")
+            .select("auth_id,email,fullname")
+            .eq("auth_id", user_id)
+            .maybe_single()
+            .execute()
         )
         row = res.data
         if row:
             return User(auth_id=row["auth_id"], email=row["email"], fullname=row.get("fullname"))
     except Exception as e:
-        print("load_user error:", e)
+        logging.warning("load_user warn: %s", e)
     return None
 
 # --- Helpers (jobs / analytics) ---
