@@ -1,0 +1,52 @@
+:root { --brand:#103c7b; --brand2:#1e6bb8; --text:#1f2937; --muted:#64748b; }
+
+html, body { margin:0; padding:0; background:#f7f7f7; color:var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
+/* Shared resume shell */
+.resume.sheet {
+  max-width: 840px; margin:24px auto; background:#fff; border-radius:16px;
+  box-shadow:0 8px 24px rgba(0,0,0,.06); overflow:hidden;
+}
+.resume .hero { padding:28px 32px; color:#fff; }
+.resume .hero h1 { margin:0 0 4px; font-size:28px; line-height:1.15; }
+.resume .title { font-weight:600; }
+.resume .contact { display:flex; gap:16px; flex-wrap:wrap; margin-top:6px; font-size:14px; }
+
+.resume .section { padding:24px 32px; }
+.resume h2 { font-size:14px; letter-spacing:.12em; color:var(--brand); margin:0 0 10px; }
+.resume .rule { height:2px; background:#e5e7eb; margin:0 0 16px; }
+.resume .summary { line-height:1.55; }
+.resume .skills { display:flex; flex-wrap:wrap; gap:10px; }
+.resume .chip { padding:6px 10px; border-radius:999px; background:#f1f5f9; border:1px solid #e5e7eb; font-size:13px; }
+.resume .exp-item { margin-bottom:18px; }
+.resume .role { font-weight:700; }
+.resume .meta { color:var(--muted); font-size:13px; margin-top:2px; }
+.resume .bullets { margin:8px 0 0 18px; }
+.resume .bullets li { margin-bottom:6px; }
+
+/* Theme: modern */
+.resume.resume--modern .hero {
+  background:linear-gradient(135deg,var(--brand),var(--brand2));
+}
+
+/* Theme: minimal */
+.resume.resume--minimal .hero {
+  background:#0f172a; /* deep slate */
+}
+.resume.resume--minimal .section { padding:22px 28px; }
+.resume.resume--minimal h2 { color:#0f172a; }
+
+/* Mobile */
+@media (max-width:768px){
+  html, body { background:#fff; }
+  .resume.sheet { box-shadow:none; border-radius:0; margin:0; }
+  .resume .hero { padding:20px 18px; }
+  .resume .section { padding:18px; }
+}
+
+/* Print */
+@media print{
+  html, body { background:#fff; }
+  .resume.sheet { box-shadow:none; margin:0; }
+}
