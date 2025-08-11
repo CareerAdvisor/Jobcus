@@ -3,165 +3,127 @@
 {% block title %}Resume Builder – Jobcus{% endblock %}
 
 {% block content %}
-
-<!-- Hero Section -->
-<div class="interview-container" style="padding: 30px 10px; width: 100%; background: #104879;">
-  <section class="interview-hero-with-image" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-    <h5 style="color: #ffc957; font-weight: 600; font-size: 14px; letter-spacing: 1px;">AI RESUME BUILDER</h5>
-    <h1 style="font-size: 28px; font-weight: 700; color: white; margin: 10px 0;">
-      Get Hired 2x Faster <br>with an <span style="color: #ffc957;">Optimized Resume</span>
+<!-- Hero -->
+<div class="interview-container" style="padding:30px 10px;width:100%;background:#104879;">
+  <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+    <h5 style="color:#ffc957;font-weight:600;font-size:14px;letter-spacing:1px;">AI RESUME BUILDER</h5>
+    <h1 style="font-size:28px;font-weight:700;color:#fff;margin:10px 0;">
+      Build a polished, ATS-friendly resume
     </h1>
-    <p style="max-width: 420px; color: white; font-size: 16px; margin: 10px 0 20px;">
-      Improve your resume with AI suggestions<br>and a recruiter-friendly format.
+    <p style="max-width:420px;color:#fff;font-size:16px;margin:10px 0 20px;">
+      Use our modern or minimal template in Jobcus colours.
     </p>
-    <ul style="list-style: none; padding: 0; margin-bottom: 15px; color: #fff; font-weight: bold;">
-      <li style="margin-bottom: 8px;">✅ ATS Resume Templates</li>
-      <li style="margin-bottom: 8px;">✅ Resume Score</li>
-      <li>✅ One Click Optimizer</li>
-    </ul>
-    <a href="#resume-analyzer" class="primary-btn"
-       style="background-color: #ffc957; padding: 12px 24px; color: #104879; border-radius: 6px; text-decoration: none; font-weight: 600;">
-      ANALYZE MY RESUME
-    </a>
-    <div style="margin-top: 20px; margin-bottom: 20px;">
-      <img src="{{ url_for('static', filename='images/mobile-illustration.png') }}" alt="Upload Resume" style="max-width: 180px; height: auto;" />
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="/resume-analyzer" class="primary-btn" style="background:#ffc957;color:#104879;padding:10px 16px;border-radius:6px;text-decoration:none;font-weight:600;">
+        Analyze my current resume
+      </a>
     </div>
   </section>
 </div>
 
-<!-- Resume Analyzer Section -->
-<section id="resume-analyzer" style="padding:40px 20px; background:#f9fafb;">
-  <h2 style="color:#104879;">🔍 AI Resume Analyzer</h2>
-  <p style="color:#555;margin-bottom:20px;">
-    Paste or upload your resume to get a personalised score, keyword analysis, and improvement suggestions.
-  </p>
-  <textarea id="resume-text"
-    placeholder="Paste your resume text here…"
-    style="width:100%;height:150px;padding:12px;border:1px solid #ccc;border-radius:8px;
-           margin-bottom:10px;font-size:14px;"></textarea>
-  <input type="file" id="resumeFile" accept=".pdf,.docx"
-         style="display:block;margin-bottom:15px;">
-  <button id="analyze-btn" class="primary-btn"
-    style="background:#104879;color:white;padding:12px 24px;border:none;border-radius:6px;
-           font-weight:600;font-size:14px;">
-    Analyze Resume
-  </button>
-
-  <div id="analyzingIndicator" style="display:none;margin-top:1rem;color:#555;text-align:center;">
-    🤖 Analyzing your resume, please wait…
-  </div>
-</section>
-
 <!-- AI Resume Builder Section -->
 <section id="resume-builder" style="background:#ffc957;padding:20px;border-radius:8px;margin-top:40px;">
-  <h2 style="color:#104879;">📄 Build Your Resume with AI</h2>
-  <p style="color:#333;margin-bottom:20px;">
-    Quickly generate a professional resume with the power of AI. Fill in your details below.
-  </p>
+  <div style="max-width:980px;margin:0 auto;">
+    <h2 style="color:#104879;">📄 Build Your Resume with AI</h2>
+    <p style="color:#333;margin-bottom:20px;">Fill your details or let AI pre-fill from your last analysis.</p>
 
-  <!-- Theme selector -->
-  <div style="margin-bottom:10px;">
-    <label for="themeSelect"><strong>Theme</strong></label><br/>
-    <select id="themeSelect" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
-      <option value="modern" selected>Modern</option>
-      <option value="minimal">Minimal</option>
-    </select>
-  </div>
-
-  <form id="resumeForm" style="display:grid;gap:10px;">
-    <div>
-      <label for="fullName"><strong>Full Name</strong></label><br/>
-      <input type="text" id="fullName" name="fullName" required
-             style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;">
-    </div>
-    <div>
-      <label for="title"><strong>Job Title(s)</strong></label><br/>
-      <input type="text" id="title" name="title" required
-             style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;">
-    </div>
-    <div>
-      <label for="contact"><strong>Contact Info</strong></label><br/>
-      <input type="text" id="contact" name="contact" required
-             style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;">
-    </div>
-    <div>
-      <label for="summary"><strong>Professional Summary</strong></label><br/>
-      <textarea id="summary" name="summary"
-        style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;"></textarea>
-    </div>
-    <div>
-      <label for="education"><strong>Education</strong></label><br/>
-      <textarea id="education" name="education"
-        style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;"></textarea>
-    </div>
-    <div>
-      <label for="experience"><strong>Work Experience</strong></label><br/>
-      <textarea id="experience" name="experience"
-        style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;"></textarea>
-    </div>
-    <div>
-      <label for="skills"><strong>Skills</strong></label><br/>
-      <textarea id="skills" name="skills"
-        style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;"></textarea>
-    </div>
-    <div>
-      <label for="certifications"><strong>Certifications</strong></label><br/>
-      <textarea id="certifications" name="certifications"
-        style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;"></textarea>
-    </div>
-    <div>
-      <label for="portfolio"><strong>LinkedIn or Portfolio</strong></label><br/>
-      <input type="url" id="portfolio" name="portfolio"
-             style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;">
+    <!-- Theme selector -->
+    <div style="margin-bottom:10px;">
+      <label for="themeSelect"><strong>Theme</strong></label><br/>
+      <select id="themeSelect" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;">
+        <option value="modern" selected>Modern</option>
+        <option value="minimal">Minimal</option>
+      </select>
     </div>
 
-    <button type="submit" style="background:#104879;color:white;
-           padding:10px 20px;border:none;border-radius:5px;margin-top:10px;">
-      ✨ Generate Resume
-    </button>
-  </form>
+    <form id="resumeForm" style="display:grid;gap:10px;">
+      <div>
+        <label for="fullName"><strong>Full Name</strong></label><br/>
+        <input type="text" id="fullName" name="fullName" required
+               style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;">
+      </div>
+      <div>
+        <label for="title"><strong>Job Title(s)</strong></label><br/>
+        <input type="text" id="title" name="title" required
+               style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;">
+      </div>
+      <div>
+        <label for="contact"><strong>Contact Info</strong></label><br/>
+        <input type="text" id="contact" name="contact" required
+               style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;">
+      </div>
+      <div>
+        <label for="summary"><strong>Professional Summary</strong></label><br/>
+        <textarea id="summary" name="summary"
+          style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;"></textarea>
+      </div>
+      <div>
+        <label for="education"><strong>Education</strong></label><br/>
+        <textarea id="education" name="education"
+          style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;"></textarea>
+      </div>
+      <div>
+        <label for="experience"><strong>Work Experience</strong></label><br/>
+        <textarea id="experience" name="experience"
+          style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;"></textarea>
+      </div>
+      <div>
+        <label for="skills"><strong>Skills</strong></label><br/>
+        <textarea id="skills" name="skills"
+          style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;"></textarea>
+      </div>
+      <div>
+        <label for="certifications"><strong>Certifications</strong></label><br/>
+        <textarea id="certifications" name="certifications"
+          style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;"></textarea>
+      </div>
+      <div>
+        <label for="portfolio"><strong>LinkedIn or Portfolio</strong></label><br/>
+        <input type="url" id="portfolio" name="portfolio"
+               style="width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;">
+      </div>
 
-  <!-- Template preview / download -->
-  <div style="display:flex; gap:.5rem; margin-top:10px;">
-    <button type="button" id="previewTemplate">🔎 Preview in Template</button>
-    <button type="button" id="downloadTemplatePdf">⬇️ Download PDF</button>
-  </div>
+      <button type="submit" style="background:#104879;color:#fff;padding:10px 20px;border:none;border-radius:5px;margin-top:10px;">
+        ✨ Generate Resume
+      </button>
+    </form>
 
-  <!-- Preview (isolated in an iframe) -->
-  <div id="resumePreviewWrap" style="display:none; margin-top:1rem;">
-    <h3 style="color:#104879;">Preview</h3>
-    <!-- Replace your preview <div> with: -->
-    <iframe id="resumePreview" class="resume-preview" style="width:100%; height:100vh; border:0; background:#fff;"></iframe>
-  </div>
-
-  <!-- output + spinner container -->
-  <div id="builderResumeOutput" class="resume-container"
-       style="background:#fff;padding:20px;border-radius:8px;min-height:150px;
-              margin-top:20px;position:relative;">
-
-    <div id="builderGeneratingIndicator"
-         style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-                color:#555;font-size:1rem;">
-      🤖 Generating your resume, please wait…
+    <!-- Template preview / download -->
+    <div style="display:flex; gap:.5rem; margin-top:10px;flex-wrap:wrap;">
+      <button type="button" id="previewTemplate">🔎 Preview in Template</button>
+      <button type="button" id="downloadTemplatePdf">⬇️ Download PDF</button>
     </div>
 
-    <div id="builderGeneratedContent"></div>
-  </div>
+    <!-- Preview (isolated in an iframe) -->
+    <div id="resumePreviewWrap" style="display:none; margin-top:1rem;">
+      <h3 style="color:#104879;">Preview</h3>
+      <iframe id="resumePreview" class="resume-preview" style="width:100%; height:80vh; border:0; background:#fff;"></iframe>
+    </div>
 
-  <!-- download or sign-up CTA -->
-  <div id="resumeDownloadOptions" style="display:none;text-align:center;margin-top:1rem;">
-    {% if current_user.is_authenticated %}
-      <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
-      <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
-    {% else %}
-      <p>
-        Want to download your AI-generated resume?
-        <strong><a href="/account" style="color:#104879;">Sign up or log in</a></strong> first.
-      </p>
-    {% endif %}
+    <!-- output + spinner container (kept for legacy download TXT) -->
+    <div id="builderResumeOutput" class="resume-container"
+         style="background:#fff;padding:20px;border-radius:8px;min-height:120px;margin-top:20px;position:relative;">
+      <div id="builderGeneratingIndicator"
+           style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#555;font-size:1rem;">
+        🤖 Generating your resume, please wait…
+      </div>
+      <div id="builderGeneratedContent"></div>
+    </div>
+
+    <!-- download or sign-up CTA -->
+    <div id="resumeDownloadOptions" style="display:none;text-align:center;margin-top:1rem;">
+      {% if current_user.is_authenticated %}
+        <button onclick="downloadResume('pdf')">⬇️ Download PDF</button>
+        <button onclick="downloadResume('txt')">⬇️ Download TXT</button>
+      {% else %}
+        <p>
+          Want to download your AI-generated resume?
+          <strong><a href="/account" style="color:#104879;">Sign up or log in</a></strong> first.
+        </p>
+      {% endif %}
+    </div>
   </div>
 </section>
-
 {% endblock %}
 
 {% block scripts %}
@@ -169,5 +131,5 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-  <script src="{{ url_for('static', filename='js/resume-builder.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/resume-builder.js') }}"></script>
 {% endblock %}
