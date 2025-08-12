@@ -3883,3 +3883,28 @@ textarea{
   background: #0a2e5f !important;
 }
 
+/* ===== Resume pages: equal side padding + no gap under fixed header ===== */
+
+/* Remove the global 50px top padding on these pages, and place the content
+   exactly under the fixed 60px header (no extra white gap). */
+.site-header + main.res-page {
+  padding-top: 0;
+  margin-top: 60px;   /* header is 60px tall */
+}
+
+/* Consistent left/right gutters on hero + page sections */
+.res-page .interview-container,
+.res-page #resume-analyzer,
+.res-page #resume-builder {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+@media (min-width: 768px) {
+  .res-page .interview-container,
+  .res-page #resume-analyzer,
+  .res-page #resume-builder {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+}
