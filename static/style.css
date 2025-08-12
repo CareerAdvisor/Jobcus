@@ -3547,50 +3547,6 @@ button {
   grid-template-columns:1fr 1fr; 
 }
 
-  /* --- Resume pages: kill horizontal overflow + keep everything boxed --- */
-*, *::before, *::after { box-sizing: border-box; }
-
-/* Never exceed viewport width */
-.res-page,
-.res-page section,
-.res-page .container,
-.res-page .card,
-.res-page .resume-container,
-.res-page .resume-preview {
-  width: 100%;
-  max-width: 100%;
-}
-
-/* Images/iframes/inputs can’t run past the edge */
-.res-page img,
-.res-page iframe,
-.res-page textarea,
-.res-page input,
-.res-page select,
-.res-page button {
-  max-width: 100%;
-}
-
-/* The preview iframe on builder */
-.res-page iframe.resume-preview {
-  display: block;
-  border: 0;
-  width: 100% !important;
-  max-width: 100%;
-}
-
-/* Long headings/links should wrap instead of pushing layout */
-.res-page h1, .res-page h2, .res-page h3, .res-page p, .res-page a {
-  overflow-wrap: anywhere;
-}
-
-/* If any component uses 100vw internally, tame it on these pages */
-.res-page [style*="100vw"], .res-page .vw-wide {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-
-
 .rb-grid .full { 
   grid-column:1/-1; 
 }
@@ -3619,6 +3575,24 @@ textarea{
   gap:.5rem; 
   margin-top:.75rem; 
   flex-wrap:wrap; 
+}
+
+.cta-primary {
+  background:var(--accent); 
+  color:#1f2a37; 
+  border:0; 
+  padding:.7rem 1rem; 
+  border-radius:10px; 
+  font-weight:700; 
+}
+
+.cta-secondary {
+  background:var(--brand); 
+  color:#fff; 
+  border:0; 
+  padding:.7rem 1rem; 
+  border-radius:10px; 
+  font-weight:700; 
 }
 
 .ghost { 
@@ -3907,4 +3881,47 @@ textarea{
     padding-left: 20px !important;
     padding-right: 20px !important;
   }
+}
+
+ /* --- Resume pages: kill horizontal overflow + keep everything boxed --- */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Never exceed viewport width */
+.res-page,
+.res-page section,
+.res-page .container,
+.res-page .card,
+.res-page .resume-container,
+.res-page .resume-preview {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Images/iframes/inputs can’t run past the edge */
+.res-page img,
+.res-page iframe,
+.res-page textarea,
+.res-page input,
+.res-page select,
+.res-page button {
+  max-width: 100%;
+}
+
+/* The preview iframe on builder */
+.res-page iframe.resume-preview {
+  display: block;
+  border: 0;
+  width: 100% !important;
+  max-width: 100%;
+}
+
+/* Long headings/links should wrap instead of pushing layout */
+.res-page h1, .res-page h2, .res-page h3, .res-page p, .res-page a {
+  overflow-wrap: anywhere;
+}
+
+/* If any component uses 100vw internally, tame it on these pages */
+.res-page [style*="100vw"], .res-page .vw-wide {
+  width: 100% !important;
+  max-width: 100% !important;
 }
