@@ -3897,6 +3897,17 @@ textarea{
   max-width: 100%;
 }
 
+/* Safe horizontal padding on small screens */
+.res-page section { 
+  padding-inline: 16px; 
+  }
+
+@media (min-width: 768px) { 
+.res-page section { 
+  padding-inline: 20px; 
+  } 
+}
+
 /* Images/iframes/inputs can’t run past the edge */
 .res-page img,
 .res-page iframe,
