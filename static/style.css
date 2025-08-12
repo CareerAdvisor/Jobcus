@@ -3703,3 +3703,127 @@ textarea{
   grid-template-columns:1fr; 
   }
 }
+
+  /* subtle top accent bar */
+.cl-spot::before {
+  content: "";
+  display: block;
+  height: 6px;
+  background: linear-gradient(90deg, var(--brand), var(--brand-2) 60%, var(--accent));
+}
+
+.cl-spot__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  padding: 22px;
+}
+
+.cl-spot__copy { max-width: 720px; }
+
+.cl-spot__eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--brand);
+  background: #eef6ff;
+  border: 1px solid #d7e8ff;
+  padding: 6px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.cl-spot__title {
+  margin: 4px 0 6px;
+  color: var(--ink);
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.cl-spot__lead {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.cl-spot__points {
+  list-style: none;
+  margin: 8px 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.cl-spot__points li {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  align-items: start;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 14.5px;
+}
+.cl-spot__points li::before {
+  content: "✓";
+  display: inline-grid;
+  place-items: center;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #1a1a1a;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Button sits nicely and expands on small screens */
+.cl-spot__cta {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #1a1a1a;
+  font-weight: 700;
+  text-decoration: none;
+  border: 0;
+  box-shadow: 0 6px 18px rgba(255, 201, 87, .35);
+}
+.cl-spot__cta:hover { filter: brightness(0.98); transform: translateY(-1px); }
+.cl-spot__cta:active { transform: translateY(0); }
+
+.cl-spot__meta {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* optional right-side art */
+.cl-spot__art {
+  display: none;
+  align-self: center;
+  text-align: center;
+}
+.cl-spot__art img {
+  max-width: 360px;
+  width: 100%;
+  height: auto;
+}
+
+/* Responsive: two columns on desktop */
+@media (min-width: 900px) {
+  .cl-spot__grid {
+    padding: 28px 32px;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 32px;
+  }
+  .cl-spot__art { display: block; }
+}
+
+/* If you already have .cta-primary styles, this keeps spacing tidy on mobile */
+@media (max-width: 520px) {
+  .cl-spot__cta { width: 100%; }
+}
+
