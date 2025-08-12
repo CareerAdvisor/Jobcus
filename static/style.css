@@ -3707,7 +3707,7 @@ button {
   padding:18px 18px 14px;
   border-bottom:1px solid #eef2f7;
 }
-.rb-card > header h2{ margin:.2rem 0 .25rem; font-size:1.25rem; }
+.rb-card > header h2{ margin:.2rem 0 .25rem; font-size:.75rem; }
 .rb-card > header p{ margin:0 0 .25rem; color:var(--muted); }
 
 /* Inner rounded panel that holds fields (the blue-tinted area) */
@@ -3844,3 +3844,4 @@ textarea{ resize:vertical; }
   color: #fff;
   border: none;
 }
+
