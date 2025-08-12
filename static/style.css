@@ -3424,6 +3424,20 @@ button {
   100% { background-color: transparent; }
 }
 
+  
+
+  /* Optional: quick styling */
+.cover-letter-spotlight {
+  background: #f7fbff;
+  border: 1px solid #e6f0fb;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 40px auto;
+}
+.cover-letter-spotlight h2 { color: #104879; margin-top: 0; }
+.cover-letter-spotlight .cl-points { margin: .5rem 0 1rem 1.1rem; }
+.cover-letter-spotlight .cl-points li { margin: .25rem 0; }
+
 /* === Chat Welcome Banner & Chips Enhancements === */
 .welcome-banner {
   padding: 24px 16px !important;       /* ensure extra padding */
@@ -3463,11 +3477,3 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
-
-
-
-
-
-
-
-
