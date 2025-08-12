@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Jobcus – Your AI Career Advisor{% endblock %}
+{% block title %}Jobcus – AI Resume Builder & Analyzer{% endblock %}
 
 {% block content %}
 
 <!-- 🟦 Hero Section -->
 <section class="hero">
-  <h1>Your AI Career Advisor</h1>
-  <p>Build resumes, analyse and improve your resume, prepare for interviews, analyse skills, and land jobs, all powered by AI.</p>
+  <h1>AI Resume Builder & Analyzer</h1>
+  <p>Create ATS-ready resumes, get instant feedback, prep for interviews, and close skill gaps—everything you need to land the job.</p>
   <a href="/resume-analyzer" class="cta-primary">Analyze my resume now</a>
   <a href="/resume-builder" class="cta-secondary">Build my resume</a>
 </section>
@@ -36,25 +36,23 @@
   </a>
 </section>
 
-<!-- ✨ AI-Powered Assistance Section -->
-<section class="ai-assistance">
-  <img src="{{ url_for('static', filename='images/ai-assist.png') }}" alt="AI Assistance" />
-  <h2>Advance Your Career with AI-Powered Assistance</h2>
+<!-- 🧠 Interview Coach -->
+<section class="ai-assistance interview-coach">
+  <img src="{{ url_for('static', filename='images/ai-assist.png') }}" alt="Interview Coach" />
+  <h2>Ace Your Interviews with Our AI Coach</h2>
   <p>
-    Get expert resume help, personalised career guidance, and job matching tailored just for you.
+    Practice tailored questions, get STAR-based feedback, and polish your answers with real-time coaching.
   </p>
-  <a href="/chat" class="cta-secondary">Get Started</a>
+  <a href="/interview-coach" class="cta-secondary">Practice now</a>
 </section>
 
-<!-- 🎯 Call-to-Action -->
-<section class="cta-section">
-  <h2>Identify and Close Your Skill Gaps?</h2>
-  <p>Join thousands using Jobcus to uncover missing skills, get personalised learning paths, and stay competitive in today’s job market.</p>
-  <a href="/skill-gap" class="cta-primary">Start Free</a>
+<!-- 🤖 AI Assistance -->
+<section class="cta-section ai-assist-cta">
+  <h2>Meet Your Personal AI Career Assistant</h2>
+  <p>
+    Ask anything about resumes, job descriptions, interview prep, or skill gaps—get instant, actionable guidance.
+  </p>
+  <a href="/chat" class="cta-primary">Chat with Jobcus AI</a>
 </section>
 
 {% endblock %}
-
-
-
-
