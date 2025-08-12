@@ -3489,7 +3489,7 @@ button {
 .rb-tabs {
   position:sticky; 
   top:0; 
-  z-index:10;
+  z-index:20;
   display:flex; 
   gap:.5rem; 
   padding:.5rem .75rem;
@@ -3501,14 +3501,15 @@ button {
 .rb-tabs button {
   flex:0 0 auto; 
   border:0; 
-  padding:.55rem .9rem; 
-  border-radius:999px;
+  padding:.55rem 1rem; 
+  border-radius:12px;
   background:#eef2f7; 
   font-weight:600;
+  color: #111;
 }
 
 .rb-tabs button.active { 
-  background:var(--brand); 
+  background: #111827;
   color:#fff; 
 }
 
@@ -3524,12 +3525,13 @@ button {
 
 .rb-card header h2 { 
   margin:.2rem 0 .25rem; 
-  font-size:1.15rem; 
+  font-size: 26px; 
+  line-height: 1.2; 
 }
 
 .rb-card header p{ 
   margin:0 0 .75rem; 
-  color:var(--muted); 
+  color: #6b7280; 
 }
 
 .rb-grid{ 
@@ -3584,27 +3586,6 @@ textarea{
   padding:.7rem 1rem; 
   border-radius:10px; 
   font-weight:700; 
-}
-
-.ghost { 
-  background:#fff; 
-  border:1px solid var(--border); 
-  padding:.7rem 1rem; 
-  border-radius:10px; 
-}
-
-.rb-footer {
-  position:sticky; 
-  bottom:0; 
-  display:flex; 
-  gap:.5rem;
-  justify-content:space-between; 
-  align-items:center; padding:.6rem;
-  background:linear-gradient(#fff,#fff); 
-  border-top:1px solid var(--border);
-  border-start-start-radius:12px; 
-  border-start-end-radius:12px; 
-  margin-top:1rem;
 }
 
 .rb-disclosure summary { 
@@ -3861,16 +3842,18 @@ textarea{
 .res-page .interview-container,
 .res-page #resume-analyzer,
 .res-page #resume-builder {
-  padding-left: 16px !important;
-  padding-right: 16px !important;
+  border-radius: 12px;
+  max-width: 940px;
+  margin: 0 auto 10px;
 }
 
 @media (min-width: 768px) {
   .res-page .interview-container,
   .res-page #resume-analyzer,
   .res-page #resume-builder {
-    padding-left: 20px !important;
-    padding-right: 20px !important;
+    border-radius: 12px;
+    max-width: 940px;
+    margin: 0 auto 10px;
   }
 }
 
@@ -4059,8 +4042,11 @@ textarea{
 .ai-suggest {
   border: 1px solid #e9d5ff;
   background: linear-gradient(180deg,#faf5ff 0%, #f5f0ff 70%);
-  border-radius: 16px; padding: 12px; margin-top: 10px;
-  position: relative; overflow: hidden;
+  border-radius: 16px; 
+  padding: 12px; 
+  margin-top: 10px;
+  position: relative; 
+  overflow: hidden;
 }
 
 .ai-suggest .ai-top {
@@ -4080,7 +4066,7 @@ textarea{
   background:#fff; 
   padding:8px 14px; 
   border-radius:999px; 
-  margin: 6px 0 10px;
+  margin-bottom:8px;
   border:1px solid #ede9fe;
 }
 
@@ -4201,3 +4187,75 @@ textarea{
   }
 }
 
+/* Inputs: rounded, soft border, light placeholder */
+.rb-card input, .rb-card select, .rb-card textarea {
+  border: 1px solid #e5e7eb; 
+  border-radius: 14px;
+  padding: 12px 14px; font-size: 16px; 
+  background: #fff;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.rb-card textarea { 
+  min-height: 120px; 
+  resize: vertical; 
+}
+
+.rb-card input::placeholder,
+.rb-card textarea::placeholder { 
+  color: #b6c0c9; 
+}
+
+.rb-card input:focus, .rb-card textarea:focus, .rb-card select:focus {
+  border-color: #cbd5e1; 
+  box-shadow: 0 0 0 4px rgba(37,99,235,.10); 
+  outline: 0;
+}
+
+  /* Wizard: show one step at a time */
+.rb-step { 
+  display: none; 
+}
+
+.rb-step.active { 
+  display: block; 
+}
+
+/* Make the footer a floating bar like the screenshots */
+.rb-footer {
+  position: fixed; 
+  left: 0; 
+  right: 0; 
+  bottom: 0; 
+  z-index: 30;
+  background: #fff; 
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -8px 22px rgba(0,0,0,.06);
+  display:flex; 
+  gap:.5rem; 
+  justify-content: center;
+  padding: 10px 12px;
+}
+
+.ghost { 
+  background:#fff; 
+  border:1px solid var(--border); 
+  padding:.7rem 1rem; 
+  border-radius:10px; 
+}
+
+.rb-footer .ghost { 
+  background:#fff; 
+  border:1px solid #e5e7eb; 
+  border-radius:999px; 
+  padding:12px 18px; 
+  font-weight:700; 
+}
+
+.rb-footer .cta-secondary { 
+  border-radius:999px; 
+}
+
+.rb-footer .cta-primary { 
+  border-radius:999px; 
+}
