@@ -207,3 +207,22 @@ padding: 0.6rem;
 border: 1px solid #ccc;
 border-radius: 4px;
 }
+
+/* 1) Space between hero and form */
+.res-builder .interview-container { margin-bottom:24px; }
+
+/* 2) Wizard buttons wrap + spacing */
+.rb-tabs{ flex-wrap:wrap; gap:8px 10px; margin-top:12px; margin-bottom:12px; }
+.rb-tabs button{ margin:0; }
+
+/* 3) Headings stacked (subheading below h2) */
+.rb-card header{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
+
+/* 4) Field spacing + comfortable padding */
+.rb-grid{ gap:1rem; }
+label{ gap:.45rem; }
+input,select,textarea{ padding:12px 14px; }
+.rb-card textarea{ min-height:140px; }
+
+/* 5) Prevent overlap with sticky header on mobile */
+.site-header + main.res-page{ margin-top:60px; padding-top:0; }
