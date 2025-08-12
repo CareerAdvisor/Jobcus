@@ -5,7 +5,7 @@
   --page-w: 210mm; --page-h: 297mm; --page-pad: 16mm;
   --text:#111; --muted:#5b6773; --rule:#e6e8eb; --accent:#104879;
   --font:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
-  --h1:18pt; --h2:11.5pt; --body:11pt; --small:10pt; --line:1.35;
+  --h1:14pt; --h2:9.5pt; --body:9pt; --small:8pt; --line:1.35;
 }
 html,body{background:#f4f6f8;color:var(--text);font:var(--body)/var(--line) var(--font);margin:0;padding:0;}
 .resume-page{box-sizing:border-box;width:var(--page-w);min-height:var(--page-h);margin:12px auto;background:#fff;box-shadow:0 4px 20px rgba(0,0,0,.08);padding:var(--page-pad);overflow:hidden;}
@@ -126,3 +126,4 @@ textarea{resize:vertical;min-height:140px;}
 @media (min-width:768px){ .res-page section{padding-inline:20px;} }
 .res-page iframe.resume-preview{display:block;border:0;width:100%!important;max-width:100%;}
 .res-page h1,.res-page h2,.res-page h3,.res-page p,.res-page a{overflow-wrap:anywhere;}
+
