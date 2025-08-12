@@ -3522,15 +3522,6 @@ button {
   margin:0 auto; 
 }
 
-.rb-card{
-  background:var(--card); 
-  border:1px solid var(--border);
-  border-radius:var(--radius); 
-  padding:1rem 1rem 1.1rem; 
-  margin:0 0 .9rem;
-  box-shadow:0 4px 14px rgba(16,72,121,.06);
-}
-
 .rb-card header h2 { 
   margin:.2rem 0 .25rem; 
   font-size:1.15rem; 
@@ -3936,3 +3927,277 @@ textarea{
   width: 100% !important;
   max-width: 100% !important;
 }
+
+/* ===== Resume Builder (page-scoped) ===== */
+.res-builder {                /* put this on <main> */
+  --brand:#104879;
+  --ink:#111827;
+  --muted:#6b7280;
+  --stroke:#e5e7eb;
+  --bg:#f7f7f8;
+  --chip:#eef2f7;
+  background:#fff;            /* white page like screenshots */
+  padding: 16px 16px 100px;   /* bottom room for fixed nav */
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+/* Sticky segmented tabs */
+.rb-topbar {
+  position: sticky; 
+  top: 0; 
+  z-index: 20;
+  padding: 10px 0 8px;
+  background: linear-gradient(#ffffffee,#ffffffee);
+  backdrop-filter: saturate(180%) blur(8px);
+}
+
+.rb-segments {
+  display:flex; 
+  gap:12px; 
+  align-items:center;
+  background:#fff; 
+  border-radius:14px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.06);
+  padding: 6px; 
+  overflow:hidden; 
+  width: fit-content;
+}
+
+.rb-segments button {
+  border:0; 
+  background:transparent; 
+  cursor:pointer;
+  padding:10px 18px; 
+  border-radius:10px; 
+  font-weight:700;
+  color:#111; font-size:16px;
+}
+
+.rb-segments button.active {
+  background:#111827; 
+  color:#fff;
+}
+
+/* Floating download FAB (blue circle on the right) */
+.rb-fab {
+  position: sticky; 
+  float: right; 
+  top: 8px;
+  margin-top:-48px; 
+  margin-right: 6px;
+  width: 46px; 
+  height: 46px; 
+  border-radius: 50%;
+  background:#2563eb; 
+  color:#fff; 
+  border:0; 
+  cursor:pointer;
+  box-shadow: 0 10px 22px rgba(37,99,235,.35);
+}
+
+/* Section cards */
+.rb-card {
+  background:#fff; 
+  border:1px solid var(--stroke);
+  border-radius:16px; 
+  padding: 18px; 
+  margin: 12px 0 18px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.04);
+}
+
+/* Headings & helper text */
+.rb-card h2 {
+  font-size: 26px; 
+  line-height: 1.2; 
+  margin: 0 0 4px; 
+  color:#111827;
+}
+
+.rb-help {
+  color:#6b7280; 
+  font-size: 15px; 
+  line-height: 1.6; 
+  margin-bottom: 14px;
+}
+
+/* Inputs like iOS/Resume.co */
+.rb-field label { 
+  display:block; 
+  font-size:14px; 
+  color:#6b7280; 
+  margin:10px 0 6px; 
+}
+
+.rb-input, .rb-textarea, .rb-select {
+  width:100%; 
+  border:1px solid var(--stroke);
+  background:#fff; 
+  border-radius:14px; 
+  padding:12px 14px;
+  font-size:16px; line-height:1.4; outline:none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.rb-textarea { 
+  min-height: 120px; 
+  resize: vertical; 
+}
+
+/* Light gray placeholder */
+.rb-input::placeholder, .rb-textarea::placeholder { 
+  color:#b4bdc6; 
+}
+
+/* Focus ring */
+.rb-input:focus, .rb-textarea:focus, .rb-select:focus {
+  border-color:#cbd5e1; 
+  box-shadow: 0 0 0 4px rgba(37,99,235,.10);
+}
+
+/* “Write with AI” suggestion card */
+.ai-suggest {
+  border: 1px solid #e9d5ff;
+  background: linear-gradient(180deg,#faf5ff 0%, #f5f0ff 70%);
+  border-radius: 16px; padding: 12px; margin-top: 10px;
+  position: relative; overflow: hidden;
+}
+
+.ai-suggest .ai-top {
+  border-top: 2px dashed #c4b5fd; 
+  height: 2px; width: 100%;
+  position: absolute; left: 0; 
+  top: 50px; 
+  opacity:.8;
+}
+
+.ai-suggest .ai-title { 
+  display:inline-flex; 
+  align-items:center; 
+  gap:8px;
+  font-weight:700; 
+  color:#6d28d9; 
+  background:#fff; 
+  padding:8px 14px; 
+  border-radius:999px; 
+  margin: 6px 0 10px;
+  border:1px solid #ede9fe;
+}
+
+.ai-suggest p { 
+  color:#111827; 
+  margin:10px 0 14px; 
+}
+
+.ai-actions { 
+  display:flex; 
+  gap:10px; 
+}
+
+.ai-actions .btn {
+  flex:1; 
+  border:0; 
+  border-radius:999px; 
+  padding:12px 16px; 
+  cursor:pointer;
+  font-weight:700; 
+  background:#fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06); 
+}
+
+.ai-actions .btn-primary { 
+  background:#2563eb; 
+  color:#fff; 
+}
+
+/* “Suggested” chips (skills) */
+.chips { 
+  display:flex; 
+  flex-wrap:wrap; 
+  gap:10px; 
+  margin: 8px 0 14px; 
+}
+
+.chip {
+  background:#eef2f7; 
+  border:1px solid #e5e7eb;
+  border-radius:999px; 
+  padding:8px 12px; 
+  font-weight:600; 
+  font-size:14px;
+}
+
+/* Additional sections list */
+.add-list { 
+  display:flex; 
+  flex-direction:column; 
+  gap:12px; 
+}
+
+.add-item {
+  background:#f6f7f9; 
+  border:1px solid #eceff3;
+  border-radius:16px; 
+  padding:14px; 
+  display:flex; 
+  align-items:center;
+  justify-content: space-between;
+  font-weight:700; 
+  color:#111827;
+}
+
+/* Wizard visibility */
+.step { 
+  display:none; 
+}
+
+.step.active { 
+  display:block; 
+}
+
+/* Bottom fixed nav (Back | Reorder | Next) */
+.rb-bottom {
+  position: fixed; 
+  left: 0; 
+  right: 0; 
+  bottom: 0; 
+  z-index: 30;
+  background:#fff; 
+  border-top:1px solid #e5e7eb;
+  box-shadow: 0 -10px 24px rgba(0,0,0,.06);
+}
+
+.rb-bottom .inner {
+  max-width: 820px; margin: 0 auto; 
+  padding: 12px 16px;
+  display:flex; 
+  align-items:center; 
+  justify-content: space-between; 
+  gap: 10px;
+}
+  
+.rb-bottom .btn {
+  border:1px solid #e5e7eb; 
+  background:#fff; 
+  color:#111827;
+  border-radius: 999px; 
+  padding: 12px 18px; 
+  font-weight:700; 
+  cursor:pointer;
+  }
+
+.rb-bottom .btn-primary {
+  background:#2563eb; 
+  color:#fff; 
+  border:0; 
+  padding: 12px 22px;
+ }
+
+/* Small screens niceties */
+@media (max-width: 480px) {
+.rb-segments { 
+  width: 100%; 
+  justify-content: space-between; 
+  }
+}
+
