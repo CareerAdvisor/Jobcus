@@ -3664,3 +3664,73 @@ button {
   background: #0a2e5f !important;
 }
 
+:root{
+  --brand:#104879;
+  --accent:#ffc957;
+  --bg:#f5f7fb;
+  --card:#fff;
+  --muted:#6b7280;
+  --border:#e5e7eb;
+  --radius:14px;
+}
+
+.rb-tabs{
+  position:sticky; top:0; z-index:10;
+  display:flex; gap:.5rem; padding:.5rem .75rem;
+  backdrop-filter:saturate(180%) blur(8px);
+  background:linear-gradient(#fff8, #fff8), var(--bg);
+  border-bottom:1px solid var(--border);
+}
+.rb-tabs button{
+  flex:0 0 auto; border:0; padding:.55rem .9rem; border-radius:999px;
+  background:#eef2f7; font-weight:600;
+}
+.rb-tabs button.active{ background:var(--brand); color:#fff; }
+
+.rb-wrap{ background:var(--bg); padding:1rem; }
+.rb-form{ max-width:840px; margin:0 auto; }
+
+.rb-card{
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1rem 1rem 1.1rem; margin:0 0 .9rem;
+  box-shadow:0 4px 14px rgba(16,72,121,.06);
+}
+.rb-card header h2{ margin:.2rem 0 .25rem; font-size:1.15rem; }
+.rb-card header p{ margin:0 0 .75rem; color:var(--muted); }
+
+.rb-grid{ display:grid; gap:.75rem; grid-template-columns:1fr 1fr; }
+.rb-grid .full{ grid-column:1/-1; }
+label{ display:flex; flex-direction:column; gap:.35rem; font-weight:600; }
+input, select, textarea{
+  border:1px solid var(--border); border-radius:10px; padding:.7rem .85rem; font:inherit;
+  background:#fff;
+}
+textarea{ resize:vertical; }
+
+.rb-row{ display:flex; gap:.5rem; margin-top:.75rem; flex-wrap:wrap; }
+.cta-primary{ background:var(--accent); color:#1f2a37; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
+.cta-secondary{ background:var(--brand); color:#fff; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
+.ghost{ background:#fff; border:1px solid var(--border); padding:.7rem 1rem; border-radius:10px; }
+
+.rb-footer{
+  position:sticky; bottom:0; display:flex; gap:.5rem;
+  justify-content:space-between; align-items:center; padding:.6rem;
+  background:linear-gradient(#fff,#fff); border-top:1px solid var(--border);
+  border-start-start-radius:12px; border-start-end-radius:12px; margin-top:1rem;
+}
+
+.rb-disclosure summary{ cursor:pointer; color:var(--brand); font-weight:700; margin-top:.25rem; }
+.rb-item{ border:1px dashed var(--border); border-radius:12px; padding:.75rem; margin:.6rem 0; background:#fafbff; }
+.rb-actions{ display:flex; justify-content:flex-end; }
+.rb-remove{ background:#fff; border:1px solid var(--border); padding:.5rem .75rem; border-radius:8px; }
+
+.rb-add{ margin-top:.25rem; border:1px dashed var(--border); background:#fff; padding:.6rem .8rem; border-radius:999px; }
+
+.rb-chips{ display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.5rem; }
+.rb-chips .chip{ padding:.35rem .6rem; border-radius:999px; border:1px solid var(--border); background:#f6f8fb; }
+.rb-chips .chip button{ margin-left:.35rem; border:0; background:transparent; cursor:pointer; }
+
+@media (max-width:640px){
+  .rb-grid{ grid-template-columns:1fr; }
+}
+
