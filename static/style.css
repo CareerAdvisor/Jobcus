@@ -3827,3 +3827,20 @@ textarea{
   .cl-spot__cta { width: 100%; }
 }
 
+/* optional */
+.cta-tertiary { background: transparent; border: 1px solid #104879; color: #104879; }
+.hero .cta-primary, .hero .cta-secondary { margin-bottom: .5rem; }
+
+/* Optional: quick styling */
+.cover-letter-spotlight {
+  background: #f7fbff;
+  border: 1px solid #e6f0fb;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 40px auto;
+}
+.cover-letter-spotlight h2 { color: #104879; margin-top: 0; }
+.cover-letter-spotlight .cl-points { margin: .5rem 0 1rem 1.1rem; }
+.cover-letter-spotlight .cl-points li { margin: .25rem 0; }
+
+  
