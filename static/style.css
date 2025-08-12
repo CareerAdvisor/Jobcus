@@ -3746,7 +3746,7 @@ button {
 .cta-tertiary { background: transparent; border: 1px solid #104879; color: #104879; }
 .hero .cta-primary, .hero .cta-secondary { margin-bottom: .5rem; }
 
-  /* Optional: quick styling */
+/* Optional: quick styling */
 .cover-letter-spotlight {
   background: #f7fbff;
   border: 1px solid #e6f0fb;
@@ -3797,6 +3797,47 @@ button {
 .suggestion-chips button:hover {
   background: #0a2e5f !important;
 }
+
+/* CTA v2 overrides */
+.cta-primary{
+  background: var(--accent);
+  color: var(--cta-text-on-accent);
+  border: 0;
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.cta-secondary{
+  background: var(--brand);
+  color: #fff;
+  border: 0;
+  padding: .7rem 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+/* Optional hover/focus polish */
+.cta-primary:hover{ filter: brightness(.97); }
+.cta-secondary:hover{ filter: brightness(1.05); }
+.cta-primary:focus, .cta-secondary:focus{
+  outline: 2px solid rgba(16,72,121,.35);
+  outline-offset: 2px;
+}
+
+/* Outline variant for dark backgrounds */
+.cta-secondary--outline{
+  background: transparent;
+  color: #fff;
+  border: 2px solid #fff;
+}
+.cta-secondary--outline:hover{
+  background: rgba(255,255,255,.1);
+}
+
+/* new theme only when .theme-jobcus is on <body> */
+.theme-jobcus .cta-primary{ /* same as above */ }
+.theme-jobcus .cta-secondary{ /* same as above */ }
 
 
 
