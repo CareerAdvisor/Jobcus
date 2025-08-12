@@ -1290,11 +1290,6 @@ img {
 }
 
 /* --- Resume pages: kill horizontal overflow + keep everything boxed --- */
-html, body {
-  max-width: 100%;
-  overflow-x: hidden;          /* last line of defence */
-}
-
 *, *::before, *::after { box-sizing: border-box; }
 
 /* Never exceed viewport width */
@@ -1307,10 +1302,6 @@ html, body {
   width: 100%;
   max-width: 100%;
 }
-
-/* Safe horizontal padding on small screens */
-.res-page section { padding-inline: 16px; }
-@media (min-width: 768px) { .res-page section { padding-inline: 20px; } }
 
 /* Images/iframes/inputs can’t run past the edge */
 .res-page img,
@@ -2471,7 +2462,7 @@ career-hero h1 {
 /* === INTERVIEW COACH PAGE STYLES === */
 
 .interview-container {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
@@ -3107,7 +3098,7 @@ button[type="submit"]:hover {
   #resume-builder,
   .resume-gallery {
     width: 100%;
-    max-width: 80%;
+    max-width: 100%;
     box-sizing: border-box;
     overflow-x: hidden;
   }
@@ -3891,6 +3882,7 @@ button {
 /* new theme only when .theme-jobcus is on <body> */
 .theme-jobcus .cta-primary{ /* same as above */ }
 .theme-jobcus .cta-secondary{ /* same as above */ }
+
 
 
 
