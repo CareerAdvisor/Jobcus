@@ -3484,3 +3484,65 @@ button {
 /* new theme only when .theme-jobcus is on <body> */
 .theme-jobcus .cta-primary{ /* same as above */ }
 .theme-jobcus .cta-secondary{ /* same as above */ }
+
+/* ==== BUILDER FORM ==== */
+.rb-tabs {
+  position:sticky; 
+  top:0; 
+  z-index:10;
+  display:flex; 
+  gap:.5rem; 
+  padding:.5rem .75rem;
+  backdrop-filter:saturate(180%) blur(8px);
+  background:linear-gradient(#fff8, #fff8), var(--bg);
+  border-bottom:1px solid var(--border);
+}
+
+.rb-tabs button {
+  flex:0 0 auto; 
+  border:0; 
+  padding:.55rem .9rem; 
+  border-radius:999px;
+  background:#eef2f7; 
+  font-weight:600;
+}
+
+.rb-tabs button.active { 
+  background:var(--brand); 
+  color:#fff; 
+}
+
+.rb-wrap { 
+  background:var(--bg); 
+  padding:1rem; 
+}
+
+.rb-form { 
+  max-width:840px; 
+  margin:0 auto; 
+}
+
+.rb-card{
+  background:var(--card); 
+  border:1px solid var(--border);
+  border-radius:var(--radius); 
+  padding:1rem 1rem 1.1rem; 
+  margin:0 0 .9rem;
+  box-shadow:0 4px 14px rgba(16,72,121,.06);
+}
+
+.rb-card header h2 { 
+  margin:.2rem 0 .25rem; 
+  font-size:1.15rem; 
+}
+
+.rb-card header p{ 
+  margin:0 0 .75rem; 
+  color:var(--muted); 
+}
+
+.rb-grid{ 
+  display:grid; 
+  gap:.75rem; 
+  grid-template-columns:1fr 1fr; 
+}
