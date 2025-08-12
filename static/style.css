@@ -3546,3 +3546,40 @@ button {
   gap:.75rem; 
   grid-template-columns:1fr 1fr; 
 }
+
+  /* --- Resume pages: kill horizontal overflow + keep everything boxed --- */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Never exceed viewport width */
+.res-page,
+.res-page section,
+.res-page .container,
+.res-page .card,
+.res-page .resume-container,
+.res-page .resume-preview {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Images/iframes/inputs can’t run past the edge */
+.res-page img,
+.res-page iframe,
+.res-page textarea,
+.res-page input,
+.res-page select,
+.res-page button {
+  max-width: 100%;
+}
+
+/* The preview iframe on builder */
+.res-page iframe.resume-preview {
+  display: block;
+  border: 0;
+  width: 100% !important;
+  max-width: 100%;
+}
+
+/* Long headings/links should wrap instead of pushing layout */
+.res-page h1, .res-page h2, .res-page h3, .res-page p, .res-page a {
+  overflow-wrap: anywhere;
+}
