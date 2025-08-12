@@ -379,3 +379,37 @@ async function downloadResume(format) {
     saveAs(new Blob([text], {type:"text/plain"}), "resume.txt");
   }
 }
+// Stepper: Write → Design → Improve, plus Next/Back buttons
+(function () {
+  const steps = ['#write', '#design', '#improve'].map(sel => document.querySelector(sel));
+  const tabs  = Array.from(document.querySelectorAll('.rb-tabs button'));
+  const next  = document.getElementById('rb-next');
+  const back  = document.getElementById('rb-back');
+
+  let i = 0;
+  function show(idx){
+    i = Math.max(0, Math.min(idx, steps.length-1));
+    steps.forEach((s,k)=> s.classList.toggle('active', k===i));
+    tabs.forEach((t,k)=> t.classList.toggle('active', k===i));
+    steps.forEach((s,k)=> s.hidden = (k!==i)); // for a11y
+    back.disabled = (i===0);
+    next.textContent = (i===steps.length-1) ? 'Finish' : 'Next';
+  }
+
+  tabs.forEach((btn,idx)=>{
+    btn.addEventListener('click', ()=>{
+      tabs.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      show(idx);
+    });
+  });
+
+  next.addEventListener('click', ()=>{
+    if (i < steps.length-1) show(i+1);
+    else document.getElementById('resumeForm').requestSubmit?.(); // or custom action
+  });
+  back.addEventListener('click', ()=> show(i-1));
+
+  show(0);
+})();
+
