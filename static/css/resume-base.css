@@ -63,25 +63,147 @@ textarea{ resize:vertical; }
 .rb-chips .chip button{ margin-left:.35rem; border:0; background:transparent; cursor:pointer; }
 
 /* Wizard visibility */
-.rb-step{ display:none; }
-.rb-step.active{ display:block; }
+.rb-step 
+{ 
+   display:none; 
+         }
+
+.rb-step.active { 
+   display:block; 
+}
 
 /* Sticky footer nav */
-.rb-footer{ position:fixed; left:0; right:0; bottom:0; z-index:30; background:#fff; border-top:1px solid #e5e7eb; box-shadow:0 -8px 22px rgba(0,0,0,.06); display:flex; gap:.5rem; justify-content:center; padding:10px 12px; }
-.rb-footer .ghost{ background:#fff; border:1px solid #e5e7eb; border-radius:999px; padding:12px 18px; font-weight:700; }
-.rb-footer .cta-secondary, .rb-footer .cta-primary{ border-radius:999px; }
+.rb-footer { 
+   position:fixed; 
+   left:0; 
+   right:0; 
+   bottom:0; 
+   z-index:30; 
+   background:#fff; 
+   border-top:1px solid #e5e7eb; 
+   box-shadow:0 -8px 22px rgba(0,0,0,.06); 
+   display:flex; 
+   gap:.5rem; 
+   justify-content:center; 
+   padding:10px 12px; 
+}
+
+.rb-footer .ghost { 
+   background:#fff; 
+   border:1px solid #e5e7eb; 
+   border-radius:999px; 
+   padding:12px 18px; 
+   font-weight:700; 
+}
+
+.rb-footer .cta-secondary, .rb-footer .cta-primary { 
+   border-radius:999px; 
+}
 
 /* AI card */
-.ai-suggest{ border:1px solid #e9d5ff; background:linear-gradient(180deg,#faf5ff 0%, #f5f0ff 70%); border-radius:16px; padding:12px; margin-top:10px; }
-.ai-suggest .ai-title{ display:inline-flex; align-items:center; gap:8px; font-weight:700; color:#6d28d9; background:#fff; padding:8px 14px; border-radius:999px; margin-bottom:8px; border:1px solid #ede9fe; }
-.ai-suggest p{ color:#111827; margin:10px 0 14px; white-space:pre-wrap; }
-.ai-actions{ display:flex; gap:10px; }
-.ai-actions .btn{ flex:1; border:0; border-radius:999px; padding:12px 16px; cursor:pointer; font-weight:700; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.06); }
-.ai-actions .btn-primary{ background:#2563eb; color:#fff; }
+.ai-suggest { 
+   border:1px solid #e9d5ff; 
+   background:linear-gradient(180deg,#faf5ff 0%, #f5f0ff 70%); 
+   border-radius:16px; 
+   padding:12px; 
+   margin-top:10px; 
+}
+
+.ai-suggest .ai-title { 
+   display:inline-flex; 
+   align-items:center; 
+   gap:8px; 
+   font-weight:700; 
+   color:#6d28d9; 
+   background:#fff; 
+   padding:8px 14px; 
+   border-radius:999px; 
+   margin-bottom:8px; 
+   border:1px solid #ede9fe; 
+}
+
+.ai-suggest p { 
+   color:#111827; 
+   margin:10px 0 14px; 
+   white-space:pre-wrap; 
+}
+
+.ai-actions { 
+   display:flex; 
+   gap:10px; 
+}
+
+.ai-actions .btn { 
+   flex:1; 
+   border:0; 
+   border-radius:999px; 
+   padding:12px 16px; 
+   cursor:pointer; 
+   font-weight:700; 
+   background:#fff; 
+   box-shadow:0 2px 8px rgba(0,0,0,.06); 
+}
+
+.ai-actions .btn-primary { 
+   background:#2563eb; 
+   color:#fff; 
+}
 
 /* Layout clamps */
-.site-header + main.res-page{ padding-top:0; margin-top:60px; }
-.res-page section{ padding-inline:16px; }
-@media (min-width:768px){ .res-page section{ padding-inline:20px; } }
-.res-page iframe.resume-preview{ display:block; border:0; width:100%!important; max-width:100%; }
-.res-page h1, .res-page h2, .res-page h3, .res-page p, .res-page a{ overflow-wrap:anywhere; }
+.site-header + main.res-page { 
+   padding-top:0; 
+   margin-top:60px; 
+}
+
+.res-page section { 
+   padding-inline:16px; 
+}
+
+@media (min-width:768px) { 
+.res-page section { 
+   padding-inline:20px; 
+   } 
+}
+
+.res-page iframe.resume-preview { 
+   display:block; 
+   border:0; 
+   width:100%!important; 
+   max-width:100%; 
+}
+
+.res-page h1, .res-page h2, .res-page h3, .res-page p, .res-page a { 
+   overflow-wrap:anywhere; 
+}
+
+/\* Add margin between hero and form \*/
+.hero-section {
+margin-bottom: 2rem;
+}
+
+/\* Space between wizard buttons \*/
+.resume-wizard-nav button {
+margin: 0.25rem;
+}
+
+/\* Move subheading below heading \*/
+.form-step h2 + p {
+display: block;
+margin-top: 0.25rem;
+font-size: 0.9rem;
+color: #555;
+}
+
+/\* Space within each form field \*/
+.form-step .form-group {
+margin-bottom: 1rem;
+}
+
+/\* Ensure consistent padding inside inputs \*/
+.form-step input,
+.form-step textarea,
+.form-step select {
+padding: 0.6rem;
+border: 1px solid #ccc;
+border-radius: 4px;
+}
