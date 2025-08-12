@@ -1,11 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Resume Builder – Jobcus{% endblock %}
 
-{# Optional: if your base.html has a block for page-level CSS, leave empty to avoid collisions #}
-{% block extra_css %}{% endblock %}
-
 {% block content %}
-<main id="resume-builder" class="res-page">
+<main id="resume-builder" class="res-page res-builder">
   <!-- Hero -->
   <div class="interview-container" style="padding:20px 10px;width:100%;background:#104879;">
     <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
@@ -15,36 +12,39 @@
     </section>
   </div>
 
-  <!-- Tabs -->
+  <!-- Wizard tabs (sticky) -->
   <nav class="rb-tabs" role="tablist" aria-label="Resume builder steps">
-    <button class="active" data-target="#write"  role="tab" aria-controls="write"  aria-selected="true">Write</button>
-    <button data-target="#design" role="tab" aria-controls="design" aria-selected="false">Design</button>
-    <button data-target="#improve" role="tab" aria-controls="improve" aria-selected="false">Improve</button>
+    <button class="active" data-target="#step-personal" role="tab" aria-controls="step-personal" aria-selected="true">Personal</button>
+    <button data-target="#step-contact" role="tab" aria-controls="step-contact" aria-selected="false">Contact</button>
+    <button data-target="#step-summary" role="tab" aria-controls="step-summary" aria-selected="false">Summary (AI)</button>
+    <button data-target="#step-experience" role="tab" aria-controls="step-experience" aria-selected="false">Experience (AI)</button>
+    <button data-target="#step-skills" role="tab" aria-controls="step-skills" aria-selected="false">Skills</button>
+    <button data-target="#step-education" role="tab" aria-controls="step-education" aria-selected="false">Education</button>
+    <button data-target="#step-design" role="tab" aria-controls="step-design" aria-selected="false">Design</button>
+    <button data-target="#step-finish" role="tab" aria-controls="step-finish" aria-selected="false">Finish</button>
   </nav>
 
   <!-- Form -->
   <form id="resumeForm" class="rb-form" autocomplete="on">
-    <!-- WRITE -->
-    <section id="write" class="rb-step" role="tabpanel">
-      <!-- Personal -->
+
+    <!-- STEP 1: Personal Details -->
+    <section id="step-personal" class="rb-step active" role="tabpanel">
       <article class="rb-card">
         <header>
           <h2>Personal details</h2>
           <p>Give recruiters a quick overview.</p>
         </header>
-
         <div class="rb-grid">
           <label>First name
             <input type="text" name="firstName" placeholder="John" required>
           </label>
           <label>Last name
-            <input type="text" name="lastName" placeholder="Smith">
+            <input type="text" name="lastName" placeholder="Smith" required>
           </label>
           <label class="full">Job title
             <input type="text" name="title" placeholder="e.g., Product Designer">
           </label>
         </div>
-
         <details class="rb-disclosure">
           <summary>Show additional details</summary>
           <div class="rb-grid">
@@ -54,17 +54,18 @@
           </div>
         </details>
       </article>
+    </section>
 
-      <!-- Contact -->
+    <!-- STEP 2: Contact Information -->
+    <section id="step-contact" class="rb-step" role="tabpanel" hidden>
       <article class="rb-card">
         <header>
           <h2>Contact information</h2>
           <p>Make it easy to reach you.</p>
         </header>
-
         <div class="rb-grid">
-          <label class="full">Email <input type="email" name="email" placeholder="john@example.com"></label>
-          <label class="full">Phone <input type="tel" name="phone" placeholder="999 888 7777"></label>
+          <label class="full">Email <input type="email" name="email" placeholder="john@example.com" required></label>
+          <label class="full">Phone <input type="tel" name="phone" placeholder="999 888 7777" required></label>
           <label>Country <input type="text" name="country" placeholder="USA"></label>
           <label>City <input type="text" name="city" placeholder="Austin"></label>
           <label class="full">Address <input type="text" name="address" placeholder="500 W 2nd St"></label>
@@ -72,33 +73,34 @@
           <label class="full">LinkedIn / Portfolio <input type="url" name="portfolio" placeholder="https://linkedin.com/in/john"></label>
         </div>
       </article>
+    </section>
 
-      <!-- Summary -->
+    <!-- STEP 3: Professional Summary (with AI) -->
+    <section id="step-summary" class="rb-step" role="tabpanel" hidden>
       <article class="rb-card">
         <header>
-          <h2>Professional summary</h2>
+          <h2>Professional Summary (with AI)</h2>
           <p>Include your title, years of experience and 1–2 measurable wins.</p>
         </header>
-
         <textarea name="summary" rows="5" placeholder="Product Designer with 10 years of experience..."></textarea>
 
-        <!-- AI helper -->
-        <div class="ai-suggest">
+        <!-- AI helper (dynamic) -->
+        <div class="ai-suggest" id="ai-summary" data-field="summary">
           <div class="ai-title">✦ Write with AI</div>
-          <p class="ai-text">
-            Product designer who improves onboarding flows and boosts activation; recently cut time-to-value by 28%.
-          </p>
+          <p class="ai-text">We’ll fetch a tailored suggestion based on what you’ve entered so far…</p>
           <div class="ai-actions">
-            <button type="button" class="btn ai-skip">Skip</button>
+            <button type="button" class="btn ai-refresh" data-ai="summary">Refresh</button>
             <button type="button" class="btn btn-primary ai-add">Add</button>
           </div>
         </div>
       </article>
+    </section>
 
-      <!-- Experience -->
+    <!-- STEP 4: Employment History (with AI Highlights) -->
+    <section id="step-experience" class="rb-step" role="tabpanel" hidden>
       <article class="rb-card" data-repeater="experience">
         <header>
-          <h2>Employment history</h2>
+          <h2>Employment history (with AI highlights)</h2>
           <p>Use action verbs, quantify results, and keep it concise.</p>
         </header>
 
@@ -116,14 +118,12 @@
               <textarea name="bullets" rows="4" placeholder="• Designed user-friendly interfaces...&#10;• Worked with teams to improve product features..."></textarea>
             </label>
 
-            <!-- AI helper -->
-            <div class="ai-suggest">
+            <!-- AI helper for highlights (dynamic) -->
+            <div class="ai-suggest" data-field="bullets">
               <div class="ai-title">✦ Write with AI</div>
-              <p class="ai-text">
-                Fostered a collaborative team environment, enhancing communication and ensuring all voices were heard during delivery.
-              </p>
+              <p class="ai-text">Get role-specific bullet ideas for this job.</p>
               <div class="ai-actions">
-                <button type="button" class="btn ai-skip">Skip</button>
+                <button type="button" class="btn ai-refresh" data-ai="highlights">Refresh</button>
                 <button type="button" class="btn btn-primary ai-add">Add</button>
               </div>
             </div>
@@ -135,8 +135,10 @@
         <div class="rb-list" id="exp-list"></div>
         <button type="button" class="rb-add" data-add="experience">+ Add another experience</button>
       </article>
+    </section>
 
-      <!-- Skills -->
+    <!-- STEP 5: Skills -->
+    <section id="step-skills" class="rb-step" role="tabpanel" hidden>
       <article class="rb-card">
         <header>
           <h2>Skills</h2>
@@ -148,8 +150,10 @@
           <input type="hidden" name="skills">
         </div>
       </article>
+    </section>
 
-      <!-- Education -->
+    <!-- STEP 6: Education -->
+    <section id="step-education" class="rb-step" role="tabpanel" hidden>
       <article class="rb-card" data-repeater="education">
         <header>
           <h2>Education</h2>
@@ -174,39 +178,39 @@
       </article>
     </section>
 
-    <!-- DESIGN -->
-    <section id="design" class="rb-step" role="tabpanel" hidden>
+    <!-- STEP 7: Design -->
+    <section id="step-design" class="rb-step" role="tabpanel" hidden>
       <article class="rb-card">
         <header><h2>Design</h2><p>Pick a template.</p></header>
-
         <label>Theme
           <select id="themeSelect" name="theme">
             <option value="modern" selected>Modern</option>
             <option value="minimal">Minimal</option>
           </select>
         </label>
-
         <div class="rb-row">
           <button type="button" id="previewTemplate" class="cta-secondary">Preview</button>
           <button type="button" id="downloadTemplatePdf" class="cta-primary">Download PDF</button>
         </div>
-
         <div id="resumePreviewWrap" style="display:none;margin-top:1rem;">
           <h3>Preview</h3>
-          <!-- Provide the CSS href for JS to inject into the iframe document -->
-          <iframe
-            id="resumePreview"
-            class="resume-preview"
-            style="width:100%;height:100vh;border:0;background:#fff;"
-            data-css="{{ url_for('static', filename='css/resume-base.css') }}"></iframe>
+          <iframe id="resumePreview" class="resume-preview" style="width:100%;height:100vh;border:0;background:#fff;"></iframe>
         </div>
       </article>
     </section>
 
-    <!-- IMPROVE -->
-    <section id="improve" class="rb-step" role="tabpanel" hidden>
+    <!-- STEP 8: Finish -->
+    <section id="step-finish" class="rb-step" role="tabpanel" hidden>
       <article class="rb-card">
-        <header><h2>Improve</h2><p>Use AI to tighten bullets, tone and length. (Coming soon)</p></header>
+        <header><h2>All set!</h2><p>Preview or download your resume. You can always go back and edit.</p></header>
+        <div class="rb-row">
+          <button type="button" id="previewTemplateFinish" class="cta-secondary">Preview</button>
+          <button type="button" id="downloadTemplatePdfFinish" class="cta-primary">Download PDF</button>
+        </div>
+        <div id="resumePreviewWrapFinish" style="display:none;margin-top:1rem;">
+          <h3>Preview</h3>
+          <iframe id="resumePreviewFinish" class="resume-preview" style="width:100%;height:90vh;border:0;background:#fff;"></iframe>
+        </div>
       </article>
     </section>
 
@@ -214,7 +218,13 @@
     <footer class="rb-footer">
       <button type="button" id="rb-back" class="ghost">Back</button>
       <button type="button" id="rb-next" class="cta-secondary">Next</button>
+      <button type="submit" id="rb-submit" class="cta-primary" style="display:none;">✨ Generate Resume</button>
     </footer>
+
+    <!-- Hidden legacy containers (kept for compatibility) -->
+    <div id="builderGeneratingIndicator" style="display:none;">🤖 Generating your resume…</div>
+    <div id="builderGeneratedContent" hidden></div>
+    <div id="resumeDownloadOptions" hidden></div>
   </form>
 </main>
 {% endblock %}
