@@ -7,7 +7,7 @@
 <!-- 🟦 Hero Section -->
 <section class="hero">
   <h1>AI Resume Builder &  Analyzer</h1>
-  <p>Create ATS-ready resumes, analyse and get instant feedback on your resume, close skill gaps, prep for interviews, and everything you need to land the right job.</p>
+  <p>Create ATS-ready resumes, analyse your resume and get instant feedback, close skill gaps, prep for interviews, and everything you need to land the right job.</p>
   <a href="/resume-analyzer" class="cta-primary">Analyze my resume now</a>
   <a href="/resume-builder" class="cta-secondary">Build my resume</a>
 </section>
@@ -56,22 +56,36 @@
 </section>
 
 <!-- ✉️ Cover Letter Spotlight -->
-<section class="cover-letter-spotlight">
-  <div class="cl-content">
-    <h2>Stand out with a tailored cover letter</h2>
-    <p>
-      Paste a job description (or a link), pick your tone, and let Jobcus write a concise, role-specific letter
-      that mirrors employer language and highlights your best wins.
-    </p>
-    <ul class="cl-points">
-      <li>Aligns with UK hiring norms and ATS</li>
-      <li>Pulls measurable results from your resume</li>
-      <li>One-click edits for tone and length</li>
-    </ul>
-    <a href="/cover-letter" class="cta-primary">Create my cover letter</a>
+<section class="cl-spot" data-aos="fade-up">
+  <div class="cl-spot__grid">
+    <div class="cl-spot__copy">
+      <span class="cl-spot__eyebrow">AI Cover Letter</span>
+      <h2 class="cl-spot__title">Stand out with a tailored cover letter</h2>
+      <p class="cl-spot__lead">
+        Paste a job description (or a link), pick your tone, and let Jobcus write a concise,
+        role-specific letter that mirrors employer language and highlights your best wins.
+      </p>
+
+      <ul class="cl-spot__points">
+        <li>Aligns with UK hiring norms and ATS</li>
+        <li>Pulls measurable results from your resume</li>
+        <li>One-click edits for tone and length</li>
+      </ul>
+
+      <a href="/cover-letter" class="cta-primary cl-spot__cta">Create my cover letter</a>
+      <div class="cl-spot__meta">Takes about 60 seconds · No design skills needed</div>
+    </div>
+
+    <!-- Optional artwork (hide if you don’t have one) -->
+    <div class="cl-spot__art" aria-hidden="true">
+      <img src="{{ url_for('static', filename='images/cover-letter-illustration.png') }}"
+           alt="" loading="lazy">
+    </div>
   </div>
 </section>
 
+
 {% endblock %}
+
 
 
