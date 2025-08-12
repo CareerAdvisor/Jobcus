@@ -3843,4 +3843,43 @@ textarea{
 .cover-letter-spotlight .cl-points { margin: .5rem 0 1rem 1.1rem; }
 .cover-letter-spotlight .cl-points li { margin: .25rem 0; }
 
-  
+/* === Chat Welcome Banner & Chips Enhancements === */
+.welcome-banner {
+  padding: 24px 16px !important;       /* ensure extra padding */
+  background: #f0f8ff !important;      /* light-blue background */
+  border-bottom: 1px solid #ddd !important;
+  text-align: center !important;
+}
+
+/* if you kept a <p> with class welcome-text */
+.welcome-banner > p {
+  font-size: 1.5rem !important;        /* large text (~24px) */
+  font-weight: 600 !important;
+  margin: 0 0 16px !important;         /* space below */
+  color: #104879 !important;
+}
+
+.suggestion-chips {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 12px !important;                /* more breathing room */
+}
+
+.suggestion-chips button {
+  padding: 10px 20px !important;       /* larger tap targets */
+  border-radius: 20px !important;
+  background: #104879 !important;
+  color: #fff !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  line-height: 1.2;
+  cursor: pointer;
+  border: none;
+}
+
+.suggestion-chips button:hover {
+  background: #0a2e5f !important;
+}
+
