@@ -3583,3 +3583,123 @@ button {
 .res-page h1, .res-page h2, .res-page h3, .res-page p, .res-page a {
   overflow-wrap: anywhere;
 }
+
+/* If any component uses 100vw internally, tame it on these pages */
+.res-page [style*="100vw"], .res-page .vw-wide {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+
+.rb-grid .full { 
+  grid-column:1/-1; 
+}
+
+label { 
+  display:flex; 
+  flex-direction:column; 
+  gap:.35rem; 
+  font-weight:600; 
+}
+
+input, select, textarea {
+  border:1px solid var(--border); 
+  border-radius:10px; 
+  padding:.7rem .85rem; 
+  font:inherit;
+  background:#fff;
+}
+
+textarea{ 
+  resize:vertical; 
+}
+
+.rb-row { 
+  display:flex; 
+  gap:.5rem; 
+  margin-top:.75rem; 
+  flex-wrap:wrap; 
+}
+
+.ghost { 
+  background:#fff; 
+  border:1px solid var(--border); 
+  padding:.7rem 1rem; 
+  border-radius:10px; 
+}
+
+.rb-footer {
+  position:sticky; 
+  bottom:0; 
+  display:flex; 
+  gap:.5rem;
+  justify-content:space-between; 
+  align-items:center; padding:.6rem;
+  background:linear-gradient(#fff,#fff); 
+  border-top:1px solid var(--border);
+  border-start-start-radius:12px; 
+  border-start-end-radius:12px; 
+  margin-top:1rem;
+}
+
+.rb-disclosure summary { 
+  cursor:pointer; 
+  color:var(--brand); 
+  font-weight:700; 
+  margin-top:.25rem; 
+}
+
+.rb-item { 
+  border:1px dashed var(--border); 
+  border-radius:12px; 
+  padding:.75rem; 
+  margin:.6rem 0; 
+  background:#fafbff; 
+}
+
+.rb-actions { 
+  display:flex; 
+  justify-content:flex-end; 
+}
+
+.rb-remove { 
+  background:#fff; 
+  border:1px solid var(--border); 
+  padding:.5rem .75rem; 
+  border-radius:8px; 
+}
+
+.rb-add { 
+  margin-top:.25rem; 
+  border:1px dashed var(--border); 
+  background:#fff; 
+  padding:.6rem .8rem; 
+  border-radius:999px; 
+}
+
+.rb-chips { 
+  display:flex; 
+  flex-wrap:wrap; 
+  gap:.4rem; 
+  margin-top:.5rem; 
+}
+
+.rb-chips .chip { 
+  padding:.35rem .6rem; 
+  border-radius:999px; 
+  border:1px solid var(--border); 
+  background:#f6f8fb; 
+}
+
+.rb-chips .chip button { 
+  margin-left:.35rem; 
+  border:0; 
+  background:transparent; 
+  cursor:pointer; 
+}
+
+@media (max-width:640px) {
+.rb-grid { 
+  grid-template-columns:1fr; 
+  }
+}
