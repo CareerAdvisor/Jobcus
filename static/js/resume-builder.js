@@ -1,5 +1,5 @@
-// Keep cookies for SameSite/Lax
-;(function(){
+// Keep cookies for SameSite/Lax on fetch
+(function () {
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
@@ -7,368 +7,438 @@
   };
 })();
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form             = document.getElementById("resumeForm");
-  const builderIndicator = document.getElementById("builderGeneratingIndicator");
-  const outputContainer  = document.getElementById("builderGeneratedContent");
-  const downloadOptions  = document.getElementById("resumeDownloadOptions");
+// Small helper: debounce
+function debounce(fn, wait = 400) {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+}
 
-  const previewBtn = document.getElementById("previewTemplate");
-  const pdfBtn     = document.getElementById("downloadTemplatePdf");
+// AI endpoints (configure here if your backend differs)
+const AI_ENDPOINT = "/ai/suggest"; // POST { field: 'summary'|'highlights', index?, context }
 
-  const previewWrap = document.getElementById("resumePreviewWrap");
-  const previewEl   = document.getElementById("resumePreview"); // <iframe>
+// Build a lightweight context for AI suggestions and template rendering
+function gatherContext(form) {
+  const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
+  const contactParts = [];
+  const loc = [form.city?.value, form.country?.value].filter(Boolean).join(", ");
+  if (loc) contactParts.push(loc);
+  if (form.phone?.value) contactParts.push(form.phone.value);
+  if (form.email?.value) contactParts.push(form.email.value);
 
-  function getTheme() {
-    return document.getElementById("themeSelect")?.value || "modern";
-  }
-
-  // Tabs / sections
-  const tabs = document.querySelectorAll('.rb-tabs button');
-  tabs.forEach(btn => btn?.addEventListener('click', () => {
-    tabs.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.rb-step').forEach(s => s.hidden = true);
-    document.querySelector(btn.dataset.target)?.removeAttribute('hidden');
-  }));
-
-  // Step footer nav
-  const steps = Array.from(document.querySelectorAll('.rb-step'));
-  let stepIndex = 0;
-  const backBtn = document.getElementById('rb-back');
-  const nextBtn = document.getElementById('rb-next');
-  function showStep(i){
-    stepIndex = Math.max(0, Math.min(i, steps.length-1));
-    steps.forEach((s, idx) => s.hidden = idx !== stepIndex);
-    tabs.forEach((t, idx) => t.classList.toggle('active', idx === stepIndex));
-    if (backBtn) backBtn.disabled = stepIndex === 0;
-    if (nextBtn) nextBtn.textContent = stepIndex === steps.length-1 ? 'Finish' : 'Next';
-  }
-  backBtn?.addEventListener('click', () => showStep(stepIndex-1));
-  nextBtn?.addEventListener('click', () => {
-    if (stepIndex < steps.length-1) showStep(stepIndex+1);
-    else form?.requestSubmit?.();
-  });
-  if (steps.length) showStep(0);
-
-  // Repeater helpers
-  function cloneFromTemplate(tplId){
-    const tpl = document.getElementById(tplId);
-    if (!tpl) return null;
-    const node = tpl.content.firstElementChild.cloneNode(true);
-    node.querySelector('.rb-remove')?.addEventListener('click', () => node.remove());
-    return node;
-  }
-  function addExperienceFromObj(obj = {}){
-    const list = document.getElementById('exp-list');
-    const node = cloneFromTemplate('tpl-experience');
-    if (!node || !list) return;
-    node.querySelector('[name="role"]').value      = obj.role || '';
-    node.querySelector('[name="company"]').value   = obj.company || '';
-    node.querySelector('[name="start"]').value     = obj.start || '';
-    node.querySelector('[name="end"]').value       = obj.end || '';
-    node.querySelector('[name="location"]').value  = obj.location || '';
-    node.querySelector('[name="bullets"]').value   = (obj.bullets || []).join('\n');
-    list.appendChild(node);
-  }
-  function addEducationFromObj(obj = {}){
-    const list = document.getElementById('edu-list');
-    const node = cloneFromTemplate('tpl-education');
-    if (!node || !list) return;
-    node.querySelector('[name="school"]').value          = obj.school || '';
-    node.querySelector('[name="degree"]').value          = obj.degree || '';
-    node.querySelector('[name="graduatedStart"]').value  = obj.graduatedStart || '';
-    node.querySelector('[name="graduated"]').value       = obj.graduated || '';
-    node.querySelector('[name="location"]').value        = obj.location || '';
-    list.appendChild(node);
-  }
-  if (!document.querySelector('#exp-list .rb-item')) addExperienceFromObj();
-  if (!document.querySelector('#edu-list .rb-item')) addEducationFromObj();
-  document.querySelector('[data-add="experience"]')?.addEventListener('click', () => addExperienceFromObj());
-  document.querySelector('[data-add="education"]')?.addEventListener('click', () => addEducationFromObj());
-
-  // Chips input for skills
-  const skillInput   = document.getElementById('skillInput');
-  const skillChips   = document.getElementById('skillChips');
-  const skillsHidden = document.querySelector('input[name="skills"]');
-  const skillsSet    = new Set();
-  function refreshChips(){
-    if (!skillChips || !skillsHidden) return;
-    skillChips.innerHTML = '';
-    skillsHidden.value = Array.from(skillsSet).join(',');
-    skillsSet.forEach(s => {
-      const chip = document.createElement('span');
-      chip.className = 'chip';
-      chip.innerHTML = `${s} <button type="button" aria-label="remove">×</button>`;
-      chip.querySelector('button').onclick = () => { skillsSet.delete(s); refreshChips(); };
-      skillChips.appendChild(chip);
-    });
-  }
-  skillInput?.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && skillInput.value.trim()){
-      e.preventDefault();
-      skillsSet.add(skillInput.value.trim());
-      skillInput.value = '';
-      refreshChips();
-    }
-  });
-
-  function contactString(f){
-    const parts = [];
-    const loc = [f.city?.value, f.country?.value].filter(Boolean).join(', ');
-    if (loc) parts.push(loc);
-    if (f.phone?.value) parts.push(f.phone.value);
-    if (f.email?.value) parts.push(f.email.value);
-    return parts.join(' | ');
-  }
-
-  // Context for template
-  window.coerceFormToTemplateContext = function(){
-    const f = document.getElementById('resumeForm');
-    const name = [f.firstName?.value, f.lastName?.value].filter(Boolean).join(' ').trim();
-    const links = f.portfolio?.value ? [{ url: f.portfolio.value, label: 'Portfolio' }] : [];
-
-    const exp = Array.from(document.querySelectorAll('#exp-list .rb-item')).map(node => {
-      const g = n => node.querySelector(`[name="${n}"]`);
-      const bullets = (g('bullets').value || '')
-        .split('\n').map(t => t.replace(/^•\s*/,'').trim()).filter(Boolean);
-      return {
-        role: g('role').value, company: g('company').value,
-        location: g('location').value, start: g('start').value, end: g('end').value,
-        bullets
-      };
-    });
-
-    const edu = Array.from(document.querySelectorAll('#edu-list .rb-item')).map(node => {
-      const g = n => node.querySelector(`[name="${n}"]`);
-      return {
-        degree: g('degree').value,
-        school: g('school').value,
-        location: g('location').value,
-        graduated: g('graduated').value || g('graduatedStart').value
-      };
-    });
-
-    const skillsArr = (form.querySelector('input[name="skills"]')?.value || '')
-      .split(',').map(s => s.trim()).filter(Boolean);
-
+  const expNodes = Array.from(document.querySelectorAll("#exp-list .rb-item"));
+  const experience = expNodes.map((node) => {
+    const g = (n) => node.querySelector(`[name="${n}"]`);
+    const bullets = (g("bullets").value || "")
+      .split("\n").map((t) => t.replace(/^•\s*/, "").trim()).filter(Boolean);
     return {
-      name,
-      title: form.title?.value.trim() || '',
-      contact: contactString(form),
-      summary: form.summary?.value.trim() || '',
-      links,
-      experience: exp,
-      education: edu,
-      skills: skillsArr
+      role: g("role").value,
+      company: g("company").value,
+      location: g("location").value,
+      start: g("start").value,
+      end: g("end").value,
+      bullets,
     };
+  });
+
+  const eduNodes = Array.from(document.querySelectorAll("#edu-list .rb-item"));
+  const education = eduNodes.map((node) => {
+    const g = (n) => node.querySelector(`[name="${n}"]`);
+    return {
+      degree: g("degree").value,
+      school: g("school").value,
+      location: g("location").value,
+      graduated: g("graduated").value || g("graduatedStart").value,
+    };
+  });
+
+  const skills = (form.elements["skills"]?.value || "").split(",").map((s) => s.trim()).filter(Boolean);
+
+  return {
+    name,
+    title: form.title?.value.trim() || "",
+    contact: contactParts.join(" | "),
+    summary: form.summary?.value.trim() || "",
+    links: form.portfolio?.value ? [{ url: form.portfolio.value, label: "Portfolio" }] : [],
+    experience,
+    education,
+    skills,
   };
+}
 
-  // Ensure resume-base.css is present in iframe srcdoc
-  function injectCssIfMissing(html, cssHref) {
-    const hasLink = /<link[^>]+href=["'][^"']*resume-base\.css["'][^>]*>/i.test(html);
-    if (hasLink) return html;
-
-    // If document has a <head>, inject before </head>. Otherwise wrap html with a full doc.
-    if (/<head[\s>]/i.test(html)) {
-      return html.replace(/<\/head>/i,
-        `<link rel="stylesheet" href="${cssHref}"></head>`);
-    }
-    return `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<link rel="stylesheet" href="${cssHref}">
-</head>
-<body>${html}</body>
-</html>`;
+async function aiSuggest(field, ctx, index) {
+  try {
+    const res = await fetch(AI_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ field, index, context: ctx }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || json.error) throw new Error(json.error || `AI suggest failed for ${field}`);
+    // Expect json.text (string) OR json.list (array of bullets)
+    return json;
+  } catch (e) {
+    console.warn(e);
+    return { text: "AI suggestion currently unavailable. Try again." };
   }
+}
 
-  // Render preview / build PDF
-  async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
-    const cssHref = previewEl?.dataset.css || "/static/css/resume-base.css";
+// Insert text into the closest textarea
+function attachAISuggestionHandlers(root) {
+  root.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".ai-refresh, .ai-add");
+    if (!btn) return;
+    const card = btn.closest(".ai-suggest");
+    const field = btn.classList.contains("ai-refresh") ? btn.dataset.ai : card?.dataset.field;
+    const step = btn.closest(".rb-step");
+    const form = document.getElementById("resumeForm");
 
-    if (format === "pdf") {
-      const res = await fetch("/build-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ format: "pdf", theme, ...ctx })
-      });
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(`PDF build failed: ${res.status} ${t}`);
+    if (btn.classList.contains("ai-refresh")) {
+      // Determine context and (for highlights) index of the experience item
+      const ctx = gatherContext(form);
+      if (field === "summary") {
+        const sug = await aiSuggest("summary", ctx);
+        const p = card.querySelector(".ai-text");
+        p.textContent = sug.text || p.textContent;
+      } else if (field === "highlights") {
+        // Find which experience block this AI card belongs to
+        const all = Array.from(document.querySelectorAll("#exp-list .rb-item"));
+        const idx = all.findIndex((n) => n.contains(card));
+        const sug = await aiSuggest("highlights", ctx, idx);
+        const p = card.querySelector(".ai-text");
+        if (Array.isArray(sug.list) && sug.list.length) {
+          p.textContent = sug.list.map((b) => `• ${b}`).join("\n");
+        } else {
+          p.textContent = sug.text || p.textContent;
+        }
       }
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "resume.pdf"; a.click();
-      URL.revokeObjectURL(url);
       return;
     }
 
-    const r = await fetch("/build-resume", {
+    if (btn.classList.contains("ai-add")) {
+      // Add suggestion text into the nearest textarea in this card/section
+      const cardWrap = btn.closest(".rb-card, .rb-item");
+      const suggestion = card.querySelector(".ai-text")?.textContent?.trim() || "";
+      if (!suggestion) return;
+      // Prefer field-specific target
+      let ta = null;
+      if (card.dataset.field === "summary") {
+        ta = step.querySelector('textarea[name="summary"]');
+      } else if (card.dataset.field === "bullets") {
+        ta = cardWrap.querySelector('textarea[name="bullets"]');
+      }
+      if (!ta) ta = cardWrap.querySelector("textarea");
+
+      if (!ta) return;
+      if (ta.name === "bullets") {
+        const prefix = ta.value && !ta.value.endsWith("\n") ? "\n" : "";
+        // Allow multi-line paste
+        const cleaned = suggestion.split("\n").map(s => s.replace(/^•\s*/, "").trim()).filter(Boolean);
+        ta.value += `${prefix}${cleaned.map(b => `• ${b}`).join("\n")}`;
+      } else {
+        ta.value = suggestion.replace(/^•\s*/g, "");
+      }
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
+}
+
+// Repeaters: experience / education
+function cloneFromTemplate(tplId) {
+  const tpl = document.getElementById(tplId);
+  if (!tpl) return null;
+  const node = tpl.content.firstElementChild.cloneNode(true);
+  node.querySelector(".rb-remove")?.addEventListener("click", () => node.remove());
+  // Attach per-item AI refresh (first load)
+  setTimeout(() => {
+    const card = node.querySelector('.ai-suggest[data-field="bullets"]');
+    if (card) card.querySelector(".ai-refresh")?.click();
+  }, 0);
+  return node;
+}
+
+function addExperienceFromObj(obj = {}) {
+  const list = document.getElementById("exp-list");
+  const node = cloneFromTemplate("tpl-experience");
+  if (!node || !list) return;
+  const g = (n) => node.querySelector(`[name="${n}"]`);
+  g("role").value      = obj.role || "";
+  g("company").value   = obj.company || "";
+  g("start").value     = obj.start || "";
+  g("end").value       = obj.end || "";
+  g("location").value  = obj.location || "";
+  g("bullets").value   = (obj.bullets || []).join("\n");
+  list.appendChild(node);
+}
+
+function addEducationFromObj(obj = {}) {
+  const list = document.getElementById("edu-list");
+  const node = cloneFromTemplate("tpl-education");
+  if (!node || !list) return;
+  const g = (n) => node.querySelector(`[name="${n}"]`);
+  g("school").value         = obj.school || "";
+  g("degree").value         = obj.degree || "";
+  g("graduatedStart").value = obj.graduatedStart || "";
+  g("graduated").value      = obj.graduated || "";
+  g("location").value       = obj.location || "";
+  list.appendChild(node);
+}
+
+// Skills chips
+function initSkills() {
+  const skillInput   = document.getElementById("skillInput");
+  const skillChips   = document.getElementById("skillChips");
+  const skillsHidden = document.querySelector('input[name="skills"]');
+  const skillsSet    = new Set();
+  function refreshChips() {
+    if (!skillChips || !skillsHidden) return;
+    skillChips.innerHTML = "";
+    skillsHidden.value = Array.from(skillsSet).join(",");
+    skillsSet.forEach((s) => {
+      const chip = document.createElement("span");
+      chip.className = "chip";
+      chip.innerHTML = `${s} <button type="button" aria-label="Remove">×</button>`;
+      chip.querySelector("button").onclick = () => { skillsSet.delete(s); refreshChips(); };
+      skillChips.appendChild(chip);
+    });
+  }
+  skillInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && skillInput.value.trim()) {
+      e.preventDefault();
+      skillsSet.add(skillInput.value.trim());
+      skillInput.value = "";
+      refreshChips();
+    }
+  });
+  return { refreshChips, skillsSet };
+}
+
+// Server render helpers
+async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
+  if (format === "pdf") {
+    const res = await fetch("/build-resume", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ format: "html", theme, ...ctx })
+      body: JSON.stringify({ format: "pdf", theme, ...ctx }),
     });
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error(`PDF build failed: ${res.status} ${t}`);
+    }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "resume.pdf"; a.click();
+    URL.revokeObjectURL(url);
+    return;
+  }
 
-    let html = await r.text();
-    if (!r.ok) throw new Error(`HTML build failed: ${r.status} ${html}`);
+  const r = await fetch("/build-resume", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ format: "html", theme, ...ctx }),
+  });
+  const html = await r.text();
+  if (!r.ok) throw new Error(`HTML build failed: ${r.status} ${html}`);
 
-    // Make sure resume-base.css is applied inside the iframe
-    html = injectCssIfMissing(html, cssHref);
+  const wrap = document.getElementById("resumePreviewWrap") || document.getElementById("resumePreviewWrapFinish");
+  const frame = document.getElementById("resumePreview") || document.getElementById("resumePreviewFinish");
+  if (wrap && frame) {
+    wrap.style.display = "block";
+    frame.srcdoc = html;
+  }
+}
 
-    if (previewWrap && previewEl) {
-      previewWrap.style.display = "block";
-      previewEl.srcdoc = html; // isolate CSS/JS
+function initWizard() {
+  const form  = document.getElementById("resumeForm");
+  const tabs  = Array.from(document.querySelectorAll(".rb-tabs button"));
+  const steps = [
+    "#step-personal",
+    "#step-contact",
+    "#step-summary",
+    "#step-experience",
+    "#step-skills",
+    "#step-education",
+    "#step-design",
+    "#step-finish",
+  ].map(sel => document.querySelector(sel));
+
+  const back  = document.getElementById("rb-back");
+  const next  = document.getElementById("rb-next");
+  const submitBtn = document.getElementById("rb-submit");
+  let idx = 0;
+
+  function updateButtons() {
+    if (back) back.disabled = idx === 0;
+    if (next) next.style.display = idx >= steps.length - 2 ? "none" : "inline-block"; // hide on Design & Finish?
+    // Show submit on Design to trigger generation before Finish
+    if (submitBtn) submitBtn.style.display = idx === steps.length - 2 ? "inline-block" : "none";
+  }
+
+  async function onEnterStep(i) {
+    const node = steps[i];
+    if (!node) return;
+    // Lazy-load AI suggestions on Summary step first enter
+    if (node.id === "step-summary" && !node.dataset.loaded) {
+      node.dataset.loaded = "1";
+      const ctx = gatherContext(form);
+      const card = node.querySelector("#ai-summary");
+      if (card) card.querySelector(".ai-refresh")?.click();
+    }
+    // Ensure at least one exp + edu block exists when entering their steps
+    if (node.id === "step-experience" && !document.querySelector("#exp-list .rb-item")) addExperienceFromObj();
+    if (node.id === "step-education" && !document.querySelector("#edu-list .rb-item")) addEducationFromObj();
+    // Auto-refresh AI suggestions for each experience on first enter
+    if (node.id === "step-experience" && !node.dataset.loaded) {
+      node.dataset.loaded = "1";
+      Array.from(document.querySelectorAll('#exp-list .ai-suggest .ai-refresh')).forEach(btn => btn.click());
     }
   }
 
-  // Prefill from analyzer (optional)
-  (async function maybePrefillFromAnalyzer(){
-    const raw = localStorage.getItem("resumeTextRaw");
-    if (!raw || !form) return;
-
-    const isEmpty =
-      !(form.firstName?.value || form.lastName?.value || form.title?.value || form.summary?.value) &&
-      !document.querySelector('#exp-list .rb-item input[value]');
-
-    if (!isEmpty) return;
-
-    try {
-      const gen = await fetch("/generate-resume", {
-        method: "POST",
-        headers: { "Content-Type":"application/json" },
-        body: JSON.stringify({
-          fullName: "", title: "", contact: "",
-          summary: raw, education: "", experience: raw, skills: "", certifications: "", portfolio: ""
-        })
-      });
-      const genJson = await gen.json().catch(() => ({}));
-      if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
-
-      fillFormFromContext(genJson.context || {});
-      window._resumeCtx = genJson.context;
-    } catch (e) {
-      console.warn("Prefill from analyzer failed:", e);
-    }
-  })();
-
-  function fillFormFromContext(ctx) {
-    if (!form) return;
-    const name = (ctx.name || '').trim();
-    if (name){
-      const parts = name.split(' ');
-      form.firstName && (form.firstName.value = parts.shift() || '');
-      form.lastName  && (form.lastName.value  = parts.join(' '));
-    }
-    form.title    && (form.title.value    = ctx.title   || '');
-    form.summary  && (form.summary.value  = ctx.summary || '');
-    if (ctx.links && ctx.links[0] && form.portfolio) form.portfolio.value = ctx.links[0].url || '';
-
-    const skillsSet = new Set((ctx.skills || []));
-    const hidden = document.querySelector('input[name="skills"]');
-    const chips  = document.getElementById('skillChips');
-    if (skillsSet.size && hidden && chips){
-      hidden.value = Array.from(skillsSet).join(',');
-      chips.innerHTML = '';
-      skillsSet.forEach(s => {
-        const chip = document.createElement('span');
-        chip.className = 'chip';
-        chip.textContent = s;
-        chips.appendChild(chip);
-      });
-    }
-
-    const expList = document.getElementById('exp-list');
-    expList && (expList.innerHTML = '');
-    (ctx.experience || []).forEach(e => addExperienceFromObj(e));
-    if (expList && !expList.children.length) addExperienceFromObj();
-
-    const eduList = document.getElementById('edu-list');
-    eduList && (eduList.innerHTML = '');
-    (ctx.education || []).forEach(ed => addEducationFromObj(ed));
-    if (eduList && !eduList.children.length) addEducationFromObj();
+  function showStep(i) {
+    idx = Math.max(0, Math.min(i, steps.length - 1));
+    steps.forEach((s, k) => {
+      if (!s) return;
+      const active = k === idx;
+      s.hidden = !active;
+      s.classList.toggle("active", active);
+      const t = tabs[k];
+      if (t) {
+        t.classList.toggle("active", active);
+        t.setAttribute("aria-selected", active ? "true" : "false");
+      }
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    updateButtons();
+    onEnterStep(idx);
   }
 
-  // Submit → AI → template
-  form?.addEventListener("submit", async e => {
+  tabs.forEach((btn, i) => btn.addEventListener("click", () => showStep(i)));
+  back?.addEventListener("click", () => showStep(idx - 1));
+  next?.addEventListener("click", () => showStep(idx + 1));
+
+  // Submit triggers generation then jumps to Finish
+  form?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    builderIndicator && (builderIndicator.style.display = "block");
-    outputContainer && (outputContainer.innerHTML = "");
-    downloadOptions && (downloadOptions.style.display = "none");
-
-    const ctxForTemplate = window.coerceFormToTemplateContext();
-    const fullName = ctxForTemplate.name || '';
-
-    const educationStr = (ctxForTemplate.education || [])
-      .map(ed => [ed.degree, ed.school, ed.location, ed.graduated].filter(Boolean).join(" – "))
-      .join("\n");
-
-    const experienceStr = (ctxForTemplate.experience || [])
-      .map(e => `${e.role}${e.company ? " – " + e.company : ""}\n${(e.bullets||[]).map(b=>"• "+b).join("\n")}`)
-      .join("\n\n");
-
-    const payload = {
-      fullName,
-      title:          ctxForTemplate.title || '',
-      contact:        ctxForTemplate.contact || '',
-      summary:        ctxForTemplate.summary || '',
-      education:      educationStr,
-      experience:     experienceStr,
-      skills:         (ctxForTemplate.skills || []).join(", "),
-      certifications: form.elements["certifications"]?.value?.trim() || "",
-      portfolio:      (ctxForTemplate.links?.[0]?.url) || ""
-    };
-
     try {
+      document.getElementById("builderGeneratingIndicator").style.display = "block";
+      const ctxForTemplate = gatherContext(form);
+
+      // Build payload for /generate-resume (kept for your existing backend contract)
+      const educationStr = (ctxForTemplate.education || [])
+        .map((ed) => [ed.degree, ed.school, ed.location, ed.graduated].filter(Boolean).join(" – "))
+        .join("\n");
+      const experienceStr = (ctxForTemplate.experience || [])
+        .map((e) => `${e.role}${e.company ? " – " + e.company : ""}\n${(e.bullets || []).map((b) => "• " + b).join("\n")}`)
+        .join("\n\n");
+      const payload = {
+        fullName: ctxForTemplate.name || "",
+        title:          ctxForTemplate.title || "",
+        contact:        ctxForTemplate.contact || "",
+        summary:        ctxForTemplate.summary || "",
+        education:      educationStr,
+        experience:     experienceStr,
+        skills:         (ctxForTemplate.skills || []).join(", "),
+        certifications: form.elements["certifications"]?.value?.trim() || "",
+        portfolio:      (ctxForTemplate.links?.[0]?.url) || "",
+      };
+
       const gen = await fetch("/generate-resume", {
         method: "POST",
-        headers: { "Content-Type":"application/json" },
-        body: JSON.stringify(payload)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
       const genJson = await gen.json().catch(() => ({}));
       if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
-      const ctx = genJson.context;
-      window._resumeCtx = ctx;
-
-      await renderWithTemplateFromContext(ctx, "html", getTheme());
-      downloadOptions && (downloadOptions.style.display = "block");
+      // Keep full context for preview/PDF
+      window._resumeCtx = genJson.context || ctxForTemplate;
+      showStep(idx + 1); // move to Finish
     } catch (err) {
       console.error("Generate/build error:", err);
       alert("Resume generation failed.");
     } finally {
-      builderIndicator && (builderIndicator.style.display = "none");
+      document.getElementById("builderGeneratingIndicator").style.display = "none";
     }
   });
 
-  // Preview
+  // Preview / PDF (Design step)
+  const previewBtn   = document.getElementById("previewTemplate");
+  const pdfBtn       = document.getElementById("downloadTemplatePdf");
+  const themeSelect  = document.getElementById("themeSelect");
+
   previewBtn?.addEventListener("click", async () => {
     try {
-      builderIndicator && (builderIndicator.style.display = "block");
-      const ctx = window._resumeCtx || window.coerceFormToTemplateContext();
-      await renderWithTemplateFromContext(ctx, "html", getTheme());
-      downloadOptions && (downloadOptions.style.display = "block");
-    } catch (e) {
-      console.error(e);
-      alert(e.message || "Preview failed");
-    } finally {
-      builderIndicator && (builderIndicator.style.display = "none");
-    }
+      document.getElementById("builderGeneratingIndicator").style.display = "block";
+      const ctx = window._resumeCtx || gatherContext(form);
+      await renderWithTemplateFromContext(ctx, "html", themeSelect?.value || "modern");
+    } catch (e) { console.error(e); alert(e.message || "Preview failed"); }
+    finally { document.getElementById("builderGeneratingIndicator").style.display = "none"; }
   });
 
-  // PDF
   pdfBtn?.addEventListener("click", async () => {
     try {
-      builderIndicator && (builderIndicator.style.display = "block");
-      const ctx = window._resumeCtx || window.coerceFormToTemplateContext();
-      await renderWithTemplateFromContext(ctx, "pdf", getTheme());
-    } catch (e) {
-      console.error(e);
-      alert(e.message || "PDF build failed");
-    } finally {
-      builderIndicator && (builderIndicator.style.display = "none");
-    }
+      document.getElementById("builderGeneratingIndicator").style.display = "block";
+      const ctx = window._resumeCtx || gatherContext(form);
+      await renderWithTemplateFromContext(ctx, "pdf", themeSelect?.value || "modern");
+    } catch (e) { console.error(e); alert(e.message || "PDF build failed"); }
+    finally { document.getElementById("builderGeneratingIndicator").style.display = "none"; }
   });
+
+  // Finish step buttons reuse same actions
+  document.getElementById("previewTemplateFinish")?.addEventListener("click", () => previewBtn?.click());
+  document.getElementById("downloadTemplatePdfFinish")?.addEventListener("click", () => pdfBtn?.click());
+
+  // Init first step
+  showStep(0);
+}
+
+// Optional: prefill from analyzer (kept from your previous version)
+async function maybePrefillFromAnalyzer(form, { refreshChips, skillsSet }) {
+  const raw = localStorage.getItem("resumeTextRaw");
+  if (!raw || !form) return;
+  const isEmpty = !(form.firstName?.value || form.lastName?.value || form.title?.value || form.summary?.value) &&
+                  !document.querySelector("#exp-list .rb-item input[value]");
+  if (!isEmpty) return;
+  try {
+    const gen = await fetch("/generate-resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fullName: "", title: "", contact: "", summary: raw, education: "", experience: raw, skills: "", certifications: "", portfolio: "" }),
+    });
+    const genJson = await gen.json().catch(() => ({}));
+    if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
+    const ctx = genJson.context || {};
+    // fill
+    const name = (ctx.name || "").trim().split(" ");
+    if (form.firstName) form.firstName.value = name.shift() || "";
+    if (form.lastName)  form.lastName.value  = name.join(" ");
+    if (form.title)   form.title.value   = ctx.title || "";
+    if (form.summary) form.summary.value = ctx.summary || "";
+    if (ctx.links && ctx.links[0] && form.portfolio) form.portfolio.value = ctx.links[0].url || "";
+    // skills
+    if (Array.isArray(ctx.skills) && ctx.skills.length) { ctx.skills.forEach((s) => skillsSet.add(s)); refreshChips(); }
+    // experience
+    const expList = document.getElementById("exp-list"); if (expList) { expList.innerHTML = ""; (ctx.experience || []).forEach((e) => addExperienceFromObj(e)); if (!expList.children.length) addExperienceFromObj(); }
+    // education
+    const eduList = document.getElementById("edu-list"); if (eduList) { eduList.innerHTML = ""; (ctx.education || []).forEach((ed) => addEducationFromObj(ed)); if (!eduList.children.length) addEducationFromObj(); }
+    window._resumeCtx = ctx;
+  } catch (e) { console.warn("Prefill from analyzer failed:", e); }
+}
+
+// Boot
+document.addEventListener("DOMContentLoaded", () => {
+  const { refreshChips, skillsSet } = initSkills();
+  if (!document.querySelector("#exp-list .rb-item")) addExperienceFromObj();
+  if (!document.querySelector("#edu-list .rb-item")) addEducationFromObj();
+  attachAISuggestionHandlers(document);
+  initWizard();
+  maybePrefillFromAnalyzer(document.getElementById("resumeForm"), { refreshChips, skillsSet });
 });
+
+// Legacy TXT download (optional)
+async function downloadResume(format) {
+  const container = document.getElementById("builderGeneratedContent");
+  const text = container?.innerText || "";
+  if (format === "txt") {
+    saveAs(new Blob([text], { type: "text/plain" }), "resume.txt");
+  }
+}
