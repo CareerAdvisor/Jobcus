@@ -3769,9 +3769,26 @@ textarea{ resize:vertical; }
 .rb-chips .chip{ padding:.35rem .6rem; border-radius:999px; border:1px solid var(--border); background:#f6f8fb; }
 .rb-chips .chip button{ margin-left:.35rem; border:0; background:transparent; cursor:pointer; }
 
+ .rb-chip-input {
+  display: flex;
+  flex-direction: column;
+}
+
 /* Step visibility */
 .rb-step{ display:none; }
 .rb-step.active{ display:block; }
+
+/* Resume page container */
+.res-page {
+  background: var(--bg);
+  min-height: 100%;
+  padding: 20px 10px;
+}
+
+.res-page .rb-form {
+  max-width: 840px;
+  margin: 0 auto;
+}
 
 /* Hero → form separation */
 .res-builder .interview-container{ margin-bottom:24px; }
@@ -3785,3 +3802,45 @@ textarea{ resize:vertical; }
 .photo-btn{ border:0; background:#fff; width:40px; height:40px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.06); cursor:pointer; display:inline-grid; place-items:center; }
 .photo-label{ font-weight:600; color:#111827; }
 #photoPreview{ width:40px; height:40px; border-radius:10px; object-fit:cover; }
+
+/* AI Suggestion Panel */
+.ai-suggest {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fffef8;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+.ai-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+  color: var(--brand);
+}
+
+.ai-text {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.ai-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-actions .btn {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.ai-actions .btn-primary {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+}
