@@ -127,4 +127,14 @@ textarea{resize:vertical;min-height:140px;}
 .res-page iframe.resume-preview{display:block;border:0;width:100%!important;max-width:100%;}
 .res-page h1,.res-page h2,.res-page h3,.res-page p,.res-page a{overflow-wrap:anywhere;}
 
+.photo-upload{
+  display:flex; align-items:center; gap:10px;
+  border:1px solid #e5e7eb; background:#f8fafc;
+  border-radius:12px; padding:10px 12px; height:48px;
+}
+.photo-btn{ border:0; background:#fff; width:40px; height:40px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.06); cursor:pointer; display:inline-grid; place-items:center; }
+.photo-label{ font-weight:600; color:#111827; }
+#photoPreview{ width:40px; height:40px; border-radius:10px; object-fit:cover; }
+
+
 
