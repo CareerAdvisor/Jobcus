@@ -1,123 +1,220 @@
-// keep your fetch-credentials shim
+// Keep cookies for SameSite/Lax
+;(function(){
+  const _fetch = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    if (!("credentials" in init)) init.credentials = "same-origin";
+    return _fetch(input, init);
+  };
+})();
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Tabs / sections
-  const tabs = document.querySelectorAll('.rb-tabs button');
-  tabs.forEach(btn => btn.addEventListener('click', () => {
-    tabs.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.rb-step').forEach(s => s.hidden = true);
-    document.querySelector(btn.dataset.target).hidden = false;
-  }));
+document.addEventListener("DOMContentLoaded", () => {
+  //
+  // Builder only
+  //
+  const form             = document.getElementById("resumeForm");
+  const builderIndicator = document.getElementById("builderGeneratingIndicator");
+  const outputContainer  = document.getElementById("builderGeneratedContent");
+  const downloadOptions  = document.getElementById("resumeDownloadOptions");
 
-  // Step footer nav
-  const steps = Array.from(document.querySelectorAll('.rb-step'));
-  let stepIndex = 0;
-  const backBtn = document.getElementById('rb-back');
-  const nextBtn = document.getElementById('rb-next');
-  function showStep(i){
-    stepIndex = Math.max(0, Math.min(i, steps.length-1));
-    steps.forEach((s, idx) => s.hidden = idx !== stepIndex);
-    tabs.forEach((t, idx) => t.classList.toggle('active', idx === stepIndex));
-    backBtn.disabled = stepIndex === 0;
-    nextBtn.disabled = stepIndex === steps.length-1;
+  const previewBtn = document.getElementById("previewTemplate");
+  const pdfBtn     = document.getElementById("downloadTemplatePdf");
+
+  const previewWrap = document.getElementById("resumePreviewWrap");
+  const previewEl   = document.getElementById("resumePreview"); // <iframe>
+
+  function getTheme() {
+    return document.getElementById("themeSelect")?.value || "modern";
   }
-  backBtn?.addEventListener('click', () => showStep(stepIndex-1));
-  nextBtn?.addEventListener('click', () => showStep(stepIndex+1));
-  showStep(0);
 
-  // Repeater helpers (experience / education)
-  function addFromTemplate(btnAttr, listId, tplId){
-    const list = document.getElementById(listId);
-    const tpl  = document.getElementById(tplId);
-    const node = tpl.content.firstElementChild.cloneNode(true);
-    node.querySelector('.rb-remove').addEventListener('click', () => node.remove());
-    list.appendChild(node);
+  // Try to pre-fill from analyzer (when user pasted text there)
+  (async function maybePrefillFromAnalyzer(){
+    const raw = localStorage.getItem("resumeTextRaw");
+    if (!raw) return;
+
+    // Only prefill if form is basically empty
+    const isEmpty =
+      (!form.elements["fullName"].value &&
+       !form.elements["title"].value &&
+       !form.elements["summary"].value &&
+       !form.elements["experience"].value);
+
+    if (!isEmpty) return;
+
+    try {
+      // Send raw text to generator (put it in summary/experience fields of the prompt)
+      const gen = await fetch("/generate-resume", {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({
+          fullName: "", title: "", contact: "",
+          summary: raw, education: "", experience: raw, skills: "", certifications: "", portfolio: ""
+        })
+      });
+      const genJson = await gen.json().catch(() => ({}));
+      if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
+
+      fillFormFromContext(genJson.context || {});
+      // keep context for instant preview
+      window._resumeCtx = genJson.context;
+    } catch (e) {
+      console.warn("Prefill from analyzer failed:", e);
+    }
+  })();
+
+  function fillFormFromContext(ctx) {
+    form.elements["fullName"].value = ctx.name || "";
+    form.elements["title"].value    = ctx.title || "";
+    form.elements["contact"].value  = ctx.contact || "";
+    form.elements["summary"].value  = ctx.summary || "";
+    form.elements["education"].value = (ctx.education || [])
+      .map(ed => [ed.degree, ed.school, ed.location, ed.graduated].filter(Boolean).join(" – "))
+      .join("\n");
+    form.elements["experience"].value = (ctx.experience || [])
+      .map(e => `${e.role}${e.company ? " – " + e.company : ""}\n${(e.bullets||[]).map(b=>"• "+b).join("\n")}`)
+      .join("\n\n");
+    form.elements["skills"].value   = (ctx.skills || []).join(", ");
+    const link = (ctx.links || [])[0];
+    form.elements["portfolio"].value = link ? (link.url || "") : "";
   }
-  document.querySelector('[data-add="experience"]')?.addEventListener('click', () => addFromTemplate('experience','exp-list','tpl-experience'));
-  document.querySelector('[data-add="education"]')?.addEventListener('click', () => addFromTemplate('education','edu-list','tpl-education'));
-  // start with one block for each
-  addFromTemplate('experience','exp-list','tpl-experience');
-  addFromTemplate('education','edu-list','tpl-education');
 
-  // Chips input for skills
-  const skillInput = document.getElementById('skillInput');
-  const skillChips = document.getElementById('skillChips');
-  const skillsHidden = document.querySelector('input[name="skills"]');
-  const skills = new Set();
-  function refreshChips(){
-    skillChips.innerHTML = '';
-    skillsHidden.value = Array.from(skills).join(',');
-    skills.forEach(s => {
-      const chip = document.createElement('span');
-      chip.className = 'chip';
-      chip.innerHTML = `${s} <button type="button" aria-label="remove">×</button>`;
-      chip.querySelector('button').onclick = () => { skills.delete(s); refreshChips(); };
-      skillChips.appendChild(chip);
+  // Coerce form → minimal context for templates
+  function coerceFormToTemplateContext() {
+    const f = form;
+    const name    = f.elements["fullName"].value.trim();
+    const title   = f.elements["title"].value.trim();
+    const contact = f.elements["contact"].value.trim();
+    const summary = f.elements["summary"].value.trim();
+    const eduTxt  = f.elements["education"].value.trim();
+    const expTxt  = f.elements["experience"].value.trim();
+    const skills  = f.elements["skills"].value.split(",").map(s => s.trim()).filter(Boolean);
+    const portfolio = f.elements["portfolio"].value.trim();
+
+    const education = eduTxt ? [{ degree: "", school: eduTxt, location: "", graduated: "" }] : [];
+    const experience = expTxt ? [{
+      role: title || "Experience",
+      company: "",
+      location: "",
+      start: "",
+      end: "",
+      bullets: expTxt.split("\n").map(b => b.trim()).filter(Boolean)
+    }] : [];
+    const links = portfolio ? [{ url: portfolio, label: "Portfolio" }] : [];
+
+    return { name, title, contact, summary, education, experience, skills, links };
+  }
+
+  async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
+    if (format === "pdf") {
+      const res = await fetch("/build-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format: "pdf", theme, ...ctx })
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`PDF build failed: ${res.status} ${t}`);
+      }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "resume.pdf"; a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    const r = await fetch("/build-resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ format: "html", theme, ...ctx })
     });
+    const html = await r.text();
+    if (!r.ok) throw new Error(`HTML build failed: ${r.status} ${html}`);
+
+    // keep the page clean; show in iframe
+    outputContainer.innerHTML = "";
+    if (previewWrap && previewEl) {
+      previewWrap.style.display = "block";
+      previewEl.srcdoc = html; // isolate CSS/JS
+    }
   }
-  skillInput?.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && skillInput.value.trim()){
-      e.preventDefault();
-      skills.add(skillInput.value.trim());
-      skillInput.value = '';
-      refreshChips();
+
+  // Submit → AI → template
+  form?.addEventListener("submit", async e => {
+    e.preventDefault();
+    builderIndicator.style.display = "block";
+    outputContainer.innerHTML = "";
+    downloadOptions.style.display = "none";
+
+    const payload = {
+      fullName:       form.elements["fullName"].value.trim(),
+      title:          form.elements["title"].value.trim(),
+      contact:        form.elements["contact"].value.trim(),
+      summary:        form.elements["summary"].value.trim(),
+      education:      form.elements["education"].value.trim(),
+      experience:     form.elements["experience"].value.trim(),
+      skills:         form.elements["skills"].value.trim(),
+      certifications: form.elements["certifications"].value.trim(),
+      portfolio:      form.elements["portfolio"].value.trim()
+    };
+
+    try {
+      const gen = await fetch("/generate-resume", {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+      const genJson = await gen.json().catch(() => ({}));
+      if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
+
+      const ctx = genJson.context;
+      window._resumeCtx = ctx;
+
+      await renderWithTemplateFromContext(ctx, "html", getTheme());
+      downloadOptions.style.display = "block";
+    } catch (err) {
+      console.error("Generate/build error:", err);
+      alert("Resume generation failed.");
+    } finally {
+      builderIndicator.style.display = "none";
     }
   });
 
-  // Compose contact → single string for template
-  function contactString(f){
-    const parts = [];
-    const loc = [f.city.value, f.country.value].filter(Boolean).join(', ');
-    if (loc) parts.push(loc);
-    if (f.phone.value) parts.push(f.phone.value);
-    if (f.email.value) parts.push(f.email.value);
-    return parts.join(' | ');
-  }
+  // Preview button
+  document.getElementById("previewTemplate")?.addEventListener("click", async () => {
+    try {
+      builderIndicator.style.display = "block";
+      const ctx = window._resumeCtx || coerceFormToTemplateContext();
+      await renderWithTemplateFromContext(ctx, "html", getTheme());
+      downloadOptions.style.display = "block";
+    } catch (e) {
+      console.error(e);
+      alert(e.message || "Preview failed");
+    } finally {
+      builderIndicator.style.display = "none";
+    }
+  });
 
-  // Replace your old coerce with this:
-  window.coerceFormToTemplateContext = function(){
-    const f = document.getElementById('resumeForm');
-
-    const name = [f.firstName.value, f.lastName.value].filter(Boolean).join(' ').trim();
-    const links = f.portfolio.value ? [{ url: f.portfolio.value, label: 'Portfolio' }] : [];
-
-    // experience[]
-    const exp = Array.from(document.querySelectorAll('#exp-list .rb-item')).map(node => {
-      const g = name => node.querySelector(`[name="${name}"]`);
-      const bullets = (g('bullets').value || '')
-        .split('\n').map(t => t.replace(/^•\s*/,'').trim()).filter(Boolean);
-      return {
-        role: g('role').value, company: g('company').value,
-        location: g('location').value, start: g('start').value, end: g('end').value,
-        bullets
-      };
-    });
-
-    // education[]
-    const edu = Array.from(document.querySelectorAll('#edu-list .rb-item')).map(node => {
-      const g = name => node.querySelector(`[name="${name}"]`);
-      return {
-        degree: g('degree').value,
-        school: g('school').value,
-        location: g('location').value,
-        graduated: g('graduated').value || g('graduatedStart').value
-      };
-    });
-
-    const skillsArr = (f.skills.value || '').split(',').map(s => s.trim()).filter(Boolean);
-
-    return {
-      name,
-      title: f.title.value.trim(),
-      contact: contactString(f),
-      summary: f.summary.value.trim(),
-      links,
-      experience: exp,
-      education: edu,
-      skills: skillsArr
-    };
-  };
-
-  /* —— keep the rest of your existing preview / PDF logic —— */
+  // PDF button
+  document.getElementById("downloadTemplatePdf")?.addEventListener("click", async () => {
+    try {
+      builderIndicator.style.display = "block";
+      const ctx = window._resumeCtx || coerceFormToTemplateContext();
+      await renderWithTemplateFromContext(ctx, "pdf", getTheme());
+    } catch (e) {
+      console.error(e);
+      alert(e.message || "PDF build failed");
+    } finally {
+      builderIndicator.style.display = "none";
+    }
+  });
 });
+
+// Legacy TXT; PDF handled via server template
+async function downloadResume(format) {
+  const container = document.getElementById("builderGeneratedContent");
+  const text = container?.innerText || "";
+
+  if (format === "txt") {
+    saveAs(new Blob([text], {type:"text/plain"}), "resume.txt");
+  }
+}
