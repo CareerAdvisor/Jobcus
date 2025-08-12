@@ -19,43 +19,45 @@
     <section id="step-personal" class="rb-step active" role="tabpanel" aria-labelledby="h-personal">
       <article class="rb-card">
         <header>
-          <h2 id="h-personal">Personal details</h2></br>
+          <h2 id="h-personal">Personal details</h2>
           <p>Personal details such as name and job title are essential in a resume to give the recruiter a quick overview of the candidate.</p>
         </header>
 
-        <div class="rb-grid">
-          <label>First name
-            <input type="text" name="firstName" placeholder="First name" required>
-          </label>
+        <div class="rb-panel">
+          <div class="rb-grid">
+            <label>First name
+              <input type="text" name="firstName" placeholder="First name" required>
+            </label>
 
-          <label>Last name
-            <input type="text" name="lastName" placeholder="Last name" required>
-          </label>
+            <label>Last name
+              <input type="text" name="lastName" placeholder="Last name" required>
+            </label>
 
-          <!-- Job title (left) -->
-          <label>Job title
-            <input type="text" name="title" placeholder="Product Designer">
-          </label>
+            <!-- Job title (left) -->
+            <label>Job title
+              <input type="text" name="title" placeholder="Product Designer">
+            </label>
 
-          <!-- Photo upload (right) -->
-          <div class="photo-upload">
-            <input type="file" id="photoInput" accept="image/*" hidden>
-            <button type="button" id="photoBtn" class="photo-btn" aria-label="Add photo">
-              <span class="cam">📷</span>
-            </button>
-            <span class="photo-label">Add photo</span>
-            <img id="photoPreview" alt="Profile photo preview" hidden>
+            <!-- Photo upload (right) -->
+            <div class="photo-upload">
+              <input type="file" id="photoInput" accept="image/*" hidden>
+              <button type="button" id="photoBtn" class="photo-btn" aria-label="Add photo">
+                <span class="cam">📷</span>
+              </button>
+              <span class="photo-label">Add photo</span>
+              <img id="photoPreview" alt="Profile photo preview" hidden>
+            </div>
           </div>
+
+          <details class="rb-disclosure" open style="margin-top:12px;">
+            <summary><span class="twiddle">—</span> Hide additional details</summary>
+            <div class="rb-grid" style="margin-top:.5rem;">
+              <label>Nationality <input type="text" name="nationality" placeholder="American"></label>
+              <label>Driver’s License <input type="text" name="drivers" placeholder="D74837465"></label>
+              <label class="full">Birth date <input type="date" name="dob" placeholder="1996-02-03"></label>
+            </div>
+          </details>
         </div>
-
-        <details class="rb-disclosure" open>
-          <summary><span class="twiddle">—</span> Hide additional details</summary>
-          <div class="rb-grid" style="margin-top:.5rem;">
-            <label>Nationality <input type="text" name="nationality" placeholder="American"></label>
-            <label>Driver’s License <input type="text" name="drivers" placeholder="D74837465"></label>
-            <label class="full">Birth date <input type="date" name="dob" placeholder="1996-02-03"></label>
-          </div>
-        </details>
       </article>
     </section>
 
@@ -63,17 +65,20 @@
     <section id="step-contact" class="rb-step" role="tabpanel" aria-labelledby="h-contact" hidden>
       <article class="rb-card">
         <header>
-          <h2 id="h-contact">Contact information</h2></br>
+          <h2 id="h-contact">Contact information</h2>
           <p>Make it easy to reach you.</p>
         </header>
-        <div class="rb-grid">
-          <label class="full">Email <input type="email" name="email" placeholder="you@example.com" required></label>
-          <label class="full">Phone <input type="tel" name="phone" placeholder="999 888 7777" required></label>
-          <label>Country <input type="text" name="country" placeholder="USA"></label>
-          <label>City <input type="text" name="city" placeholder="Austin"></label>
-          <label class="full">Address <input type="text" name="address" placeholder="500 W 2nd St"></label>
-          <label>Postcode <input type="text" name="postcode" placeholder="55912"></label>
-          <label class="full">LinkedIn / Portfolio <input type="url" name="portfolio" placeholder="https://linkedin.com/in/you"></label>
+
+        <div class="rb-panel">
+          <div class="rb-grid">
+            <label class="full">Email <input type="email" name="email" placeholder="you@example.com" required></label>
+            <label class="full">Phone <input type="tel" name="phone" placeholder="999 888 7777" required></label>
+            <label>Country <input type="text" name="country" placeholder="USA"></label>
+            <label>City <input type="text" name="city" placeholder="Austin"></label>
+            <label class="full">Address <input type="text" name="address" placeholder="500 W 2nd St"></label>
+            <label>Postcode <input type="text" name="postcode" placeholder="55912"></label>
+            <label class="full">LinkedIn / Portfolio <input type="url" name="portfolio" placeholder="https://linkedin.com/in/you"></label>
+          </div>
         </div>
       </article>
     </section>
@@ -82,17 +87,20 @@
     <section id="step-summary" class="rb-step" role="tabpanel" aria-labelledby="h-summary" hidden>
       <article class="rb-card">
         <header>
-          <h2 id="h-summary">Professional Summary (with AI)</h2></br>
+          <h2 id="h-summary">Professional Summary (with AI)</h2>
           <p>Include your title, years of experience and 1–2 measurable wins.</p>
         </header>
-        <textarea name="summary" rows="5" placeholder="Product Designer with 10 years of experience..."></textarea>
 
-        <div class="ai-suggest" id="ai-summary" data-field="summary">
-          <div class="ai-title">✦ Write with AI</div>
-          <p class="ai-text">We’ll fetch a tailored suggestion based on what you’ve entered so far…</p>
-          <div class="ai-actions">
-            <button type="button" class="btn ai-refresh" data-ai="summary">Refresh</button>
-            <button type="button" class="btn btn-primary ai-add">Add</button>
+        <div class="rb-panel">
+          <textarea name="summary" rows="5" placeholder="Product Designer with 10 years of experience..."></textarea>
+
+          <div class="ai-suggest" id="ai-summary" data-field="summary" style="margin-top:12px;">
+            <div class="ai-title">✦ Write with AI</div>
+            <p class="ai-text">We’ll fetch a tailored suggestion based on what you’ve entered so far…</p>
+            <div class="ai-actions">
+              <button type="button" class="btn ai-refresh" data-ai="summary">Refresh</button>
+              <button type="button" class="btn btn-primary ai-add">Add</button>
+            </div>
           </div>
         </div>
       </article>
@@ -102,39 +110,43 @@
     <section id="step-experience" class="rb-step" role="tabpanel" aria-labelledby="h-experience" hidden>
       <article class="rb-card" data-repeater="experience">
         <header>
-          <h2 id="h-experience">Employment history (with AI highlights)</h2></br>
+          <h2 id="h-experience">Employment history (with AI highlights)</h2>
           <p>Use action verbs, quantify results, and keep it concise.</p>
         </header>
 
-        <template id="tpl-experience">
-          <div class="rb-item">
-            <div class="rb-grid">
-              <label class="full">Job title <input type="text" name="role" placeholder="Product Designer"></label>
-              <label class="full">Company name <input type="text" name="company" placeholder="Apple Inc."></label>
-              <label>Start date <input type="text" name="start" placeholder="Jan 2016"></label>
-              <label>End date <input type="text" name="end" placeholder="Feb 2019 / Present"></label>
-              <label class="full">Location <input type="text" name="location" placeholder="Washington, D.C."></label>
-            </div>
+        <div class="rb-panel">
+          <template id="tpl-experience">
+            <div class="rb-item">
+              <div class="rb-grid">
+                <label class="full">Job title <input type="text" name="role" placeholder="Product Designer"></label>
+                <label class="full">Company name <input type="text" name="company" placeholder="Apple Inc."></label>
+                <label>Start date <input type="text" name="start" placeholder="Jan 2016"></label>
+                <label>End date <input type="text" name="end" placeholder="Feb 2019 / Present"></label>
+                <label class="full">Location <input type="text" name="location" placeholder="Washington, D.C."></label>
+              </div>
 
-            <label class="full">Highlights (one per line)
-              <textarea name="bullets" rows="4" placeholder="• Designed user-friendly interfaces...&#10;• Worked with teams to improve product features..."></textarea>
-            </label>
+              <label class="full" style="margin-top:12px;">Highlights (one per line)
+                <textarea name="bullets" rows="4" placeholder="• Reduced ticket backlog by 32%..."></textarea>
+              </label>
 
-            <div class="ai-suggest" data-field="bullets">
-              <div class="ai-title">✦ Write with AI</div>
-              <p class="ai-text">Get role-specific bullet ideas for this job.</p>
-              <div class="ai-actions">
-                <button type="button" class="btn ai-refresh" data-ai="highlights">Refresh</button>
-                <button type="button" class="btn btn-primary ai-add">Add</button>
+              <div class="ai-suggest" data-field="bullets" style="margin-top:12px;">
+                <div class="ai-title">✦ Write with AI</div>
+                <p class="ai-text">Get role-specific bullet ideas for this job.</p>
+                <div class="ai-actions">
+                  <button type="button" class="btn ai-refresh" data-ai="highlights">Refresh</button>
+                  <button type="button" class="btn btn-primary ai-add">Add</button>
+                </div>
+              </div>
+
+              <div class="rb-actions" style="padding-top:10px;">
+                <button type="button" class="rb-remove">Remove</button>
               </div>
             </div>
+          </template>
 
-            <div class="rb-actions"><button type="button" class="rb-remove">Remove</button></div>
-          </div>
-        </template>
-
-        <div class="rb-list" id="exp-list"></div>
-        <button type="button" class="rb-add" data-add="experience">+ Add another experience</button>
+          <div class="rb-list" id="exp-list"></div>
+          <button type="button" class="rb-add" data-add="experience">+ Add another experience</button>
+        </div>
       </article>
     </section>
 
@@ -142,13 +154,16 @@
     <section id="step-skills" class="rb-step" role="tabpanel" aria-labelledby="h-skills" hidden>
       <article class="rb-card">
         <header>
-          <h2 id="h-skills">Skills</h2></br>
+          <h2 id="h-skills">Skills</h2>
           <p>Highlight your most relevant professional skills.</p>
         </header>
-        <div class="rb-chip-input">
-          <input type="text" id="skillInput" placeholder="Type a skill and press Enter">
-          <div id="skillChips" class="rb-chips"></div>
-          <input type="hidden" name="skills">
+
+        <div class="rb-panel">
+          <div class="rb-chip-input">
+            <input type="text" id="skillInput" placeholder="Type a skill and press Enter">
+            <div id="skillChips" class="rb-chips" style="margin-top:8px;"></div>
+            <input type="hidden" name="skills">
+          </div>
         </div>
       </article>
     </section>
@@ -157,25 +172,29 @@
     <section id="step-education" class="rb-step" role="tabpanel" aria-labelledby="h-education" hidden>
       <article class="rb-card" data-repeater="education">
         <header>
-          <h2 id="h-education">Education</h2></br>
+          <h2 id="h-education">Education</h2>
           <p>Add your school, degree, dates and location.</p>
         </header>
 
-        <template id="tpl-education">
-          <div class="rb-item">
-            <div class="rb-grid">
-              <label class="full">Institution <input type="text" name="school" placeholder="Harvard University"></label>
-              <label class="full">Degree <input type="text" name="degree" placeholder="Bachelor's Degree in Design"></label>
-              <label>Start date <input type="text" name="graduatedStart" placeholder="Jan 2016"></label>
-              <label>End date <input type="text" name="graduated" placeholder="Feb 2019"></label>
-              <label class="full">Location <input type="text" name="location" placeholder="Cambridge, MA"></label>
+        <div class="rb-panel">
+          <template id="tpl-education">
+            <div class="rb-item">
+              <div class="rb-grid">
+                <label class="full">Institution <input type="text" name="school" placeholder="Harvard University"></label>
+                <label class="full">Degree <input type="text" name="degree" placeholder="Bachelor's Degree in Design"></label>
+                <label>Start date <input type="text" name="graduatedStart" placeholder="Jan 2016"></label>
+                <label>End date <input type="text" name="graduated" placeholder="Feb 2019"></label>
+                <label class="full">Location <input type="text" name="location" placeholder="Cambridge, MA"></label>
+              </div>
+              <div class="rb-actions" style="padding-top:10px;">
+                <button type="button" class="rb-remove">Remove</button>
+              </div>
             </div>
-            <div class="rb-actions"><button type="button" class="rb-remove">Remove</button></div>
-          </div>
-        </template>
+          </template>
 
-        <div class="rb-list" id="edu-list"></div>
-        <button type="button" class="rb-add" data-add="education">+ Add education</button>
+          <div class="rb-list" id="edu-list"></div>
+          <button type="button" class="rb-add" data-add="education">+ Add education</button>
+        </div>
       </article>
     </section>
 
@@ -183,19 +202,24 @@
     <section id="step-design" class="rb-step" role="tabpanel" aria-labelledby="h-design" hidden>
       <article class="rb-card">
         <header><h2 id="h-design">Design</h2><p>Pick a template.</p></header>
-        <label>Theme
-          <select id="themeSelect" name="theme">
-            <option value="modern" selected>Modern</option>
-            <option value="minimal">Minimal</option>
-          </select>
-        </label>
-        <div class="rb-row">
-          <button type="button" id="previewTemplate" class="cta-secondary">Preview</button>
-          <button type="button" id="downloadTemplatePdf" class="cta-primary">Download PDF</button>
-        </div>
-        <div id="resumePreviewWrap" style="display:none;margin-top:1rem;">
-          <h3>Preview</h3>
-          <iframe id="resumePreview" class="resume-preview" style="width:100%;height:100vh;border:0;background:#fff;"></iframe>
+
+        <div class="rb-panel">
+          <label>Theme
+            <select id="themeSelect" name="theme">
+              <option value="modern" selected>Modern</option>
+              <option value="minimal">Minimal</option>
+            </select>
+          </label>
+
+          <div class="rb-row">
+            <button type="button" id="previewTemplate" class="cta-secondary">Preview</button>
+            <button type="button" id="downloadTemplatePdf" class="cta-primary">Download PDF</button>
+          </div>
+
+          <div id="resumePreviewWrap" style="display:none;margin-top:1rem;">
+            <h3>Preview</h3>
+            <iframe id="resumePreview" class="resume-preview" style="width:100%;height:100vh;border:0;background:#fff;"></iframe>
+          </div>
         </div>
       </article>
     </section>
@@ -204,13 +228,17 @@
     <section id="step-finish" class="rb-step" role="tabpanel" aria-labelledby="h-finish" hidden>
       <article class="rb-card">
         <header><h2 id="h-finish">All set!</h2><p>Preview or download your resume. You can always go back and edit.</p></header>
-        <div class="rb-row">
-          <button type="button" id="previewTemplateFinish" class="cta-secondary">Preview</button>
-          <button type="button" id="downloadTemplatePdfFinish" class="cta-primary">Download PDF</button>
-        </div>
-        <div id="resumePreviewWrapFinish" style="display:none;margin-top:1rem;">
-          <h3>Preview</h3>
-          <iframe id="resumePreviewFinish" class="resume-preview" style="width:100%;height:90vh;border:0;background:#fff;"></iframe>
+
+        <div class="rb-panel">
+          <div class="rb-row">
+            <button type="button" id="previewTemplateFinish" class="cta-secondary">Preview</button>
+            <button type="button" id="downloadTemplatePdfFinish" class="cta-primary">Download PDF</button>
+          </div>
+
+          <div id="resumePreviewWrapFinish" style="display:none;margin-top:1rem;">
+            <h3>Preview</h3>
+            <iframe id="resumePreviewFinish" class="resume-preview" style="width:100%;height:90vh;border:0;background:#fff;"></iframe>
+          </div>
         </div>
       </article>
     </section>
