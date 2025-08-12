@@ -20,6 +20,8 @@ from dotenv import load_dotenv
 # Local modules
 from extensions import login_manager, init_supabase, init_openai
 from blueprints.resumes import resumes_bp  # <-- your blueprint with all resume endpoints
+import logging
+from typing import Optional  # if you're on Python <3.10
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -69,46 +71,70 @@ class User(UserMixin):
         self.email = email
         self.fullname = fullname
 
-# app.py
 @login_manager.user_loader
-def load_user(user_id: str):
+def load_user(user_id: "Optional[str]"):
     if not user_id or user_id == "None":
         return None
+
+    supabase = current_app.config.get("SUPABASE")
+    if supabase is None:
+        logging.warning("load_user: supabase client is not initialized")
+        return None
+
     try:
-        res = (
+        resp = (
             supabase.table("users")
             .select("auth_id,email,fullname")
             .eq("auth_id", user_id)
-            .maybe_single()
+            .limit(1)
             .execute()
         )
-        row = res.data
-        if row:
-            return User(auth_id=row["auth_id"], email=row["email"], fullname=row.get("fullname"))
-    except Exception as e:
-        logging.warning("load_user warn: %s", e)
-    return None
 
-# --- Helpers (jobs / analytics) ---
-def get_user_resume_text(user_id: str) -> str | None:
+        data = getattr(resp, "data", None) if resp is not None else None
+        if not data:
+            return None
+
+        row = data[0] if isinstance(data, list) else data
+        if not row:
+            return None
+
+        return User(
+            auth_id=row.get("auth_id"),
+            email=row.get("email"),
+            fullname=row.get("fullname"),
+        )
+    except Exception:
+        logging.exception("load_user: failed to restore user")
+        return None
+
+
+def get_user_resume_text(user_id: str) -> Optional[str]:
     """Fetch the latest stored resume text for a user from Supabase."""
     try:
-        supabase = current_app.config["SUPABASE"]
-        res = (
+        supabase = current_app.config.get("SUPABASE")
+        if supabase is None:
+            current_app.logger.warning("get_user_resume_text: supabase client is not initialized")
+            return None
+
+        resp = (
             supabase.table("resumes")
             .select("text,created_at")
             .eq("user_id", user_id)
             .order("created_at", desc=True)
             .limit(1)
-            .maybe_single()
             .execute()
         )
-        data = res.data or {}
-        return data.get("text")
-    except Exception as e:
-        current_app.logger.warning("get_user_resume_text error: %s", e)
-        return None
 
+        data = getattr(resp, "data", None) if resp is not None else None
+        if not data:
+            return None
+
+        row = data[0] if isinstance(data, list) else data
+        return row.get("text") if row else None
+    except Exception:
+        current_app.logger.exception("get_user_resume_text error")
+        return None
+        
 def fetch_remotive_jobs(query: str):
     try:
         r = requests.get(REMOTIVE_API_URL, params={"search": query})
