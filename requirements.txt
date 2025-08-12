@@ -11,3 +11,4 @@ python-docx
 Authlib
 weasyprint
 docxtpl
+gotrue
