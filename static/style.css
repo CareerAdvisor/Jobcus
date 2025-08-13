@@ -3290,6 +3290,187 @@ button {
   animation: progressBar 2s infinite linear;
 }
 
+/* Resume-Builder page css */
+:root{
+  --brand:#104879;
+  --accent:#ffc957;
+  --bg:#f5f7fb;
+  --card:#fff;
+  --muted:#6b7280;
+  --border:#e5e7eb;
+  --radius:14px;
+}
+
+/* (Tabs CSS included for consistency, even though tabs are hidden on this page) */
+.rb-tabs{
+  position:sticky; top:0; z-index:10;
+  display:flex; gap:.5rem; padding:.5rem .75rem;
+  backdrop-filter:saturate(180%) blur(8px);
+  background:linear-gradient(#fff8, #fff8), var(--bg);
+  border-bottom:1px solid var(--border);
+}
+.rb-tabs button{
+  flex:0 0 auto; border:0; padding:.55rem .9rem; border-radius:999px;
+  background:#eef2f7; font-weight:600;
+}
+.rb-tabs button.active{ background:var(--brand); color:#fff; }
+
+.rb-wrap{ background:var(--bg); padding:1rem; }
+.rb-form{ max-width:840px; margin:0 auto; }
+
+/* Outer card */
+.rb-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;            /* slightly larger for soft look */
+  padding:0;                     /* header/panel handle padding */
+  margin:0 0 1rem;
+  box-shadow:0 4px 14px rgba(16,72,121,.06);
+}
+
+/* Header slab (title + subheading) */
+.rb-card > header{
+  padding:18px 18px 14px;
+  border-bottom:1px solid #eef2f7;
+}
+.rb-card > header h2{ margin:.2rem 0 .25rem; font-size:.75rem; }
+.rb-card > header p{ margin:0 0 .25rem; color:var(--muted); }
+
+/* Inner rounded panel that holds fields (the blue-tinted area) */
+.rb-panel{
+  margin:12px;
+  padding:14px;
+  border:1px solid #eef2f7;
+  background:#f8fbff;
+  border-radius:14px;
+}
+
+/* Grid + field spacing */
+.rb-grid{ display:grid; gap:.9rem; grid-template-columns:1fr 1fr; }
+.rb-grid .full{ grid-column:1/-1; }
+@media (max-width:640px){ .rb-grid{ grid-template-columns:1fr; } }
+
+/* Inputs */
+label{ display:flex; flex-direction:column; gap:.35rem; font-weight:600; }
+input, select, textarea{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:.85rem .9rem;
+  font:inherit;
+  background:#fff;
+}
+textarea{ resize:vertical; }
+
+/* Actions & chips */
+.rb-row{ display:flex; gap:.5rem; margin-top:.75rem; flex-wrap:wrap; }
+.cta-primary{ background:var(--accent); color:#1f2a37; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
+.cta-secondary{ background:var(--brand); color:#fff; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
+.ghost{ background:#fff; border:1px solid var(--border); padding:.7rem 1rem; border-radius:10px; }
+
+.rb-footer{
+  position:sticky; bottom:0; display:flex; gap:.5rem;
+  justify-content:space-between; align-items:center; padding:.6rem;
+  background:linear-gradient(#fff,#fff); border-top:1px solid var(--border);
+  border-start-start-radius:12px; border-start-end-radius:12px; margin-top:1rem;
+}
+
+/* Details (show/hide) bar visuals */
+.rb-disclosure summary{
+  background:#f3f4f6;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px 14px;
+  font-weight:700;
+  cursor:pointer;
+}
+.rb-disclosure[open] summary{ background:#eef2f7; }
+
+/* Repeater items */
+.rb-item{ border:1px dashed var(--border); border-radius:12px; padding:.75rem; margin:.6rem 0; background:#fafbff; }
+.rb-actions{ display:flex; justify-content:flex-end; }
+.rb-remove{ background:#fff; border:1px solid var(--border); padding:.5rem .75rem; border-radius:8px; }
+.rb-add{ margin-top:.25rem; border:1px dashed var(--border); background:#fff; padding:.6rem .8rem; border-radius:999px; }
+
+.rb-chips{ display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.5rem; }
+.rb-chips .chip{ padding:.35rem .6rem; border-radius:999px; border:1px solid var(--border); background:#f6f8fb; }
+.rb-chips .chip button{ margin-left:.35rem; border:0; background:transparent; cursor:pointer; }
+
+ .rb-chip-input {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Step visibility */
+.rb-step{ display:none; }
+.rb-step.active{ display:block; }
+
+/* Resume page container */
+.res-page {
+  background: var(--bg);
+  min-height: 100%;
+  padding: 20px 10px;
+}
+
+.res-page .rb-form {
+  max-width: 840px;
+  margin: 0 auto;
+}
+
+/* Hero → form separation */
+.res-builder .interview-container{ margin-bottom:24px; }
+
+/* Photo upload look */
+.photo-upload{
+  display:flex; align-items:center; gap:10px;
+  border:1px solid #e5e7eb; background:#f8fafc;
+  border-radius:12px; padding:10px 12px; height:48px;
+}
+.photo-btn{ border:0; background:#fff; width:40px; height:40px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.06); cursor:pointer; display:inline-grid; place-items:center; }
+.photo-label{ font-weight:600; color:#111827; }
+#photoPreview{ width:40px; height:40px; border-radius:10px; object-fit:cover; }
+
+/* AI Suggestion Panel */
+.ai-suggest {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fffef8;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+.ai-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+  color: var(--brand);
+}
+
+.ai-text {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.ai-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-actions .btn {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.ai-actions .btn-primary {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+}
+
 /* ==== FAQ PAGE STYLES ==== */
 .faq-header {
   text-align: left;
@@ -3664,184 +3845,4 @@ button {
   background: #0a2e5f !important;
 }
 
-/* Resume-Builder page css */
-:root{
-  --brand:#104879;
-  --accent:#ffc957;
-  --bg:#f5f7fb;
-  --card:#fff;
-  --muted:#6b7280;
-  --border:#e5e7eb;
-  --radius:14px;
-}
-
-/* (Tabs CSS included for consistency, even though tabs are hidden on this page) */
-.rb-tabs{
-  position:sticky; top:0; z-index:10;
-  display:flex; gap:.5rem; padding:.5rem .75rem;
-  backdrop-filter:saturate(180%) blur(8px);
-  background:linear-gradient(#fff8, #fff8), var(--bg);
-  border-bottom:1px solid var(--border);
-}
-.rb-tabs button{
-  flex:0 0 auto; border:0; padding:.55rem .9rem; border-radius:999px;
-  background:#eef2f7; font-weight:600;
-}
-.rb-tabs button.active{ background:var(--brand); color:#fff; }
-
-.rb-wrap{ background:var(--bg); padding:1rem; }
-.rb-form{ max-width:840px; margin:0 auto; }
-
-/* Outer card */
-.rb-card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:18px;            /* slightly larger for soft look */
-  padding:0;                     /* header/panel handle padding */
-  margin:0 0 1rem;
-  box-shadow:0 4px 14px rgba(16,72,121,.06);
-}
-
-/* Header slab (title + subheading) */
-.rb-card > header{
-  padding:18px 18px 14px;
-  border-bottom:1px solid #eef2f7;
-}
-.rb-card > header h2{ margin:.2rem 0 .25rem; font-size:.75rem; }
-.rb-card > header p{ margin:0 0 .25rem; color:var(--muted); }
-
-/* Inner rounded panel that holds fields (the blue-tinted area) */
-.rb-panel{
-  margin:12px;
-  padding:14px;
-  border:1px solid #eef2f7;
-  background:#f8fbff;
-  border-radius:14px;
-}
-
-/* Grid + field spacing */
-.rb-grid{ display:grid; gap:.9rem; grid-template-columns:1fr 1fr; }
-.rb-grid .full{ grid-column:1/-1; }
-@media (max-width:640px){ .rb-grid{ grid-template-columns:1fr; } }
-
-/* Inputs */
-label{ display:flex; flex-direction:column; gap:.35rem; font-weight:600; }
-input, select, textarea{
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:.85rem .9rem;
-  font:inherit;
-  background:#fff;
-}
-textarea{ resize:vertical; }
-
-/* Actions & chips */
-.rb-row{ display:flex; gap:.5rem; margin-top:.75rem; flex-wrap:wrap; }
-.cta-primary{ background:var(--accent); color:#1f2a37; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
-.cta-secondary{ background:var(--brand); color:#fff; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
-.ghost{ background:#fff; border:1px solid var(--border); padding:.7rem 1rem; border-radius:10px; }
-
-.rb-footer{
-  position:sticky; bottom:0; display:flex; gap:.5rem;
-  justify-content:space-between; align-items:center; padding:.6rem;
-  background:linear-gradient(#fff,#fff); border-top:1px solid var(--border);
-  border-start-start-radius:12px; border-start-end-radius:12px; margin-top:1rem;
-}
-
-/* Details (show/hide) bar visuals */
-.rb-disclosure summary{
-  background:#f3f4f6;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  padding:12px 14px;
-  font-weight:700;
-  cursor:pointer;
-}
-.rb-disclosure[open] summary{ background:#eef2f7; }
-
-/* Repeater items */
-.rb-item{ border:1px dashed var(--border); border-radius:12px; padding:.75rem; margin:.6rem 0; background:#fafbff; }
-.rb-actions{ display:flex; justify-content:flex-end; }
-.rb-remove{ background:#fff; border:1px solid var(--border); padding:.5rem .75rem; border-radius:8px; }
-.rb-add{ margin-top:.25rem; border:1px dashed var(--border); background:#fff; padding:.6rem .8rem; border-radius:999px; }
-
-.rb-chips{ display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.5rem; }
-.rb-chips .chip{ padding:.35rem .6rem; border-radius:999px; border:1px solid var(--border); background:#f6f8fb; }
-.rb-chips .chip button{ margin-left:.35rem; border:0; background:transparent; cursor:pointer; }
-
- .rb-chip-input {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Step visibility */
-.rb-step{ display:none; }
-.rb-step.active{ display:block; }
-
-/* Resume page container */
-.res-page {
-  background: var(--bg);
-  min-height: 100%;
-  padding: 20px 10px;
-}
-
-.res-page .rb-form {
-  max-width: 840px;
-  margin: 0 auto;
-}
-
-/* Hero → form separation */
-.res-builder .interview-container{ margin-bottom:24px; }
-
-/* Photo upload look */
-.photo-upload{
-  display:flex; align-items:center; gap:10px;
-  border:1px solid #e5e7eb; background:#f8fafc;
-  border-radius:12px; padding:10px 12px; height:48px;
-}
-.photo-btn{ border:0; background:#fff; width:40px; height:40px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.06); cursor:pointer; display:inline-grid; place-items:center; }
-.photo-label{ font-weight:600; color:#111827; }
-#photoPreview{ width:40px; height:40px; border-radius:10px; object-fit:cover; }
-
-/* AI Suggestion Panel */
-.ai-suggest {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
-  background: #fffef8;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-}
-
-.ai-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-  margin-bottom: 4px;
-  color: var(--brand);
-}
-
-.ai-text {
-  font-size: 0.9rem;
-  color: var(--muted);
-  margin-bottom: 8px;
-}
-
-.ai-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.ai-actions .btn {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
-  padding: 6px 10px;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.ai-actions .btn-primary {
-  background: var(--brand);
-  color: #fff;
-  border: none;
-}
 
