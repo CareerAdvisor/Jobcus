@@ -2,7 +2,7 @@
 {% block title %}Resume Builder – Jobcus{% endblock %}
 
 {% block content %}
-<main id="resume-builder" class="res-page res-builder">
+<main id="resume-builder" class="rb-wrap">
   <!-- Hero -->
   <div class="interview-container" style="padding:20px 10px;width:100%;background:#104879;">
     <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
@@ -12,6 +12,7 @@
     </section>
   </div>
 
+  <div class="rb-container">
   <!-- Form (no tabs; simple wizard via Back/Next) -->
   <form id="resumeForm" class="rb-form" autocomplete="on">
     
@@ -22,6 +23,7 @@
     </nav>
 
     <!-- STEP 1: Personal Details -->
+    <div class="rb-section">
     <section id="step-personal" class="rb-step active" role="tabpanel" aria-labelledby="h-personal">
       <article class="rb-card">
         <header>
@@ -64,8 +66,10 @@
         </div>
       </article>
     </section>
+    </div>
 
     <!-- STEP 2: Contact Information -->
+    <div class="rb-section">
     <section id="step-contact" class="rb-step" role="tabpanel" aria-labelledby="h-contact" hidden>
       <article class="rb-card">
         <header>
@@ -86,8 +90,10 @@
         </div>
       </article>
     </section>
+    </div>
 
     <!-- STEP 3: Professional Summary (with AI) -->
+    <div class="rb-section">
     <section id="step-summary" class="rb-step" role="tabpanel" aria-labelledby="h-summary" hidden>
       <article class="rb-card">
         <header>
@@ -109,8 +115,11 @@
         </div>
       </article>
     </section>
+    </div>
 
+    
     <!-- STEP 4: Employment History (with AI Highlights) -->
+    <div class="rb-section">
     <section id="step-experience" class="rb-step" role="tabpanel" aria-labelledby="h-experience" hidden>
       <article class="rb-card" data-repeater="experience">
         <header>
@@ -153,8 +162,10 @@
         </div>
       </article>
     </section>
+    </div>
 
     <!-- STEP 5: Skills -->
+    <div class="rb-section">
     <section id="step-skills" class="rb-step" role="tabpanel" aria-labelledby="h-skills" hidden>
       <article class="rb-card">
         <header>
@@ -171,8 +182,10 @@
         </div>
       </article>
     </section>
+    </div>
 
     <!-- STEP 6: Education -->
+    <div class="rb-section">
     <section id="step-education" class="rb-step" role="tabpanel" aria-labelledby="h-education" hidden>
       <article class="rb-card" data-repeater="education">
         <header>
@@ -201,8 +214,10 @@
         </div>
       </article>
     </section>
+    </div>
 
     <!-- STEP 7: Design -->
+    <div class="rb-section">
     <section id="step-design" class="rb-step" role="tabpanel" aria-labelledby="h-design" hidden>
       <article class="rb-card">
         <header><h2 id="h-design">Design</h2><p>Pick a template.</p></header>
@@ -227,8 +242,10 @@
         </div>
       </article>
     </section>
+    </div>
 
     <!-- STEP 8: Finish -->
+    <div class="rb-section">
     <section id="step-finish" class="rb-step" role="tabpanel" aria-labelledby="h-finish" hidden>
       <article class="rb-card">
         <header><h2 id="h-finish">All set!</h2><p>Preview or download your resume. You can always go back and edit.</p></header>
@@ -246,6 +263,7 @@
         </div>
       </article>
     </section>
+    </div>
 
     <!-- Sticky footer controls -->
     <footer class="rb-footer">
@@ -259,6 +277,7 @@
     <div id="builderGeneratedContent" hidden></div>
     <div id="resumeDownloadOptions" hidden></div>
   </form>
+  </div>
 </main>
 {% endblock %}
 
