@@ -272,4 +272,3 @@ portfolio: {data.get('portfolio',"")}
     except Exception:
         logging.exception("Generation failed")
         return jsonify(context=naive_context(data), aiUsed=False, error_code="error")
-
