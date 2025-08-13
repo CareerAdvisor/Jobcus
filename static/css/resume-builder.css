@@ -1,0 +1,154 @@
+/* ==== Resume Builder (scoped) ==== */
+#resume-builder {
+  --brand:#104879;
+  --accent:#ffc957;
+  --bg:#f5f7fb;
+  --card:#fff;
+  --muted:#6b7280;
+  --border:#e5e7eb;
+  --radius:14px;
+}
+
+/* Wrap + container */
+#resume-builder.rb-wrap { background: var(--bg); padding: 1rem; }
+#resume-builder .rb-container { max-width: 940px; margin: 0 auto; padding: 0 12px 24px; }
+
+/* Tabs */
+#resume-builder .rb-tabs{
+  position:sticky; top:0; z-index:10;
+  display:flex; gap:.5rem; padding:.5rem .75rem;
+  backdrop-filter:saturate(180%) blur(8px);
+  background:linear-gradient(#fff8, #fff8), var(--bg);
+  border-bottom:1px solid var(--border);
+}
+#resume-builder .rb-tabs button{
+  flex:0 0 auto; border:0; padding:.55rem .9rem; border-radius:999px;
+  background:#eef2f7; font-weight:600;
+}
+#resume-builder .rb-tabs button.active{ background:var(--brand); color:#fff; }
+
+/* Cards */
+#resume-builder .rb-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:0;
+  margin:0 0 1rem;
+  box-shadow:0 4px 14px rgba(16,72,121,.06);
+}
+#resume-builder .rb-card > header{
+  padding:18px 18px 14px;
+  border-bottom:1px solid #eef2f7;
+}
+#resume-builder .rb-card > header h2{
+  margin:0 0 .4rem;
+  font-size:1.1rem;        /* smaller, tidy */
+  font-weight:700;
+}
+#resume-builder .rb-card > header p{
+  margin:0;
+  font-size:.9rem;
+  color:var(--muted);
+  line-height:1.35;
+}
+
+/* Inner panel */
+#resume-builder .rb-panel{
+  margin:12px;
+  padding:14px;
+  border:1px solid #eef2f7;
+  background:#f8fbff;
+  border-radius:14px;
+}
+
+/* Grid */
+#resume-builder .rb-grid{ display:grid; gap:.9rem; grid-template-columns:1fr 1fr; }
+#resume-builder .rb-grid .full{ grid-column:1/-1; }
+@media (max-width:640px){ #resume-builder .rb-grid{ grid-template-columns:1fr; } }
+
+/* Labels & fields */
+#resume-builder label{ display:flex; flex-direction:column; gap:.35rem; font-weight:600; font-size:.9rem; }
+#resume-builder .rb-panel input,
+#resume-builder .rb-panel select,
+#resume-builder .rb-panel textarea{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:.85rem .9rem;
+  font:inherit;
+  font-size:.9rem;               /* smaller field text */
+  background:#fff;
+}
+#resume-builder .rb-panel input::placeholder,
+#resume-builder .rb-panel textarea::placeholder{
+  font-size:.85rem;
+  color:var(--muted);
+}
+#resume-builder textarea{ resize:vertical; }
+
+/* Disclosure */
+#resume-builder .rb-disclosure summary{
+  background:#f3f4f6;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px 14px;
+  font-weight:700;
+  cursor:pointer;
+}
+#resume-builder .rb-disclosure[open] summary{ background:#eef2f7; }
+
+/* Repeater items */
+#resume-builder .rb-item{ border:1px dashed var(--border); border-radius:12px; padding:.75rem; margin:.6rem 0; background:#fafbff; }
+#resume-builder .rb-actions{ display:flex; justify-content:flex-end; }
+#resume-builder .rb-remove{ background:#fff; border:1px solid var(--border); padding:.5rem .75rem; border-radius:8px; }
+#resume-builder .rb-add{ margin-top:.25rem; border:1px dashed var(--border); background:#fff; padding:.6rem .8rem; border-radius:999px; }
+
+/* Chips */
+#resume-builder .rb-chips{ display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.5rem; }
+#resume-builder .rb-chips .chip{ padding:.35rem .6rem; border-radius:999px; border:1px solid var(--border); background:#f6f8fb; }
+#resume-builder .rb-chip-input{ display:flex; flex-direction:column; }
+
+/* Steps visibility */
+#resume-builder .rb-step{ display:none; }
+#resume-builder .rb-step.active{ display:block; }
+
+/* Footer nav */
+#resume-builder .rb-footer{
+  position:sticky; bottom:0; display:flex; gap:.5rem;
+  justify-content:space-between; align-items:center; padding:.6rem;
+  background:#fff; border-top:1px solid var(--border);
+  border-start-start-radius:12px; border-start-end-radius:12px; margin-top:1rem;
+}
+#resume-builder .cta-primary{ background:var(--accent); color:#1f2a37; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
+#resume-builder .cta-secondary{ background:var(--brand); color:#fff; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
+#resume-builder .ghost{ background:#fff; border:1px solid var(--border); padding:.7rem 1rem; border-radius:10px; }
+
+/* Photo upload */
+#resume-builder .photo-upload{
+  display:flex; align-items:center; gap:10px;
+  border:1px solid #e5e7eb; background:#f8fafc;
+  border-radius:12px; padding:10px 12px; height:48px;
+}
+#resume-builder .photo-btn{ border:0; background:#fff; width:40px; height:40px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.06); cursor:pointer; display:inline-grid; place-items:center; }
+#resume-builder .photo-label{ font-weight:600; color:#111827; }
+#resume-builder #photoPreview{ width:40px; height:40px; border-radius:10px; object-fit:cover; }
+
+/* AI suggest */
+#resume-builder .ai-suggest {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fffef8;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  margin-top: 12px;
+}
+#resume-builder .ai-title { font-weight:700; font-size:.95rem; margin-bottom:4px; color:var(--brand); }
+#resume-builder .ai-text  { font-size:.9rem;  color:var(--muted); margin-bottom:8px; }
+#resume-builder .ai-actions{ display:flex; gap:8px; }
+#resume-builder .ai-actions .btn{ border:1px solid var(--border); border-radius:8px; background:#fff; padding:6px 10px; font-size:.85rem; cursor:pointer; }
+#resume-builder .ai-actions .btn-primary{ background:var(--brand); color:#fff; border:none; }
+
+/* Section wrapper (outer spacing) */
+#resume-builder .rb-section{ margin:16px 0 24px; }
+
+/* Hero → form separation (this page only) */
+#resume-builder .interview-container{ margin-bottom:24px; }
