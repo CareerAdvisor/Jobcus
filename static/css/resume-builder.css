@@ -36,14 +36,20 @@
   margin:0 0 1rem;
   box-shadow:0 4px 14px rgba(16,72,121,.06);
 }
-#resume-builder .rb-card > header{
-  padding:18px 18px 14px;
-  border-bottom:1px solid #eef2f7;
+
+#resume-builder .rb-card > header {
+  display: flex;
+  flex-direction: column; /* stack h2 and p vertically */
+  align-items: flex-start; /* align them to the left */
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid #eef2f7;
 }
+
 #resume-builder .rb-card > header h2{
   margin:0 0 .4rem;
   font-size:1.1rem;        /* smaller, tidy */
   font-weight:700;
+  
 }
 #resume-builder .rb-card > header p{
   margin:0;
