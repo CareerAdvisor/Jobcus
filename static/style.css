@@ -3664,8 +3664,8 @@ button {
   background: #0a2e5f !important;
 }
 
-  /* Resume-Builder page css */
-:root{
+/* ==== Resume Builder (scoped) ==== */
+#resume-builder {
   --brand:#104879;
   --accent:#ffc957;
   --bg:#f5f7fb;
@@ -3675,43 +3675,51 @@ button {
   --radius:14px;
 }
 
-/* (Tabs CSS included for consistency, even though tabs are hidden on this page) */
-.rb-tabs{
+/* Wrap + container */
+#resume-builder.rb-wrap { background: var(--bg); padding: 1rem; }
+#resume-builder .rb-container { max-width: 940px; margin: 0 auto; padding: 0 12px 24px; }
+
+/* Tabs */
+#resume-builder .rb-tabs{
   position:sticky; top:0; z-index:10;
   display:flex; gap:.5rem; padding:.5rem .75rem;
   backdrop-filter:saturate(180%) blur(8px);
   background:linear-gradient(#fff8, #fff8), var(--bg);
   border-bottom:1px solid var(--border);
 }
-.rb-tabs button{
+#resume-builder .rb-tabs button{
   flex:0 0 auto; border:0; padding:.55rem .9rem; border-radius:999px;
   background:#eef2f7; font-weight:600;
 }
-.rb-tabs button.active{ background:var(--brand); color:#fff; }
+#resume-builder .rb-tabs button.active{ background:var(--brand); color:#fff; }
 
-.rb-wrap{ background:var(--bg); padding:1rem; }
-.rb-form{ max-width:840px; margin:0 auto; }
-
-/* Outer card */
-.rb-card{
+/* Cards */
+#resume-builder .rb-card{
   background:var(--card);
   border:1px solid var(--border);
-  border-radius:18px;            /* slightly larger for soft look */
-  padding:0;                     /* header/panel handle padding */
+  border-radius:18px;
+  padding:0;
   margin:0 0 1rem;
   box-shadow:0 4px 14px rgba(16,72,121,.06);
 }
-
-/* Header slab (title + subheading) */
-.rb-card > header{
+#resume-builder .rb-card > header{
   padding:18px 18px 14px;
   border-bottom:1px solid #eef2f7;
 }
-.rb-card > header h2{ margin:.2rem 0 .25rem; font-size:.75rem; }
-.rb-card > header p{ margin:0 0 .25rem; color:var(--muted); }
+#resume-builder .rb-card > header h2{
+  margin:0 0 .4rem;
+  font-size:1.1rem;        /* smaller, tidy */
+  font-weight:700;
+}
+#resume-builder .rb-card > header p{
+  margin:0;
+  font-size:.9rem;
+  color:var(--muted);
+  line-height:1.35;
+}
 
-/* Inner rounded panel that holds fields (the blue-tinted area) */
-.rb-panel{
+/* Inner panel */
+#resume-builder .rb-panel{
   margin:12px;
   padding:14px;
   border:1px solid #eef2f7;
@@ -3719,37 +3727,32 @@ button {
   border-radius:14px;
 }
 
-/* Grid + field spacing */
-.rb-grid{ display:grid; gap:.9rem; grid-template-columns:1fr 1fr; }
-.rb-grid .full{ grid-column:1/-1; }
-@media (max-width:640px){ .rb-grid{ grid-template-columns:1fr; } }
+/* Grid */
+#resume-builder .rb-grid{ display:grid; gap:.9rem; grid-template-columns:1fr 1fr; }
+#resume-builder .rb-grid .full{ grid-column:1/-1; }
+@media (max-width:640px){ #resume-builder .rb-grid{ grid-template-columns:1fr; } }
 
-/* Inputs */
-label{ display:flex; flex-direction:column; gap:.35rem; font-weight:600; }
-input, select, textarea{
+/* Labels & fields */
+#resume-builder label{ display:flex; flex-direction:column; gap:.35rem; font-weight:600; font-size:.9rem; }
+#resume-builder .rb-panel input,
+#resume-builder .rb-panel select,
+#resume-builder .rb-panel textarea{
   border:1px solid var(--border);
   border-radius:10px;
   padding:.85rem .9rem;
   font:inherit;
+  font-size:.9rem;               /* smaller field text */
   background:#fff;
 }
-textarea{ resize:vertical; }
-
-/* Actions & chips */
-.rb-row{ display:flex; gap:.5rem; margin-top:.75rem; flex-wrap:wrap; }
-.cta-primary{ background:var(--accent); color:#1f2a37; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
-.cta-secondary{ background:var(--brand); color:#fff; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
-.ghost{ background:#fff; border:1px solid var(--border); padding:.7rem 1rem; border-radius:10px; }
-
-.rb-footer{
-  position:sticky; bottom:0; display:flex; gap:.5rem;
-  justify-content:space-between; align-items:center; padding:.6rem;
-  background:linear-gradient(#fff,#fff); border-top:1px solid var(--border);
-  border-start-start-radius:12px; border-start-end-radius:12px; margin-top:1rem;
+#resume-builder .rb-panel input::placeholder,
+#resume-builder .rb-panel textarea::placeholder{
+  font-size:.85rem;
+  color:var(--muted);
 }
+#resume-builder textarea{ resize:vertical; }
 
-/* Details (show/hide) bar visuals */
-.rb-disclosure summary{
+/* Disclosure */
+#resume-builder .rb-disclosure summary{
   background:#f3f4f6;
   border:1px solid #e5e7eb;
   border-radius:12px;
@@ -3757,125 +3760,68 @@ textarea{ resize:vertical; }
   font-weight:700;
   cursor:pointer;
 }
-.rb-disclosure[open] summary{ background:#eef2f7; }
+#resume-builder .rb-disclosure[open] summary{ background:#eef2f7; }
 
 /* Repeater items */
-.rb-item{ border:1px dashed var(--border); border-radius:12px; padding:.75rem; margin:.6rem 0; background:#fafbff; }
-.rb-actions{ display:flex; justify-content:flex-end; }
-.rb-remove{ background:#fff; border:1px solid var(--border); padding:.5rem .75rem; border-radius:8px; }
-.rb-add{ margin-top:.25rem; border:1px dashed var(--border); background:#fff; padding:.6rem .8rem; border-radius:999px; }
+#resume-builder .rb-item{ border:1px dashed var(--border); border-radius:12px; padding:.75rem; margin:.6rem 0; background:#fafbff; }
+#resume-builder .rb-actions{ display:flex; justify-content:flex-end; }
+#resume-builder .rb-remove{ background:#fff; border:1px solid var(--border); padding:.5rem .75rem; border-radius:8px; }
+#resume-builder .rb-add{ margin-top:.25rem; border:1px dashed var(--border); background:#fff; padding:.6rem .8rem; border-radius:999px; }
 
-.rb-chips{ display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.5rem; }
-.rb-chips .chip{ padding:.35rem .6rem; border-radius:999px; border:1px solid var(--border); background:#f6f8fb; }
-.rb-chips .chip button{ margin-left:.35rem; border:0; background:transparent; cursor:pointer; }
+/* Chips */
+#resume-builder .rb-chips{ display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.5rem; }
+#resume-builder .rb-chips .chip{ padding:.35rem .6rem; border-radius:999px; border:1px solid var(--border); background:#f6f8fb; }
+#resume-builder .rb-chip-input{ display:flex; flex-direction:column; }
 
- .rb-chip-input {
-  display: flex;
-  flex-direction: column;
+/* Steps visibility */
+#resume-builder .rb-step{ display:none; }
+#resume-builder .rb-step.active{ display:block; }
+
+/* Footer nav */
+#resume-builder .rb-footer{
+  position:sticky; bottom:0; display:flex; gap:.5rem;
+  justify-content:space-between; align-items:center; padding:.6rem;
+  background:#fff; border-top:1px solid var(--border);
+  border-start-start-radius:12px; border-start-end-radius:12px; margin-top:1rem;
 }
+#resume-builder .cta-primary{ background:var(--accent); color:#1f2a37; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
+#resume-builder .cta-secondary{ background:var(--brand); color:#fff; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
+#resume-builder .ghost{ background:#fff; border:1px solid var(--border); padding:.7rem 1rem; border-radius:10px; }
 
-/* Step visibility */
-.rb-step{ display:none; }
-.rb-step.active{ display:block; }
-
-/* Resume page container */
-.res-page {
-  background: var(--bg);
-  min-height: 100%;
-  padding: 20px 10px;
-}
-
-.res-page .rb-form {
-  max-width: 840px;
-  margin: 0 auto;
-}
-
-/* Hero → form separation */
-.res-builder .interview-container{ margin-bottom:24px; }
-
-/* Photo upload look */
-.photo-upload{
+/* Photo upload */
+#resume-builder .photo-upload{
   display:flex; align-items:center; gap:10px;
   border:1px solid #e5e7eb; background:#f8fafc;
   border-radius:12px; padding:10px 12px; height:48px;
 }
-.photo-btn{ border:0; background:#fff; width:40px; height:40px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.06); cursor:pointer; display:inline-grid; place-items:center; }
-.photo-label{ font-weight:600; color:#111827; }
-#photoPreview{ width:40px; height:40px; border-radius:10px; object-fit:cover; }
+#resume-builder .photo-btn{ border:0; background:#fff; width:40px; height:40px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.06); cursor:pointer; display:inline-grid; place-items:center; }
+#resume-builder .photo-label{ font-weight:600; color:#111827; }
+#resume-builder #photoPreview{ width:40px; height:40px; border-radius:10px; object-fit:cover; }
 
-/* AI Suggestion Panel */
-.ai-suggest {
+/* AI suggest */
+#resume-builder .ai-suggest {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px;
   background: #fffef8;
   box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  margin-top: 12px;
 }
+#resume-builder .ai-title { font-weight:700; font-size:.95rem; margin-bottom:4px; color:var(--brand); }
+#resume-builder .ai-text  { font-size:.9rem;  color:var(--muted); margin-bottom:8px; }
+#resume-builder .ai-actions{ display:flex; gap:8px; }
+#resume-builder .ai-actions .btn{ border:1px solid var(--border); border-radius:8px; background:#fff; padding:6px 10px; font-size:.85rem; cursor:pointer; }
+#resume-builder .ai-actions .btn-primary{ background:var(--brand); color:#fff; border:none; }
 
-.ai-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-  margin-bottom: 4px;
-  color: var(--brand);
-}
+/* Section wrapper (outer spacing) */
+#resume-builder .rb-section{ margin:16px 0 24px; }
 
-.ai-text {
-  font-size: 0.9rem;
-  color: var(--muted);
-  margin-bottom: 8px;
-}
+/* Hero → form separation (this page only) */
+#resume-builder .interview-container{ margin-bottom:24px; }
 
-.ai-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.ai-actions .btn {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
-  padding: 6px 10px;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.ai-actions .btn-primary {
-  background: var(--brand);
-  color: #fff;
-  border: none;
-}
-
-/* Center the whole form on the page */
-.rb-container{
-  max-width: 940px;
-  margin: 0 auto;
-  padding: 0 12px 24px;
-}
-
-/* A wrapper around each step to separate it from the site body */
-.rb-section{
-  /* outer spacing between steps */
-  margin: 16px 0 24px;
-  /* optional: soft background behind the card for extra separation */
-  background: transparent; /* change to var(--bg) if you want a faint slab */
-  border-radius: 18px;
-}
-
-/* If you want the rb-section itself to provide the white card look,
-   uncomment this block and remove the border on .rb-card:
-.rb-section{
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  box-shadow: 0 4px 14px rgba(16,72,121,.06);
-  padding: 0; 
-}
-.rb-section .rb-card{ border:0; box-shadow:none; margin:0; }
-*/
-
-/* Keep hero well-separated from the form */
-.res-builder .interview-container{ margin-bottom:24px; }
-
-
-
+#resume-builder .rb-card > header h2 { font-size: 1.1rem; margin-bottom: .4rem; }
+#resume-builder .rb-card > header p  { font-size: .9rem;  }
+#resume-builder label                 { font-size: .9rem;  }
+#resume-builder input::placeholder,
+#resume-builder textarea::placeholder{ font-size: .85rem; }
 
