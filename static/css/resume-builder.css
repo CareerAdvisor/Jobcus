@@ -43,7 +43,7 @@
   align-items: flex-start; /* align them to the left */
   padding: 18px 18px 14px;
   border-bottom: 1px solid #eef2f7;
-  height: 35px;
+  height: 100px;
 }
 
 #resume-builder .rb-card > header h2{
