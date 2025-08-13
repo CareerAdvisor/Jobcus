@@ -413,5 +413,36 @@ async function maybePrefillFromAnalyzer(form, helpers) {
     if (form.summary) form.summary.value = ctx.summary || "";
     if (ctx.links && ctx.links[0] && form.portfolio) form.portfolio.value = ctx.links[0].url || "";
 
-    if (Array.isArray(ctx.skills) && ctx.skil
-        )
+      // ... inside maybePrefillFromAnalyzer
+  if (Array.isArray(ctx.skills) && ctx.skills.length) {
+    ctx.skills.forEach((s) => helpers.skillsSet.add(s));
+    helpers.refreshChips();
+  }
+  // experience
+  const expList = document.querySelector("#exp-list");
+  if (expList) {
+    expList.innerHTML = "";
+    (ctx.experience || []).forEach(addExperienceFromObj);
+    if (!expList.children.length) addExperienceFromObj();
+  }
+  // education
+  const eduList = document.querySelector("#edu-list");
+  if (eduList) {
+    eduList.innerHTML = "";
+    (ctx.education || []).forEach(addEducationFromObj);
+    if (!eduList.children.length) addEducationFromObj();
+  }
+  window._resumeCtx = ctx;
+} catch (e) {
+  console.warn("Prefill from analyzer failed:", e);
+}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const helpers = initSkills();
+  if (!document.querySelector("#exp-list .rb-item")) addExperienceFromObj();
+  if (!document.querySelector("#edu-list .rb-item")) addEducationFromObj();
+  attachAISuggestionHandlers();
+  initWizard();
+  maybePrefillFromAnalyzer(document.getElementById("resumeForm"), helpers);
+});
