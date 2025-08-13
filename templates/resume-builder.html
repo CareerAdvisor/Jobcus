@@ -2,78 +2,101 @@
 {% block title %}Resume Builder – Jobcus{% endblock %}
 
 {% block content %}
+<main id="resume-builder" class="res-page res-builder">
+  <!-- Hero -->
+  <div class="interview-container" style="padding:20px 10px;width:100%;background:#104879;">
+    <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+      <h5 style="color:#ffc957;font-weight:600;font-size:14px;letter-spacing:1px;">AI RESUME BUILDER</h5>
+      <h1 style="font-size:28px;font-weight:700;color:#fff;margin:10px 0;">Build a polished, ATS-friendly resume</h1>
+      <p style="max-width:420px;color:#fff;font-size:16px;margin:10px 0 20px;">Use our modern or minimal template to build your resume.</p>
+    </section>
+  </div>
 
-<!-- Top tabs (mobile-first) -->
-<nav class="rb-tabs" role="tablist" aria-label="Resume builder steps">
-  <button class="active" data-target="#write"  role="tab" aria-controls="write"  aria-selected="true">Write</button>
-  <button data-target="#design" role="tab" aria-controls="design" aria-selected="false">Design</button>
-</nav>
+  <!-- Form (no tabs; simple wizard via Back/Next) -->
+  <form id="resumeForm" class="rb-form" autocomplete="on">
+    
+    <!-- Top tabs (mobile-first) -->
+    <nav class="rb-tabs" role="tablist" aria-label="Resume builder steps">
+      <button class="active" data-target="#write"  role="tab" aria-controls="write"  aria-selected="true">Write</button>
+      <button data-target="#design" role="tab" aria-controls="design" aria-selected="false">Design</button>
+    </nav>
 
-<main id="resume-builder" class="rb-wrap">
-  <form id="resumeForm" class="rb-form">
-
-    <!-- WRITE -->
-    <section id="write" class="rb-step active" role="tabpanel" aria-labelledby="h-write">
-      <!-- Personal details -->
+    <!-- STEP 1: Personal Details -->
+    <section id="step-personal" class="rb-step active" role="tabpanel" aria-labelledby="h-personal">
       <article class="rb-card">
         <header>
-          <h2 id="h-personal">Personal details</h2></br>
+          <h2 id="h-personal">Personal details</h2>
           <p>Give recruiters a quick overview.</p>
         </header>
 
         <div class="rb-panel">
           <div class="rb-grid">
             <label>First name
-              <input type="text" name="firstName" required>
+              <input type="text" name="firstName" placeholder="First name" required>
             </label>
+
             <label>Last name
-              <input type="text" name="lastName">
+              <input type="text" name="lastName" placeholder="Last name" required>
             </label>
-            <label class="full">Job title
-              <input type="text" name="title" placeholder="e.g., IT Support Specialist">
+
+            <!-- Job title (left) -->
+            <label>Job title
+              <input type="text" name="title" placeholder="Product Designer">
             </label>
+
+            <!-- Photo upload (right) -->
+            <div class="photo-upload">
+              <input type="file" id="photoInput" accept="image/*" hidden>
+              <button type="button" id="photoBtn" class="photo-btn" aria-label="Add photo">
+                <span class="cam">📷</span>
+              </button>
+              <span class="photo-label">Add photo</span>
+            </div>
           </div>
 
-          <details class="rb-disclosure" style="margin-top:12px;">
-            <summary>Show additional details</summary>
+          <details class="rb-disclosure" open style="margin-top:12px;">
+            <summary><span class="twiddle">—</span> Hide additional details</summary>
             <div class="rb-grid" style="margin-top:.5rem;">
-              <label>Nationality <input type="text" name="nationality"></label>
-              <label>Driver’s licence <input type="text" name="drivers"></label>
-              <label class="full">Birth date <input type="date" name="dob"></label>
+              <label>Nationality <input type="text" name="nationality" placeholder="Britain"></label>
+              <label class="full">Birth date <input type="date" name="dob" placeholder="1996-02-03"></label>
             </div>
           </details>
         </div>
       </article>
+    </section>
 
-      <!-- Contact information -->
+    <!-- STEP 2: Contact Information -->
+    <section id="step-contact" class="rb-step" role="tabpanel" aria-labelledby="h-contact" hidden>
       <article class="rb-card">
         <header>
-          <h2 id="h-contact">Contact information</h2></br>
+          <h2 id="h-contact">Contact information</h2>
           <p>Make it easy to reach you.</p>
         </header>
 
         <div class="rb-panel">
           <div class="rb-grid">
-            <label class="full">Email <input type="email" name="email"></label>
-            <label class="full">Phone <input type="tel" name="phone"></label>
-            <label>Country <input type="text" name="country"></label>
-            <label>City <input type="text" name="city"></label>
-            <label class="full">Address <input type="text" name="address"></label>
-            <label>Postcode <input type="text" name="postcode"></label>
-            <label class="full">LinkedIn / Portfolio <input type="url" name="portfolio"></label>
+            <label class="full">Email <input type="email" name="email" placeholder="you@example.com" required></label>
+            <label class="full">Phone <input type="tel" name="phone" placeholder="999 888 7777" required></label>
+            <label>Country <input type="text" name="country" placeholder="USA"></label>
+            <label>City <input type="text" name="city" placeholder="Austin"></label>
+            <label class="full">Address <input type="text" name="address" placeholder="500 W 2nd St"></label>
+            <label>Postcode <input type="text" name="postcode" placeholder="LN2 5TW"></label>
+            <label class="full">LinkedIn / Portfolio <input type="url" name="portfolio" placeholder="https://linkedin.com/in/you"></label>
           </div>
         </div>
       </article>
+    </section>
 
-      <!-- Professional summary (with AI) -->
+    <!-- STEP 3: Professional Summary (with AI) -->
+    <section id="step-summary" class="rb-step" role="tabpanel" aria-labelledby="h-summary" hidden>
       <article class="rb-card">
         <header>
-          <h2 id="h-summary">Professional Summary (with AI)</h2> </br>
-          <p>1–3 crisp sentences with measurable wins.</p>
+          <h2 id="h-summary">Professional Summary (with AI)</h2>
+          <p>Include your title, years of experience and 1–2 measurable wins.</p>
         </header>
 
         <div class="rb-panel">
-          <textarea name="summary" rows="5" placeholder="e.g., IT Support Specialist with 5+ years..."></textarea>
+          <textarea name="summary" rows="5" placeholder="Product Designer with 10 years of experience..."></textarea>
 
           <div class="ai-suggest" id="ai-summary" data-field="summary" style="margin-top:12px;">
             <div class="ai-title">✦ Write with AI</div>
@@ -85,23 +108,25 @@
           </div>
         </div>
       </article>
+    </section>
 
-      <!-- Employment history (with AI highlights) -->
+    <!-- STEP 4: Employment History (with AI Highlights) -->
+    <section id="step-experience" class="rb-step" role="tabpanel" aria-labelledby="h-experience" hidden>
       <article class="rb-card" data-repeater="experience">
         <header>
-          <h2 id="h-experience">Employment history</h2></br>
-          <p>Use action verbs and numbers.</p>
+          <h2 id="h-experience">Employment history (with AI highlights)</h2>
+          <p>Use action verbs, quantify results, and keep it concise.</p>
         </header>
 
         <div class="rb-panel">
           <template id="tpl-experience">
             <div class="rb-item">
               <div class="rb-grid">
-                <label class="full">Job title <input type="text" name="role"></label>
-                <label class="full">Company name <input type="text" name="company"></label>
-                <label>Start date <input type="text" name="start" placeholder="Jan 2021"></label>
-                <label>End date <input type="text" name="end" placeholder="Present"></label>
-                <label class="full">Location <input type="text" name="location"></label>
+                <label class="full">Job title <input type="text" name="role" placeholder="Product Designer"></label>
+                <label class="full">Company name <input type="text" name="company" placeholder="Apple Inc."></label>
+                <label>Start date <input type="text" name="start" placeholder="Jan 2016"></label>
+                <label>End date <input type="text" name="end" placeholder="Feb 2019 / Present"></label>
+                <label class="full">Location <input type="text" name="location" placeholder="Washington, D.C."></label>
               </div>
 
               <label class="full" style="margin-top:12px;">Highlights (one per line)
@@ -127,38 +152,43 @@
           <button type="button" class="rb-add" data-add="experience">+ Add another experience</button>
         </div>
       </article>
+    </section>
 
-      <!-- Skills -->
+    <!-- STEP 5: Skills -->
+    <section id="step-skills" class="rb-step" role="tabpanel" aria-labelledby="h-skills" hidden>
       <article class="rb-card">
         <header>
-          <h2 id="h-skills">Skills</h2></br>
-          <p>Most relevant skills first.</p>
+          <h2 id="h-skills">Skills</h2>
+          <p>Highlight your most relevant professional skills.</p>
         </header>
 
         <div class="rb-panel">
           <div class="rb-chip-input">
             <input type="text" id="skillInput" placeholder="Type a skill and press Enter">
             <div id="skillChips" class="rb-chips" style="margin-top:8px;"></div>
-            <input type="hidden" name="skills"> <!-- comma-separated -->
+            <input type="hidden" name="skills">
           </div>
         </div>
       </article>
+    </section>
 
-      <!-- Education -->
+    <!-- STEP 6: Education -->
+    <section id="step-education" class="rb-step" role="tabpanel" aria-labelledby="h-education" hidden>
       <article class="rb-card" data-repeater="education">
         <header>
-          <h2 id="h-education">Education</h2></br>
+          <h2 id="h-education">Education</h2>
+          <p>Add your school, degree, dates and location.</p>
         </header>
 
         <div class="rb-panel">
           <template id="tpl-education">
             <div class="rb-item">
               <div class="rb-grid">
-                <label class="full">Institution <input type="text" name="school"></label>
-                <label class="full">Degree <input type="text" name="degree"></label>
-                <label>Start date <input type="text" name="graduatedStart" placeholder="Sep 2017"></label>
-                <label>End date <input type="text" name="graduated" placeholder="Jun 2021"></label>
-                <label class="full">Location <input type="text" name="location"></label>
+                <label class="full">Institution <input type="text" name="school" placeholder="University of Oxford"></label>
+                <label class="full">Degree <input type="text" name="degree" placeholder="Bachelor's Degree in Design"></label>
+                <label>Start date <input type="text" name="graduatedStart" placeholder="Jan 2016"></label>
+                <label>End date <input type="text" name="graduated" placeholder="Feb 2019"></label>
+                <label class="full">Location <input type="text" name="location" placeholder="Cambridge, MA"></label>
               </div>
               <div class="rb-actions" style="padding-top:10px;">
                 <button type="button" class="rb-remove">Remove</button>
@@ -172,8 +202,8 @@
       </article>
     </section>
 
-    <!-- DESIGN -->
-    <section id="design" class="rb-step" role="tabpanel" aria-labelledby="h-design" hidden>
+    <!-- STEP 7: Design -->
+    <section id="step-design" class="rb-step" role="tabpanel" aria-labelledby="h-design" hidden>
       <article class="rb-card">
         <header><h2 id="h-design">Design</h2><p>Pick a template.</p></header>
 
@@ -184,14 +214,34 @@
               <option value="minimal">Minimal</option>
             </select>
           </label>
+
           <div class="rb-row">
             <button type="button" id="previewTemplate" class="cta-secondary">Preview</button>
             <button type="button" id="downloadTemplatePdf" class="cta-primary">Download PDF</button>
           </div>
 
-          <div id="resumePreviewWrap" style="display:none; margin-top:1rem;">
+          <div id="resumePreviewWrap" style="display:none;margin-top:1rem;">
             <h3>Preview</h3>
-            <iframe id="resumePreview" class="resume-preview" style="width:100%; height:100vh; border:0; background:#fff;"></iframe>
+            <iframe id="resumePreview" class="resume-preview" style="width:100%;height:100vh;border:0;background:#fff;"></iframe>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- STEP 8: Finish -->
+    <section id="step-finish" class="rb-step" role="tabpanel" aria-labelledby="h-finish" hidden>
+      <article class="rb-card">
+        <header><h2 id="h-finish">All set!</h2><p>Preview or download your resume. You can always go back and edit.</p></header>
+
+        <div class="rb-panel">
+          <div class="rb-row">
+            <button type="button" id="previewTemplateFinish" class="cta-secondary">Preview</button>
+            <button type="button" id="downloadTemplatePdfFinish" class="cta-primary">Download PDF</button>
+          </div>
+
+          <div id="resumePreviewWrapFinish" style="display:none;margin-top:1rem;">
+            <h3>Preview</h3>
+            <iframe id="resumePreviewFinish" class="resume-preview" style="width:100%;height:90vh;border:0;background:#fff;"></iframe>
           </div>
         </div>
       </article>
@@ -200,12 +250,16 @@
     <!-- Sticky footer controls -->
     <footer class="rb-footer">
       <button type="button" id="rb-back" class="ghost">Back</button>
-      <button type="submit" id="rb-generate" class="cta-primary">Generate Resume</button>
       <button type="button" id="rb-next" class="cta-secondary">Next</button>
+      <button type="submit" id="rb-submit" class="cta-primary" style="display:none;">✨ Generate Resume</button>
     </footer>
+
+    <!-- Hidden legacy containers (kept for compatibility) -->
+    <div id="builderGeneratingIndicator" style="display:none;">🤖 Generating your resume…</div>
+    <div id="builderGeneratedContent" hidden></div>
+    <div id="resumeDownloadOptions" hidden></div>
   </form>
 </main>
-
 {% endblock %}
 
 {% block scripts %}
