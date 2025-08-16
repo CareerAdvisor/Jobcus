@@ -159,3 +159,17 @@
 
 /* Hero → form separation (this page only) */
 #resume-builder .interview-container{ margin-bottom:24px; }
+
+#resume-builder .rb-tabs a.rb-tab-link{
+  display:inline-block;
+  text-decoration:none;
+  border:0;
+  padding:.55rem .9rem;
+  border-radius:999px;
+  background:#eef2f7;
+  font-weight:600;
+  color:inherit;
+}
+#resume-builder .rb-tabs a.rb-tab-link:hover{
+  filter:brightness(0.98);
+}
