@@ -1,4 +1,3 @@
-# blueprints/resumes.py
 from flask import Blueprint, render_template, request, make_response, send_file, jsonify, current_app
 from weasyprint import HTML, CSS
 from docxtpl import DocxTemplate
@@ -456,3 +455,4 @@ def build_cover_letter():
         return send_file(io.BytesIO(pdf), mimetype="application/pdf",
                          as_attachment=True, download_name="cover-letter.pdf")
     return html
+
