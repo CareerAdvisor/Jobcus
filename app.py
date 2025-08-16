@@ -315,45 +315,6 @@ def terms_of_service():
 @app.route("/cover-letter")
 def cover_letter():
     return render_template("cover-letter.html")
-    
-# ----------------------------
-# AI suggest
-# ----------------------------
-@app.route("/ai/suggest", methods=["POST"])
-def ai_suggest():
-    try:
-        data = request.json or {}
-        field_type = data.get("field", "general")
-        context = data.get("context", "")
-
-        # Create a role-specific prompt for better suggestions
-        prompt_map = {
-            "summary": f"Write a short professional summary based on this info:\n{context}\n",
-            "highlights": f"Write 3 concise, achievement-focused bullet points for a resume job description based on this info:\n{context}\n",
-            "general": f"Write 3 bullet points for a resume based on this info:\n{context}\n"
-        }
-
-        prompt = prompt_map.get(field_type, prompt_map["general"])
-
-        # Call OpenAI API
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",  # Or "gpt-3.5-turbo" if you want faster/cheaper
-            messages=[
-                {"role": "system", "content": "You are an expert resume writer."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=150
-        )
-
-        # Extract and split suggestions
-        ai_text = response.choices[0].message.content.strip()
-        suggestions = [line.strip("•- ") for line in ai_text.split("\n") if line.strip()]
-
-        return jsonify({"suggestions": suggestions})
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
         
 # ----------------------------
 # Email confirmation
