@@ -312,9 +312,14 @@ def privacy_policy():
 def terms_of_service():
     return render_template('terms-of-service.html')
 
-@app.route("/cover-letter")
+@app.route('/cover-letter')
 def cover_letter():
-    return render_template("cover-letter.html")
+    # Always provide defaults so the template can't blow up
+    return render_template(
+        "cover-letter.html",
+        letter_only=False,   # make explicit
+        sender={}, recipient={}, draft=""
+    )
         
 # ----------------------------
 # Email confirmation
