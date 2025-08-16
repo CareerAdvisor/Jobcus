@@ -7,18 +7,17 @@
   };
 })();
 
-function qs(root, sel)  { return (root || document).querySelector(sel); }
-function qsa(root, sel) { return Array.from((root || document).querySelectorAll(sel)); }
+function qs(root, sel){ return (root || document).querySelector(sel); }
+function qsa(root, sel){ return Array.from((root || document).querySelectorAll(sel)); }
 function withinBuilder(sel){ return `#resume-builder ${sel}`; }
-
-// Debounce
-function debounce(fn, wait = 400){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
 
 const AI_ENDPOINT = "/ai/suggest";
 
+// Gather overall context (name, contact, skills, exp, edu)
 function gatherContext(form) {
   const builder = qs(document, "#resume-builder");
   const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
+
   const contactParts = [];
   const loc = [form.city?.value, form.country?.value].filter(Boolean).join(", ");
   if (loc) contactParts.push(loc);
@@ -46,7 +45,8 @@ function gatherContext(form) {
     };
   });
 
-  const skills = (form.elements["skills"]?.value || "").split(",").map(s => s.trim()).filter(Boolean);
+  const skills = (form.elements["skills"]?.value || "")
+    .split(",").map(s => s.trim()).filter(Boolean);
 
   return {
     name,
@@ -68,63 +68,74 @@ async function aiSuggest(field, ctx, index) {
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok || json.error) throw new Error(json.error || `AI suggest failed for ${field}`);
-    return json;
+    // normalize to array of lines
+    const lines = Array.isArray(json.list) && json.list.length
+      ? json.list
+      : (json.text ? json.text.split(/\r?\n/).filter(Boolean) : []);
+    return lines;
   } catch (e) {
     console.warn(e);
-    // return text fallback for all fields including coverletter
-    return { text: "AI suggestion currently unavailable. Try again." };
+    return ["AI suggestion currently unavailable. Try again."];
   }
 }
 
+// Hook AI cards (Summary + Highlights)
 function attachAISuggestionHandlers() {
   const builder = qs(document, "#resume-builder");
+  const form = qs(builder, "#resumeForm");
+
   builder.addEventListener("click", async (e) => {
     const btn = e.target.closest(".ai-refresh, .ai-add");
     if (!btn) return;
 
     const card = btn.closest(".ai-suggest");
-    const form = qs(builder, "#resumeForm");
+    const textEl = qs(card, ".ai-text");
 
     if (btn.classList.contains("ai-refresh")) {
-      const field = btn.dataset.ai;
-      const ctx = gatherContext(form);
+      const type = btn.dataset.ai; // "summary" | "highlights"
+      textEl.textContent = "Thinking…";
+      try {
+        const ctx = gatherContext(form);
 
-      if (field === "summary") {
-        const sug = await aiSuggest("summary", ctx);
-        const p = qs(card, ".ai-text");
-        p.textContent = sug.text || p.textContent;
-      } else if (field === "highlights") {
-        const all = qsa(builder, "#exp-list .rb-item");
-        const idx = all.findIndex((n) => n.contains(card));
-        const sug = await aiSuggest("highlights", ctx, idx);
-        const p = qs(card, ".ai-text");
-        p.textContent = Array.isArray(sug.list) && sug.list.length
-          ? sug.list.map((b) => `• ${b}`).join("\n")
-          : (sug.text || p.textContent);
+        if (type === "summary") {
+          const lines = await aiSuggest("summary", ctx);
+          textEl.textContent = lines.join(" ");
+        } else if (type === "highlights") {
+          const allItems = qsa(builder, "#exp-list .rb-item");
+          const itemEl = btn.closest(".rb-item");
+          const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
+          const lines = await aiSuggest("highlights", ctx, idx);
+          textEl.textContent = lines.join("\n");
+        } else {
+          const lines = await aiSuggest("general", ctx);
+          textEl.textContent = lines.join("\n");
+        }
+      } catch (err) {
+        textEl.textContent = err.message || "AI suggestion unavailable.";
       }
       return;
     }
 
     if (btn.classList.contains("ai-add")) {
-      const step = btn.closest(".rb-step");
-      const cardWrap = btn.closest(".rb-card, .rb-item");
-      const suggestion = qs(card, ".ai-text")?.textContent?.trim() || "";
+      // insert into the right textarea
+      const wrap = btn.closest(".rb-card, .rb-item, .rb-step");
+      const taSummary = qs(wrap, 'textarea[name="summary"]');
+      const taBullets = qs(wrap, 'textarea[name="bullets"]');
+      const suggestion = (textEl.textContent || "").trim();
       if (!suggestion) return;
 
-      let ta = null;
-      if (card.dataset.field === "summary") ta = qs(step, 'textarea[name="summary"]');
-      else if (card.dataset.field === "bullets") ta = qs(cardWrap, 'textarea[name="bullets"]');
-      if (!ta) ta = qs(cardWrap, "textarea");
-      if (!ta) return;
-
-      if (ta.name === "bullets") {
-        const prefix = ta.value && !ta.value.endsWith("\n") ? "\n" : "";
-        const cleaned = suggestion.split("\n").map(s => s.replace(/^•\s*/, "").trim()).filter(Boolean);
-        ta.value += `${prefix}${cleaned.map(b => `• ${b}`).join("\n")}`;
-      } else {
-        ta.value = suggestion.replace(/^•\s*/g, "");
+      if (taSummary) {
+        taSummary.value = suggestion.replace(/^•\s*/gm, "").replace(/\n+/g, " ").trim();
+        taSummary.dispatchEvent(new Event("input", { bubbles: true }));
+        return;
       }
-      ta.dispatchEvent(new Event("input", { bubbles: true }));
+
+      if (taBullets) {
+        const cleaned = suggestion.split(/\r?\n/).map(s => s.replace(/^•\s*/, "").trim()).filter(Boolean);
+        const prefix = taBullets.value && !taBullets.value.endsWith("\n") ? "\n" : "";
+        taBullets.value += prefix + cleaned.map(b => `• ${b}`).join("\n");
+        taBullets.dispatchEvent(new Event("input", { bubbles: true }));
+      }
     }
   });
 }
