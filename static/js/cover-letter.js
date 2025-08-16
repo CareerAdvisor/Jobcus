@@ -1,6 +1,5 @@
 // static/js/cover-letter.js
 (function () {
-  // Always send cookies for same-origin requests
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
@@ -10,15 +9,14 @@
   function gatherContext(form) {
     const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
     return {
-      // header
       name,
       contact: form.contact?.value || "",
-      // role/company
       company: form.company?.value || "",
       role: form.role?.value || "",
       jobUrl: form.jobUrl?.value || "",
       tone: form.tone?.value || "professional",
-      // sender (you)
+
+      // Applicant (sender)
       sender: {
         name,
         address1: form.senderAddress1?.value || "",
@@ -28,7 +26,8 @@
         phone: form.senderPhone?.value || "",
         date: form.letterDate?.value || new Date().toISOString().slice(0,10)
       },
-      // recipient (hiring manager/company)
+
+      // Recruiter / company (recipient)
       recipient: {
         name: form.recipient?.value || "Hiring Manager",
         company: form.company?.value || "",
@@ -36,7 +35,7 @@
         city: form.companyCity?.value || "",
         postcode: form.companyPostcode?.value || ""
       },
-      // cover letter body payload for backend
+
       coverLetter: {
         manager: form.recipient?.value || "Hiring Manager",
         company: form.company?.value || "",
@@ -48,23 +47,12 @@
     };
   }
 
-  // Remove “Dear …” and any trailing sign-off if the AI returns a full letter.
+  // Keep only the letter body (no greeting/closing) even if AI returns them.
   function sanitizeDraft(text) {
     if (!text) return text;
     let t = String(text).trim();
-
-    // Strip leading “Dear …” block up to the first blank line
-    t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, "");
-
-    // Strip common sign-offs from the end (e.g., Yours sincerely, Sincerely, Kind regards) and anything that follows
-    t = t.replace(/\n+\s*(yours sincerely|sincerely|kind regards|best regards)[\s\S]*$/i, "");
-
-    // Also trim a trailing author name line if it’s alone at the bottom
-    t = t.replace(/\n+\s*[A-Z][A-Za-z .'-]{1,80}\s*$/m, (match) => {
-      // keep if it looks like part of a sentence; otherwise drop
-      return /\.\s*$/.test(match) ? match : "";
-    });
-
+    t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, ""); // drop any leading "Dear ..."
+    t = t.replace(/\n+\s*(yours sincerely|sincerely|kind regards|best regards)[\s\S]*$/i, ""); // drop sign-off
     return t.trim();
   }
 
@@ -83,7 +71,6 @@
       (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n")
        : (Array.isArray(json.list) ? json.list.join("\n\n") : ""));
 
-    // Ensure we only keep the body paragraphs
     return sanitizeDraft(raw || "");
   }
 
@@ -100,6 +87,7 @@
     });
 
     if (!res.ok) throw new Error(`Build failed: ${res.status}`);
+
     if (format === "pdf") {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -122,16 +110,6 @@
     const form = document.getElementById("clForm");
     const aiCard = document.getElementById("ai-cl");
 
-    // Optional prefill
-    try {
-      const seed = JSON.parse(localStorage.getItem("coverLetterSeed") || "{}");
-      if (seed.firstName && form.firstName) form.firstName.value = seed.firstName;
-      if (seed.lastName  && form.lastName)  form.lastName.value  = seed.lastName;
-      if (seed.contact   && form.contact)   form.contact.value   = seed.contact;
-      if (seed.role      && form.role)      form.role.value      = seed.role;
-      if (seed.company   && form.company)   form.company.value   = seed.company;
-    } catch {}
-
     aiCard?.addEventListener("click", async (e) => {
       const btn = e.target.closest(".ai-refresh, .ai-add");
       if (!btn) return;
@@ -140,7 +118,7 @@
         try {
           const ctx = gatherContext(form);
           const draft = await aiSuggestCoverLetter(ctx);
-          aiCard.querySelector(".ai-text").textContent = draft;
+          aiCard.querySelector(".ai-text").textContent = draft || "No draft yet.";
         } catch (err) {
           aiCard.querySelector(".ai-text").textContent = err.message || "AI failed.";
         }
@@ -163,31 +141,3 @@
     });
   });
 })();
-
-// Analyzer quick-draft (if you use that mini form somewhere else)
-document.getElementById("genCLBtn")?.addEventListener("click", async () => {
-  const company = document.getElementById("clCompany").value.trim();
-  const role    = document.getElementById("clRole").value.trim();
-  const jd      = document.getElementById("clJD").value.trim();
-  const resumeText = document.getElementById("resume-text").value.trim();
-
-  const context = { company, role, jd, resumeText };
-  try {
-    const res = await fetch("/ai/suggest", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ field: "coverletter_from_analyzer", context }),
-    });
-    const json = await res.json();
-    if (json.error) throw new Error(json.error);
-    const raw = json.text || (Array.isArray(json.list) ? json.list.join("\n\n")
-                : (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n") : ""));
-    const draft = sanitizeDraft(raw || "");
-    const ta = document.getElementById("clDraft");
-    ta.style.display = "block";
-    ta.value = draft || "No draft produced.";
-    localStorage.setItem("coverLetterDraft", ta.value);
-  } catch (e) {
-    alert(e.message || "Failed to draft cover letter.");
-  }
-});
