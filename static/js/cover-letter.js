@@ -6,7 +6,7 @@
     if (!("credentials" in init)) init.credentials = "same-origin";
     return _fetch(input, init);
   };
- 
+
   function gatherContext(form) {
     const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
     return {
@@ -46,7 +46,7 @@
         draft: form.body?.value || ""
       }
     };
-  }  
+  }
 
   async function aiSuggestCoverLetter(ctx) {
     const field = document.getElementById("ai-cl")?.dataset?.field || "coverletter"; // supports cover_letter/coverletter
@@ -162,7 +162,7 @@ document.getElementById("genCLBtn")?.addEventListener("click", async () => {
     const json = await res.json();
     if (json.error) throw new Error(json.error);
     const draft = json.text || (Array.isArray(json.list) ? json.list.join("\n\n")
-                  : (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n") : ""));
+                  : (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n") : "")); 
     const ta = document.getElementById("clDraft");
     ta.style.display = "block";
     ta.value = draft || "No draft produced.";
