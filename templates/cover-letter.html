@@ -3,6 +3,8 @@
 {% block title %}Cover Letter – Jobcus{% endblock %}
 
 {% block content %}
+
+{% if letter_only %}
   <div class="cl-print" style="max-width:720px;margin:40px auto;font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;">
     <header style="margin-bottom:18px;">
       <div style="font-weight:700;font-size:18px;">{{ name }}</div>
