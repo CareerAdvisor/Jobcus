@@ -114,3 +114,29 @@
     });
   });
 })();
+
+document.getElementById("genCLBtn")?.addEventListener("click", async () => {
+  const company = document.getElementById("clCompany").value.trim();
+  const role    = document.getElementById("clRole").value.trim();
+  const jd      = document.getElementById("clJD").value.trim();
+  const resumeText = document.getElementById("resume-text").value.trim();
+
+  const context = { company, role, jd, resumeText };
+  try {
+    const res = await fetch("/ai/suggest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ field: "coverletter_from_analyzer", context }),
+    });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    const draft = json.text || (Array.isArray(json.list) ? json.list.join("\n") : "");
+    const ta = document.getElementById("clDraft");
+    ta.style.display = "block";
+    ta.value = draft || "No draft produced.";
+    localStorage.setItem("coverLetterDraft", ta.value);
+  } catch (e) {
+    alert(e.message || "Failed to draft cover letter.");
+  }
+});
+
