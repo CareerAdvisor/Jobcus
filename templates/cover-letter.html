@@ -7,54 +7,93 @@
 {# ---------- LETTER-ONLY (iframe preview / PDF) ---------- #}
 {% if letter_only %}
   <style>
-    html,body { background:#fff; margin:0; }
-    /* Hide site chrome coming from base.html */
+    /* Hide any site chrome from base.html */
     header, nav, footer,
     .site-header, .site-footer, .navbar, .topbar, .app-footer,
     .chat-widget, .floating-chat, .intercom-lightweight-app {
-      display:none !important;
+      display: none !important;
     }
-    .cl { max-width:650px; margin:36px auto; padding:0 16px; color:#111;
-          font:14px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Arial; }
-    .name { font-weight:700; font-size:19px; }
-    .muted { color:#666; }
-    .block { white-space:pre-wrap; overflow-wrap:anywhere; }
-    .sep { height:12px; }
-    @page { size:A4; margin:18mm 18mm; }
+
+    html, body {
+      margin: 0;
+      background: #fff;
+      font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+      font-size: 12pt;                 /* ← 12pt everywhere by default */
+      line-height: 1.55;
+      color: #111;
+    }
+
+    .cl {
+      max-width: 650px;
+      margin: 36px auto;
+      padding: 0 16px;
+    }
+
+    .name {
+      font-weight: 700;
+      font-size: 20pt;                 /* ← Bigger applicant name */
+      margin: 0 0 6pt 0;
+    }
+
+    .sender-address {                  /* address/contact under name */
+      margin: 0 0 10pt 0;              /* space before the date */
+    }
+
+    .sender-date {                     /* date after address */
+      margin: 0 0 12pt 0;              /* space before recruiter block */
+    }
+
+    .recipient-block {                 /* recruiter/company block */
+      margin: 0 0 12pt 0;              /* space before “Dear …” */
+    }
+
+    .salutation {
+      margin: 0 0 10pt 0;
+    }
+
+    .muted { color: #666; }
+    .block { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+    @page { size: A4; margin: 18mm 18mm; }
   </style>
 
   <div class="cl">
-    {# Applicant (sender) first #}
+    {# ----- Applicant (sender) ----- #}
     {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
-    {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
-    {% if sender.city or sender.postcode %}
-      <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
-    {% endif %}
-    {% if sender.email or sender.phone %}
-      <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
-    {% endif %}
-    {% if sender.date %}<div style="margin-top:6px;">{{ sender.date }}</div>{% endif %}
 
-    {# Recipient (company) next #}
-    {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
-      <div class="sep"></div>
-      {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
-      {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
-      {% if recipient.address1 %}<div>{{ recipient.address1 }}</div>{% endif %}
-      {% if recipient.city or recipient.postcode %}
-        <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
+    <div class="sender-address">
+      {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
+      {% if sender.city or sender.postcode %}
+        <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
       {% endif %}
+      {% if sender.email or sender.phone %}
+        <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
+      {% endif %}
+    </div>
+
+    {% if sender.date %}<div class="sender-date">{{ sender.date }}</div>{% endif %}
+
+    {# ----- Recruiter / Company ----- #}
+    {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
+      <div class="recipient-block">
+        {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
+        {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
+        {% if recipient.address1 %}<div>{{ recipient.address1 }}</div>{% endif %}
+        {% if recipient.city or recipient.postcode %}
+          <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
+        {% endif %}
+      </div>
     {% endif %}
 
-    <div class="sep"></div>
+    {# ----- Greeting, Body, Closing ----- #}
+    <div class="salutation">Dear {{ recipient.name or 'Hiring Manager' }},</div>
 
-    {# Salutation, body, closing (no de-dup logic here; JS already cleans) #}
-    <div style="margin-bottom:12px;">Dear {{ recipient.name or 'Hiring Manager' }},</div>
     <main class="block">{{ draft or '' }}</main>
 
-    <div class="sep"></div>
-    <div>Yours sincerely,</div>
-    <div>{{ sender.name or '' }}</div>
+    <div style="margin-top: 12pt;">
+      <div>Yours sincerely,</div>
+      <div>{{ sender.name or '' }}</div>
+    </div>
   </div>
 
 {# ---------- BUILDER PAGE ---------- #}
