@@ -6,30 +6,40 @@
 
 {% if letter_only %}
   <style>
-    /* Hide global chrome when rendering the letter block */
-    header.site-header, .site-header, nav.site-nav, footer.site-footer, #site-header, #site-footer {
+    /* Hide site chrome in preview/PDF */
+    header.site-header, .site-header, nav.site-nav, #site-header,
+    footer.site-footer, .site-footer, #site-footer,
+    .rb-footer, .app-footer, .chat-icon, .chat-widget, #tidio-chat,
+    .intercom-lightweight-app, .intercom-launcher-frame {
       display: none !important;
     }
+
     .cl-print{
-      max-width: 650px;              /* fits A4 after margins at 96dpi */
+      max-width: 650px;            /* A4-safe after margins */
       margin: 40px auto;
       padding: 0 16px;
       color: #111;
       font: 14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;
     }
-    .name{font-weight:700;font-size:18px}
-    .muted{color:#666}
-    .block{
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;       /* break very long URLs/words */
-      word-break: break-word;
-    }
-    @page { size: A4; margin: 18mm 18mm; }   /* slightly tighter margins */
+    .label { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:#6b7280; margin:0 0 6px }
+    .name  { font-weight:700; font-size:18px }
+    .muted { color:#666 }
+    .block { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+    .spacer{ height: 12px }
+    @page { size: A4; margin: 18mm 18mm; }
   </style>
 
+  {# Detect whether the draft already contains salutation or sign-off #}
+  {% set _d = (draft or '').strip() %}
+  {% set _dl = _d|lower %}
+  {% set has_dear = _dl.startswith('dear ') %}
+  {% set has_signoff = ('sincerely' in _dl) or ('yours sincerely' in _dl) or ('kind regards' in _dl) or ('best regards' in _dl) %}
+
   <div class="cl-print">
-    <!-- Sender block -->
-    <div style="margin-bottom:18px;">
+
+    {# Applicant (sender) first #}
+    <div class="label">From</div>
+    <div style="margin-bottom:10px;">
       {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
       {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
       {% if sender.city or sender.postcode %}
@@ -38,11 +48,12 @@
       {% if sender.email or sender.phone %}
         <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
       {% endif %}
-      {% if sender.date %}<div style="margin-top:6px;">{{ sender.date }}</div>{% endif %}
     </div>
+    {% if sender.date %}<div class="muted" style="margin-bottom:12px;">{{ sender.date }}</div>{% endif %}
 
-    <!-- Recipient block -->
-    {% if recipient.company or recipient.name or recipient.address1 %}
+    {# Hiring manager / organisation next #}
+    {% if recipient.company or recipient.name or recipient.address1 or recipient.city or recipient.postcode %}
+    <div class="label" style="margin-top:6px;">To</div>
     <div style="margin-bottom:18px;">
       {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
       {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
@@ -53,21 +64,23 @@
     </div>
     {% endif %}
 
-    <!-- Salutation -->
-    <div style="margin-bottom:12px;">
-      Dear {{ recipient.name or 'Hiring Manager' }},
-    </div>
-
-    <!-- Body -->
-    <main class="block">{{ draft }}</main>
-
-    <!-- Closing -->
-    <div style="margin-top:18px;">Yours sincerely,</div>
-    <div>{{ sender.name }}</div>
+    {# Letter body #}
+    {% if has_dear %}
+      {# AI/textarea included its own salutation; render as-is once #}
+      <main class="block">{{ _d }}</main>
+    {% else %}
+      <div style="margin-bottom:12px;">Dear {{ recipient.name or 'Hiring Manager' }},</div>
+      <main class="block">{{ _d }}</main>
+      {% if not has_signoff %}
+        <div class="spacer"></div>
+        <div>Yours sincerely,</div>
+        <div>{{ sender.name }}</div>
+      {% endif %}
+    {% endif %}
   </div>
-{% else %}
 
-<main id="cover-letter" class="rb-wrap">
+{% else %}
+  <main id="cover-letter" class="rb-wrap">
     <!-- Hero -->
     <div class="interview-container" style="padding:20px 16px;width:100%;background:#104879;">
       <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
@@ -89,7 +102,7 @@
               <article class="rb-card">
                 <header>
                   <h2>Letter details</h2>
-                  <p>Who’s this for and what role?</p>
+                  <p>Group your details and the recipient’s details.</p>
                 </header>
                 <div class="rb-panel">
                   <div class="rb-grid">
@@ -154,7 +167,7 @@
             </section>
           </div>
 
-          <!-- Section 2 -->
+          <!-- Section 2: Your info (kept) -->
           <div class="rb-section">
             <section class="rb-step">
               <article class="rb-card">
@@ -171,22 +184,18 @@
             </section>
           </div>
 
-          <!-- Section 3 -->
+          <!-- Section 3: Draft (header removed per request) -->
           <div class="rb-section">
             <section class="rb-step">
               <article class="rb-card">
-                <header>
-                  <h2>Draft</h2>
-                  <p>Let AI help or write your own.</p>
-                </header>
                 <div class="rb-panel">
-                  <textarea name="body" rows="12" placeholder="Dear Hiring Manager, …"></textarea>
+                  <textarea name="body" rows="12" placeholder="Write your experience highlights here…"></textarea>
 
-                  <div class="ai-suggest" id="ai-cl" data-field="cover_letter">
+                  <div class="ai-suggest" id="ai-cl" data-field="coverletter">
                     <div class="ai-title">✦ Write with AI</div>
-                    <p class="ai-text">We’ll draft a tailored letter using your details above.</p>
+                    <p class="ai-text">We’ll draft a tailored body using the details above (no duplicate greeting or sign-off).</p>
                     <div class="ai-actions">
-                      <button type="button" class="btn ai-refresh" data-ai="cover_letter">Refresh</button>
+                      <button type="button" class="btn ai-refresh" data-ai="coverletter">Refresh</button>
                       <button type="button" class="btn btn-primary ai-add">Insert</button>
                     </div>
                   </div>
@@ -195,7 +204,6 @@
             </section>
           </div>
 
-          <!-- Footer like builder -->
           <footer class="rb-footer">
             <a class="ghost" href="/resume-builder">← Back to Builder</a>
           </footer>
@@ -211,7 +219,7 @@
               <button type="button" id="cl-download" class="cta-primary">Download PDF</button>
             </div>
             <div id="clPreviewWrap" class="preview-wrap" style="display:none;">
-              <iframe id="clPreview" style="width:100%;height:70vh;border:0;background:#fff;border-radius:8px;"></iframe>
+              <iframe id="clPreview" style="width:100%;height:70vh;border:0;background:#fff;"></iframe>
             </div>
           </div>
         </article>
