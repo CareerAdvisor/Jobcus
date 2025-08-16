@@ -143,7 +143,6 @@
 
 {% block scripts %}
   {% if not letter_only %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-builder.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}">
     <script defer src="{{ url_for('static', filename='js/cover-letter.js') }}"></script>
   {% endif %}
