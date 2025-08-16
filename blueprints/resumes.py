@@ -431,30 +431,33 @@ def ai_suggest():
 
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 def build_cover_letter():
-    data = request.get_json(force=True) or {}
-    fmt  = (data.get("format") or "html").lower()
+    data   = request.get_json(force=True) or {}
+    fmt    = data.get("format", "html")
 
-    # pull structured blocks coming from the client JS
+    # optional header line (used by non-print page)
+    name    = data.get("name", "")
+    title   = data.get("title", "")
+    contact = data.get("contact", "")
+
     sender    = data.get("sender") or {}
     recipient = data.get("recipient") or {}
     cl        = data.get("coverLetter") or {}
     draft     = (cl.get("draft") or "").strip()
 
-    # render the SAME template, but the inner 'letter_only' branch
     html = render_template(
         "cover-letter.html",
-        letter_only=True,          # hide site chrome and show printable letter
-        sender=sender,
-        recipient=recipient,
-        draft=draft
+        # builder header bits (safe to keep)
+        name=name, title=title, contact=contact,
+        # print data
+        sender=sender, recipient=recipient, draft=draft,
+        letter_only=(fmt == "pdf" or data.get("letter_only") is True),
+        for_pdf=(fmt == "pdf")
     )
 
     if fmt == "pdf":
         pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf()
-        return send_file(BytesIO(pdf_bytes),
-                         mimetype="application/pdf",
-                         as_attachment=True,
-                         download_name="cover-letter.pdf")
+        return send_file(BytesIO(pdf_bytes), mimetype="application/pdf",
+                         as_attachment=True, download_name="cover-letter.pdf")
 
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
