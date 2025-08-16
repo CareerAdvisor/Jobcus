@@ -432,22 +432,25 @@ def ai_suggest():
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 def build_cover_letter():
     data   = request.get_json(force=True) or {}
-    format = data.get("format", "html")
+    fmt    = data.get("format", "html")
     name   = data.get("name","")
     title  = data.get("title","")
     contact= data.get("contact","")
     cl     = data.get("coverLetter") or {}
     draft  = (cl.get("draft","") or "").strip()
 
-    html = render_template("letters/cover-letter.html",
-                           name=name, title=title, contact=contact, draft=draft)
+    # render the SAME page but in print mode
+    html = render_template(
+        "cover-letter.html",
+        name=name, title=title, contact=contact, draft=draft,
+        letter_only=True,              # <- tells template to show the printable letter
+        for_pdf=(fmt == "pdf")         # <- optional if you want slightly different CSS for PDF
+    )
 
-    if format == "pdf":
+    if fmt == "pdf":
         pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf()
-        return send_file(BytesIO(pdf_bytes),  # <-- use BytesIO
-                         mimetype="application/pdf",
-                         as_attachment=True,
-                         download_name="cover-letter.pdf")
+        return send_file(BytesIO(pdf_bytes), mimetype="application/pdf",
+                         as_attachment=True, download_name="cover-letter.pdf")
 
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
