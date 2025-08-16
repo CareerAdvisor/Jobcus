@@ -58,6 +58,7 @@ function gatherContext(form) {
   };
 }
 
+// allow field = "coverletter"
 async function aiSuggest(field, ctx, index) {
   try {
     const res = await fetch(AI_ENDPOINT, {
@@ -70,6 +71,7 @@ async function aiSuggest(field, ctx, index) {
     return json;
   } catch (e) {
     console.warn(e);
+    // return text fallback for all fields including coverletter
     return { text: "AI suggestion currently unavailable. Try again." };
   }
 }
