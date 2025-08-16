@@ -429,28 +429,26 @@ def ai_suggest():
 
     return jsonify({"text": "No suggestion available."})
 
-# --- Cover Letter HTML/PDF build ---
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 def build_cover_letter():
-    data   = request.json or {}
+    data   = request.get_json(force=True) or {}
     format = data.get("format", "html")
     name   = data.get("name","")
     title  = data.get("title","")
     contact= data.get("contact","")
     cl     = data.get("coverLetter") or {}
-    draft  = cl.get("draft","").strip()
+    draft  = (cl.get("draft","") or "").strip()
 
-    # simple Jinja render (create templates/cover-letter.html)
-    html = render_template("cover-letter.html",
+    html = render_template("letters/cover-letter.html",
                            name=name, title=title, contact=contact, draft=draft)
 
     if format == "pdf":
-        # If you already use WeasyPrint for resumes, reuse it here
-        from weasyprint import HTML, CSS
-        pdf = HTML(string=html, base_url=request.host_url).write_pdf()
-        return send_file(io.BytesIO(pdf), mimetype="application/pdf",
-                         as_attachment=True, download_name="cover-letter.pdf")
-    return html
+        pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf()
+        return send_file(BytesIO(pdf_bytes),  # <-- use BytesIO
+                         mimetype="application/pdf",
+                         as_attachment=True,
+                         download_name="cover-letter.pdf")
 
-
-
+    resp = make_response(html)
+    resp.headers["Content-Type"] = "text/html; charset=utf-8"
+    return resp
