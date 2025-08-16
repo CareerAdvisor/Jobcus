@@ -291,25 +291,47 @@ def ai_suggest():
             text = "\n".join(items)
         return {"text": text or "", "list": items or []}
 
-    # ---- Cover letter (letter-style, no bullets) ----
-    if field in ("coverletter", "cover_letter", "coverletter_from_analyzer"):
-        name    = ctx.get("name") or ""
-        title   = ctx.get("title") or ""
-        cl      = ctx.get("coverLetter") or ctx
-        company = (cl or {}).get("company", "the company")
-        role    = (cl or {}).get("role", "the role")
-        manager = (cl or {}).get("manager", "") or "Hiring Manager"
+    # ---- Cover letter (letter-style, paragraphs, supports tone) ----
+if field in ("coverletter", "coverletter_from_analyzer", "cover_letter"):
+    name  = ctx.get("name") or ""
+    title = ctx.get("title") or "professional"
+    cl    = ctx.get("coverLetter") or ctx
+    company  = (cl or {}).get("company") or "your company"
+    role     = (cl or {}).get("role") or "the role"
+    manager  = (cl or {}).get("manager") or "Hiring Manager"
+    tone     = (cl or {}).get("tone") or "professional"
 
-        letter = (
-            f"Dear {manager},\n\n"
-            f"I am a {title or 'experienced professional'} interested in the {role} role at {company}. "
-            f"My background aligns closely with your needs.\n\n"
-            "In my recent roles, I delivered measurable outcomes by improving processes, collaborating cross-functionally, "
-            "and driving initiatives from concept to execution. I’d welcome the opportunity to bring that same impact to your team.\n\n"
-            "Thank you for your time and consideration. I look forward to the possibility of discussing how I can contribute.\n\n"
-            f"Sincerely,\n{name}".strip()
-        )
-        return jsonify(normalize(letter))
+    openers = {
+        "professional": (
+            f"I’m a {title} interested in the {role} role at {company}. "
+            "I bring a record of delivering measurable results and collaborating across teams."
+        ),
+        "friendly": (
+            f"I’m excited to apply for the {role} role at {company}. "
+            "I love tackling real problems with practical solutions and working closely with teammates."
+        ),
+        "concise": (
+            f"I’m applying for the {role} role at {company}. I deliver results and improve processes."
+        ),
+    }
+    opener = openers.get(tone, openers["professional"])
+
+    # Keep your original, more formal core body if you prefer
+    body = (
+        "In my recent roles, I delivered measurable outcomes by improving processes, collaborating cross-functionally, "
+        "and driving initiatives from concept to execution. I’d welcome the opportunity to bring that same impact to your team."
+    )
+
+    text = (
+        f"Dear {manager},\n\n"
+        f"{opener}\n\n"
+        f"{body}\n\n"
+        "Thank you for your time and consideration. I look forward to the possibility of discussing how I can contribute.\n\n"
+        f"Sincerely,\n{name}".strip()
+    )
+
+    # Return as a single paragraph-style string (no bullets)
+    return jsonify({"text": text, "list": [], "suggestions": []})
 
     # ---- Compact context for resume prompts ----
     def compact_context(c):
@@ -434,5 +456,6 @@ def build_cover_letter():
         return send_file(io.BytesIO(pdf), mimetype="application/pdf",
                          as_attachment=True, download_name="cover-letter.pdf")
     return html
+
 
 
