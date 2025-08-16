@@ -89,3 +89,41 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = "/resume-builder";
   });
 });
+
+// --- Cover letter handoff from Analyzer ---
+(function(){
+  function guessNameFromText(txt="") {
+    const firstLine = (txt.split(/\r?\n/).find(Boolean) || "").trim();
+    if (firstLine && /\b[A-Za-z]+(?:\s+[A-Za-z\.\-']+){1,3}\b/.test(firstLine)) {
+      return firstLine;
+    }
+    return "";
+  }
+
+  function toContactLine(txt="") {
+    return "";
+  }
+
+  const openCLBtn = document.getElementById("openCoverLetter");
+  if (!openCLBtn) return;
+
+  openCLBtn.addEventListener("click", () => {
+    try {
+      const raw = document.getElementById("resume-text")?.value?.trim() || "";
+      let firstName="", lastName="";
+      const fullName = guessNameFromText(raw);
+      if (fullName) {
+        const parts = fullName.split(/\s+/);
+        firstName = parts.shift() || "";
+        lastName  = parts.join(" ");
+      }
+
+      const seed = { firstName, lastName, contact: toContactLine(raw), role: "", company: "" };
+      localStorage.setItem("coverLetterSeed", JSON.stringify(seed));
+    } catch (e) {
+      console.warn("CL seed not set:", e);
+    }
+
+    window.location.href = "/cover-letter";
+  });
+})();
