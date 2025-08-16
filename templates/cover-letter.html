@@ -7,17 +7,15 @@
 {# ------------------ LETTER-ONLY (preview/PDF) ------------------ #}
 {% if letter_only %}
   <style>
-    /* Make page white and remove margins */
     html, body { background:#fff; margin:0; }
 
-    /* Hide common site chrome injected by base.html */
+    /* Hide site chrome coming from base.html */
     header, nav, footer,
     .site-header, .site-footer, .navbar, .topbar, .app-footer,
     .chat-widget, .floating-chat, .intercom-lightweight-app {
       display: none !important;
     }
 
-    /* Letter layout */
     .cl { max-width: 650px; margin: 36px auto; padding: 0 16px; color:#111;
           font: 14px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Arial; }
     .name { font-weight: 700; font-size: 19px; }
