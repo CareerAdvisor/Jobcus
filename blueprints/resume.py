@@ -272,65 +272,61 @@ portfolio: {data.get('portfolio',"")}
         logging.exception("Generation failed")
         return jsonify(context=naive_context(data), aiUsed=False, error_code="error")
 
-# --- AI suggest (summary + highlights + cover letter) ---
 @resumes_bp.route("/ai/suggest", methods=["POST"])
 def ai_suggest():
     data  = request.get_json(force=True) or {}
     field = (data.get("field") or "general").strip().lower()
     ctx   = data.get("context") or {}
-    client = current_app.config.get("OPENAI_CLIENT")  # set in app init
+    client = current_app.config.get("OPENAI_CLIENT")
 
     def normalize(text="", items=None):
-        # Always return both shapes
         items = items if isinstance(items, list) else None
         if not items and text:
-            # split on newlines → bullet-ish list when needed
             items = [ln.strip("•- ").strip() for ln in text.splitlines() if ln.strip()]
         if not text and items:
             text = "\n".join(items)
-        return {"text": text or "", "list": items or []}
+        # include 'suggestions' for front-ends that expect it
+        return {"text": text or "", "list": items or [], "suggestions": items or []}
 
     # ---- Cover letter (letter-style, paragraphs, supports tone) ----
-if field in ("coverletter", "coverletter_from_analyzer", "cover_letter"):
-    name  = ctx.get("name") or ""
-    title = ctx.get("title") or "professional"
-    cl    = ctx.get("coverLetter") or ctx
-    company  = (cl or {}).get("company") or "your company"
-    role     = (cl or {}).get("role") or "the role"
-    manager  = (cl or {}).get("manager") or "Hiring Manager"
-    tone     = (cl or {}).get("tone") or "professional"
+    if field in ("coverletter", "coverletter_from_analyzer", "cover_letter"):
+        name  = ctx.get("name") or ""
+        title = ctx.get("title") or "professional"
+        cl    = ctx.get("coverLetter") or ctx
+        company  = (cl or {}).get("company") or "your company"
+        role     = (cl or {}).get("role") or "the role"
+        manager  = (cl or {}).get("manager") or "Hiring Manager"
+        tone     = (cl or {}).get("tone") or "professional"
 
-    openers = {
-        "professional": (
-            f"I’m a {title} interested in the {role} role at {company}. "
-            "I bring a record of delivering measurable results and collaborating across teams."
-        ),
-        "friendly": (
-            f"I’m excited to apply for the {role} role at {company}. "
-            "I love tackling real problems with practical solutions and working closely with teammates."
-        ),
-        "concise": (
-            f"I’m applying for the {role} role at {company}. I deliver results and improve processes."
-        ),
-    }
-    opener = openers.get(tone, openers["professional"])
+        openers = {
+            "professional": (
+                f"I’m a {title} interested in the {role} role at {company}. "
+                "I bring a record of delivering measurable results and collaborating across teams."
+            ),
+            "friendly": (
+                f"I’m excited to apply for the {role} role at {company}. "
+                "I love tackling real problems with practical solutions and working closely with teammates."
+            ),
+            "concise": (
+                f"I’m applying for the {role} role at {company}. I deliver results and improve processes."
+            ),
+        }
+        opener = openers.get(tone, openers["professional"])
 
-    # Keep your original, more formal core body if you prefer
-    body = (
-        "In my recent roles, I delivered measurable outcomes by improving processes, collaborating cross-functionally, "
-        "and driving initiatives from concept to execution. I’d welcome the opportunity to bring that same impact to your team."
-    )
+        body = (
+            "In my recent roles, I delivered measurable outcomes by improving processes, collaborating cross-functionally, "
+            "and driving initiatives from concept to execution. I’d welcome the opportunity to bring that same impact to your team."
+        )
 
-    text = (
-        f"Dear {manager},\n\n"
-        f"{opener}\n\n"
-        f"{body}\n\n"
-        "Thank you for your time and consideration. I look forward to the possibility of discussing how I can contribute.\n\n"
-        f"Sincerely,\n{name}".strip()
-    )
+        text = (
+            f"Dear {manager},\n\n"
+            f"{opener}\n\n"
+            f"{body}\n\n"
+            "Thank you for your time and consideration. I look forward to the possibility of discussing how I can contribute.\n\n"
+            f"Sincerely,\n{name}".strip()
+        )
 
-    # Return as a single paragraph-style string (no bullets)
-    return jsonify({"text": text, "list": [], "suggestions": []})
+        return jsonify({"text": text, "list": [], "suggestions": []})
 
     # ---- Compact context for resume prompts ----
     def compact_context(c):
@@ -455,4 +451,5 @@ def build_cover_letter():
         return send_file(io.BytesIO(pdf), mimetype="application/pdf",
                          as_attachment=True, download_name="cover-letter.pdf")
     return html
+
 
