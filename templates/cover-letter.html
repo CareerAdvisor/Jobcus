@@ -5,6 +5,17 @@
 {% block content %}
 
 {% if letter_only %}
+  <style>
+    /* Hide site chrome inside letter preview */
+    .site-header, .app-header, .navbar, .topbar, .header-bar,
+    .site-footer, .app-footer, footer,
+    .chat-widget, .intercom-launcher, .floating-cta, .rb-footer {
+      display: none !important;
+    }
+    html, body { background:#fff !important; }
+    .rb-wrap, .rb-container { padding:0 !important; margin:0 !important; }
+  </style>
+
   <div class="cl-print" style="max-width:720px;margin:40px auto;font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;">
     <header style="margin-bottom:18px;">
       <div style="font-weight:700;font-size:18px;">{{ name }}</div>
