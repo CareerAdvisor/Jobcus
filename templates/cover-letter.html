@@ -4,10 +4,10 @@
 
 {% block content %}
 
-{# ---------- PRINT/PREVIEW (letter_only) ---------- #}
-{% {% if letter_only %}
+{# ------------------ LETTER-ONLY (preview/PDF) ------------------ #}
+{% if letter_only %}
   <style>
-    /* Hide everything except the print root */
+    /* Hide all site chrome (header, footer, chat, etc.) */
     body > :not(#cl-print-root) { display: none !important; }
     html, body { background:#fff; margin:0; }
     .cl { max-width: 650px; margin: 36px auto; padding: 0 16px; color:#111;
@@ -20,9 +20,9 @@
   </style>
 
   <div id="cl-print-root">
-    {# …keep the rest of your letter-only markup here (applicant block, recipient block, salutation/body/closing)… #}
     <div class="cl">
-      {# Applicant first #}
+
+      {# Applicant (sender) first #}
       {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
       {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
       {% if sender.city or sender.postcode %}
@@ -33,7 +33,7 @@
       {% endif %}
       {% if sender.date %}<div style="margin-top:6px;">{{ sender.date }}</div>{% endif %}
 
-      {# Recipient next #}
+      {# Recipient (company) next #}
       {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
         <div class="sep"></div>
         {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
@@ -47,10 +47,10 @@
       <div class="sep"></div>
 
       {# Salutation/body/closing with de-duplication #}
-      {% set _d = (draft or '').strip() %}
+      {% set _d = (draft or '')|trim %}
       {% set _dl = _d|lower %}
       {% set has_dear = _dl.startswith('dear ') %}
-      {% set has_signoff = ('sincerely' in _dl) or ('yours sincerely' in _dl) or ('kind regards' in _dl) or ('best regards' in _dl) %}
+      {% set has_signoff = ('yours sincerely' in _dl) or ('sincerely' in _dl) or ('kind regards' in _dl) or ('best regards' in _dl) %}
 
       {% if has_dear %}
         <main class="block">{{ _d }}</main>
@@ -65,11 +65,11 @@
       {% endif %}
     </div>
   </div>
-{% else %}
 
-{# ---------- BUILDER PAGE (normal) ---------- #}
+{# ------------------ BUILDER PAGE ------------------ #}
 {% else %}
   <main id="cover-letter" class="rb-wrap">
+    <!-- Hero -->
     <div class="interview-container" style="padding:20px 16px;width:100%;background:#104879;">
       <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
         <h5 style="color:#ffc957;font-weight:600;font-size:14px;letter-spacing:1px;">AI COVER LETTER</h5>
@@ -79,23 +79,25 @@
     </div>
 
     <div class="rb-container rb-layout">
+      <!-- Left: Form -->
       <div class="rb-main">
         <form id="clForm" class="rb-form" autocomplete="on">
-          <!-- Section: Recruiter -->
+
+          <!-- Recruiter section -->
           <div class="rb-section">
             <section class="rb-step active">
               <article class="rb-card">
-                <header style="height: 50px;">
+                <header>
                   <h2>Recruiter</h2>
                   <p>Company, role, job link, tone, and recipient details.</p>
-                </header></br>
+                </header>
                 <div class="rb-panel">
                   <div class="rb-grid">
                     <label>Company
                       <input type="text" name="company" placeholder="Acme Inc.">
                     </label>
                     <label>Role
-                      <input type="text" name="role" placeholder="IT Support">
+                      <input type="text" name="role" placeholder="Product Designer">
                     </label>
                     <label class="full">Job link (optional)
                       <input type="url" name="jobUrl" placeholder="https://…">
@@ -108,10 +110,11 @@
                       </select>
                     </label>
 
-                    <div class="full" style="margin-top:6px;font-weight:600;color:#104879;">Recipient</div>
                     <label class="full">Recipient (Name or Team)
-                      <input type="text" name="recipient" placeholder="Head of IT / Hiring Manager">
+                      <input type="text" name="recipient" placeholder="Hiring Manager">
                     </label>
+
+                    <div class="full" style="margin-top:6px;font-weight:600;color:#104879;">Recipient’s address</div>
                     <label class="full">Company address (line 1)
                       <input type="text" name="companyAddress1" placeholder="45 Market Road">
                     </label>
@@ -125,16 +128,16 @@
                 </div>
               </article>
             </section>
-          </div></br>
+          </div>
 
-          <!-- Section: Applicant -->
+          <!-- Applicant section -->
           <div class="rb-section">
             <section class="rb-step">
               <article class="rb-card">
-                <header style="height: 50px;">
+                <header>
                   <h2>Applicant</h2>
-                  <p>Your contact information and address for the header.</p>
-                </header></br>
+                  <p>Your contact details for the letter heading.</p>
+                </header>
                 <div class="rb-panel">
                   <div class="rb-grid">
                     <label>First name <input type="text" name="firstName" placeholder="John"></label>
@@ -164,20 +167,20 @@
                 </div>
               </article>
             </section>
-          </div></br>
+          </div>
 
-          <!-- Section: Letter body (no “Draft” heading) -->
+          <!-- Draft (no extra header) -->
           <div class="rb-section">
             <section class="rb-step">
               <article class="rb-card">
                 <div class="rb-panel">
-                  <textarea name="body" rows="12" placeholder="Write a few key points you want the AI to weave in, or leave blank and click Refresh."></textarea>
+                  <textarea name="body" rows="12" placeholder="Write or generate your letter body here…"></textarea>
 
-                  <div class="ai-suggest" id="ai-cl" data-field="coverletter">
+                  <div class="ai-suggest" id="ai-cl" data-field="cover_letter">
                     <div class="ai-title">✦ Write with AI</div>
-                    <p class="ai-text">We’ll generate a polished body from your details above (no duplicate greeting or sign-off).</p>
+                    <p class="ai-text">We’ll draft a tailored letter using your details above.</p>
                     <div class="ai-actions">
-                      <button type="button" class="btn ai-refresh" data-ai="coverletter">Refresh</button>
+                      <button type="button" class="btn ai-refresh" data-ai="cover_letter">Refresh</button>
                       <button type="button" class="btn btn-primary ai-add">Insert</button>
                     </div>
                   </div>
@@ -192,7 +195,7 @@
         </form>
       </div>
 
-      <!-- Right: Preview -->
+      <!-- Right: Sticky Preview -->
       <aside class="rb-preview">
         <article class="rb-card">
           <div class="rb-panel">
@@ -201,7 +204,7 @@
               <button type="button" id="cl-download" class="cta-primary">Download PDF</button>
             </div>
             <div id="clPreviewWrap" class="preview-wrap" style="display:none;">
-              <iframe id="clPreview" style="width:100%;height:70vh;border:0;background:#fff;"></iframe>
+              <iframe id="clPreview"></iframe>
             </div>
           </div>
         </article>
