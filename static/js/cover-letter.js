@@ -1,5 +1,6 @@
 // static/js/cover-letter.js
 (function () {
+  // Always send cookies for same-origin requests
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
@@ -30,33 +31,26 @@
   }
 
   async function aiSuggestCoverLetter(ctx) {
+    const field = document.getElementById("ai-cl")?.dataset?.field || "coverletter"; // supports cover_letter/coverletter
     const res = await fetch("/ai/suggest", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      // let the dataset override if present (your HTML uses data-field="cover_letter")
-      body: JSON.stringify({
-        field: (document.getElementById("ai-cl")?.dataset?.field) || "coverletter",
-        context: ctx
-      })
+      body: JSON.stringify({ field, context: ctx })
     });
-    // ...
-  }
-
     const json = await res.json().catch(() => ({}));
     if (!res.ok || json.error) throw new Error(json.error || "AI suggest failed");
+    // be resilient to any shape returned by backend
     const text =
-      json.text
-      || (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n")
-         : (Array.isArray(json.list) ? json.list.join("\n\n") : ""));
+      json.text ||
+      (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n")
+       : (Array.isArray(json.list) ? json.list.join("\n\n") : ""));
     return text || "AI suggestion unavailable.";
-
   }
 
   async function renderLetter(ctx, format = "html") {
     const res = await fetch("/build-cover-letter", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      // Backend expects {name, title?, contact, coverLetter:{draft:...}, format}
       body: JSON.stringify({ format, name: ctx.name, contact: ctx.contact, coverLetter: ctx.coverLetter })
     });
 
@@ -93,6 +87,7 @@
       if (seed.company   && form.company)   form.company.value   = seed.company;
     } catch {}
 
+    // ✅ Make this handler async (fixes "await is only valid..." error)
     aiCard?.addEventListener("click", async (e) => {
       const btn = e.target.closest(".ai-refresh, .ai-add");
       if (!btn) return;
@@ -109,11 +104,11 @@
 
       if (btn.classList.contains("ai-add")) {
         const draft = aiCard.querySelector(".ai-text")?.textContent?.trim();
-        if (!draft) return;
-        form.body.value = draft; // insert into textarea
+        if (draft) form.body.value = draft;
       }
     });
 
+    // ✅ These also must be async because they use await renderLetter(...)
     document.getElementById("cl-preview")?.addEventListener("click", async () => {
       try { await renderLetter(gatherContext(form), "html"); }
       catch (e) { alert(e.message || "Preview failed"); }
@@ -126,6 +121,7 @@
   });
 })();
 
+// If you use the analyzer variant button elsewhere:
 document.getElementById("genCLBtn")?.addEventListener("click", async () => {
   const company = document.getElementById("clCompany").value.trim();
   const role    = document.getElementById("clRole").value.trim();
@@ -141,7 +137,8 @@ document.getElementById("genCLBtn")?.addEventListener("click", async () => {
     });
     const json = await res.json();
     if (json.error) throw new Error(json.error);
-    const draft = json.text || (Array.isArray(json.list) ? json.list.join("\n") : "");
+    const draft = json.text || (Array.isArray(json.list) ? json.list.join("\n\n")
+                  : (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n") : ""));
     const ta = document.getElementById("clDraft");
     ta.style.display = "block";
     ta.value = draft || "No draft produced.";
@@ -150,4 +147,3 @@ document.getElementById("genCLBtn")?.addEventListener("click", async () => {
     alert(e.message || "Failed to draft cover letter.");
   }
 });
-
