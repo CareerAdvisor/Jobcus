@@ -315,7 +315,7 @@ def terms_of_service():
 @app.route("/cover-letter")
 def cover_letter():
     return render_template("cover-letter.html")
-
+    
 # ----------------------------
 # AI suggest
 # ----------------------------
