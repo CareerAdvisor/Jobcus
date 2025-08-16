@@ -272,3 +272,64 @@ portfolio: {data.get('portfolio',"")}
     except Exception:
         logging.exception("Generation failed")
         return jsonify(context=naive_context(data), aiUsed=False, error_code="error")
+
+# --- AI suggest (adds cover letter fields) ---
+@app.route("/ai/suggest", methods=["POST"])
+def ai_suggest():
+    data = request.json or {}
+    field = data.get("field", "general")
+    ctx   = data.get("context", {})  # includes resume + coverLetter sub-obj
+
+    # Basic non-OpenAI fallback so UI never breaks
+    if field in ("coverletter", "coverletter_from_analyzer"):
+        name   = ctx.get("name") or ""
+        title  = ctx.get("title") or ""
+        cl     = ctx.get("coverLetter") or ctx  # analyzer passes different shape
+        comp   = (cl or {}).get("company", "the company")
+        role   = (cl or {}).get("role", "the role")
+        manager = (cl or {}).get("manager", "")
+        lines = [
+            f"Dear {manager or 'Hiring Manager'},",
+            "",
+            f"I’m a {title or 'professional'} interested in the {role} role at {comp}.",
+            "I believe my experience aligns well with your needs:",
+            "• Impact #1 relevant to the role",
+            "• Impact #2 with a measurable outcome",
+            "• Impact #3 that shows collaboration/ownership",
+            "",
+            "I’d welcome the opportunity to discuss how I can contribute.",
+            "Sincerely,",
+            f"{name}".strip()
+        ]
+        return jsonify({"text": "\n".join(lines)})
+
+    # Resume summary / highlights fallbacks
+    if field == "summary":
+        return jsonify({"text": "Results-driven professional with X years of experience delivering Y. Known for Z."})
+    if field == "highlights":
+        return jsonify({"list": ["Led A to achieve B", "Improved C by D%", "Built E that saved F hours"]})
+
+    return jsonify({"text": "No suggestion available."})
+
+# --- Cover Letter HTML/PDF build ---
+@app.route("/build-cover-letter", methods=["POST"])
+def build_cover_letter():
+    data   = request.json or {}
+    format = data.get("format", "html")
+    name   = data.get("name","")
+    title  = data.get("title","")
+    contact= data.get("contact","")
+    cl     = data.get("coverLetter") or {}
+    draft  = cl.get("draft","").strip()
+
+    # simple Jinja render (create templates/cover-letter.html)
+    html = render_template("cover-letter.html",
+                           name=name, title=title, contact=contact, draft=draft)
+
+    if format == "pdf":
+        # If you already use WeasyPrint for resumes, reuse it here
+        from weasyprint import HTML, CSS
+        pdf = HTML(string=html, base_url=request.host_url).write_pdf()
+        return send_file(io.BytesIO(pdf), mimetype="application/pdf",
+                         as_attachment=True, download_name="cover-letter.pdf")
+    return html
