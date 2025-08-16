@@ -431,25 +431,30 @@ def ai_suggest():
 
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 def build_cover_letter():
-    data = request.get_json(force=True) or {}
-    fmt  = data.get("format", "html")
+    data   = request.get_json(force=True) or {}
+    format = data.get("format", "html")
+    name   = data.get("name", "")
+    title  = data.get("title", "")
+    contact= data.get("contact", "")
+    cl     = data.get("coverLetter") or {}
+    draft  = (cl.get("draft", "") or "").strip()
 
-    sender    = data.get("sender") or {}
-    recipient = data.get("recipient") or {}
-    cl        = data.get("coverLetter") or {}
-    cover_body = (cl.get("draft") or "").strip()
-
+    # IMPORTANT: use a dedicated printable template so it doesn't clash with your page at templates/cover-letter.html
+    # Create: templates/letters/cover-letter.html
     html = render_template(
-        "cover-letter-print.html",
-        sender=sender,
-        recipient=recipient,
-        cover_body=cover_body
+        "letters/cover-letter.html",
+        name=name, title=title, contact=contact, draft=draft
     )
 
-    if fmt == "pdf":
+    if format == "pdf":
+        # Use the same base_url approach as resumes (filesystem base)
         pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf()
-        return send_file(BytesIO(pdf_bytes), mimetype="application/pdf",
-                         as_attachment=True, download_name="cover-letter.pdf")
+        return send_file(
+            BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name="cover-letter.pdf",
+        )
 
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
