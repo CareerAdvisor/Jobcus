@@ -4,77 +4,62 @@
 
 {% block content %}
 
-{# ------------------ LETTER-ONLY (preview/PDF) ------------------ #}
+{# ---------- LETTER-ONLY (iframe preview / PDF) ---------- #}
 {% if letter_only %}
   <style>
-    html, body { background:#fff; margin:0; }
-
+    html,body { background:#fff; margin:0; }
     /* Hide site chrome coming from base.html */
     header, nav, footer,
     .site-header, .site-footer, .navbar, .topbar, .app-footer,
     .chat-widget, .floating-chat, .intercom-lightweight-app {
-      display: none !important;
+      display:none !important;
     }
-
-    .cl { max-width: 650px; margin: 36px auto; padding: 0 16px; color:#111;
-          font: 14px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Arial; }
-    .name { font-weight: 700; font-size: 19px; }
+    .cl { max-width:650px; margin:36px auto; padding:0 16px; color:#111;
+          font:14px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Arial; }
+    .name { font-weight:700; font-size:19px; }
     .muted { color:#666; }
-    .block { white-space: pre-wrap; overflow-wrap:anywhere; }
-    .sep { height: 12px; }
-    @page { size: A4; margin: 18mm 18mm; }
+    .block { white-space:pre-wrap; overflow-wrap:anywhere; }
+    .sep { height:12px; }
+    @page { size:A4; margin:18mm 18mm; }
   </style>
 
-  <div id="cl-print-root">
-    <div class="cl">
-      {# Applicant (sender) first #}
-      {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
-      {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
-      {% if sender.city or sender.postcode %}
-        <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
-      {% endif %}
-      {% if sender.email or sender.phone %}
-        <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
-      {% endif %}
-      {% if sender.date %}<div style="margin-top:6px;">{{ sender.date }}</div>{% endif %}
+  <div class="cl">
+    {# Applicant (sender) first #}
+    {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
+    {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
+    {% if sender.city or sender.postcode %}
+      <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
+    {% endif %}
+    {% if sender.email or sender.phone %}
+      <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
+    {% endif %}
+    {% if sender.date %}<div style="margin-top:6px;">{{ sender.date }}</div>{% endif %}
 
-      {# Recipient (company) next #}
-      {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
-        <div class="sep"></div>
-        {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
-        {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
-        {% if recipient.address1 %}<div>{{ recipient.address1 }}</div>{% endif %}
-        {% if recipient.city or recipient.postcode %}
-          <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
-        {% endif %}
-      {% endif %}
-
+    {# Recipient (company) next #}
+    {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
       <div class="sep"></div>
-
-      {# Salutation/body/closing with de-duplication #}
-      {% set _d = (draft or '')|trim %}
-      {% set _dl = _d|lower %}
-      {% set has_dear = _dl.startswith('dear ') %}
-      {% set has_signoff = ('yours sincerely' in _dl) or ('sincerely' in _dl) or ('kind regards' in _dl) or ('best regards' in _dl) %}
-
-      {% if has_dear %}
-        <main class="block">{{ _d }}</main>
-      {% else %}
-        <div style="margin-bottom:12px;">Dear {{ recipient.name or 'Hiring Manager' }},</div>
-        <main class="block">{{ _d }}</main>
-        {% if not has_signoff %}
-          <div class="sep"></div>
-          <div>Yours sincerely,</div>
-          <div>{{ sender.name }}</div>
-        {% endif %}
+      {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
+      {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
+      {% if recipient.address1 %}<div>{{ recipient.address1 }}</div>{% endif %}
+      {% if recipient.city or recipient.postcode %}
+        <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
       {% endif %}
-    </div>
-  </div>
-{% else %}
+    {% endif %}
 
-{# ------------------ BUILDER PAGE ------------------ #}
+    <div class="sep"></div>
+
+    {# Salutation, body, closing (no de-dup logic here; JS already cleans) #}
+    <div style="margin-bottom:12px;">Dear {{ recipient.name or 'Hiring Manager' }},</div>
+    <main class="block">{{ draft or '' }}</main>
+
+    <div class="sep"></div>
+    <div>Yours sincerely,</div>
+    <div>{{ sender.name or '' }}</div>
+  </div>
+
+{# ---------- BUILDER PAGE ---------- #}
 {% else %}
-  <main id="resume-builder" class="rb-wrap">
+  <main id="cover-letter" class="rb-wrap">
     <!-- Hero -->
     <div class="interview-container" style="padding:20px 16px;width:100%;background:#104879;">
       <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
@@ -84,7 +69,7 @@
       </section>
     </div>
 
-    <div id="clFromAnalyzer" style="margin-top:16px; dashed #e5e7ee;border-radius:10px;background:#e5e7eb;">
+    <div class="rb-container rb-layout" style="margin-top:16px; dashed #e5e7ee;border-radius:10px;background:#e5e7eb;">
       <!-- Left: Form -->
       <div class="rb-main">
         <form id="clForm" class="rb-form" autocomplete="on">
@@ -96,14 +81,14 @@
                 <header style="height: 90px; color:#104879;">
                   <h2>Recruiter</h2>
                   <p>Company, role, job link, tone, and recipient details.</p>
-                </header></br>
+                </header>
                 <div class="rb-panel">
                   <div class="rb-grid">
                     <label>Company
                       <input type="text" name="company" placeholder="Acme Inc.">
                     </label>
                     <label>Role
-                      <input type="text" name="role" placeholder="Product Designer">
+                      <input type="text" name="role" placeholder="IT Support">
                     </label>
                     <label class="full">Job link (optional)
                       <input type="url" name="jobUrl" placeholder="https://…">
@@ -148,9 +133,6 @@
                   <div class="rb-grid">
                     <label>First name <input type="text" name="firstName" placeholder="John"></label>
                     <label>Last name  <input type="text" name="lastName"  placeholder="Doe"></label>
-                    <label class="full">Contact line
-                      <input type="text" name="contact" placeholder="London, UK | john@email.com | 07123 456 789 | linkedin.com/in/john">
-                    </label>
                     <label class="full">Your address (line 1)
                       <input type="text" name="senderAddress1" placeholder="123 High Street">
                     </label>
@@ -175,7 +157,7 @@
             </section>
           </div></br>
 
-          <!-- Draft (no extra header) -->
+          <!-- Body -->
           <div class="rb-section">
             <section class="rb-step">
               <article class="rb-card">
@@ -210,7 +192,7 @@
               <button type="button" id="cl-download" class="cta-primary">Download PDF</button>
             </div>
             <div id="clPreviewWrap" class="preview-wrap" style="display:none;">
-              <iframe id="clPreview"></iframe>
+              <iframe id="clPreview" style="width:100%; height:80vh; border:0; background:#fff;"></iframe>
             </div>
           </div>
         </article>
@@ -218,7 +200,6 @@
     </div>
   </main>
 {% endif %}
-
 {% endblock %}
 
 {% block scripts %}
