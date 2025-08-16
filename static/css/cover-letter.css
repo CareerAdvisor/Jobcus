@@ -112,15 +112,3 @@
   gap: .5rem;
   justify-content: flex-end;
 }
-
-/* Minor polish */
-.rb-card header h2,
-.rb-card header h3 {
-  margin: 0 0 4px 0;
-}
-
-.rb-card header p {
-  margin: 0 0 8px 0;
-  color: #6b7280; /* subtle */
-}
-
