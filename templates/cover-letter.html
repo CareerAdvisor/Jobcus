@@ -5,16 +5,11 @@
 {% block content %}
 
 {# ---------- PRINT/PREVIEW (letter_only) ---------- #}
-{% if letter_only %}
+{% {% if letter_only %}
   <style>
-    /* Hide site chrome in preview/PDF */
-    header.site-header, .site-header, nav.site-nav, #site-header,
-    footer.site-footer, .site-footer, #site-footer, .app-footer, .global-footer,
-    footer, body > footer, [role="contentinfo"],
-    .chat-icon, .chat-widget, #tidio-chat, .intercom-lightweight-app, .intercom-launcher-frame {
-      display: none !important;
-    }
-    html, body { background:#fff; }
+    /* Hide everything except the print root */
+    body > :not(#cl-print-root) { display: none !important; }
+    html, body { background:#fff; margin:0; }
     .cl { max-width: 650px; margin: 36px auto; padding: 0 16px; color:#111;
           font: 14px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Arial; }
     .name { font-weight: 700; font-size: 19px; }
@@ -24,49 +19,53 @@
     @page { size: A4; margin: 18mm 18mm; }
   </style>
 
-  {% set _d = (draft or '').strip() %}
-  {% set _dl = _d|lower %}
-  {% set has_dear = _dl.startswith('dear ') %}
-  {% set has_signoff = ('sincerely' in _dl) or ('yours sincerely' in _dl) or ('kind regards' in _dl) or ('best regards' in _dl) %}
-
-  <div class="cl">
-    {# Applicant (sender) FIRST, no "From" label #}
-    {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
-    {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
-    {% if sender.city or sender.postcode %}
-      <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
-    {% endif %}
-    {% if sender.email or sender.phone %}
-      <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
-    {% endif %}
-    {% if sender.date %}<div style="margin-top:6px;">{{ sender.date }}</div>{% endif %}
-
-    {# Recipient (recruiter/company) NEXT, no "To" label #}
-    {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
-      <div class="sep"></div>
-      {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
-      {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
-      {% if recipient.address1 %}<div>{{ recipient.address1 }}</div>{% endif %}
-      {% if recipient.city or recipient.postcode %}
-        <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
+  <div id="cl-print-root">
+    {# …keep the rest of your letter-only markup here (applicant block, recipient block, salutation/body/closing)… #}
+    <div class="cl">
+      {# Applicant first #}
+      {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
+      {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
+      {% if sender.city or sender.postcode %}
+        <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
       {% endif %}
-    {% endif %}
+      {% if sender.email or sender.phone %}
+        <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
+      {% endif %}
+      {% if sender.date %}<div style="margin-top:6px;">{{ sender.date }}</div>{% endif %}
 
-    <div class="sep"></div>
-
-    {% if has_dear %}
-      {# AI/body already includes salutation; render once, as-is #}
-      <main class="block">{{ _d }}</main>
-    {% else %}
-      <div style="margin-bottom:12px;">Dear {{ recipient.name or 'Hiring Manager' }},</div>
-      <main class="block">{{ _d }}</main>
-      {% if not has_signoff %}
+      {# Recipient next #}
+      {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
         <div class="sep"></div>
-        <div>Yours sincerely,</div>
-        <div>{{ sender.name }}</div>
+        {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
+        {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
+        {% if recipient.address1 %}<div>{{ recipient.address1 }}</div>{% endif %}
+        {% if recipient.city or recipient.postcode %}
+          <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
+        {% endif %}
       {% endif %}
-    {% endif %}
+
+      <div class="sep"></div>
+
+      {# Salutation/body/closing with de-duplication #}
+      {% set _d = (draft or '').strip() %}
+      {% set _dl = _d|lower %}
+      {% set has_dear = _dl.startswith('dear ') %}
+      {% set has_signoff = ('sincerely' in _dl) or ('yours sincerely' in _dl) or ('kind regards' in _dl) or ('best regards' in _dl) %}
+
+      {% if has_dear %}
+        <main class="block">{{ _d }}</main>
+      {% else %}
+        <div style="margin-bottom:12px;">Dear {{ recipient.name or 'Hiring Manager' }},</div>
+        <main class="block">{{ _d }}</main>
+        {% if not has_signoff %}
+          <div class="sep"></div>
+          <div>Yours sincerely,</div>
+          <div>{{ sender.name }}</div>
+        {% endif %}
+      {% endif %}
+    </div>
   </div>
+{% else %}
 
 {# ---------- BUILDER PAGE (normal) ---------- #}
 {% else %}
@@ -86,10 +85,10 @@
           <div class="rb-section">
             <section class="rb-step active">
               <article class="rb-card">
-                <header>
+                <header style="height: 50px;">
                   <h2>Recruiter</h2>
                   <p>Company, role, job link, tone, and recipient details.</p>
-                </header>
+                </header></br>
                 <div class="rb-panel">
                   <div class="rb-grid">
                     <label>Company
@@ -126,16 +125,16 @@
                 </div>
               </article>
             </section>
-          </div>
+          </div></br>
 
           <!-- Section: Applicant -->
           <div class="rb-section">
             <section class="rb-step">
               <article class="rb-card">
-                <header>
+                <header style="height: 50px;">
                   <h2>Applicant</h2>
                   <p>Your contact information and address for the header.</p>
-                </header>
+                </header></br>
                 <div class="rb-panel">
                   <div class="rb-grid">
                     <label>First name <input type="text" name="firstName" placeholder="John"></label>
@@ -165,7 +164,7 @@
                 </div>
               </article>
             </section>
-          </div>
+          </div></br>
 
           <!-- Section: Letter body (no “Draft” heading) -->
           <div class="rb-section">
