@@ -5,13 +5,53 @@
 {% block content %}
 
 {% if letter_only %}
-  <div class="cl-print" style="max-width:720px;margin:40px auto;font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;">
-    <header style="margin-bottom:18px;">
-      <div style="font-weight:700;font-size:18px;">{{ name }}</div>
-      {% if title %}<div style="color:#555;">{{ title }}</div>{% endif %}
-      {% if contact %}<div style="color:#666;font-size:13px;margin-top:6px;">{{ contact }}</div>{% endif %}
-    </header>
-    <main style="white-space:pre-wrap;color:#111;">{{ draft }}</main>
+  <style>
+    /* Hide site chrome in preview/PDF */
+    header.site-header, .site-header, nav.site-nav, footer.site-footer, #site-header, #site-footer { display:none !important; }
+    .cl-print{max-width:720px;margin:40px auto;padding:0 16px;color:#111;font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .name{font-weight:700;font-size:18px}
+    .muted{color:#666}
+    .block{white-space:pre-wrap}
+    @page{size:A4;margin:22mm 18mm}
+  </style>
+
+  <div class="cl-print">
+    <!-- Sender block -->
+    <div style="margin-bottom:18px;">
+      {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
+      {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
+      {% if sender.city or sender.postcode %}
+        <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
+      {% endif %}
+      {% if sender.email or sender.phone %}
+        <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
+      {% endif %}
+      {% if sender.date %}<div style="margin-top:6px;">{{ sender.date }}</div>{% endif %}
+    </div>
+
+    <!-- Recipient block -->
+    {% if recipient.company or recipient.name or recipient.address1 %}
+    <div style="margin-bottom:18px;">
+      {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
+      {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
+      {% if recipient.address1 %}<div>{{ recipient.address1 }}</div>{% endif %}
+      {% if recipient.city or recipient.postcode %}
+        <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Salutation -->
+    <div style="margin-bottom:12px;">
+      Dear {{ recipient.name or 'Hiring Manager' }},
+    </div>
+
+    <!-- Body (AI) -->
+    <main class="block">{{ draft }}</main>
+
+    <!-- Closing -->
+    <div style="margin-top:18px;">Yours sincerely,</div>
+    <div>{{ sender.name }}</div>
   </div>
 {% else %}
   <main id="cover-letter" class="rb-wrap">
@@ -122,6 +162,10 @@
           <div class="rb-section">
             <section class="rb-step">
               <article class="rb-card">
+                <header>
+                  <h2>Draft</h2>
+                  <p>Let AI help or write your own.</p>
+                </header>
                 <div class="rb-panel">
                   <textarea name="body" rows="12" placeholder="Dear Hiring Manager, …"></textarea>
 
@@ -154,7 +198,7 @@
               <button type="button" id="cl-download" class="cta-primary">Download PDF</button>
             </div>
             <div id="clPreviewWrap" class="preview-wrap" style="display:none;">
-              <iframe id="clPreview"></iframe>
+              <iframe id="clPreview" style="width:100%;height:70vh;border:0;background:#fff;border-radius:8px;"></iframe>
             </div>
           </div>
         </article>
