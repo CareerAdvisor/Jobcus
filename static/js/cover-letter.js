@@ -28,7 +28,7 @@
         phone: form.senderPhone?.value || "",
         date: form.letterDate?.value || new Date().toISOString().slice(0,10)
       },
-      // recipient
+      // recipient (hiring manager/company)
       recipient: {
         name: form.recipient?.value || "Hiring Manager",
         company: form.company?.value || "",
@@ -36,7 +36,7 @@
         city: form.companyCity?.value || "",
         postcode: form.companyPostcode?.value || ""
       },
-      // cover letter body payload for backend AI + template
+      // cover letter body payload for backend
       coverLetter: {
         manager: form.recipient?.value || "Hiring Manager",
         company: form.company?.value || "",
@@ -48,8 +48,28 @@
     };
   }
 
+  // Remove “Dear …” and any trailing sign-off if the AI returns a full letter.
+  function sanitizeDraft(text) {
+    if (!text) return text;
+    let t = String(text).trim();
+
+    // Strip leading “Dear …” block up to the first blank line
+    t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, "");
+
+    // Strip common sign-offs from the end (e.g., Yours sincerely, Sincerely, Kind regards) and anything that follows
+    t = t.replace(/\n+\s*(yours sincerely|sincerely|kind regards|best regards)[\s\S]*$/i, "");
+
+    // Also trim a trailing author name line if it’s alone at the bottom
+    t = t.replace(/\n+\s*[A-Z][A-Za-z .'-]{1,80}\s*$/m, (match) => {
+      // keep if it looks like part of a sentence; otherwise drop
+      return /\.\s*$/.test(match) ? match : "";
+    });
+
+    return t.trim();
+  }
+
   async function aiSuggestCoverLetter(ctx) {
-    const field = document.getElementById("ai-cl")?.dataset?.field || "coverletter"; // supports cover_letter/coverletter
+    const field = document.getElementById("ai-cl")?.dataset?.field || "coverletter";
     const res = await fetch("/ai/suggest", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
@@ -57,19 +77,20 @@
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok || json.error) throw new Error(json.error || "AI suggest failed");
-    // be resilient to any shape returned by backend
-    const text =
+
+    const raw =
       json.text ||
       (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n")
        : (Array.isArray(json.list) ? json.list.join("\n\n") : ""));
-    return text || "AI suggestion unavailable.";
+
+    // Ensure we only keep the body paragraphs
+    return sanitizeDraft(raw || "");
   }
 
   async function renderLetter(ctx, format = "html") {
     const res = await fetch("/build-cover-letter", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      // send sender/recipient so server template can print the full letter
       body: JSON.stringify({
         format,
         sender: ctx.sender,
@@ -101,7 +122,7 @@
     const form = document.getElementById("clForm");
     const aiCard = document.getElementById("ai-cl");
 
-    // Optional prefill from localStorage (if you set it from builder/analyzer)
+    // Optional prefill
     try {
       const seed = JSON.parse(localStorage.getItem("coverLetterSeed") || "{}");
       if (seed.firstName && form.firstName) form.firstName.value = seed.firstName;
@@ -111,7 +132,6 @@
       if (seed.company   && form.company)   form.company.value   = seed.company;
     } catch {}
 
-    // ✅ Make this handler async (fixes "await is only valid..." error)
     aiCard?.addEventListener("click", async (e) => {
       const btn = e.target.closest(".ai-refresh, .ai-add");
       if (!btn) return;
@@ -128,11 +148,10 @@
 
       if (btn.classList.contains("ai-add")) {
         const draft = aiCard.querySelector(".ai-text")?.textContent?.trim();
-        if (draft) form.body.value = draft;
+        if (draft) form.body.value = sanitizeDraft(draft);
       }
     });
 
-    // ✅ These also must be async because they use await renderLetter(...)
     document.getElementById("cl-preview")?.addEventListener("click", async () => {
       try { await renderLetter(gatherContext(form), "html"); }
       catch (e) { alert(e.message || "Preview failed"); }
@@ -145,7 +164,7 @@
   });
 })();
 
-// If you use the analyzer variant button elsewhere:
+// Analyzer quick-draft (if you use that mini form somewhere else)
 document.getElementById("genCLBtn")?.addEventListener("click", async () => {
   const company = document.getElementById("clCompany").value.trim();
   const role    = document.getElementById("clRole").value.trim();
@@ -161,8 +180,9 @@ document.getElementById("genCLBtn")?.addEventListener("click", async () => {
     });
     const json = await res.json();
     if (json.error) throw new Error(json.error);
-    const draft = json.text || (Array.isArray(json.list) ? json.list.join("\n\n")
-                  : (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n") : "")); 
+    const raw = json.text || (Array.isArray(json.list) ? json.list.join("\n\n")
+                : (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n") : ""));
+    const draft = sanitizeDraft(raw || "");
     const ta = document.getElementById("clDraft");
     ta.style.display = "block";
     ta.value = draft || "No draft produced.";
