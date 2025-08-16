@@ -12,6 +12,16 @@
   <a href="/resume-builder" class="cta-secondary">Build my resume</a>
 </section>
 
+<!-- ✉️ Cover Letter Builder -->
+<section class="ai-assistance cover-letter">
+  <img src="{{ url_for('static', filename='images/cover-letter.png') }}" alt="Cover Letter Builder" />
+  <h2>Stand Out with Tailored Cover Letters</h2>
+  <p>
+    Use your resume details and AI assistance to create personalized, job-specific cover letters that recruiters notice.
+  </p>
+  <a href="/cover-letter" class="cta-secondary">Create your letter</a>
+</section>
+
 <!-- 💡 Feature Highlights -->
 <section class="features">
   <a href="/resume-analyzer" class="feature-link" data-aos="fade-up" data-aos-delay="300">
@@ -28,13 +38,28 @@
     </div>
   </a>
 
+  <a href="/cover-letter" class="feature-link" data-aos="fade-up" data-aos-delay="50">
+    <div class="feature-box">
+      <h3>✉️ Cover Letter Builder</h3>
+      <p>Generate tailored cover letters to match each job.</p>
+    </div>
+  </a>
+
   <a href="/interview-coach" class="feature-link" data-aos="fade-up" data-aos-delay="100">
     <div class="feature-box">
       <h3>🧠 Interview Coach</h3>
       <p>Practice questions and boost confidence.</p>
     </div>
   </a>
+
+  <a href="/skill-gap" class="feature-link" data-aos="fade-up" data-aos-delay="75">
+    <div class="feature-box">
+      <h3>📊 Skill Gap Analyzer</h3>
+      <p>Identify missing skills and boost your employability.</p>
+    </div>
+  </a>
 </section>
+
 
 <!-- 🧠 Interview Coach -->
 <section class="ai-assistance interview-coach">
@@ -56,8 +81,3 @@
 </section>
 
 {% endblock %}
-
-
-
-
-
