@@ -19,6 +19,16 @@
 #cover-letter .cta-primary { background:#ffc957; color:#1f2a37; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
 #cover-letter .cta-secondary { background:#104879; color:#fff; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
 
+@media (max-width:680px){ #cover-letter .cl-panel{ grid-template-columns:1fr; } }
+
+/* Printable doc */
+.cl-doc { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#111827; }
+.cl-doc-header { margin:24px 0 16px; }
+.cl-name { font-size:28px; font-weight:800; }
+.cl-title { color:#374151; margin-top:2px; }
+.cl-contact { color:#4b5563; margin-top:6px; }
+.cl-doc-body pre { white-space:pre-wrap; line-height:1.6; font-family: inherit; }
+
 /* Use the same tokens from resume-builder.css via #cover-letter scope */
 #cover-letter .rb-card > header{
   display:flex;
@@ -40,13 +50,3 @@
 #cover-letter .rb-grid{ display:grid; gap:.9rem; grid-template-columns:1fr 1fr; }
 #cover-letter .rb-grid .full{ grid-column:1/-1; }
 @media (max-width:640px){ #cover-letter .rb-grid{ grid-template-columns:1fr; } }
-
-@media (max-width:680px){ #cover-letter .cl-panel{ grid-template-columns:1fr; } }
-
-/* Printable doc */
-.cl-doc { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#111827; }
-.cl-doc-header { margin:24px 0 16px; }
-.cl-name { font-size:28px; font-weight:800; }
-.cl-title { color:#374151; margin-top:2px; }
-.cl-contact { color:#4b5563; margin-top:6px; }
-.cl-doc-body pre { white-space:pre-wrap; line-height:1.6; font-family: inherit; }
