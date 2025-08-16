@@ -107,8 +107,8 @@
 {% endblock %}
 
 {% block scripts %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-builder.css') }}">
+{# <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-builder.css') }}"> #}
 {# optional: add a tiny cover-letter.css if you want differences #}
-{# <link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}"> #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}">
 <script defer src="{{ url_for('static', filename='js/cover-letter.js') }}"></script>
 {% endblock %}
