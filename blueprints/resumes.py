@@ -273,64 +273,63 @@ portfolio: {data.get('portfolio',"")}
         logging.exception("Generation failed")
         return jsonify(context=naive_context(data), aiUsed=False, error_code="error")
 
-# --- AI suggest (summary + highlights + cover letter fallback) ---
+# --- AI suggest (summary + highlights + cover letter) ---
 @resumes_bp.route("/ai/suggest", methods=["POST"])
 def ai_suggest():
     data  = request.get_json(force=True) or {}
     field = (data.get("field") or "general").strip().lower()
     ctx   = data.get("context") or {}
-    client = current_app.config.get("OPENAI_CLIENT")  # must be set in app init
+    client = current_app.config.get("OPENAI_CLIENT")  # set in app init
 
     def normalize(text="", items=None):
+        # Always return both shapes
         items = items if isinstance(items, list) else None
         if not items and text:
+            # split on newlines → bullet-ish list when needed
             items = [ln.strip("•- ").strip() for ln in text.splitlines() if ln.strip()]
         if not text and items:
             text = "\n".join(items)
         return {"text": text or "", "list": items or []}
 
-    # --- cover letter fallbacks (kept from your version) ---
-    if field in ("coverletter", "coverletter_from_analyzer", "cover_letter"):
+    # ---- Cover letter (letter-style, no bullets) ----
+    if field in ("coverletter", "cover_letter", "coverletter_from_analyzer"):
         name    = ctx.get("name") or ""
         title   = ctx.get("title") or ""
         cl      = ctx.get("coverLetter") or ctx
         company = (cl or {}).get("company", "the company")
         role    = (cl or {}).get("role", "the role")
-        manager = (cl or {}).get("manager", "")
-        lines = [
-            f"Dear {manager or 'Hiring Manager'},",
-            "",
-            f"I’m a {title or 'professional'} interested in the {role} role at {company}.",
-            "I believe my experience aligns well with your needs:",
-            "• Impact #1 relevant to the role",
-            "• Impact #2 with a measurable outcome",
-            "• Impact #3 that shows collaboration/ownership",
-            "",
-            "I’d welcome the opportunity to discuss how I can contribute.",
-            "Sincerely,",
-            f"{name}".strip(),
-        ]
-        return jsonify(normalize("\n".join(lines)))
+        manager = (cl or {}).get("manager", "") or "Hiring Manager"
 
-    # --- prompts for resume summary and highlights ---
-    # Build a compact context string the model can use
+        letter = (
+            f"Dear {manager},\n\n"
+            f"I am a {title or 'experienced professional'} interested in the {role} role at {company}. "
+            f"My background aligns closely with your needs.\n\n"
+            "In my recent roles, I delivered measurable outcomes by improving processes, collaborating cross-functionally, "
+            "and driving initiatives from concept to execution. I’d welcome the opportunity to bring that same impact to your team.\n\n"
+            "Thank you for your time and consideration. I look forward to the possibility of discussing how I can contribute.\n\n"
+            f"Sincerely,\n{name}".strip()
+        )
+        return jsonify(normalize(letter))
+
+    # ---- Compact context for resume prompts ----
     def compact_context(c):
         parts = []
         nm  = c.get("name");   ti = c.get("title")
         sm  = c.get("summary"); ct = c.get("contact")
         if nm or ti: parts.append(f"Name/Title: {nm or ''} {ti or ''}".strip())
         if ct: parts.append(f"Contact: {ct}")
-        # Include first experience if present for better grounding
         exps = c.get("experience") or []
         if exps:
             e0 = exps[0]
-            role = e0.get("role",""); comp = e0.get("company","")
-            loc = e0.get("location",""); start = e0.get("start",""); end = e0.get("end","")
-            parts.append(f"Recent role: {role} at {comp} ({loc}) {start}–{end}".strip())
+            parts.append(
+                f"Recent role: {e0.get('role','')} at {e0.get('company','')} "
+                f"({e0.get('location','')}) {e0.get('start','')}–{e0.get('end','')}"
+            )
+        if sm: parts.append(f"Existing summary: {sm}")
         return "\n".join(parts)[:2000]
 
-    # Choose prompt
     base_ctx = compact_context(ctx)
+
     if field == "summary":
         prompt = (
             "Write a single, crisp professional summary (2–3 sentences) for a resume. "
@@ -339,7 +338,6 @@ def ai_suggest():
             f"Context:\n{base_ctx}"
         )
     elif field == "highlights":
-        # If a specific experience item was clicked, caller may pass an index
         idx = data.get("index")
         exp = None
         if isinstance(idx, int):
@@ -353,29 +351,30 @@ def ai_suggest():
                 f"Company: {exp.get('company','')}\n"
                 f"Location: {exp.get('location','')}\n"
                 f"Dates: {exp.get('start','')} – {exp.get('end','')}\n"
+                f"Existing bullets: {(exp.get('bullets') or [])}"
             )
         prompt = (
-            "Write exactly 3–5 strong resume bullet points (no numbering, use '• ' prefix not required) "
-            "for this role. Each bullet should be outcomes-focused with metrics where possible, "
-            "start with an action verb, and be under 22 words.\n\n"
-            f"Global context:\n{base_ctx}\n\n"
-            f"Job context:\n{exp_ctx}"
+            "Write exactly 3–5 strong resume bullet points for this role. "
+            "Return plain lines (no numbering). Start with an action verb; keep each under ~22 words; quantify impact.\n\n"
+            f"Global context:\n{base_ctx}\n\nJob context:\n{exp_ctx}"
         )
     else:
         prompt = (
             "Write 3 concise, outcomes-focused resume bullet points. "
-            "Return them as plain lines (no numbering). Use action verbs and quantify impact.\n\n"
+            "Return plain lines (no numbering). Use action verbs and metrics.\n\n"
             f"Context:\n{base_ctx}"
         )
 
-    # If no client configured (or quota/429), return a safe fallback so the UI still works
+    # If no client, return safe fallbacks with 200
     if not client:
         if field == "summary":
-            return jsonify(normalize("Results-driven professional with experience delivering measurable impact across X, Y, and Z. Known for A, B, C."))
-        # highlights/general fallback
+            return jsonify(normalize(
+                "Results-driven professional with experience delivering measurable impact across X, Y, and Z. "
+                "Recognized for A, B, and C; partners cross-functionally to ship results."
+            ))
         return jsonify(normalize(items=[
             "Increased X by Y% by doing Z",
-            "Reduced A by B% through C",
+            "Reduced A by B% through C initiative",
             "Led D cross-functional effort resulting in E"
         ]))
 
@@ -390,15 +389,18 @@ def ai_suggest():
             max_tokens=220,
         )
         out = (resp.choices[0].message.content or "").strip()
-        # normalize to both formats
         return jsonify(normalize(out))
     except Exception as e:
-        current_app.logger.warning("ai_suggest failed, using fallback: %s", e)
+        # IMPORTANT: still return 200 with fallback so the UI updates
+        current_app.logger.warning("ai_suggest error; returning fallback: %s", e)
         if field == "summary":
-            return jsonify(normalize("Results-driven professional with experience delivering measurable impact across X, Y, and Z. Known for A, B, C."))
+            return jsonify(normalize(
+                "Results-driven professional with experience delivering measurable impact across X, Y, and Z. "
+                "Recognized for A, B, and C; partners cross-functionally to ship results."
+            ))
         return jsonify(normalize(items=[
             "Increased X by Y% by doing Z",
-            "Reduced A by B% through C",
+            "Reduced A by B% through C initiative",
             "Led D cross-functional effort resulting in E"
         ]))
 
@@ -432,4 +434,5 @@ def build_cover_letter():
         return send_file(io.BytesIO(pdf), mimetype="application/pdf",
                          as_attachment=True, download_name="cover-letter.pdf")
     return html
+
 
