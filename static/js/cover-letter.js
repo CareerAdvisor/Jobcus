@@ -6,19 +6,37 @@
     if (!("credentials" in init)) init.credentials = "same-origin";
     return _fetch(input, init);
   };
-
+ 
   function gatherContext(form) {
     const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
     return {
+      // header
       name,
       contact: form.contact?.value || "",
-      // keep top-level for header
-      recipient: form.recipient?.value || "Hiring Manager",
+      // role/company
       company: form.company?.value || "",
       role: form.role?.value || "",
       jobUrl: form.jobUrl?.value || "",
       tone: form.tone?.value || "professional",
-      // send nested object for backend
+      // sender (you)
+      sender: {
+        name,
+        address1: form.senderAddress1?.value || "",
+        city: form.senderCity?.value || "",
+        postcode: form.senderPostcode?.value || "",
+        email: form.senderEmail?.value || "",
+        phone: form.senderPhone?.value || "",
+        date: form.letterDate?.value || new Date().toISOString().slice(0,10)
+      },
+      // recipient
+      recipient: {
+        name: form.recipient?.value || "Hiring Manager",
+        company: form.company?.value || "",
+        address1: form.companyAddress1?.value || "",
+        city: form.companyCity?.value || "",
+        postcode: form.companyPostcode?.value || ""
+      },
+      // cover letter body payload for backend AI + template
       coverLetter: {
         manager: form.recipient?.value || "Hiring Manager",
         company: form.company?.value || "",
@@ -28,7 +46,7 @@
         draft: form.body?.value || ""
       }
     };
-  }
+  }  
 
   async function aiSuggestCoverLetter(ctx) {
     const field = document.getElementById("ai-cl")?.dataset?.field || "coverletter"; // supports cover_letter/coverletter
@@ -51,7 +69,13 @@
     const res = await fetch("/build-cover-letter", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ format, name: ctx.name, contact: ctx.contact, coverLetter: ctx.coverLetter })
+      // send sender/recipient so server template can print the full letter
+      body: JSON.stringify({
+        format,
+        sender: ctx.sender,
+        recipient: ctx.recipient,
+        coverLetter: ctx.coverLetter
+      })
     });
 
     if (!res.ok) throw new Error(`Build failed: ${res.status}`);
