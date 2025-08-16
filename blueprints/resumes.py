@@ -274,7 +274,7 @@ portfolio: {data.get('portfolio',"")}
         return jsonify(context=naive_context(data), aiUsed=False, error_code="error")
 
 # --- AI suggest (adds cover letter fields) ---
-@@resumes_bp.route("/ai/suggest", methods=["POST"])
+@resumes_bp.route("/ai/suggest", methods=["POST"])
 def ai_suggest():
     data = request.json or {}
     field = data.get("field", "general")
@@ -312,7 +312,7 @@ def ai_suggest():
     return jsonify({"text": "No suggestion available."})
 
 # --- Cover Letter HTML/PDF build ---
-@@resumes_bp.route("/build-cover-letter", methods=["POST"])
+@resumes_bp.route("/build-cover-letter", methods=["POST"])
 def build_cover_letter():
     data   = request.json or {}
     format = data.get("format", "html")
@@ -333,3 +333,4 @@ def build_cover_letter():
         return send_file(io.BytesIO(pdf), mimetype="application/pdf",
                          as_attachment=True, download_name="cover-letter.pdf")
     return html
+
