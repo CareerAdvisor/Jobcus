@@ -33,12 +33,23 @@
     const res = await fetch("/ai/suggest", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ field: "coverletter", context: ctx }) // <-- no underscore
+      // let the dataset override if present (your HTML uses data-field="cover_letter")
+      body: JSON.stringify({
+        field: (document.getElementById("ai-cl")?.dataset?.field) || "coverletter",
+        context: ctx
+      })
     });
+    // ...
+  }
+
     const json = await res.json().catch(() => ({}));
     if (!res.ok || json.error) throw new Error(json.error || "AI suggest failed");
-    const text = json.text || (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n") : "");
+    const text =
+      json.text
+      || (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n")
+         : (Array.isArray(json.list) ? json.list.join("\n\n") : ""));
     return text || "AI suggestion unavailable.";
+
   }
 
   async function renderLetter(ctx, format = "html") {
