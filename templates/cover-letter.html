@@ -1,140 +1,62 @@
-{# templates/cover-letter.html #}
-{% extends "base.html" %}
-{% block title %}Cover Letter – Jobcus{% endblock %}
+<header>
+  <h2>Letter details</h2>
+  <p>Who’s this for and what role?</p>
+</header>
+<div class="rb-panel">
+  <div class="rb-grid">
 
-{% block content %}
+    {# --- Role/company (as before) --- #}
+    <label>Company
+      <input type="text" name="company" placeholder="Acme Inc.">
+    </label>
+    <label>Role
+      <input type="text" name="role" placeholder="Product Designer">
+    </label>
+    <label class="full">Job link (optional)
+      <input type="url" name="jobUrl" placeholder="https://…">
+    </label>
+    <label class="full">Tone
+      <select name="tone">
+        <option value="professional" selected>Professional</option>
+        <option value="friendly">Friendly</option>
+        <option value="concise">Concise</option>
+      </select>
+    </label>
 
-{% if letter_only %}
-  <div class="cl-print" style="max-width:720px;margin:40px auto;font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;">
-    <header style="margin-bottom:18px;">
-      <div style="font-weight:700;font-size:18px;">{{ name }}</div>
-      {% if title %}<div style="color:#555;">{{ title }}</div>{% endif %}
-      {% if contact %}<div style="color:#666;font-size:13px;margin-top:6px;">{{ contact }}</div>{% endif %}
-    </header>
-    <main style="white-space:pre-wrap;color:#111;">{{ draft }}</main>
+    {# --- Sender (you) --- #}
+    <div class="full" style="margin-top:6px;font-weight:600;color:#104879;">Your details</div>
+    <label class="full">Recipient (Name or Team)
+      <input type="text" name="recipient" placeholder="Hiring Manager">
+    </label>
+    <label class="full">Your address (line 1)
+      <input type="text" name="senderAddress1" placeholder="123 High Street">
+    </label>
+    <label>City
+      <input type="text" name="senderCity" placeholder="London">
+    </label>
+    <label>Postcode
+      <input type="text" name="senderPostcode" placeholder="E1 1AA">
+    </label>
+    <label>Email
+      <input type="email" name="senderEmail" placeholder="you@email.com">
+    </label>
+    <label>Phone
+      <input type="tel" name="senderPhone" placeholder="+44 7123 456 789">
+    </label>
+    <label>Date
+      <input type="date" name="letterDate">
+    </label>
+
+    {# --- Recipient company address --- #}
+    <div class="full" style="margin-top:6px;font-weight:600;color:#104879;">Recipient’s address</div>
+    <label class="full">Company address (line 1)
+      <input type="text" name="companyAddress1" placeholder="45 Market Road">
+    </label>
+    <label>City
+      <input type="text" name="companyCity" placeholder="London">
+    </label>
+    <label>Postcode
+      <input type="text" name="companyPostcode" placeholder="W1 2BC">
+    </label>
   </div>
-{% else %}
-  <main id="cover-letter" class="rb-wrap">
-    <!-- Hero -->
-    <div class="interview-container" style="padding:20px 16px;width:100%;background:#104879;">
-      <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
-        <h5 style="color:#ffc957;font-weight:600;font-size:14px;letter-spacing:1px;">AI COVER LETTER</h5>
-        <h1 style="font-size:28px;font-weight:700;color:#fff;margin:10px 0;">Create a tailored cover letter</h1>
-        <p style="max-width:520px;color:#fff;font-size:16px;margin:10px 0 20px;">Use your resume details to draft a polished letter.</p>
-      </section>
-    </div>
-
-    <!-- Builder-style two-column layout -->
-    <div class="rb-container rb-layout">
-      <!-- Left: Form -->
-      <div class="rb-main">
-        <form id="clForm" class="rb-form" autocomplete="on">
-
-          <!-- Section 1 -->
-          <div class="rb-section">
-            <section class="rb-step active">
-              <article class="rb-card">
-                <header>
-                  <h2>Letter details</h2>
-                  <p>Who’s this for and what role?</p>
-                </header>
-                <div class="rb-panel">
-                  <div class="rb-grid">
-                    <label class="full">Recipient (Name or Team)
-                      <input type="text" name="recipient" placeholder="Hiring Manager">
-                    </label>
-                    <label>Company
-                      <input type="text" name="company" placeholder="Acme Inc.">
-                    </label>
-                    <label>Role
-                      <input type="text" name="role" placeholder="Product Designer">
-                    </label>
-                    <label class="full">Job link (optional)
-                      <input type="url" name="jobUrl" placeholder="https://…">
-                    </label>
-                    <label class="full">Tone
-                      <select name="tone">
-                        <option value="professional" selected>Professional</option>
-                        <option value="friendly">Friendly</option>
-                        <option value="concise">Concise</option>
-                      </select>
-                    </label>
-                  </div>
-                </div>
-              </article>
-            </section>
-          </div>
-
-          <!-- Section 2 -->
-          <div class="rb-section">
-            <section class="rb-step">
-              <article class="rb-card">
-                
-                <div class="rb-panel">
-                  <div class="rb-grid">
-                    <label>First name <input type="text" name="firstName" placeholder="John"></label>
-                    <label>Last name  <input type="text" name="lastName"  placeholder="Doe"></label>
-                    <label class="full">Contact line
-                      <input type="text" name="contact" placeholder="London, UK | john@email.com | 07123 456 789 | linkedin.com/in/john">
-                    </label>
-                  </div>
-                </div>
-              </article>
-            </section>
-          </div>
-
-          <!-- Section 3 -->
-          <div class="rb-section">
-            <section class="rb-step">
-              <article class="rb-card">
-               
-                <div class="rb-panel">
-                  <textarea name="body" rows="12" placeholder="Dear Hiring Manager, …"></textarea>
-
-                  <div class="ai-suggest" id="ai-cl" data-field="cover_letter">
-                    <div class="ai-title">✦ Write with AI</div>
-                    <p class="ai-text">We’ll draft a tailored letter using your details above.</p>
-                    <div class="ai-actions">
-                      <button type="button" class="btn ai-refresh" data-ai="cover_letter">Refresh</button>
-                      <button type="button" class="btn btn-primary ai-add">Insert</button>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            </section>
-          </div>
-
-          <!-- Footer like builder -->
-          <footer class="rb-footer">
-            <a class="ghost" href="/resume-builder">← Back to Builder</a>
-          </footer>
-        </form>
-      </div>
-
-      <!-- Right: Sticky Preview -->
-      <aside class="rb-preview">
-        <article class="rb-card">
-          
-          <div class="rb-panel">
-            <div class="rb-actions">
-              <button type="button" id="cl-preview" class="cta-secondary">Preview</button>
-              <button type="button" id="cl-download" class="cta-primary">Download PDF</button>
-            </div>
-            <div id="clPreviewWrap" class="preview-wrap" style="display:none;">
-              <iframe id="clPreview"></iframe>
-            </div>
-          </div>
-        </article>
-      </aside>
-    </div>
-  </main>
-{% endif %}
-
-{% endblock %}
-
-{% block scripts %}
-  {% if not letter_only %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}">
-    <script defer src="{{ url_for('static', filename='js/cover-letter.js') }}"></script>
-  {% endif %}
-{% endblock %}
+</div>
