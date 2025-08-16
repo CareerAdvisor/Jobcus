@@ -79,7 +79,8 @@
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        format,
+        format,                      // "html" for preview, "pdf" for download
+        letter_only: true,           // <— IMPORTANT: force the letter-only view in preview
         sender: ctx.sender,
         recipient: ctx.recipient,
         coverLetter: ctx.coverLetter
