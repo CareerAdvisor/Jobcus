@@ -429,36 +429,52 @@ def ai_suggest():
 
     return jsonify({"text": "No suggestion available."})
 
+# resumes_bp.py
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 def build_cover_letter():
-    data   = request.get_json(force=True) or {}
-    fmt    = data.get("format", "html")
+    # 1) Parse JSON safely
+    try:
+        data = request.get_json(force=True) or {}
+    except Exception:
+        current_app.logger.exception("build-cover-letter: bad JSON")
+        return jsonify(error="Invalid JSON body"), 400
 
-    # optional header line (used by non-print page)
-    name    = data.get("name", "")
-    title   = data.get("title", "")
-    contact = data.get("contact", "")
+    fmt = (data.get("format") or "html").lower()
+    try:
+        # 2) Gather fields (all optional)
+        name     = data.get("name", "")
+        title    = data.get("title", "")
+        contact  = data.get("contact", "")
+        sender   = data.get("sender") or {}
+        recipient= data.get("recipient") or {}
+        cl       = data.get("coverLetter") or {}
+        draft    = (cl.get("draft") or "").strip()
 
-    sender    = data.get("sender") or {}
-    recipient = data.get("recipient") or {}
-    cl        = data.get("coverLetter") or {}
-    draft     = (cl.get("draft") or "").strip()
+        # 3) Render HTML (this is where Jinja errors happen)
+        html = render_template(
+            "cover-letter.html",
+            name=name, title=title, contact=contact,
+            sender=sender, recipient=recipient, draft=draft,
+            letter_only=(fmt == "pdf" or bool(data.get("letter_only"))),
+            for_pdf=(fmt == "pdf"),
+        )
+    except Exception:
+        current_app.logger.exception("build-cover-letter: template render failed")
+        return jsonify(error="Template error (see logs for details)"), 500
 
-    html = render_template(
-        "cover-letter.html",
-        # builder header bits (safe to keep)
-        name=name, title=title, contact=contact,
-        # print data
-        sender=sender, recipient=recipient, draft=draft,
-        letter_only=(fmt == "pdf" or data.get("letter_only") is True),
-        for_pdf=(fmt == "pdf")
-    )
-
+    # 4) If PDF, run WeasyPrint separately so we can log PDF-specific errors
     if fmt == "pdf":
-        pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf()
-        return send_file(BytesIO(pdf_bytes), mimetype="application/pdf",
-                         as_attachment=True, download_name="cover-letter.pdf")
+        try:
+            pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf()
+            return send_file(BytesIO(pdf_bytes),
+                             mimetype="application/pdf",
+                             as_attachment=True,
+                             download_name="cover-letter.pdf")
+        except Exception:
+            current_app.logger.exception("build-cover-letter: PDF generation failed")
+            return jsonify(error="PDF generation failed (see logs)"), 500
 
+    # 5) HTML success
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
