@@ -4,84 +4,73 @@
 
 {% block content %}
 
+{# ---------- PRINT/PREVIEW (letter_only) ---------- #}
 {% if letter_only %}
   <style>
     /* Hide site chrome in preview/PDF */
     header.site-header, .site-header, nav.site-nav, #site-header,
-    footer.site-footer, .site-footer, #site-footer,
-    .rb-footer, .app-footer, .chat-icon, .chat-widget, #tidio-chat,
-    .intercom-lightweight-app, .intercom-launcher-frame {
+    footer.site-footer, .site-footer, #site-footer, .app-footer, .global-footer,
+    footer, body > footer, [role="contentinfo"],
+    .chat-icon, .chat-widget, #tidio-chat, .intercom-lightweight-app, .intercom-launcher-frame {
       display: none !important;
     }
-
-    .cl-print{
-      max-width: 650px;            /* A4-safe after margins */
-      margin: 40px auto;
-      padding: 0 16px;
-      color: #111;
-      font: 14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;
-    }
-    .label { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:#6b7280; margin:0 0 6px }
-    .name  { font-weight:700; font-size:18px }
-    .muted { color:#666 }
-    .block { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
-    .spacer{ height: 12px }
+    html, body { background:#fff; }
+    .cl { max-width: 650px; margin: 36px auto; padding: 0 16px; color:#111;
+          font: 14px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Arial; }
+    .name { font-weight: 700; font-size: 19px; }
+    .muted { color:#666; }
+    .block { white-space: pre-wrap; overflow-wrap:anywhere; }
+    .sep { height: 12px; }
     @page { size: A4; margin: 18mm 18mm; }
   </style>
 
-  {# Detect whether the draft already contains salutation or sign-off #}
   {% set _d = (draft or '').strip() %}
   {% set _dl = _d|lower %}
   {% set has_dear = _dl.startswith('dear ') %}
   {% set has_signoff = ('sincerely' in _dl) or ('yours sincerely' in _dl) or ('kind regards' in _dl) or ('best regards' in _dl) %}
 
-  <div class="cl-print">
+  <div class="cl">
+    {# Applicant (sender) FIRST, no "From" label #}
+    {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
+    {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
+    {% if sender.city or sender.postcode %}
+      <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
+    {% endif %}
+    {% if sender.email or sender.phone %}
+      <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
+    {% endif %}
+    {% if sender.date %}<div style="margin-top:6px;">{{ sender.date }}</div>{% endif %}
 
-    {# Applicant (sender) first #}
-    <div class="label">From</div>
-    <div style="margin-bottom:10px;">
-      {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
-      {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
-      {% if sender.city or sender.postcode %}
-        <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
-      {% endif %}
-      {% if sender.email or sender.phone %}
-        <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
-      {% endif %}
-    </div>
-    {% if sender.date %}<div class="muted" style="margin-bottom:12px;">{{ sender.date }}</div>{% endif %}
-
-    {# Hiring manager / organisation next #}
-    {% if recipient.company or recipient.name or recipient.address1 or recipient.city or recipient.postcode %}
-    <div class="label" style="margin-top:6px;">To</div>
-    <div style="margin-bottom:18px;">
+    {# Recipient (recruiter/company) NEXT, no "To" label #}
+    {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
+      <div class="sep"></div>
       {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
       {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
       {% if recipient.address1 %}<div>{{ recipient.address1 }}</div>{% endif %}
       {% if recipient.city or recipient.postcode %}
         <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
       {% endif %}
-    </div>
     {% endif %}
 
-    {# Letter body #}
+    <div class="sep"></div>
+
     {% if has_dear %}
-      {# AI/textarea included its own salutation; render as-is once #}
+      {# AI/body already includes salutation; render once, as-is #}
       <main class="block">{{ _d }}</main>
     {% else %}
       <div style="margin-bottom:12px;">Dear {{ recipient.name or 'Hiring Manager' }},</div>
       <main class="block">{{ _d }}</main>
       {% if not has_signoff %}
-        <div class="spacer"></div>
+        <div class="sep"></div>
         <div>Yours sincerely,</div>
         <div>{{ sender.name }}</div>
       {% endif %}
     {% endif %}
   </div>
 
+{# ---------- BUILDER PAGE (normal) ---------- #}
 {% else %}
   <main id="cover-letter" class="rb-wrap">
-    <!-- Hero -->
     <div class="interview-container" style="padding:20px 16px;width:100%;background:#104879;">
       <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
         <h5 style="color:#ffc957;font-weight:600;font-size:14px;letter-spacing:1px;">AI COVER LETTER</h5>
@@ -90,29 +79,24 @@
       </section>
     </div>
 
-    <!-- Builder-style two-column layout -->
     <div class="rb-container rb-layout">
-      <!-- Left: Form -->
       <div class="rb-main">
         <form id="clForm" class="rb-form" autocomplete="on">
-
-          <!-- Section 1 -->
+          <!-- Section: Recruiter -->
           <div class="rb-section">
             <section class="rb-step active">
               <article class="rb-card">
                 <header>
-                  <h2>Letter details</h2>
-                  <p>Group your details and the recipient’s details.</p>
+                  <h2>Recruiter</h2>
+                  <p>Company, role, job link, tone, and recipient details.</p>
                 </header>
                 <div class="rb-panel">
                   <div class="rb-grid">
-
-                    {# --- Role/company --- #}
                     <label>Company
                       <input type="text" name="company" placeholder="Acme Inc.">
                     </label>
                     <label>Role
-                      <input type="text" name="role" placeholder="Product Designer">
+                      <input type="text" name="role" placeholder="IT Support">
                     </label>
                     <label class="full">Job link (optional)
                       <input type="url" name="jobUrl" placeholder="https://…">
@@ -125,10 +109,39 @@
                       </select>
                     </label>
 
-                    {# --- Sender (you) --- #}
-                    <div class="full" style="margin-top:6px;font-weight:600;color:#104879;">Your details</div>
+                    <div class="full" style="margin-top:6px;font-weight:600;color:#104879;">Recipient</div>
                     <label class="full">Recipient (Name or Team)
-                      <input type="text" name="recipient" placeholder="Hiring Manager">
+                      <input type="text" name="recipient" placeholder="Head of IT / Hiring Manager">
+                    </label>
+                    <label class="full">Company address (line 1)
+                      <input type="text" name="companyAddress1" placeholder="45 Market Road">
+                    </label>
+                    <label>City
+                      <input type="text" name="companyCity" placeholder="London">
+                    </label>
+                    <label>Postcode
+                      <input type="text" name="companyPostcode" placeholder="W1 2BC">
+                    </label>
+                  </div>
+                </div>
+              </article>
+            </section>
+          </div>
+
+          <!-- Section: Applicant -->
+          <div class="rb-section">
+            <section class="rb-step">
+              <article class="rb-card">
+                <header>
+                  <h2>Applicant</h2>
+                  <p>Your contact information and address for the header.</p>
+                </header>
+                <div class="rb-panel">
+                  <div class="rb-grid">
+                    <label>First name <input type="text" name="firstName" placeholder="John"></label>
+                    <label>Last name  <input type="text" name="lastName"  placeholder="Doe"></label>
+                    <label class="full">Contact line
+                      <input type="text" name="contact" placeholder="London, UK | john@email.com | 07123 456 789 | linkedin.com/in/john">
                     </label>
                     <label class="full">Your address (line 1)
                       <input type="text" name="senderAddress1" placeholder="123 High Street">
@@ -148,52 +161,22 @@
                     <label>Date
                       <input type="date" name="letterDate">
                     </label>
-
-                    {# --- Recipient company address --- #}
-                    <div class="full" style="margin-top:6px;font-weight:600;color:#104879;">Recipient’s address</div>
-                    <label class="full">Company address (line 1)
-                      <input type="text" name="companyAddress1" placeholder="45 Market Road">
-                    </label>
-                    <label>City
-                      <input type="text" name="companyCity" placeholder="London">
-                    </label>
-                    <label>Postcode
-                      <input type="text" name="companyPostcode" placeholder="W1 2BC">
-                    </label>
-
                   </div>
                 </div>
               </article>
             </section>
           </div>
 
-          <!-- Section 2: Your info (kept) -->
+          <!-- Section: Letter body (no “Draft” heading) -->
           <div class="rb-section">
             <section class="rb-step">
               <article class="rb-card">
                 <div class="rb-panel">
-                  <div class="rb-grid">
-                    <label>First name <input type="text" name="firstName" placeholder="John"></label>
-                    <label>Last name  <input type="text" name="lastName"  placeholder="Doe"></label>
-                    <label class="full">Contact line
-                      <input type="text" name="contact" placeholder="London, UK | john@email.com | 07123 456 789 | linkedin.com/in/john">
-                    </label>
-                  </div>
-                </div>
-              </article>
-            </section>
-          </div>
-
-          <!-- Section 3: Draft (header removed per request) -->
-          <div class="rb-section">
-            <section class="rb-step">
-              <article class="rb-card">
-                <div class="rb-panel">
-                  <textarea name="body" rows="12" placeholder="Write your experience highlights here…"></textarea>
+                  <textarea name="body" rows="12" placeholder="Write a few key points you want the AI to weave in, or leave blank and click Refresh."></textarea>
 
                   <div class="ai-suggest" id="ai-cl" data-field="coverletter">
                     <div class="ai-title">✦ Write with AI</div>
-                    <p class="ai-text">We’ll draft a tailored body using the details above (no duplicate greeting or sign-off).</p>
+                    <p class="ai-text">We’ll generate a polished body from your details above (no duplicate greeting or sign-off).</p>
                     <div class="ai-actions">
                       <button type="button" class="btn ai-refresh" data-ai="coverletter">Refresh</button>
                       <button type="button" class="btn btn-primary ai-add">Insert</button>
@@ -210,7 +193,7 @@
         </form>
       </div>
 
-      <!-- Right: Sticky Preview -->
+      <!-- Right: Preview -->
       <aside class="rb-preview">
         <article class="rb-card">
           <div class="rb-panel">
