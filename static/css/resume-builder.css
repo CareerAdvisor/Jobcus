@@ -182,3 +182,23 @@
 /* Optional polish: make summary clickable and remove default marker */
 .rb-disclosure > summary { cursor: pointer; list-style: none; }
 .rb-disclosure > summary::-webkit-details-marker { display: none; }
+
+.rb-tabs .rb-tab-link--cta{
+  background:#ffc957;         /* brand gold */
+  color:#fff;                  /* white text */
+  border-radius:10px;
+  padding:.55rem 1rem;
+  font-weight:600;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  gap:.4rem;
+}
+.rb-tabs .rb-tab-link--cta:hover{ filter:brightness(.95); }
+.rb-tabs .rb-tab-link--cta:focus-visible{
+  outline:2px solid #fff;
+  outline-offset:2px;
+  box-shadow:0 0 0 3px rgba(255,201,87,.6);
+}
+/* keep visited the same color */
+.rb-tabs .rb-tab-link--cta:visited{ color:#fff; }
