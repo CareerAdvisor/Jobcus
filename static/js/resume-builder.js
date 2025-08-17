@@ -13,10 +13,11 @@ function withinBuilder(sel){ return `#resume-builder ${sel}`; }
 
 const AI_ENDPOINT = "/ai/suggest";
 
-// Gather overall context (name, contact, skills, exp, edu, certs)
+// Gather overall context (now includes certifications and multiple name aliases)
 function gatherContext(form) {
   const builder = qs(document, "#resume-builder");
-  const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
+  const safeJoin = (a,b)=>[a,b].filter(Boolean).join(" ").trim();
+  const name = safeJoin(form.firstName?.value, form.lastName?.value);
 
   const contactParts = [];
   const loc = [form.city?.value, form.country?.value].filter(Boolean).join(", ");
@@ -53,6 +54,8 @@ function gatherContext(form) {
 
   return {
     name,
+    fullName: name,
+    full_name: name,                // extra alias for server safety
     title: form.title?.value.trim() || "",
     contact: contactParts.join(" | "),
     summary: form.summary?.value.trim() || "",
@@ -61,7 +64,7 @@ function gatherContext(form) {
   };
 }
 
-// allow field = "coverletter"
+// AI suggestion handlers (unchanged)
 async function aiSuggest(field, ctx, index) {
   try {
     const res = await fetch(AI_ENDPOINT, {
@@ -81,7 +84,6 @@ async function aiSuggest(field, ctx, index) {
   }
 }
 
-// Hook AI cards (Summary + Highlights)
 function attachAISuggestionHandlers() {
   const builder = qs(document, "#resume-builder");
   const form = qs(builder, "#resumeForm");
@@ -94,15 +96,14 @@ function attachAISuggestionHandlers() {
     const textEl = qs(card, ".ai-text");
 
     if (btn.classList.contains("ai-refresh")) {
-      const type = btn.dataset.ai; // "summary" | "highlights"
+      const type = btn.dataset.ai;
       textEl.textContent = "Thinking…";
       try {
         const ctx = gatherContext(form);
-
         if (type === "summary") {
           const lines = await aiSuggest("summary", ctx);
           textEl.textContent = lines.join(" ");
-        } else if (type === "highlights") {
+        } else if (type === "highlights")) {
           const allItems = qsa(builder, "#exp-list .rb-item");
           const itemEl = btn.closest(".rb-item");
           const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
@@ -130,7 +131,6 @@ function attachAISuggestionHandlers() {
         taSummary.dispatchEvent(new Event("input", { bubbles: true }));
         return;
       }
-
       if (taBullets) {
         const cleaned = suggestion.split(/\r?\n/).map(s => s.replace(/^•\s*/, "").trim()).filter(Boolean);
         const prefix = taBullets.value && !taBullets.value.endsWith("\n") ? "\n" : "";
@@ -141,7 +141,7 @@ function attachAISuggestionHandlers() {
   });
 }
 
-// Repeaters
+// Repeaters (unchanged)
 function cloneFromTemplate(tplId) {
   const tpl = qs(document, withinBuilder(`#${tplId}`));
   if (!tpl) return null;
@@ -176,7 +176,7 @@ function addEducationFromObj(obj = {}) {
   list.appendChild(node);
 }
 
-// Skills chips
+// Skills chips (unchanged)
 function initSkills() {
   const builder = qs(document, "#resume-builder");
   const skillInput = qs(builder, "#skillInput");
@@ -209,21 +209,15 @@ function initSkills() {
   return { refreshChips, skillsSet };
 }
 
-// Render helper (iframe or PDF)
+// Always include every name alias in preview/PDF calls
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
-  // Coerce minimal fields (fixes "Your Name")
-  const form = qs(document, "#resumeForm");
-  if (form) {
-    const live = gatherContext(form);
-    if (!ctx.name) ctx.name = live.name;
-    if ((!ctx.skills || !ctx.skills.length) && live.skills?.length) ctx.skills = live.skills;
-    if ((!ctx.certifications || !ctx.certifications.length) && live.certifications?.length) ctx.certifications = live.certifications;
-  }
+  const safeName = ctx.name || ctx.fullName || ctx.full_name || "";
+  const withKeys = { ...ctx, name: safeName, fullName: safeName, full_name: safeName };
 
   if (format === "pdf") {
     const res = await fetch("/build-resume", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ format: "pdf", theme, ...ctx }),
+      body: JSON.stringify({ format: "pdf", theme, ...withKeys }),
     });
     if (!res.ok) throw new Error(`PDF build failed: ${res.status}`);
     const blob = await res.blob();
@@ -235,7 +229,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
   }
   const r = await fetch("/build-resume", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ format: "html", theme, ...ctx }),
+    body: JSON.stringify({ format: "html", theme, ...withKeys }),
   });
   const html = await r.text();
   if (!r.ok) throw new Error(`HTML build failed: ${r.status} ${html}`);
@@ -254,7 +248,7 @@ function initWizard() {
     "#step-summary",
     "#step-experience",
     "#step-education",
-    "#step-certifications",   // NEW
+    "#step-certifications",
     "#step-skills",
     "#step-design",
     "#step-finish",
@@ -292,9 +286,8 @@ function initWizard() {
     idx = Math.max(0, Math.min(i, steps.length - 1));
     steps.forEach((s, k) => {
       if (!s) return;
-      const active = k === idx;
-      s.hidden = !active;
-      s.classList.toggle("active", active);
+      s.hidden = k !== idx;
+      s.classList.toggle("active", k === idx);
     });
     tabs.forEach(btn => {
       const tId = btn.getAttribute("data-target");
@@ -329,11 +322,12 @@ function initWizard() {
   });
 
   // Submit → generate, then go to Finish
-  form?.addEventListener("submit", async (e) => {
+  const formEl = form;
+  formEl?.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      const ctxForTemplate = gatherContext(form);
+      const ctxForTemplate = gatherContext(formEl);
 
       const educationStr = (ctxForTemplate.education || [])
         .map(ed => [ed.degree, ed.school, ed.location, ed.graduated].filter(Boolean).join(" – "))
@@ -344,6 +338,8 @@ function initWizard() {
 
       const payload = {
         fullName: ctxForTemplate.name || "",
+        full_name: ctxForTemplate.name || "",
+        name: ctxForTemplate.name || "",
         title: ctxForTemplate.title || "",
         contact: ctxForTemplate.contact || "",
         summary: ctxForTemplate.summary || "",
@@ -361,12 +357,16 @@ function initWizard() {
       const genJson = await gen.json().catch(() => ({}));
       if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
-      // Merge server context with live form so critical fields (name, skills, certs) never get lost
       const server = genJson.context || {};
       const merged = {
         ...ctxForTemplate,
         ...server,
-        name: (server.name || server.fullName || "").trim() || ctxForTemplate.name || payload.fullName,
+        name: (server.name || server.fullName || server.full_name || "").trim() ||
+              ctxForTemplate.name || payload.fullName,
+        fullName: (server.name || server.fullName || server.full_name || "").trim() ||
+                  ctxForTemplate.name || payload.fullName,
+        full_name: (server.name || server.fullName || server.full_name || "").trim() ||
+                   ctxForTemplate.name || payload.fullName,
         skills: Array.isArray(server.skills) && server.skills.length ? server.skills : ctxForTemplate.skills,
         certifications: Array.isArray(server.certifications) && server.certifications.length
           ? server.certifications
@@ -374,7 +374,7 @@ function initWizard() {
       };
 
       window._resumeCtx = merged;
-      showStep(stepIndexById("#step-finish"));
+      showStep(["#step-finish","#step-design"].includes(location.hash) ? 8 : 8);
     } catch (err) {
       console.error("Generate/build error:", err);
       alert("Resume generation failed.");
@@ -383,7 +383,7 @@ function initWizard() {
     }
   });
 
-  // Preview / PDF (Design + Finish)
+  // Preview / PDF
   const previewBtn  = qs(builder, "#previewTemplate");
   const pdfBtn      = qs(builder, "#downloadTemplatePdf");
   const themeSelect = qs(builder, "#themeSelect");
@@ -391,8 +391,7 @@ function initWizard() {
   previewBtn?.addEventListener("click", async () => {
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      const ctxLive = gatherContext(qs(builder, "#resumeForm"));
-      const ctx = window._resumeCtx ? { ...window._resumeCtx, name: window._resumeCtx.name || ctxLive.name } : ctxLive;
+      const ctx = window._resumeCtx || gatherContext(qs(builder, "#resumeForm"));
       await renderWithTemplateFromContext(ctx, "html", themeSelect?.value || "modern");
     } catch (e) { console.error(e); alert(e.message || "Preview failed"); }
     finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
@@ -401,8 +400,7 @@ function initWizard() {
   pdfBtn?.addEventListener("click", async () => {
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      const ctxLive = gatherContext(qs(builder, "#resumeForm"));
-      const ctx = window._resumeCtx ? { ...window._resumeCtx, name: window._resumeCtx.name || ctxLive.name } : ctxLive;
+      const ctx = window._resumeCtx || gatherContext(qs(builder, "#resumeForm"));
       await renderWithTemplateFromContext(ctx, "pdf", themeSelect?.value || "modern");
     } catch (e) { console.error(e); alert(e.message || "PDF build failed"); }
     finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
@@ -432,7 +430,7 @@ async function maybePrefillFromAnalyzer(form, helpers) {
     if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
     const ctx = genJson.context || {};
-    const name = (ctx.name || ctx.fullName || "").trim().split(" ");
+    const name = (ctx.name || ctx.fullName || ctx.full_name || "").trim().split(" ");
     if (form.firstName) form.firstName.value = name.shift() || "";
     if (form.lastName)  form.lastName.value  = name.join(" ");
     if (form.title)   form.title.value   = ctx.title || "";
@@ -457,7 +455,9 @@ async function maybePrefillFromAnalyzer(form, helpers) {
     }
     window._resumeCtx = {
       ...ctx,
-      name: (ctx.name || ctx.fullName || "").trim()
+      name: (ctx.name || ctx.fullName || ctx.full_name || "").trim(),
+      fullName: (ctx.name || ctx.fullName || ctx.full_name || "").trim(),
+      full_name: (ctx.name || ctx.fullName || ctx.full_name || "").trim()
     };
   } catch (e) {
     console.warn("Prefill from analyzer failed:", e);
