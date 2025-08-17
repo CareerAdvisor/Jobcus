@@ -15,7 +15,7 @@
   {% endif %}
 
   <style>
-    /* A4 with 0.75" margins */
+    /* A4 with 0.75" margins for preview too (PDF margins also set server-side) */
     @page { size: A4; margin: 19mm; }
     .resume-page { padding: 0; }
 
@@ -107,17 +107,12 @@
     </section>
     {% endif %}
 
-    {# Certifications can be array or newline-separated string #}
-    {% set cert_list =
-         certifications if certifications is iterable and certifications is not string
-         else (certifications.split('\n') if certifications else []) %}
-    {% if cert_list and cert_list|length %}
+    {# === Inserted exactly as requested === #}
+    {% if certifications %}
     <section class="section">
       <h2>Other Education & Certifications</h2>
       <div class="rule"></div>
-      <ul class="bullets">
-        {% for c in cert_list if c %}<li>{{ c|trim }}</li>{% endfor %}
-      </ul>
+      <ul class="bullets">{% for c in certifications %}<li>{{ c }}</li>{% endfor %}</ul>
     </section>
     {% endif %}
   </div>
