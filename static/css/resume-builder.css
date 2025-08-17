@@ -39,18 +39,19 @@
 
 #resume-builder .rb-card > header {
   display: flex;
-  flex-direction: column; /* stack h2 and p vertically */
-  align-items: flex-start; /* align them to the left */
+  flex-direction: column;        /* stack h2 and p vertically */
+  align-items: flex-start;       /* align them to the left */
   padding: 18px 18px 14px;
   border-bottom: 1px solid #eef2f7;
-  height: 100px;
+  /* was fixed height:100px; -> allow long headings to wrap */
+  min-height: 100px;
+  height: auto;
 }
 
 #resume-builder .rb-card > header h2{
   margin:0 0 .4rem;
-  font-size:1.1rem;        /* smaller, tidy */
+  font-size:1.1rem;              /* smaller, tidy */
   font-weight:700;
-  
 }
 #resume-builder .rb-card > header p{
   margin:0;
@@ -160,6 +161,7 @@
 /* Hero → form separation (this page only) */
 #resume-builder .interview-container{ margin-bottom:24px; }
 
+/* --- Tabs CTA link (Cover letter) --- */
 #resume-builder .rb-tabs a.rb-tab-link{
   display:inline-block;
   text-decoration:none;
@@ -173,16 +175,6 @@
 #resume-builder .rb-tabs a.rb-tab-link:hover{
   filter:brightness(0.98);
 }
-
-/* Only show one label at a time inside the <summary> */
-.rb-disclosure .label-open { display: none; }
-.rb-disclosure[open] .label-open { display: inline; }
-.rb-disclosure[open] .label-closed { display: none; }
-
-/* Optional polish: make summary clickable and remove default marker */
-.rb-disclosure > summary { cursor: pointer; list-style: none; }
-.rb-disclosure > summary::-webkit-details-marker { display: none; }
-
 .rb-tabs .rb-tab-link--cta{
   background:#ffc957;         /* brand gold */
   color:#fff;                  /* white text */
@@ -202,6 +194,14 @@
 }
 /* keep visited the same color */
 .rb-tabs .rb-tab-link--cta:visited{ color:#fff; }
+
+/* --- Show/Hide Additional details: only one label visible --- */
+.rb-disclosure .label-open { display: none; }
+.rb-disclosure[open] .label-open { display: inline; }
+.rb-disclosure[open] .label-closed { display: none; }
+/* Optional polish: make summary clickable and remove default marker */
+.rb-disclosure > summary { cursor: pointer; list-style: none; }
+.rb-disclosure > summary::-webkit-details-marker { display: none; }
 
 /* --- Make key buttons visible --- */
 
@@ -247,3 +247,11 @@
   font-weight: 700;
 }
 #resume-builder .rb-footer .ghost:hover{ filter: brightness(.97); }
+
+/* --- Small utilities / tweaks --- */
+#resume-builder .rb-row{ display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+
+/* Certifications textarea sizing (new step) */
+#resume-builder textarea[name="certifications"]{
+  min-height: 140px;
+}
