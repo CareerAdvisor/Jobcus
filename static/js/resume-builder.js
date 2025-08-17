@@ -13,7 +13,7 @@ function withinBuilder(sel){ return `#resume-builder ${sel}`; }
 
 const AI_ENDPOINT = "/ai/suggest";
 
-// Gather overall context (name, contact, skills, exp, edu)
+// Gather overall context (name, contact, skills, exp, edu, certs)
 function gatherContext(form) {
   const builder = qs(document, "#resume-builder");
   const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
@@ -48,13 +48,15 @@ function gatherContext(form) {
   const skills = (form.elements["skills"]?.value || "")
     .split(",").map(s => s.trim()).filter(Boolean);
 
+  const certifications = form.elements["certifications"]?.value?.trim() || "";
+
   return {
     name,
     title: form.title?.value.trim() || "",
     contact: contactParts.join(" | "),
     summary: form.summary?.value.trim() || "",
     links: form.portfolio?.value ? [{ url: form.portfolio.value, label: "Portfolio" }] : [],
-    experience, education, skills
+    experience, education, skills, certifications
   };
 }
 
@@ -208,7 +210,7 @@ function initSkills() {
   return { refreshChips, skillsSet };
 }
 
-// Server render helpers (unchanged)
+// Server render helpers
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
   if (format === "pdf") {
     const res = await fetch("/build-resume", {
@@ -243,8 +245,9 @@ function initWizard() {
     "#step-contact",
     "#step-summary",
     "#step-experience",
-    "#step-skills",
     "#step-education",
+    "#step-certifications",   // NEW step inserted here
+    "#step-skills",
     "#step-design",
     "#step-finish",
   ].map(sel => qs(builder, sel));
@@ -351,7 +354,7 @@ function initWizard() {
         education: educationStr,
         experience: experienceStr,
         skills: (ctxForTemplate.skills || []).join(", "),
-        certifications: form.elements["certifications"]?.value?.trim() || "",
+        certifications: ctxForTemplate.certifications || "",
         portfolio: (ctxForTemplate.links?.[0]?.url) || "",
       };
 
@@ -362,7 +365,9 @@ function initWizard() {
       const genJson = await gen.json().catch(() => ({}));
       if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
-      window._resumeCtx = genJson.context || ctxForTemplate;
+      // Keep server context but don't lose live form fields
+      const serverCtx = genJson.context || {};
+      window._resumeCtx = { ...serverCtx, ...ctxForTemplate };
       showStep(stepIndexById("#step-finish"));
     } catch (err) {
       console.error("Generate/build error:", err);
@@ -380,7 +385,9 @@ function initWizard() {
   previewBtn?.addEventListener("click", async () => {
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      const ctx = window._resumeCtx || gatherContext(qs(builder, "#resumeForm"));
+      // Merge live form over any stored context to avoid "Your Name"
+      const live = gatherContext(qs(builder, "#resumeForm"));
+      const ctx  = { ...(window._resumeCtx || {}), ...live };
       await renderWithTemplateFromContext(ctx, "html", themeSelect?.value || "modern");
     } catch (e) { console.error(e); alert(e.message || "Preview failed"); }
     finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
@@ -389,7 +396,8 @@ function initWizard() {
   pdfBtn?.addEventListener("click", async () => {
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      const ctx = window._resumeCtx || gatherContext(qs(builder, "#resumeForm"));
+      const live = gatherContext(qs(builder, "#resumeForm"));
+      const ctx  = { ...(window._resumeCtx || {}), ...live };
       await renderWithTemplateFromContext(ctx, "pdf", themeSelect?.value || "modern");
     } catch (e) { console.error(e); alert(e.message || "PDF build failed"); }
     finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
@@ -426,29 +434,29 @@ async function maybePrefillFromAnalyzer(form, helpers) {
     if (form.summary) form.summary.value = ctx.summary || "";
     if (ctx.links && ctx.links[0] && form.portfolio) form.portfolio.value = ctx.links[0].url || "";
 
-      // ... inside maybePrefillFromAnalyzer
-  if (Array.isArray(ctx.skills) && ctx.skills.length) {
-    ctx.skills.forEach((s) => helpers.skillsSet.add(s));
-    helpers.refreshChips();
+    // skills
+    if (Array.isArray(ctx.skills) && ctx.skills.length) {
+      ctx.skills.forEach((s) => helpers.skillsSet.add(s));
+      helpers.refreshChips();
+    }
+    // experience
+    const expList = document.querySelector("#exp-list");
+    if (expList) {
+      expList.innerHTML = "";
+      (ctx.experience || []).forEach(addExperienceFromObj);
+      if (!expList.children.length) addExperienceFromObj();
+    }
+    // education
+    const eduList = document.querySelector("#edu-list");
+    if (eduList) {
+      eduList.innerHTML = "";
+      (ctx.education || []).forEach(addEducationFromObj);
+      if (!eduList.children.length) addEducationFromObj();
+    }
+    window._resumeCtx = ctx;
+  } catch (e) {
+    console.warn("Prefill from analyzer failed:", e);
   }
-  // experience
-  const expList = document.querySelector("#exp-list");
-  if (expList) {
-    expList.innerHTML = "";
-    (ctx.experience || []).forEach(addExperienceFromObj);
-    if (!expList.children.length) addExperienceFromObj();
-  }
-  // education
-  const eduList = document.querySelector("#edu-list");
-  if (eduList) {
-    eduList.innerHTML = "";
-    (ctx.education || []).forEach(addEducationFromObj);
-    if (!eduList.children.length) addEducationFromObj();
-  }
-  window._resumeCtx = ctx;
-} catch (e) {
-  console.warn("Prefill from analyzer failed:", e);
-}
 }
 
 document.addEventListener("DOMContentLoaded", () => {
