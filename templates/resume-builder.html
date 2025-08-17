@@ -45,13 +45,18 @@
                   <input type="text" name="title" placeholder="Product Designer">
                 </label>
 
-              <details class="rb-disclosure" open style="margin-top:12px;">
-                <summary><span class="twiddle">—</span> Hide additional details</summary>
-                <div class="rb-grid" style="margin-top:.5rem;">
+              <details class="rb-disclosure" id="personal-extra" style="margin-top:12px;">
+                <summary>
+                  <span class="label-closed">▼ — Show additional details</span>
+                  <span class="label-open">▲ — Hide additional details</span>
+                </summary>
+
+                <div class="rb-grid">
                   <label>Nationality <input type="text" name="nationality" placeholder="Britain"></label>
                   <label class="full">Birth date <input type="date" name="dob" placeholder="1996-02-03"></label>
                 </div>
               </details>
+
             </div>
           </article>
         </section>
