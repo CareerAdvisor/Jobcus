@@ -72,3 +72,45 @@
   padding:5mm;
 }
 .resume.resume--modern .card + .card{ margin-top: 4mm; }
+
+/* Sections */
+.section { margin-top: 20px; }
+.section h2 { margin: 0 0 6px; }
+
+/* Skills: 2 columns, bullets, no extra bottom gap */
+.skills-list{
+  columns: 2;
+  column-gap: 24px;
+  list-style: disc outside;
+  padding-left: 1.15rem;
+  margin: 4px 0 0;               /* no big bottom margin */
+}
+.skills-list li{
+  break-inside: avoid;
+  margin: 2px 0;
+}
+
+/* Make the next section hug Skills */
+.section--skills { margin-bottom: 0; }
+.section--skills + .section { margin-top: 8px; } /* tiny breathing room */
+
+.exp-item { margin: 8px 0 12px; }
+.exp-header{
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+.exp-title{ font-weight: 700; }
+.exp-meta { color: #555; font-size: .95em; white-space: nowrap; }
+.exp-bullets{
+  margin: 6px 0 0 1.15rem;
+  padding: 0;
+}
+
+.cert-list{
+  list-style: disc outside;
+  padding-left: 1.15rem;
+  margin: 4px 0 0;
+}
+
