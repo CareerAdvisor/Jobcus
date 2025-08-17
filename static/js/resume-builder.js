@@ -48,18 +48,20 @@ function gatherContext(form) {
   const skills = (form.elements["skills"]?.value || "")
     .split(",").map(s => s.trim()).filter(Boolean);
 
+  const certsRaw = form.elements["certifications"]?.value || "";
+  const certifications = certsRaw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+
   return {
     name,
     title: form.title?.value.trim() || "",
     contact: contactParts.join(" | "),
     summary: form.summary?.value.trim() || "",
     links: form.portfolio?.value ? [{ url: form.portfolio.value, label: "Portfolio" }] : [],
-    experience, education, skills,
-    certifications: form.elements["certifications"]?.value?.trim() || ""
+    experience, education, skills, certifications
   };
 }
 
-// --- AI suggest (unchanged) ---
+// allow field = "coverletter"
 async function aiSuggest(field, ctx, index) {
   try {
     const res = await fetch(AI_ENDPOINT, {
@@ -79,25 +81,37 @@ async function aiSuggest(field, ctx, index) {
   }
 }
 
+// Hook AI cards (Summary + Highlights)
 function attachAISuggestionHandlers() {
   const builder = qs(document, "#resume-builder");
   const form = qs(builder, "#resumeForm");
+
   builder.addEventListener("click", async (e) => {
     const btn = e.target.closest(".ai-refresh, .ai-add");
     if (!btn) return;
+
     const card = btn.closest(".ai-suggest");
     const textEl = qs(card, ".ai-text");
 
     if (btn.classList.contains("ai-refresh")) {
-      const type = btn.dataset.ai;
+      const type = btn.dataset.ai; // "summary" | "highlights"
       textEl.textContent = "Thinking…";
       try {
         const ctx = gatherContext(form);
-        const lines =
-          type === "summary"    ? await aiSuggest("summary", ctx) :
-          type === "highlights" ? await aiSuggest("highlights", ctx, Array.from(qsa(builder, "#exp-list .rb-item")).indexOf(btn.closest(".rb-item"))) :
-                                  await aiSuggest("general", ctx);
-        textEl.textContent = (Array.isArray(lines) ? lines : [String(lines||"")]).join(type==="summary" ? " " : "\n");
+
+        if (type === "summary") {
+          const lines = await aiSuggest("summary", ctx);
+          textEl.textContent = lines.join(" ");
+        } else if (type === "highlights") {
+          const allItems = qsa(builder, "#exp-list .rb-item");
+          const itemEl = btn.closest(".rb-item");
+          const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
+          const lines = await aiSuggest("highlights", ctx, idx);
+          textEl.textContent = lines.join("\n");
+        } else {
+          const lines = await aiSuggest("general", ctx);
+          textEl.textContent = lines.join("\n");
+        }
       } catch (err) {
         textEl.textContent = err.message || "AI suggestion unavailable.";
       }
@@ -116,6 +130,7 @@ function attachAISuggestionHandlers() {
         taSummary.dispatchEvent(new Event("input", { bubbles: true }));
         return;
       }
+
       if (taBullets) {
         const cleaned = suggestion.split(/\r?\n/).map(s => s.replace(/^•\s*/, "").trim()).filter(Boolean);
         const prefix = taBullets.value && !taBullets.value.endsWith("\n") ? "\n" : "";
@@ -126,7 +141,7 @@ function attachAISuggestionHandlers() {
   });
 }
 
-// --- Repeaters (unchanged) ---
+// Repeaters
 function cloneFromTemplate(tplId) {
   const tpl = qs(document, withinBuilder(`#${tplId}`));
   if (!tpl) return null;
@@ -161,7 +176,7 @@ function addEducationFromObj(obj = {}) {
   list.appendChild(node);
 }
 
-// Skills chips UI (unchanged)
+// Skills chips
 function initSkills() {
   const builder = qs(document, "#resume-builder");
   const skillInput = qs(builder, "#skillInput");
@@ -194,8 +209,17 @@ function initSkills() {
   return { refreshChips, skillsSet };
 }
 
-// Render helpers — MERGE live form over cached context
+// Render helper (iframe or PDF)
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
+  // Coerce minimal fields (fixes "Your Name")
+  const form = qs(document, "#resumeForm");
+  if (form) {
+    const live = gatherContext(form);
+    if (!ctx.name) ctx.name = live.name;
+    if ((!ctx.skills || !ctx.skills.length) && live.skills?.length) ctx.skills = live.skills;
+    if ((!ctx.certifications || !ctx.certifications.length) && live.certifications?.length) ctx.certifications = live.certifications;
+  }
+
   if (format === "pdf") {
     const res = await fetch("/build-resume", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -229,9 +253,9 @@ function initWizard() {
     "#step-contact",
     "#step-summary",
     "#step-experience",
-    "#step-skills",
     "#step-education",
-    "#step-certs",
+    "#step-certifications",   // NEW
+    "#step-skills",
     "#step-design",
     "#step-finish",
   ].map(sel => qs(builder, sel));
@@ -295,7 +319,7 @@ function initWizard() {
   back?.addEventListener("click", () => showStep(idx - 1));
   next?.addEventListener("click", () => showStep(idx + 1));
 
-  // Add buttons
+  // Add buttons (experience/education)
   builder.addEventListener("click", (e) => {
     const addBtn = e.target.closest("[data-add]");
     if (!addBtn) return;
@@ -309,26 +333,25 @@ function initWizard() {
     e.preventDefault();
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      const liveCtx = gatherContext(form);
+      const ctxForTemplate = gatherContext(form);
 
-      const educationStr = (liveCtx.education || [])
+      const educationStr = (ctxForTemplate.education || [])
         .map(ed => [ed.degree, ed.school, ed.location, ed.graduated].filter(Boolean).join(" – "))
         .join("\n");
-      const experienceStr = (liveCtx.experience || [])
+      const experienceStr = (ctxForTemplate.experience || [])
         .map(e => `${e.role}${e.company ? " – " + e.company : ""}\n${(e.bullets || []).map(b => "• " + b).join("\n")}`)
         .join("\n\n");
 
       const payload = {
-        name: liveCtx.name || "",
-        fullName: liveCtx.name || "",
-        title: liveCtx.title || "",
-        contact: liveCtx.contact || "",
-        summary: liveCtx.summary || "",
+        fullName: ctxForTemplate.name || "",
+        title: ctxForTemplate.title || "",
+        contact: ctxForTemplate.contact || "",
+        summary: ctxForTemplate.summary || "",
         education: educationStr,
         experience: experienceStr,
-        skills: (liveCtx.skills || []).join(", "),
-        certifications: liveCtx.certifications || "",
-        portfolio: (liveCtx.links?.[0]?.url) || "",
+        skills: (ctxForTemplate.skills || []).join(", "),
+        certifications: (ctxForTemplate.certifications || []).join("\n"),
+        portfolio: (ctxForTemplate.links?.[0]?.url) || "",
       };
 
       const gen = await fetch("/generate-resume", {
@@ -338,8 +361,19 @@ function initWizard() {
       const genJson = await gen.json().catch(() => ({}));
       if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
-      // **Form values win** (so name/skills/certs never disappear)
-      window._resumeCtx = { ...(genJson.context || {}), ...liveCtx };
+      // Merge server context with live form so critical fields (name, skills, certs) never get lost
+      const server = genJson.context || {};
+      const merged = {
+        ...ctxForTemplate,
+        ...server,
+        name: (server.name || server.fullName || "").trim() || ctxForTemplate.name || payload.fullName,
+        skills: Array.isArray(server.skills) && server.skills.length ? server.skills : ctxForTemplate.skills,
+        certifications: Array.isArray(server.certifications) && server.certifications.length
+          ? server.certifications
+          : ctxForTemplate.certifications
+      };
+
+      window._resumeCtx = merged;
       showStep(stepIndexById("#step-finish"));
     } catch (err) {
       console.error("Generate/build error:", err);
@@ -349,20 +383,17 @@ function initWizard() {
     }
   });
 
-  // Preview / PDF — **merge live form over any cached context**
+  // Preview / PDF (Design + Finish)
   const previewBtn  = qs(builder, "#previewTemplate");
   const pdfBtn      = qs(builder, "#downloadTemplatePdf");
   const themeSelect = qs(builder, "#themeSelect");
 
-  function mergedCtx() {
-    const live = gatherContext(qs(builder, "#resumeForm"));
-    return { ...(window._resumeCtx || {}), ...live };
-  }
-
   previewBtn?.addEventListener("click", async () => {
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      await renderWithTemplateFromContext(mergedCtx(), "html", themeSelect?.value || "modern");
+      const ctxLive = gatherContext(qs(builder, "#resumeForm"));
+      const ctx = window._resumeCtx ? { ...window._resumeCtx, name: window._resumeCtx.name || ctxLive.name } : ctxLive;
+      await renderWithTemplateFromContext(ctx, "html", themeSelect?.value || "modern");
     } catch (e) { console.error(e); alert(e.message || "Preview failed"); }
     finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
   });
@@ -370,7 +401,9 @@ function initWizard() {
   pdfBtn?.addEventListener("click", async () => {
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      await renderWithTemplateFromContext(mergedCtx(), "pdf", themeSelect?.value || "modern");
+      const ctxLive = gatherContext(qs(builder, "#resumeForm"));
+      const ctx = window._resumeCtx ? { ...window._resumeCtx, name: window._resumeCtx.name || ctxLive.name } : ctxLive;
+      await renderWithTemplateFromContext(ctx, "pdf", themeSelect?.value || "modern");
     } catch (e) { console.error(e); alert(e.message || "PDF build failed"); }
     finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
   });
@@ -378,7 +411,7 @@ function initWizard() {
   qs(builder, "#previewTemplateFinish")?.addEventListener("click", () => previewBtn?.click());
   qs(builder, "#downloadTemplatePdfFinish")?.addEventListener("click", () => pdfBtn?.click());
 
-  // Start wizard
+  // Start
   showStep(0);
 }
 
@@ -399,11 +432,11 @@ async function maybePrefillFromAnalyzer(form, helpers) {
     if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
     const ctx = genJson.context || {};
-    const name = (ctx.name || "").trim().split(" ");
+    const name = (ctx.name || ctx.fullName || "").trim().split(" ");
     if (form.firstName) form.firstName.value = name.shift() || "";
     if (form.lastName)  form.lastName.value  = name.join(" ");
-    if (form.title)     form.title.value     = ctx.title || "";
-    if (form.summary)   form.summary.value   = ctx.summary || "";
+    if (form.title)   form.title.value   = ctx.title || "";
+    if (form.summary) form.summary.value = ctx.summary || "";
     if (ctx.links && ctx.links[0] && form.portfolio) form.portfolio.value = ctx.links[0].url || "";
 
     if (Array.isArray(ctx.skills) && ctx.skills.length) {
@@ -422,9 +455,10 @@ async function maybePrefillFromAnalyzer(form, helpers) {
       (ctx.education || []).forEach(addEducationFromObj);
       if (!eduList.children.length) addEducationFromObj();
     }
-
-    // Don’t clobber live values later
-    window._resumeCtx = { ...(window._resumeCtx || {}), ...ctx };
+    window._resumeCtx = {
+      ...ctx,
+      name: (ctx.name || ctx.fullName || "").trim()
+    };
   } catch (e) {
     console.warn("Prefill from analyzer failed:", e);
   }
