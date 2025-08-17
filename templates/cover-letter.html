@@ -7,74 +7,50 @@
 {# ---------- LETTER-ONLY (iframe preview / PDF) ---------- #}
 {% if letter_only %}
   <style>
-    /* Hide any site chrome from base.html */
+    /* Hide site chrome coming from base.html */
     header, nav, footer,
     .site-header, .site-footer, .navbar, .topbar, .app-footer,
-    .chat-widget, .floating-chat, .intercom-lightweight-app {
-      display: none !important;
-    }
+    .chat-widget, .floating-chat, .intercom-lightweight-app { display:none !important; }
 
-    html, body {
-      margin: 0;
-      background: #fff;
-      font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-      font-size: 12pt;                 /* ← 12pt everywhere by default */
-      line-height: 1.55;
-      color: #111;
-    }
+    html,body { background:#fff; margin:0; }
+    /* 12pt Arial everywhere; legible line height for print */
+    .cl { max-width: 650px; margin: 36px auto; padding: 0 16px; color:#111;
+          font: 12pt/1.55 Arial, Helvetica, sans-serif; }
 
-    .cl {
-      max-width: 650px;
-      margin: 36px auto;
-      padding: 0 16px;
-    }
+    /* Centered identity block */
+    .cl-header { text-align:center; margin: 0 auto 14pt; }
+    .cl-header .name { font-weight:800; font-size:26pt; margin:0; }
+    .cl-header .contact { margin-top:4pt; }
 
-    .name {
-      font-weight: 700;
-      font-size: 20pt;                 /* ← Bigger applicant name */
-      margin: 0 0 6pt 0;
-    }
-
-    .sender-address {                  /* address/contact under name */
-      margin: 0 0 10pt 0;              /* space before the date */
-    }
-
-    .sender-date {                     /* date after address */
-      margin: 0 0 12pt 0;              /* space before recruiter block */
-    }
-
-    .recipient-block {                 /* recruiter/company block */
-      margin: 0 0 12pt 0;              /* space before “Dear …” */
-    }
-
-    .salutation {
-      margin: 0 0 10pt 0;
-    }
-
-    .muted { color: #666; }
-    .block { white-space: pre-wrap; overflow-wrap: anywhere; }
-
-    @page { size: A4; margin: 18mm 18mm; }
+    .date { margin: 12pt 0 14pt; }           /* space below contact, above recipient */
+    .recipient { margin: 0 0 12pt; }         /* space before "Dear ..." */
+    .salutation { margin: 0 0 10pt; }
+    .block { white-space:pre-wrap; overflow-wrap:anywhere; }
+    @page { size:A4; margin:18mm 18mm; }
   </style>
 
   <div class="cl">
-    {# ----- Applicant (sender) ----- #}
-    {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}</br>
+    <!-- Applicant header (centered) -->
+    <div class="cl-header">
+      {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
+      <div class="contact">
+        {# Address + city/postcode, then pipes for email/phone #}
+        {% if sender.address1 %}{{ sender.address1 }}{% endif %}
+        {% if sender.city or sender.postcode %}
+          {% if sender.address1 %} {% endif %}
+          {{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}
+        {% endif %}
+        {% if (sender.email or sender.phone) and (sender.address1 or sender.city or sender.postcode) %} | {% endif %}
+        {% if sender.email %}{{ sender.email }}{% if sender.phone %} | {% endif %}{% endif %}
+        {% if sender.phone %}{{ sender.phone }}{% endif %}
+      </div>
+    </div>
 
-    <div class="sender-address">
-      {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
-      {% if sender.city or sender.postcode %}
-        <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
-      {% endif %}
-      {% if sender.email %}<div class="muted">{{ sender.email }}</div>{% endif %}
-      {% if sender.phone %}<div>{{ sender.phone }}</div>{% endif %}
-    </div></br>
+    {% if sender.date %}<div class="date">{{ sender.date }}</div>{% endif %}
 
-    {% if sender.date %}<div class="sender-date">{{ sender.date }}</div>{% endif %}</br>
-
-    {# ----- Recruiter / Company ----- #}
+    <!-- Recipient block -->
     {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
-      <div class="recipient-block">
+      <div class="recipient">
         {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
         {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
         {% if recipient.address1 %}<div>{{ recipient.address1 }}</div>{% endif %}
@@ -82,17 +58,14 @@
           <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
         {% endif %}
       </div>
-    {% endif %}</br>
+    {% endif %}
 
-    {# ----- Greeting, Body, Closing ----- #}
+    <!-- Salutation + body + closing -->
     <div class="salutation">Dear {{ recipient.name or 'Hiring Manager' }},</div>
-
     <main class="block">{{ draft or '' }}</main>
 
-    <div style="margin-top: 12pt;">
-      <div>Yours sincerely,</div>
-      <div>{{ sender.name or '' }}</div>
-    </div>
+    <div style="margin-top:12pt;">Yours sincerely,</div>
+    <div>{{ sender.name or '' }}</div>
   </div>
 
 {# ---------- BUILDER PAGE ---------- #}
@@ -157,7 +130,7 @@
                 </div>
               </article>
             </section>
-          </div></br>
+          </div>
 
           <!-- Applicant section -->
           <div class="rb-section">
@@ -166,7 +139,7 @@
                 <header style="height: 90px; color:#104879; font-size: 20px;">
                   <h2>Applicant</h2>
                   <p>Your contact details for the letter heading.</p>
-                </header></br>
+                </header>
                 <div class="rb-panel">
                   <div class="rb-grid">
                     <label>First name <input type="text" name="firstName" placeholder="John"></label>
@@ -193,7 +166,7 @@
                 </div>
               </article>
             </section>
-          </div></br>
+          </div>
 
           <!-- Body -->
           <div class="rb-section">
