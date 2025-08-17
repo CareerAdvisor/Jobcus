@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>{{ (name or fullName or 'Resume') }} – {{ title }}</title>
+  <title>{{ name }} – {{ title }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   {% set base_css  = url_for('static', filename='css/resume-base.css') if not for_pdf else 'static/css/resume-base.css' %}
@@ -14,29 +14,25 @@
     <script type="module" src="{{ url_for('static', filename='js/modern.js') }}"></script>
   {% endif %}
 
-  {% set display_name = (name or fullName or '')|trim %}
   <style>
-    /* tighter rhythm + keep sections from forcing huge page gaps */
-    .resume--modern .section{ margin:12px 0; }
-    .resume--modern .section .rule{ margin:8px 0 14px; }
-    /* Skills as bullets in 2 columns */
-    .resume--modern .skills-list{
-      column-count:2; column-gap:24px;
-      margin:0; padding-left:18px;
+    /* 0.75" margins on all sides */
+    @page { size: A4; margin: 19mm; }
+    .resume-page { padding: 0; }
+    /* Tighter, consistent section spacing + breathing room under rules */
+    .resume .section { margin: 12px 0 10px; page-break-inside: auto; }
+    .resume .rule { margin: 6px 0 10px; }
+    /* Skills: bullets in two columns, no big gap below */
+    .resume .skills-list { 
+      columns: 2; column-gap: 28px; 
+      list-style: disc; padding-left: 18px; margin: 0 0 6px 0;
     }
-    .resume--modern .skills-list li{ break-inside:avoid; margin:0 0 4px 0; }
-    /* Allow breaking so “Relevant Experience” can sit right after Skills */
-    @media print{
-      .resume--modern .section,
-      .resume--modern .item,
-      .resume--modern .bullets { break-inside:auto; page-break-inside:auto; }
-    }
+    .resume .skills-list li { break-inside: avoid; margin: 2px 0; }
   </style>
 </head>
 <body>
   <div class="resume-page resume resume--modern">
     <header class="resume-header hero">
-      <div class="resume-name">{{ display_name or 'Your Name' }}</div>
+      <div class="resume-name">{{ name or 'Your Name' }}</div>
       {% if title %}<div class="resume-title">{{ title }}</div>{% endif %}
       <div class="resume-contact">
         {% if contact %}{{ contact }}{% endif %}
@@ -55,11 +51,12 @@
     {% endif %}
 
     {% if skills %}
-    <section class="section skills-section">
+    <section class="section">
       <h2>Skills</h2>
       <div class="rule"></div>
+      {% set skills_list = skills if skills is iterable and skills is not string else (skills.split(',') if skills else []) %}
       <ul class="skills-list">
-        {% for s in skills %}<li>{{ s }}</li>{% endfor %}
+        {% for s in skills_list if s %}<li>{{ s|trim }}</li>{% endfor %}
       </ul>
     </section>
     {% endif %}
@@ -74,7 +71,9 @@
             <div class="item-title">{{ e.role }}{% if e.company %} – {{ e.company }}{% endif %}</div>
             <div class="item-meta">
               {% if e.location %}{{ e.location }}{% endif %}
-              {% if e.start or e.end %}{% if e.location %} · {% endif %}{% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}{% endif %}
+              {% if e.start or e.end %}{% if e.location %} · {% endif %}
+                {% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}
+              {% endif %}
             </div>
           </div>
           {% if e.bullets %}<ul class="bullets">{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
@@ -103,15 +102,16 @@
     {% endif %}
 
     {% if certifications %}
+    {% set cert_list = certifications if certifications is iterable and certifications is not string else (certifications.split('\n') if certifications else []) %}
+    {% if cert_list|length %}
     <section class="section">
       <h2>Other Education & Certifications</h2>
       <div class="rule"></div>
-      <ul class="skills-list">
-        {% for line in certifications.split('\n') if line.strip() %}
-          <li>{{ line.strip() }}</li>
-        {% endfor %}
+      <ul class="bullets">
+        {% for c in cert_list if c %}<li>{{ c|trim }}</li>{% endfor %}
       </ul>
     </section>
+    {% endif %}
     {% endif %}
   </div>
 </body>
