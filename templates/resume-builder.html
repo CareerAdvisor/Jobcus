@@ -51,7 +51,7 @@
                     <span class="label-open">▲ — Hide additional details</span>
                   </summary>
 
-                  <div class="rb-grid">
+                  <div class="rb-grid" style="margin-top:.5rem;">
                     <label>Nationality <input type="text" name="nationality" placeholder="Britain"></label>
                     <label class="full">Birth date <input type="date" name="dob" placeholder="1996-02-03"></label>
                   </div>
@@ -186,16 +186,20 @@
         </section>
       </div>
 
-      <!-- STEP 6: Other Education & Certifications -->
+      <!-- STEP 6: Other Education & Certifications (NEW) -->
       <div class="rb-section">
-        <section id="step-certs" class="rb-step" role="tabpanel" aria-labelledby="h-certs" hidden>
+        <section id="step-certifications" class="rb-step" role="tabpanel" aria-labelledby="h-certifications" hidden>
           <article class="rb-card">
             <header>
-              <h2 id="h-certs">Other Education & Certifications</h2>
-              <p>Add short lines for courses, licences and certifications.</p>
+              <h2 id="h-certifications">Other Education & Certifications</h2>
+              <p>List professional courses and certifications (one per line).</p>
             </header>
             <div class="rb-panel">
-              <textarea name="certifications" rows="6" placeholder="PRINCE2® Foundation — 2023&#10;CompTIA Security+ — 2024&#10;Google IT Support Professional Certificate — 2022"></textarea>
+              <label class="full">Items
+                <textarea name="certifications" rows="6" placeholder="CompTIA A+ (2023)
+PRINCE2® Foundation (2022)
+Google IT Support Professional Certificate (2021)"></textarea>
+              </label>
             </div>
           </article>
         </section>
