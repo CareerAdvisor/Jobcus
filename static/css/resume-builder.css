@@ -202,3 +202,48 @@
 }
 /* keep visited the same color */
 .rb-tabs .rb-tab-link--cta:visited{ color:#fff; }
+
+/* --- Make key buttons visible --- */
+
+/* 1) Refresh (gold) */
+#resume-builder .ai-actions .ai-refresh{
+  background: var(--accent);      /* #ffc957 */
+  color: #104879;                 /* brand text */
+  border: none;
+  font-weight: 700;
+}
+#resume-builder .ai-actions .ai-refresh:hover{ filter: brightness(.95); }
+#resume-builder .ai-actions .ai-refresh:focus-visible{
+  outline: 2px solid #104879; outline-offset: 2px;
+}
+
+/* 2) Remove (grey) */
+#resume-builder .rb-actions .rb-remove{
+  background: #e5e7eb;            /* grey */
+  color: #111;
+  border: 1px solid #d1d5db;
+  font-weight: 600;
+}
+#resume-builder .rb-actions .rb-remove:hover{ filter: brightness(.97); }
+
+/* 3) + Add another experience (brand blue) */
+#resume-builder .rb-add{
+  background: var(--brand);       /* #104879 */
+  color: #fff;
+  border: none;
+  font-weight: 700;
+}
+#resume-builder .rb-add:hover{ filter: brightness(.95); }
+#resume-builder .rb-add:focus-visible{
+  outline: 2px solid #fff; outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(16,72,121,.35);
+}
+
+/* 4) Back (grey) — override the .ghost default */
+#resume-builder .rb-footer .ghost{
+  background: #e5e7eb;
+  color: #111;
+  border: 1px solid #d1d5db;
+  font-weight: 700;
+}
+#resume-builder .rb-footer .ghost:hover{ filter: brightness(.97); }
