@@ -13,58 +13,58 @@ function withinBuilder(sel){ return `#resume-builder ${sel}`; }
 
 const AI_ENDPOINT = "/ai/suggest";
 
-// Gather overall context (now includes certifications and multiple name aliases)
+// ------- Context gatherers -------
 function gatherContext(form) {
-  const builder = qs(document, "#resume-builder");
-  const safeJoin = (a,b)=>[a,b].filter(Boolean).join(" ").trim();
-  const name = safeJoin(form.firstName?.value, form.lastName?.value);
+  try {
+    const builder = qs(document, "#resume-builder");
+    const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
 
-  const contactParts = [];
-  const loc = [form.city?.value, form.country?.value].filter(Boolean).join(", ");
-  if (loc) contactParts.push(loc);
-  if (form.phone?.value) contactParts.push(form.phone.value);
-  if (form.email?.value) contactParts.push(form.email.value);
+    const contactParts = [];
+    const loc = [form.city?.value, form.country?.value].filter(Boolean).join(", ");
+    if (loc) contactParts.push(loc);
+    if (form.phone?.value) contactParts.push(form.phone.value);
+    if (form.email?.value) contactParts.push(form.email.value);
 
-  const expNodes = qsa(builder, "#exp-list .rb-item");
-  const experience = expNodes.map((node) => {
-    const g = (n) => qs(node, `[name="${n}"]`);
-    const bullets = (g("bullets").value || "")
-      .split("\n").map(t => t.replace(/^•\s*/, "").trim()).filter(Boolean);
+    const expNodes = qsa(builder, "#exp-list .rb-item");
+    const experience = expNodes.map((node) => {
+      const g = (n) => qs(node, `[name="${n}"]`);
+      const bullets = (g("bullets")?.value || "")
+        .split("\n").map(t => t.replace(/^•\s*/, "").trim()).filter(Boolean);
+      return {
+        role: g("role")?.value || "", company: g("company")?.value || "",
+        location: g("location")?.value || "",
+        start: g("start")?.value || "", end: g("end")?.value || "", bullets
+      };
+    });
+
+    const eduNodes = qsa(builder, "#edu-list .rb-item");
+    const education = eduNodes.map((node) => {
+      const g = (n) => qs(node, `[name="${n}"]`);
+      return {
+        degree: g("degree")?.value || "", school: g("school")?.value || "",
+        location: g("location")?.value || "",
+        graduated: g("graduated")?.value || g("graduatedStart")?.value || ""
+      };
+    });
+
+    const skills = (form.elements["skills"]?.value || "")
+      .split(",").map(s => s.trim()).filter(Boolean);
+
     return {
-      role: g("role").value, company: g("company").value, location: g("location").value,
-      start: g("start").value, end: g("end").value, bullets
+      name,
+      title: form.title?.value.trim() || "",
+      contact: contactParts.join(" | "),
+      summary: form.summary?.value.trim() || "",
+      links: form.portfolio?.value ? [{ url: form.portfolio.value, label: "Portfolio" }] : [],
+      experience, education, skills
     };
-  });
-
-  const eduNodes = qsa(builder, "#edu-list .rb-item");
-  const education = eduNodes.map((node) => {
-    const g = (n) => qs(node, `[name="${n}"]`);
-    return {
-      degree: g("degree").value, school: g("school").value,
-      location: g("location").value,
-      graduated: g("graduated").value || g("graduatedStart").value
-    };
-  });
-
-  const skills = (form.elements["skills"]?.value || "")
-    .split(",").map(s => s.trim()).filter(Boolean);
-
-  const certsRaw = form.elements["certifications"]?.value || "";
-  const certifications = certsRaw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-
-  return {
-    name,
-    fullName: name,
-    full_name: name,                // extra alias for server safety
-    title: form.title?.value.trim() || "",
-    contact: contactParts.join(" | "),
-    summary: form.summary?.value.trim() || "",
-    links: form.portfolio?.value ? [{ url: form.portfolio.value, label: "Portfolio" }] : [],
-    experience, education, skills, certifications
-  };
+  } catch (e) {
+    console.error("gatherContext error:", e);
+    return { name:"", title:"", contact:"", summary:"", links:[], experience:[], education:[], skills:[] };
+  }
 }
 
-// AI suggestion handlers (unchanged)
+// ------- AI helpers -------
 async function aiSuggest(field, ctx, index) {
   try {
     const res = await fetch(AI_ENDPOINT, {
@@ -87,6 +87,7 @@ async function aiSuggest(field, ctx, index) {
 function attachAISuggestionHandlers() {
   const builder = qs(document, "#resume-builder");
   const form = qs(builder, "#resumeForm");
+  if (!builder || !form) return;
 
   builder.addEventListener("click", async (e) => {
     const btn = e.target.closest(".ai-refresh, .ai-add");
@@ -94,6 +95,7 @@ function attachAISuggestionHandlers() {
 
     const card = btn.closest(".ai-suggest");
     const textEl = qs(card, ".ai-text");
+    if (!textEl) return;
 
     if (btn.classList.contains("ai-refresh")) {
       const type = btn.dataset.ai;
@@ -103,7 +105,7 @@ function attachAISuggestionHandlers() {
         if (type === "summary") {
           const lines = await aiSuggest("summary", ctx);
           textEl.textContent = lines.join(" ");
-        } else if (type === "highlights")) {
+        } else if (type === "highlights") {
           const allItems = qsa(builder, "#exp-list .rb-item");
           const itemEl = btn.closest(".rb-item");
           const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
@@ -141,7 +143,7 @@ function attachAISuggestionHandlers() {
   });
 }
 
-// Repeaters (unchanged)
+// ------- Repeaters -------
 function cloneFromTemplate(tplId) {
   const tpl = qs(document, withinBuilder(`#${tplId}`));
   if (!tpl) return null;
@@ -155,12 +157,13 @@ function addExperienceFromObj(obj = {}) {
   const node = cloneFromTemplate("tpl-experience");
   if (!node || !list) return;
   const g = (n) => qs(node, `[name="${n}"]`);
-  g("role").value = obj.role || "";
-  g("company").value = obj.company || "";
-  g("start").value = obj.start || "";
-  g("end").value = obj.end || "";
-  g("location").value = obj.location || "";
-  g("bullets").value = (obj.bullets || []).join("\n");
+  if (g("role")) g("role").value = obj.role || "";
+  if (g("company")) g("company").value = obj.company || "";
+  if (g("start")) g("start").value = obj.start || "";
+  if (g("end")) g("end").value = obj.end || "";
+  if (g("location")) g("location").value = obj.location || "";
+  const bullets = g("bullets");
+  if (bullets) bullets.value = (obj.bullets || []).join("\n");
   list.appendChild(node);
 }
 function addEducationFromObj(obj = {}) {
@@ -168,15 +171,15 @@ function addEducationFromObj(obj = {}) {
   const node = cloneFromTemplate("tpl-education");
   if (!node || !list) return;
   const g = (n) => qs(node, `[name="${n}"]`);
-  g("school").value = obj.school || "";
-  g("degree").value = obj.degree || "";
-  g("graduatedStart").value = obj.graduatedStart || "";
-  g("graduated").value = obj.graduated || "";
-  g("location").value = obj.location || "";
+  if (g("school")) g("school").value = obj.school || "";
+  if (g("degree")) g("degree").value = obj.degree || "";
+  if (g("graduatedStart")) g("graduatedStart").value = obj.graduatedStart || "";
+  if (g("graduated")) g("graduated").value = obj.graduated || "";
+  if (g("location")) g("location").value = obj.location || "";
   list.appendChild(node);
 }
 
-// Skills chips (unchanged)
+// ------- Skills chips -------
 function initSkills() {
   const builder = qs(document, "#resume-builder");
   const skillInput = qs(builder, "#skillInput");
@@ -209,15 +212,12 @@ function initSkills() {
   return { refreshChips, skillsSet };
 }
 
-// Always include every name alias in preview/PDF calls
+// ------- Render helpers -------
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
-  const safeName = ctx.name || ctx.fullName || ctx.full_name || "";
-  const withKeys = { ...ctx, name: safeName, fullName: safeName, full_name: safeName };
-
   if (format === "pdf") {
     const res = await fetch("/build-resume", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ format: "pdf", theme, ...withKeys }),
+      body: JSON.stringify({ format: "pdf", theme, ...ctx }),
     });
     if (!res.ok) throw new Error(`PDF build failed: ${res.status}`);
     const blob = await res.blob();
@@ -229,7 +229,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
   }
   const r = await fetch("/build-resume", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ format: "html", theme, ...withKeys }),
+    body: JSON.stringify({ format: "html", theme, ...ctx }),
   });
   const html = await r.text();
   if (!r.ok) throw new Error(`HTML build failed: ${r.status} ${html}`);
@@ -238,29 +238,35 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
   if (wrap && frame) { wrap.style.display = "block"; frame.srcdoc = html; }
 }
 
+// ------- Wizard -------
 function initWizard() {
   const builder = qs(document, "#resume-builder");
   const form = qs(builder, "#resumeForm");
+  if (!builder || !form) {
+    console.error("Resume builder root or form not found.");
+    return;
+  }
 
-  const steps = [
-    "#step-personal",
-    "#step-contact",
-    "#step-summary",
-    "#step-experience",
-    "#step-education",
-    "#step-certifications",
-    "#step-skills",
-    "#step-design",
-    "#step-finish",
-  ].map(sel => qs(builder, sel));
+  // 1) Build steps dynamically
+  const steps = qsa(builder, ".rb-step");
+  if (!steps.length) {
+    console.error("No wizard steps found (.rb-step).");
+    return;
+  }
 
+  // 2) Controls
   const tabs = qsa(builder, ".rb-tabs button");
   const back = qs(builder, "#rb-back");
   const next = qs(builder, "#rb-next");
   const submitBtn = qs(builder, "#rb-submit");
-  let idx = 0;
+  let idx = Math.max(0, steps.findIndex(s => s.classList.contains("active")));
+  if (idx < 0) idx = 0;
 
-  function stepIndexById(id){ return steps.findIndex(s => s && ("#" + s.id) === id); }
+  function stepIndexById(id){
+    if (!id) return -1;
+    const targetId = id.startsWith("#") ? id.slice(1) : id;
+    return steps.findIndex(s => s && s.id === targetId);
+  }
 
   function updateButtons() {
     if (back) back.disabled = idx === 0;
@@ -283,36 +289,40 @@ function initWizard() {
   }
 
   function showStep(i) {
-    idx = Math.max(0, Math.min(i, steps.length - 1));
+    const maxIdx = steps.length - 1;
+    idx = Math.max(0, Math.min(i, maxIdx));
     steps.forEach((s, k) => {
       if (!s) return;
-      s.hidden = k !== idx;
-      s.classList.toggle("active", k === idx);
+      const active = k === idx;
+      s.hidden = !active;
+      s.classList.toggle("active", active);
     });
     tabs.forEach(btn => {
       const tId = btn.getAttribute("data-target");
-      const isActive = tId && steps[idx] && ("#" + steps[idx].id) === tId;
-      btn.classList.toggle("active", !!isActive);
+      const isActive = !!(tId && steps[idx] && ("#" + steps[idx].id) === tId);
+      btn.classList.toggle("active", isActive);
       btn.setAttribute("aria-selected", isActive ? "true" : "false");
     });
-
     window.scrollTo({ top: 0, behavior: "smooth" });
     updateButtons();
     onEnterStep(idx);
   }
 
+  // 3) Tab clicks: jump directly
   tabs.forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
       const target = btn.getAttribute("data-target");
       const i = stepIndexById(target);
       if (i >= 0) showStep(i);
     });
   });
 
-  back?.addEventListener("click", () => showStep(idx - 1));
-  next?.addEventListener("click", () => showStep(idx + 1));
+  // 4) Back / Next
+  back?.addEventListener("click", (e) => { e.preventDefault(); showStep(idx - 1); });
+  next?.addEventListener("click", (e) => { e.preventDefault(); showStep(idx + 1); });
 
-  // Add buttons (experience/education)
+  // 5) Add buttons (experience/education)
   builder.addEventListener("click", (e) => {
     const addBtn = e.target.closest("[data-add]");
     if (!addBtn) return;
@@ -321,32 +331,40 @@ function initWizard() {
     if (type === "education") addEducationFromObj();
   });
 
-  // Submit → generate, then go to Finish
-  const formEl = form;
-  formEl?.addEventListener("submit", async (e) => {
+  // 6) Photo upload (safe no-ops if elements absent)
+  qs(builder, "#photoBtn")?.addEventListener("click", () => qs(builder, "#photoInput")?.click());
+  qs(builder, "#photoInput")?.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    const img = qs(builder, "#photoPreview");
+    if (file && img) {
+      const url = URL.createObjectURL(file);
+      img.src = url; img.hidden = false;
+    }
+  });
+
+  // 7) Submit → generate, then go to Finish
+  form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      const ctxForTemplate = gatherContext(formEl);
+      const ctxForTemplate = gatherContext(form);
 
       const educationStr = (ctxForTemplate.education || [])
         .map(ed => [ed.degree, ed.school, ed.location, ed.graduated].filter(Boolean).join(" – "))
         .join("\n");
       const experienceStr = (ctxForTemplate.experience || [])
-        .map(e => `${e.role}${e.company ? " – " + e.company : ""}\n${(e.bullets || []).map(b => "• " + b).join("\n")}`)
+        .map(ex => `${ex.role}${ex.company ? " – " + ex.company : ""}\n${(ex.bullets || []).map(b => "• " + b).join("\n")}`)
         .join("\n\n");
 
       const payload = {
         fullName: ctxForTemplate.name || "",
-        full_name: ctxForTemplate.name || "",
-        name: ctxForTemplate.name || "",
         title: ctxForTemplate.title || "",
         contact: ctxForTemplate.contact || "",
         summary: ctxForTemplate.summary || "",
         education: educationStr,
         experience: experienceStr,
         skills: (ctxForTemplate.skills || []).join(", "),
-        certifications: (ctxForTemplate.certifications || []).join("\n"),
+        certifications: form.elements["certifications"]?.value?.trim() || "",
         portfolio: (ctxForTemplate.links?.[0]?.url) || "",
       };
 
@@ -357,33 +375,20 @@ function initWizard() {
       const genJson = await gen.json().catch(() => ({}));
       if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
-      const server = genJson.context || {};
-      const merged = {
-        ...ctxForTemplate,
-        ...server,
-        name: (server.name || server.fullName || server.full_name || "").trim() ||
-              ctxForTemplate.name || payload.fullName,
-        fullName: (server.name || server.fullName || server.full_name || "").trim() ||
-                  ctxForTemplate.name || payload.fullName,
-        full_name: (server.name || server.fullName || server.full_name || "").trim() ||
-                   ctxForTemplate.name || payload.fullName,
-        skills: Array.isArray(server.skills) && server.skills.length ? server.skills : ctxForTemplate.skills,
-        certifications: Array.isArray(server.certifications) && server.certifications.length
-          ? server.certifications
-          : ctxForTemplate.certifications
-      };
-
-      window._resumeCtx = merged;
-      showStep(["#step-finish","#step-design"].includes(location.hash) ? 8 : 8);
+      window._resumeCtx = genJson.context || ctxForTemplate;
+      // jump to Finish
+      const finishIdx = steps.findIndex(s => s && s.id === "step-finish");
+      showStep(finishIdx >= 0 ? finishIdx : steps.length - 1);
     } catch (err) {
       console.error("Generate/build error:", err);
       alert("Resume generation failed.");
     } finally {
-      qs(builder, "#builderGeneratingIndicator").style.display = "none";
+      const ind = qs(builder, "#builderGeneratingIndicator");
+      if (ind) ind.style.display = "none";
     }
   });
 
-  // Preview / PDF
+  // 8) Preview / PDF (Design + Finish)
   const previewBtn  = qs(builder, "#previewTemplate");
   const pdfBtn      = qs(builder, "#downloadTemplatePdf");
   const themeSelect = qs(builder, "#themeSelect");
@@ -410,9 +415,13 @@ function initWizard() {
   qs(builder, "#downloadTemplatePdfFinish")?.addEventListener("click", () => pdfBtn?.click());
 
   // Start
-  showStep(0);
+  showStep(idx || 0);
+
+  // Expose for quick debugging
+  window.__rbWizard = { steps, showStep, get index(){return idx;} };
 }
 
+// ------- Prefill from analyzer (optional) -------
 async function maybePrefillFromAnalyzer(form, helpers) {
   const raw = localStorage.getItem("resumeTextRaw");
   if (!raw || !form) return;
@@ -430,7 +439,7 @@ async function maybePrefillFromAnalyzer(form, helpers) {
     if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
     const ctx = genJson.context || {};
-    const name = (ctx.name || ctx.fullName || ctx.full_name || "").trim().split(" ");
+    const name = (ctx.name || "").trim().split(" ");
     if (form.firstName) form.firstName.value = name.shift() || "";
     if (form.lastName)  form.lastName.value  = name.join(" ");
     if (form.title)   form.title.value   = ctx.title || "";
@@ -453,22 +462,22 @@ async function maybePrefillFromAnalyzer(form, helpers) {
       (ctx.education || []).forEach(addEducationFromObj);
       if (!eduList.children.length) addEducationFromObj();
     }
-    window._resumeCtx = {
-      ...ctx,
-      name: (ctx.name || ctx.fullName || ctx.full_name || "").trim(),
-      fullName: (ctx.name || ctx.fullName || ctx.full_name || "").trim(),
-      full_name: (ctx.name || ctx.fullName || ctx.full_name || "").trim()
-    };
+    window._resumeCtx = ctx;
   } catch (e) {
     console.warn("Prefill from analyzer failed:", e);
   }
 }
 
+// ------- Boot -------
 document.addEventListener("DOMContentLoaded", () => {
-  const helpers = initSkills();
-  if (!document.querySelector("#exp-list .rb-item")) addExperienceFromObj();
-  if (!document.querySelector("#edu-list .rb-item")) addEducationFromObj();
-  attachAISuggestionHandlers();
-  initWizard();
-  maybePrefillFromAnalyzer(document.getElementById("resumeForm"), helpers);
+  try {
+    const helpers = initSkills();
+    if (!document.querySelector("#exp-list .rb-item")) addExperienceFromObj();
+    if (!document.querySelector("#edu-list .rb-item")) addEducationFromObj();
+    attachAISuggestionHandlers();
+    initWizard();
+    maybePrefillFromAnalyzer(document.getElementById("resumeForm"), helpers);
+  } catch (e) {
+    console.error("Resume builder init failed:", e);
+  }
 });
