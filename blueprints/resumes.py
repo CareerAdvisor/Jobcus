@@ -288,45 +288,63 @@ def ai_suggest():
         # include 'suggestions' for front-ends that expect it
         return {"text": text or "", "list": items or [], "suggestions": items or []}
 
-    # ---- Cover letter (letter-style, paragraphs, supports tone) ----
+    # ---- Cover letter (letter-style body, richer content) ----
     if field in ("coverletter", "coverletter_from_analyzer", "cover_letter"):
-        name  = ctx.get("name") or ""
-        title = ctx.get("title") or "professional"
-        cl    = ctx.get("coverLetter") or ctx
-        company  = (cl or {}).get("company") or "your company"
-        role     = (cl or {}).get("role") or "the role"
-        manager  = (cl or {}).get("manager") or "Hiring Manager"
-        tone     = (cl or {}).get("tone") or "professional"
+        name   = (ctx.get("name") or "").strip()
+        title  = (ctx.get("title") or "professional").strip()
+        cl     = ctx.get("coverLetter") or ctx or {}
+        company = (cl.get("company") or "your company").strip()
+        role    = (cl.get("role") or "the role").strip()
+        manager = (cl.get("manager") or "Hiring Manager").strip()
+        tone    = (cl.get("tone") or "professional").strip()
 
-        openers = {
-            "professional": (
-                f"I’m a {title} interested in the {role} role at {company}. "
-                "I bring a record of delivering measurable results and collaborating across teams."
-            ),
-            "friendly": (
-                f"I’m excited to apply for the {role} role at {company}. "
-                "I love tackling real problems with practical solutions and working closely with teammates."
-            ),
-            "concise": (
-                f"I’m applying for the {role} role at {company}. I deliver results and improve processes."
-            ),
-        }
-        opener = openers.get(tone, openers["professional"])
+        # Optional extra context if sent from analyzer
+        jd   = (ctx.get("jd") or "").strip()
+        rsum = (ctx.get("resumeText") or "").strip()
 
-        body = (
-            "In my recent roles, I delivered measurable outcomes by improving processes, collaborating cross-functionally, "
-            "and driving initiatives from concept to execution. I’d welcome the opportunity to bring that same impact to your team."
+        client = current_app.config.get("OPENAI_CLIENT")
+        prompt = (
+            "Write a UK-English cover letter BODY (no greeting and no closing) for a job application.\n"
+            f"Role: {role}\nCompany: {company}\nCandidate: {name or 'the candidate'} ({title})\n"
+            f"Tone: {tone} but warm and confident. Length: ~220–320 words in 3–5 short paragraphs.\n"
+            "Prioritise clear impact, quantified results, collaboration, tooling, and domain fit.\n"
+            "Use concise sentences, avoid clichés and buzzwords, and do not include lists or bullets.\n"
+            "Return PLAIN TEXT only — DO NOT add 'Dear ...' or 'Yours sincerely'.\n\n"
+            f"Resume excerpt (optional):\n{rsum[:2000]}\n\n"
+            f"Job description (optional):\n{jd[:2000]}"
         )
 
+        if client:
+            try:
+                resp = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.6,
+                    max_tokens=600,
+                )
+                out = (resp.choices[0].message.content or "").strip()
+                out = re.sub(r"```(?:\w+)?", "", out).strip()
+                return jsonify({"text": out, "list": [], "suggestions": []})
+            except Exception as e:
+                current_app.logger.warning("cover letter AI error; using fallback: %s", e)
+
+        # Fallback (no OpenAI): longer, multi-paragraph template
         text = (
-            f"Dear {manager},\n\n"
-            f"{opener}\n\n"
-            f"{body}\n\n"
-            "Thank you for your time and consideration. I look forward to the possibility of discussing how I can contribute.\n\n"
-            f"Sincerely,\n{name}".strip()
+            f"As an experienced {title.lower()} with a strong record of supporting teams and customers, "
+            f"I’m excited to apply for the {role} role at {company}. I combine hands-on technical ability with "
+            f"a pragmatic, service-oriented approach that focuses on reliability, responsiveness, and measurable outcomes.\n\n"
+            "In previous roles I resolved complex issues across hardware, software, and networks while maintaining high CSAT. "
+            "I introduced lightweight runbooks to speed up triage, reduced repeat incidents through root-cause fixes, "
+            "and partnered with cross-functional teams to tighten feedback loops. Notable wins include cutting average resolution time "
+            "by over 25% and driving onboarding improvements that reduced first-week tickets by double digits.\n\n"
+            "Beyond troubleshooting, I care deeply about clear communication. I translate technical details into plain language, "
+            "set expectations transparently, and prioritise thoughtfully when demand spikes. I’m comfortable owning a queue, "
+            "coordinating escalations, and documenting knowledge so solutions scale.\n\n"
+            "I’m confident I can bring the same reliability and customer focus to your team and help deliver fast, friendly, "
+            "and secure support at scale."
         )
-
         return jsonify({"text": text, "list": [], "suggestions": []})
+
 
     # ---- Compact context for resume prompts ----
     def compact_context(c):
