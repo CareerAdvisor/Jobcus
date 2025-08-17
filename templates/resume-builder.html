@@ -3,7 +3,6 @@
 
 {% block content %}
 <main id="resume-builder" class="rb-wrap">
-  <!-- Hero -->
   <div class="interview-container" style="padding:20px 10px;width:100%;background:#104879;">
     <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
       <h5 style="color:#ffc957;font-weight:600;font-size:14px;letter-spacing:1px;">AI RESUME BUILDER</h5>
@@ -14,8 +13,6 @@
 
   <div class="rb-container">
     <form id="resumeForm" class="rb-form" autocomplete="on">
-
-      <!-- Tabs -->
       <nav class="rb-tabs" role="tablist" aria-label="Resume builder steps">
         <button class="active" role="tab" aria-selected="true" data-target="#step-personal">Write</button>
         <button role="tab" aria-selected="false" data-target="#step-design">Design</button>
@@ -36,11 +33,9 @@
                 <label>First name
                   <input type="text" name="firstName" placeholder="First name" required>
                 </label>
-
                 <label>Last name
                   <input type="text" name="lastName" placeholder="Last name" required>
                 </label>
-
                 <label>Job title
                   <input type="text" name="title" placeholder="Product Designer">
                 </label>
@@ -50,7 +45,6 @@
                     <span class="label-closed">▼ — Show additional details</span>
                     <span class="label-open">▲ — Hide additional details</span>
                   </summary>
-
                   <div class="rb-grid" style="margin-top:.5rem;">
                     <label>Nationality <input type="text" name="nationality" placeholder="Britain"></label>
                     <label class="full">Birth date <input type="date" name="dob" placeholder="1996-02-03"></label>
@@ -66,10 +60,7 @@
       <div class="rb-section">
         <section id="step-contact" class="rb-step" role="tabpanel" aria-labelledby="h-contact" hidden>
           <article class="rb-card">
-            <header>
-              <h2 id="h-contact">Contact information</h2>
-              <p>Make it easy to reach you.</p>
-            </header>
+            <header><h2 id="h-contact">Contact information</h2><p>Make it easy to reach you.</p></header>
             <div class="rb-panel">
               <div class="rb-grid">
                 <label class="full">Email <input type="email" name="email" placeholder="you@example.com" required></label>
@@ -89,10 +80,7 @@
       <div class="rb-section">
         <section id="step-summary" class="rb-step" role="tabpanel" aria-labelledby="h-summary" hidden>
           <article class="rb-card">
-            <header>
-              <h2 id="h-summary">Professional Summary</h2>
-              <p>Include your title, years of experience and 1–2 measurable wins.</p>
-            </header>
+            <header><h2 id="h-summary">Professional Summary</h2><p>Include your title, years of experience and 1–2 measurable wins.</p></header>
             <div class="rb-panel">
               <textarea name="summary" rows="5" placeholder="Product Designer with 10 years of experience..."></textarea>
               <div class="ai-suggest" id="ai-summary" data-field="summary">
@@ -112,11 +100,7 @@
       <div class="rb-section">
         <section id="step-experience" class="rb-step" role="tabpanel" aria-labelledby="h-experience" hidden>
           <article class="rb-card" data-repeater="experience">
-            <header>
-              <h2 id="h-experience">Employment history</h2>
-              <p>Use action verbs, quantify results, and keep it concise.</p>
-            </header>
-
+            <header><h2 id="h-experience">Employment history</h2><p>Use action verbs, quantify results, and keep it concise.</p></header>
             <div class="rb-panel">
               <template id="tpl-experience">
                 <div class="rb-item">
@@ -127,11 +111,9 @@
                     <label>End date <input type="text" name="end" placeholder="Feb 2019 / Present"></label>
                     <label class="full">Location <input type="text" name="location" placeholder="Washington, D.C."></label>
                   </div>
-
                   <label class="full" style="margin-top:12px;">Highlights (one per line)
                     <textarea name="bullets" rows="4" placeholder="• Reduced ticket backlog by 32%..."></textarea>
                   </label>
-
                   <div class="ai-suggest" data-field="bullets">
                     <div class="ai-title">✦ Write with AI</div>
                     <p class="ai-text">Get role-specific bullet ideas for this job.</p>
@@ -140,13 +122,11 @@
                       <button type="button" class="btn btn-primary ai-add">Add</button>
                     </div>
                   </div>
-
                   <div class="rb-actions" style="padding-top:10px;">
                     <button type="button" class="rb-remove">Remove</button>
                   </div>
                 </div>
               </template>
-
               <div class="rb-list" id="exp-list"></div>
               <button type="button" class="rb-add" data-add="experience">+ Add another experience</button>
             </div>
@@ -158,11 +138,7 @@
       <div class="rb-section">
         <section id="step-education" class="rb-step" role="tabpanel" aria-labelledby="h-education" hidden>
           <article class="rb-card" data-repeater="education">
-            <header>
-              <h2 id="h-education">Education</h2>
-              <p>Add your school, degree, dates and location.</p>
-            </header>
-
+            <header><h2 id="h-education">Education</h2><p>Add your school, degree, dates and location.</p></header>
             <div class="rb-panel">
               <template id="tpl-education">
                 <div class="rb-item">
@@ -178,7 +154,6 @@
                   </div>
                 </div>
               </template>
-
               <div class="rb-list" id="edu-list"></div>
               <button type="button" class="rb-add" data-add="education">+ Add education</button>
             </div>
@@ -190,10 +165,7 @@
       <div class="rb-section">
         <section id="step-certifications" class="rb-step" role="tabpanel" aria-labelledby="h-certifications" hidden>
           <article class="rb-card">
-            <header>
-              <h2 id="h-certifications">Other Education & Certifications</h2>
-              <p>List professional courses and certifications (one per line).</p>
-            </header>
+            <header><h2 id="h-certifications">Other Education & Certifications</h2><p>List professional courses and certifications (one per line).</p></header>
             <div class="rb-panel">
               <label class="full">Items
                 <textarea name="certifications" rows="6" placeholder="CompTIA A+ (2023)
@@ -209,10 +181,7 @@ Google IT Support Professional Certificate (2021)"></textarea>
       <div class="rb-section">
         <section id="step-skills" class="rb-step" role="tabpanel" aria-labelledby="h-skills" hidden>
           <article class="rb-card">
-            <header>
-              <h2 id="h-skills">Skills</h2>
-              <p>Highlight your most relevant professional skills.</p>
-            </header>
+            <header><h2 id="h-skills">Skills</h2><p>Highlight your most relevant professional skills.</p></header>
             <div class="rb-panel">
               <div class="rb-chip-input">
                 <input type="text" id="skillInput" placeholder="Type a skill and press Enter">
@@ -268,7 +237,6 @@ Google IT Support Professional Certificate (2021)"></textarea>
         </section>
       </div>
 
-      <!-- Sticky footer -->
       <footer class="rb-footer">
         <button type="button" id="rb-back" class="ghost">Back</button>
         <button type="button" id="rb-next" class="cta-secondary">Next</button>
