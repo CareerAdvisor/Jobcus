@@ -173,3 +173,12 @@
 #resume-builder .rb-tabs a.rb-tab-link:hover{
   filter:brightness(0.98);
 }
+
+/* Only show one label at a time inside the <summary> */
+.rb-disclosure .label-open { display: none; }
+.rb-disclosure[open] .label-open { display: inline; }
+.rb-disclosure[open] .label-closed { display: none; }
+
+/* Optional polish: make summary clickable and remove default marker */
+.rb-disclosure > summary { cursor: pointer; list-style: none; }
+.rb-disclosure > summary::-webkit-details-marker { display: none; }
