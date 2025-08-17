@@ -8,19 +8,43 @@ import base64, re, json, logging, os, docx
 
 resumes_bp = Blueprint("resumes", __name__)
 
+# -------------------------------------------------------------------
+# Print/PDF overrides (reduce WeasyPrint warnings, enforce margins)
+# -------------------------------------------------------------------
+PDF_CSS_OVERRIDES = """
+@page { size: A4; margin: 0.75in; }    /* 0.75" on all sides */
+* { box-shadow: none !important; }     /* WeasyPrint ignores box-shadow; silence visually */
+@media print {
+  html, body { background: white !important; }
+  .resume-page, .resume { box-shadow: none !important; }
+  .section { margin-top: 12px !important; }
+  .section .rule { margin: 6px 0 10px 0 !important; }
+  h1, h2, h3 { page-break-after: avoid; }
+  .item-header { page-break-inside: avoid; }
+  ul.bullets { margin-top: 6px !important; }
+}
+"""
+
 # ---------- Helper: fallback context if OpenAI is unavailable ----------
 def naive_context(data: dict) -> dict:
     """Fallback: coerce raw form fields into your template context."""
-    name      = (data.get("fullName") or "").strip()
+    # name: honor fullName if present, else try first+last
+    first = (data.get("firstName") or "").strip()
+    last  = (data.get("lastName") or "").strip()
+    derived = " ".join([p for p in (first, last) if p]).strip()
+
+    name      = (data.get("name") or data.get("fullName") or derived or "").strip()
     title     = (data.get("title") or "").strip()
     contact   = (data.get("contact") or "").strip()
     summary   = (data.get("summary") or "").strip()
     edu_txt   = (data.get("education") or "").strip()
     exp_txt   = (data.get("experience") or "").strip()
     skills_s  = (data.get("skills") or "")
+    certs_s   = (data.get("certifications") or "")
     portfolio = (data.get("portfolio") or "").strip()
 
-    skills = [s.strip() for s in skills_s.replace("\n", ",").split(",") if s.strip()]
+    skills = [s.strip() for s in str(skills_s).replace("\n", ",").split(",") if s.strip()]
+    certifications = [c.strip() for c in str(certs_s).splitlines() if c.strip()]
 
     education = []
     if edu_txt:
@@ -44,43 +68,85 @@ def naive_context(data: dict) -> dict:
     return {
         "name": name, "title": title, "contact": contact, "summary": summary,
         "skills": skills, "links": links,
-        "experience": experience, "education": education
+        "experience": experience, "education": education,
+        "certifications": certifications,
     }
+
+# ---------- Helper: normalize context coming from the UI ----------
+def _normalize_ctx(data: dict) -> dict:
+    """
+    Make sure template fields are present and in the correct types,
+    no matter how the client sent them.
+    """
+    # ---- Name (prefer explicit, then fullName, then first+last) ----
+    first = (data.get("firstName") or "").strip()
+    last  = (data.get("lastName") or "").strip()
+    derived = " ".join([p for p in (first, last) if p]).strip()
+    name = (data.get("name") or data.get("fullName") or data.get("full_name") or derived or "").strip()
+
+    ctx = dict(data)  # shallow copy
+    ctx["name"] = name
+    ctx["fullName"] = name
+    ctx["full_name"] = name
+
+    # ---- Skills: allow CSV/newlines or list ----
+    skills = ctx.get("skills") or []
+    if isinstance(skills, str):
+        skills = [s.strip() for s in re.split(r"[,\n]", skills) if s.strip()]
+    ctx["skills"] = skills
+
+    # ---- Certifications: allow newlines or list ----
+    certs = ctx.get("certifications") or []
+    if isinstance(certs, str):
+        certs = [c.strip() for c in certs.splitlines() if c.strip()]
+    ctx["certifications"] = certs
+
+    # Ensure arrays exist (templates expect iterables)
+    ctx["experience"] = ctx.get("experience") or []
+    ctx["education"]  = ctx.get("education")  or []
+    ctx["links"]      = ctx.get("links")      or []
+
+    return ctx
 
 # ---------- 1) Template-based resume (HTML/PDF) ----------
 @resumes_bp.post("/build-resume")
 def build_resume():
-    data  = request.get_json(force=True)
-    theme = data.get("theme", "modern")
-    fmt   = data.get("format", "html")
+    data  = request.get_json(force=True) or {}
+    theme = (data.get("theme") or "modern").lower()
+    fmt   = (data.get("format") or "html").lower()
 
-    context = {
-        "name":       data.get("fullName", ""),
-        "title":      data.get("title", ""),
-        "contact":    data.get("contact", ""),
-        "summary":    data.get("summary", ""),
-        "education":  data.get("education", []),
-        "experience": data.get("experience", []),
-        "skills":     data.get("skills", []),
-        "links":      data.get("links", []),
+    # Always normalize first (fixes name/skills/certifications issues)
+    ctx = _normalize_ctx(data)
+
+    # Build final template context
+    tpl_ctx = {
+        "name":           ctx.get("name", ""),
+        "title":          ctx.get("title", ""),
+        "contact":        ctx.get("contact", ""),
+        "summary":        ctx.get("summary", ""),
+        "skills":         ctx.get("skills", []),
+        "links":          ctx.get("links", []),
+        "experience":     ctx.get("experience", []),
+        "education":      ctx.get("education", []),
+        "certifications": ctx.get("certifications", []),
     }
 
-    html = render_template(f"resumes/{theme}.html", for_pdf=(fmt == "pdf"), **context)
+    # templates are in templates/resumes/<theme>.html
+    template_path = f"resumes/{'minimal' if theme == 'minimal' else 'modern'}.html"
+    html = render_template(template_path, for_pdf=(fmt == "pdf"), **tpl_ctx)
 
     if fmt == "pdf":
-        # Build a list of local CSS files to include
-        css_files = [
-            os.path.join(current_app.root_path, "static", "resumes", f"{theme}.css")
-        ]
+        # Attach optional files plus our print overrides
+        stylesheets = [CSS(string=PDF_CSS_OVERRIDES)]
+
+        # If you keep separate pdf.css, include it too (optional)
         pdf_css_path = os.path.join(current_app.root_path, "static", "pdf.css")
         if os.path.exists(pdf_css_path):
-            css_files.append(pdf_css_path)
-
-        stylesheets = [CSS(filename=p) for p in css_files if os.path.exists(p)]
+            stylesheets.append(CSS(filename=pdf_css_path))
 
         pdf_bytes = HTML(
             string=html,
-            base_url=current_app.root_path  # enables relative 'static/...' paths
+            base_url=current_app.root_path  # enables relative 'static/...' paths in the template
         ).write_pdf(stylesheets=stylesheets)
 
         resp = make_response(pdf_bytes)
@@ -96,19 +162,21 @@ def build_resume():
 # ---------- 2) Template-based resume (DOCX) ----------
 @resumes_bp.post("/build-resume-docx")
 def build_resume_docx():
-    data = request.get_json(force=True)
-    tpl_path = os.path.join(current_app.root_path, "templates", "resumes", "clean.docx")
+    data = request.get_json(force=True) or {}
+    ctx  = _normalize_ctx(data)
 
+    tpl_path = os.path.join(current_app.root_path, "templates", "resumes", "clean.docx")
     tpl = DocxTemplate(tpl_path)
     tpl.render({
-        "name":       data.get("fullName", ""),
-        "title":      data.get("title", ""),
-        "summary":    data.get("summary", ""),
-        "experience": data.get("experience", []),
-        "education":  data.get("education", []),
-        "skills":     data.get("skills", []),
-        "contact":    data.get("contact", ""),
-        "links":      data.get("links", []),
+        "name":           ctx.get("name", ""),
+        "title":          ctx.get("title", ""),
+        "summary":        ctx.get("summary", ""),
+        "experience":     ctx.get("experience", []),
+        "education":      ctx.get("education", []),
+        "skills":         ctx.get("skills", []),
+        "contact":        ctx.get("contact", ""),
+        "links":          ctx.get("links", []),
+        "certifications": ctx.get("certifications", []),
     })
 
     buf = BytesIO()
@@ -232,11 +300,14 @@ Return ONLY valid JSON (no backticks) with this exact schema:
   ],
   "education": [
     {{"degree":"...", "school":"...", "location":"", "graduated":""}}
-  ]
+  ],
+  "certifications": ["..."]
 }}
 
 User input:
 fullName: {data.get('fullName',"")}
+firstName: {data.get('firstName',"")}
+lastName: {data.get('lastName',"")}
 title: {data.get('title',"")}
 contact: {data.get('contact',"")}
 summary: {data.get('summary',"")}
@@ -246,6 +317,11 @@ skills (free text): {data.get('skills',"")}
 certifications (free text): {data.get('certifications',"")}
 portfolio: {data.get('portfolio',"")}
 """.strip()
+
+    def _coerce_list(val):
+        if isinstance(val, list): return val
+        if not val: return []
+        return [s.strip() for s in str(val).replace("\r", "").split("\n") if s.strip()]
 
     try:
         resp = client.chat.completions.create(
@@ -257,10 +333,18 @@ portfolio: {data.get('portfolio',"")}
         content = re.sub(r"```(?:json)?", "", content).strip()
         ctx = json.loads(content)
 
-        # tiny fallback so template never breaks
-        ctx.setdefault("name",  (data.get("fullName") or ""))
+        # Guarantee essential fields
+        first = (data.get("firstName") or "").strip()
+        last  = (data.get("lastName") or "").strip()
+        derived = " ".join([p for p in (first, last) if p]).strip()
+        ctx.setdefault("name",  (data.get("fullName") or derived or ""))
         ctx.setdefault("title", (data.get("title") or ""))
         ctx.setdefault("contact", (data.get("contact") or ""))
+
+        # Normalize lists
+        if isinstance(ctx.get("skills"), str):
+            ctx["skills"] = [s.strip() for s in ctx["skills"].replace(",", "\n").splitlines() if s.strip()]
+        ctx["certifications"] = _coerce_list(ctx.get("certifications")) or _coerce_list(data.get("certifications"))
 
         return jsonify(context=ctx, aiUsed=True)
 
@@ -285,7 +369,6 @@ def ai_suggest():
             items = [ln.strip("•- ").strip() for ln in text.splitlines() if ln.strip()]
         if not text and items:
             text = "\n".join(items)
-        # include 'suggestions' for front-ends that expect it
         return {"text": text or "", "list": items or [], "suggestions": items or []}
 
     # ---- Cover letter (letter-style body, richer content) ----
@@ -298,11 +381,9 @@ def ai_suggest():
         manager = (cl.get("manager") or "Hiring Manager").strip()
         tone    = (cl.get("tone") or "professional").strip()
 
-        # Optional extra context if sent from analyzer
         jd   = (ctx.get("jd") or "").strip()
         rsum = (ctx.get("resumeText") or "").strip()
 
-        client = current_app.config.get("OPENAI_CLIENT")
         prompt = (
             "Write a UK-English cover letter BODY (no greeting and no closing) for a job application.\n"
             f"Role: {role}\nCompany: {company}\nCandidate: {name or 'the candidate'} ({title})\n"
@@ -328,7 +409,6 @@ def ai_suggest():
             except Exception as e:
                 current_app.logger.warning("cover letter AI error; using fallback: %s", e)
 
-        # Fallback (no OpenAI): longer, multi-paragraph template
         text = (
             f"As an experienced {title.lower()} with a strong record of supporting teams and customers, "
             f"I’m excited to apply for the {role} role at {company}. I combine hands-on technical ability with "
@@ -344,7 +424,6 @@ def ai_suggest():
             "and secure support at scale."
         )
         return jsonify({"text": text, "list": [], "suggestions": []})
-
 
     # ---- Compact context for resume prompts ----
     def compact_context(c):
@@ -400,7 +479,6 @@ def ai_suggest():
             f"Context:\n{base_ctx}"
         )
 
-    # If no client, return safe fallbacks with 200
     if not client:
         if field == "summary":
             return jsonify(normalize(
@@ -426,7 +504,6 @@ def ai_suggest():
         out = (resp.choices[0].message.content or "").strip()
         return jsonify(normalize(out))
     except Exception as e:
-        # IMPORTANT: still return 200 with fallback so the UI updates
         current_app.logger.warning("ai_suggest error; returning fallback: %s", e)
         if field == "summary":
             return jsonify(normalize(
@@ -439,18 +516,12 @@ def ai_suggest():
             "Led D cross-functional effort resulting in E"
         ]))
 
-    # Resume summary / highlights fallbacks
-    if field == "summary":
-        return jsonify({"text": "Results-driven professional with X years of experience delivering Y. Known for Z."})
-    if field == "highlights":
-        return jsonify({"list": ["Led A to achieve B", "Improved C by D%", "Built E that saved F hours"]})
+    # Unreachable
+    # return jsonify({"text": "No suggestion available."})
 
-    return jsonify({"text": "No suggestion available."})
-
-# resumes_bp.py
+# ---------- Cover Letter builder ----------
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 def build_cover_letter():
-    # 1) Parse JSON safely
     try:
         data = request.get_json(force=True) or {}
     except Exception:
@@ -459,7 +530,6 @@ def build_cover_letter():
 
     fmt = (data.get("format") or "html").lower()
     try:
-        # 2) Gather fields (all optional)
         name     = data.get("name", "")
         title    = data.get("title", "")
         contact  = data.get("contact", "")
@@ -468,7 +538,6 @@ def build_cover_letter():
         cl       = data.get("coverLetter") or {}
         draft    = (cl.get("draft") or "").strip()
 
-        # 3) Render HTML (this is where Jinja errors happen)
         html = render_template(
             "cover-letter.html",
             name=name, title=title, contact=contact,
@@ -480,10 +549,11 @@ def build_cover_letter():
         current_app.logger.exception("build-cover-letter: template render failed")
         return jsonify(error="Template error (see logs for details)"), 500
 
-    # 4) If PDF, run WeasyPrint separately so we can log PDF-specific errors
     if fmt == "pdf":
         try:
-            pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf()
+            pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf(
+                stylesheets=[CSS(string="@page{size:A4;margin:0.75in}")]
+            )
             return send_file(BytesIO(pdf_bytes),
                              mimetype="application/pdf",
                              as_attachment=True,
@@ -492,7 +562,6 @@ def build_cover_letter():
             current_app.logger.exception("build-cover-letter: PDF generation failed")
             return jsonify(error="PDF generation failed (see logs)"), 500
 
-    # 5) HTML success
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
