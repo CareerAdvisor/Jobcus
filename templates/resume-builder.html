@@ -51,7 +51,7 @@
                     <span class="label-open">▲ — Hide additional details</span>
                   </summary>
 
-                  <div class="rb-grid" style="margin-top:.5rem;">
+                  <div class="rb-grid">
                     <label>Nationality <input type="text" name="nationality" placeholder="Britain"></label>
                     <label class="full">Birth date <input type="date" name="dob" placeholder="1996-02-03"></label>
                   </div>
@@ -186,26 +186,41 @@
         </section>
       </div>
 
-      <!-- STEP 5B: Other Education & Certifications -->
+      <!-- STEP 6: Other Education & Certifications -->
       <div class="rb-section">
         <section id="step-certs" class="rb-step" role="tabpanel" aria-labelledby="h-certs" hidden>
           <article class="rb-card">
             <header>
               <h2 id="h-certs">Other Education & Certifications</h2>
-              <p>Add short courses, professional certifications, and licenses.</p>
+              <p>Add short lines for courses, licences and certifications.</p>
             </header>
             <div class="rb-panel">
-              <label class="full">List items (one per line)
-                <textarea name="certifications" rows="5" placeholder="CompTIA A+ (2024)
-PRINCE2® Foundation (2023)
-Google IT Support Professional Certificate (2022)"></textarea>
-              </label>
+              <textarea name="certifications" rows="6" placeholder="PRINCE2® Foundation — 2023&#10;CompTIA Security+ — 2024&#10;Google IT Support Professional Certificate — 2022"></textarea>
             </div>
           </article>
         </section>
       </div>
 
-      <!-- STEP 7: Design -->
+      <!-- STEP 7: Skills -->
+      <div class="rb-section">
+        <section id="step-skills" class="rb-step" role="tabpanel" aria-labelledby="h-skills" hidden>
+          <article class="rb-card">
+            <header>
+              <h2 id="h-skills">Skills</h2>
+              <p>Highlight your most relevant professional skills.</p>
+            </header>
+            <div class="rb-panel">
+              <div class="rb-chip-input">
+                <input type="text" id="skillInput" placeholder="Type a skill and press Enter">
+                <div id="skillChips" class="rb-chips" style="margin-top:8px;"></div>
+                <input type="hidden" name="skills">
+              </div>
+            </div>
+          </article>
+        </section>
+      </div>
+
+      <!-- STEP 8: Design -->
       <div class="rb-section">
         <section id="step-design" class="rb-step" role="tabpanel" aria-labelledby="h-design" hidden>
           <article class="rb-card">
@@ -230,7 +245,7 @@ Google IT Support Professional Certificate (2022)"></textarea>
         </section>
       </div>
 
-      <!-- STEP 8: Finish -->
+      <!-- STEP 9: Finish -->
       <div class="rb-section">
         <section id="step-finish" class="rb-step" role="tabpanel" aria-labelledby="h-finish" hidden>
           <article class="rb-card">
