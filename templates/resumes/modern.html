@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>{{ name or fullName }} – {{ title }}</title>
+  <title>{{ name or fullName or full_name }} – {{ title }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   {% set base_css  = url_for('static', filename='css/resume-base.css') if not for_pdf else 'static/css/resume-base.css' %}
@@ -15,13 +15,16 @@
   {% endif %}
 
   <style>
-    /* === Print + spacing fixes === */
-    @page { size: A4; margin: 19mm; }              /* 0.75" margins */
+    /* A4 with 0.75" margins */
+    @page { size: A4; margin: 19mm; }
     .resume-page { padding: 0; }
-    .resume .section { margin: 12px 0 10px; }
-    .resume .rule { margin: 6px 0 10px; }
 
-    /* Skills as two-column bullets */
+    /* Gentle spacing below section rules */
+    .resume .section { margin: 12px 0 10px; }
+    .resume .rule    { margin: 6px 0 10px; }
+
+    /* Skills as two-column bullet list */
+    .skills-section{ break-after: avoid; page-break-after: avoid; }
     .skills-list{
       columns: 2;
       column-gap: 28px;
@@ -30,15 +33,12 @@
       margin: 0;
     }
     .skills-list li{ break-inside: avoid; margin: 2px 0; }
-
-    /* Keep Experience from jumping to a new page after skills */
-    .skills-section{ break-after: avoid; page-break-after: avoid; }
   </style>
 </head>
 <body>
   <div class="resume-page resume resume--modern">
     <header class="resume-header hero">
-      <div class="resume-name">{{ name or fullName or 'Your Name' }}</div>
+      <div class="resume-name">{{ name or fullName or full_name or 'Your Name' }}</div>
       {% if title %}<div class="resume-title">{{ title }}</div>{% endif %}
       <div class="resume-contact">
         {% if contact %}{{ contact }}{% endif %}
@@ -107,7 +107,7 @@
     </section>
     {% endif %}
 
-    {# Certifications can be array or newline string #}
+    {# Certifications can be array or newline-separated string #}
     {% set cert_list =
          certifications if certifications is iterable and certifications is not string
          else (certifications.split('\n') if certifications else []) %}
