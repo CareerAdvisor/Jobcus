@@ -16,15 +16,16 @@
 
   {% set display_name = (name or fullName or '')|trim %}
   <style>
-    /* Tighter rhythm + bullets in two columns */
-    .resume--modern .section{ margin:14px 0; }
-    .resume--modern .section .rule{ margin:6px 0 10px; }
+    /* tighter rhythm + keep sections from forcing huge page gaps */
+    .resume--modern .section{ margin:12px 0; }
+    .resume--modern .section .rule{ margin:8px 0 14px; }
+    /* Skills as bullets in 2 columns */
     .resume--modern .skills-list{
       column-count:2; column-gap:24px;
-      margin:0 0 6px 0; padding-left:18px;
+      margin:0; padding-left:18px;
     }
     .resume--modern .skills-list li{ break-inside:avoid; margin:0 0 4px 0; }
-    /* Let long experience items split across pages so no giant gap after Skills */
+    /* Allow breaking so “Relevant Experience” can sit right after Skills */
     @media print{
       .resume--modern .section,
       .resume--modern .item,
