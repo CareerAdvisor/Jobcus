@@ -72,26 +72,12 @@
   <a href="/cover-letter" class="primary-btn"
    style="background:#ffc957;color:#104879;padding:12px 16px;
           border-radius:6px;text-decoration:none;font-weight:600;
-          font-size:14px;display:inline-block;">
+          font-size:16px;display:inline-block; align-item: center;">
   ➜ Create Cover Letter
-  <small style="display:block;font-weight:400;font-size:12px;color:#104879;">
+  <small style="display:block;font-weight:400;font-size:14px;color:#104879; align-item: center;">
     Opens cover letter page
   </small>
 </a>
-
-      <div id="clFromAnalyzer" style="margin-top:16px;padding:12px;border:1px dashed #e5e7eb;border-radius:10px;background:#fffef8;">
-  <h4 style="margin:0 0 8px;color:#104879;">Generate a cover letter</h4>
-  <div style="display:grid;gap:8px;">
-    <input id="clCompany" placeholder="Target company (e.g., Acme Corp)" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
-    <input id="clRole" placeholder="Target role (e.g., Product Designer)" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
-    <textarea id="clJD" rows="4" placeholder="Paste the job description (optional)" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;"></textarea>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button id="genCLBtn" class="primary-btn" style="background:#104879;color:#fff;padding:10px 16px;border:none;border-radius:6px;font-weight:600;">Draft cover letter</button>
-      <a href="/cover-letter" id="openCLPage" style="display:inline-block;background:#ffc957;color:#104879;padding:10px 16px;border-radius:6px;text-decoration:none;font-weight:600;">Open Cover Letter Builder</a>
-    </div>
-    <textarea id="clDraft" rows="10" placeholder="Your draft will appear here…" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;display:none;"></textarea>
-  </div>
-</div>
 
 </main>
 {% endblock %}
