@@ -48,19 +48,18 @@ function gatherContext(form) {
   const skills = (form.elements["skills"]?.value || "")
     .split(",").map(s => s.trim()).filter(Boolean);
 
-  const certifications = form.elements["certifications"]?.value?.trim() || "";
-
   return {
     name,
     title: form.title?.value.trim() || "",
     contact: contactParts.join(" | "),
     summary: form.summary?.value.trim() || "",
     links: form.portfolio?.value ? [{ url: form.portfolio.value, label: "Portfolio" }] : [],
-    experience, education, skills, certifications
+    experience, education, skills,
+    certifications: form.elements["certifications"]?.value?.trim() || ""
   };
 }
 
-// allow field = "coverletter"
+// --- AI suggest (unchanged) ---
 async function aiSuggest(field, ctx, index) {
   try {
     const res = await fetch(AI_ENDPOINT, {
@@ -70,7 +69,6 @@ async function aiSuggest(field, ctx, index) {
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok || json.error) throw new Error(json.error || `AI suggest failed for ${field}`);
-    // normalize to array of lines
     const lines = Array.isArray(json.list) && json.list.length
       ? json.list
       : (json.text ? json.text.split(/\r?\n/).filter(Boolean) : []);
@@ -81,37 +79,25 @@ async function aiSuggest(field, ctx, index) {
   }
 }
 
-// Hook AI cards (Summary + Highlights)
 function attachAISuggestionHandlers() {
   const builder = qs(document, "#resume-builder");
   const form = qs(builder, "#resumeForm");
-
   builder.addEventListener("click", async (e) => {
     const btn = e.target.closest(".ai-refresh, .ai-add");
     if (!btn) return;
-
     const card = btn.closest(".ai-suggest");
     const textEl = qs(card, ".ai-text");
 
     if (btn.classList.contains("ai-refresh")) {
-      const type = btn.dataset.ai; // "summary" | "highlights"
+      const type = btn.dataset.ai;
       textEl.textContent = "Thinking…";
       try {
         const ctx = gatherContext(form);
-
-        if (type === "summary") {
-          const lines = await aiSuggest("summary", ctx);
-          textEl.textContent = lines.join(" ");
-        } else if (type === "highlights") {
-          const allItems = qsa(builder, "#exp-list .rb-item");
-          const itemEl = btn.closest(".rb-item");
-          const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
-          const lines = await aiSuggest("highlights", ctx, idx);
-          textEl.textContent = lines.join("\n");
-        } else {
-          const lines = await aiSuggest("general", ctx);
-          textEl.textContent = lines.join("\n");
-        }
+        const lines =
+          type === "summary"    ? await aiSuggest("summary", ctx) :
+          type === "highlights" ? await aiSuggest("highlights", ctx, Array.from(qsa(builder, "#exp-list .rb-item")).indexOf(btn.closest(".rb-item"))) :
+                                  await aiSuggest("general", ctx);
+        textEl.textContent = (Array.isArray(lines) ? lines : [String(lines||"")]).join(type==="summary" ? " " : "\n");
       } catch (err) {
         textEl.textContent = err.message || "AI suggestion unavailable.";
       }
@@ -119,7 +105,6 @@ function attachAISuggestionHandlers() {
     }
 
     if (btn.classList.contains("ai-add")) {
-      // insert into the right textarea
       const wrap = btn.closest(".rb-card, .rb-item, .rb-step");
       const taSummary = qs(wrap, 'textarea[name="summary"]');
       const taBullets = qs(wrap, 'textarea[name="bullets"]');
@@ -131,7 +116,6 @@ function attachAISuggestionHandlers() {
         taSummary.dispatchEvent(new Event("input", { bubbles: true }));
         return;
       }
-
       if (taBullets) {
         const cleaned = suggestion.split(/\r?\n/).map(s => s.replace(/^•\s*/, "").trim()).filter(Boolean);
         const prefix = taBullets.value && !taBullets.value.endsWith("\n") ? "\n" : "";
@@ -142,7 +126,7 @@ function attachAISuggestionHandlers() {
   });
 }
 
-// Repeaters
+// --- Repeaters (unchanged) ---
 function cloneFromTemplate(tplId) {
   const tpl = qs(document, withinBuilder(`#${tplId}`));
   if (!tpl) return null;
@@ -177,7 +161,7 @@ function addEducationFromObj(obj = {}) {
   list.appendChild(node);
 }
 
-// Skills chips
+// Skills chips UI (unchanged)
 function initSkills() {
   const builder = qs(document, "#resume-builder");
   const skillInput = qs(builder, "#skillInput");
@@ -210,7 +194,7 @@ function initSkills() {
   return { refreshChips, skillsSet };
 }
 
-// Server render helpers
+// Render helpers — MERGE live form over cached context
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
   if (format === "pdf") {
     const res = await fetch("/build-resume", {
@@ -245,9 +229,9 @@ function initWizard() {
     "#step-contact",
     "#step-summary",
     "#step-experience",
-    "#step-education",
-    "#step-certifications",   // NEW step inserted here
     "#step-skills",
+    "#step-education",
+    "#step-certs",
     "#step-design",
     "#step-finish",
   ].map(sel => qs(builder, sel));
@@ -288,7 +272,6 @@ function initWizard() {
       s.hidden = !active;
       s.classList.toggle("active", active);
     });
-    // Sync tab active state to the current step (based on data-target)
     tabs.forEach(btn => {
       const tId = btn.getAttribute("data-target");
       const isActive = tId && steps[idx] && ("#" + steps[idx].id) === tId;
@@ -301,7 +284,6 @@ function initWizard() {
     onEnterStep(idx);
   }
 
-  // Tab clicks: jump to their mapped step
   tabs.forEach((btn) => {
     btn.addEventListener("click", () => {
       const target = btn.getAttribute("data-target");
@@ -313,7 +295,7 @@ function initWizard() {
   back?.addEventListener("click", () => showStep(idx - 1));
   next?.addEventListener("click", () => showStep(idx + 1));
 
-  // Add buttons (experience/education)
+  // Add buttons
   builder.addEventListener("click", (e) => {
     const addBtn = e.target.closest("[data-add]");
     if (!addBtn) return;
@@ -322,40 +304,31 @@ function initWizard() {
     if (type === "education") addEducationFromObj();
   });
 
-  // Photo upload
-  qs(builder, "#photoBtn")?.addEventListener("click", () => qs(builder, "#photoInput")?.click());
-  qs(builder, "#photoInput")?.addEventListener("change", (e) => {
-    const file = e.target.files && e.target.files[0];
-    const img = qs(builder, "#photoPreview");
-    if (file && img) {
-      const url = URL.createObjectURL(file);
-      img.src = url; img.hidden = false;
-    }
-  });
-
   // Submit → generate, then go to Finish
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      const ctxForTemplate = gatherContext(form);
+      const liveCtx = gatherContext(form);
 
-      const educationStr = (ctxForTemplate.education || [])
+      const educationStr = (liveCtx.education || [])
         .map(ed => [ed.degree, ed.school, ed.location, ed.graduated].filter(Boolean).join(" – "))
         .join("\n");
-      const experienceStr = (ctxForTemplate.experience || [])
+      const experienceStr = (liveCtx.experience || [])
         .map(e => `${e.role}${e.company ? " – " + e.company : ""}\n${(e.bullets || []).map(b => "• " + b).join("\n")}`)
         .join("\n\n");
+
       const payload = {
-        fullName: ctxForTemplate.name || "",
-        title: ctxForTemplate.title || "",
-        contact: ctxForTemplate.contact || "",
-        summary: ctxForTemplate.summary || "",
+        name: liveCtx.name || "",
+        fullName: liveCtx.name || "",
+        title: liveCtx.title || "",
+        contact: liveCtx.contact || "",
+        summary: liveCtx.summary || "",
         education: educationStr,
         experience: experienceStr,
-        skills: (ctxForTemplate.skills || []).join(", "),
-        certifications: ctxForTemplate.certifications || "",
-        portfolio: (ctxForTemplate.links?.[0]?.url) || "",
+        skills: (liveCtx.skills || []).join(", "),
+        certifications: liveCtx.certifications || "",
+        portfolio: (liveCtx.links?.[0]?.url) || "",
       };
 
       const gen = await fetch("/generate-resume", {
@@ -365,9 +338,8 @@ function initWizard() {
       const genJson = await gen.json().catch(() => ({}));
       if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
-      // Keep server context but don't lose live form fields
-      const serverCtx = genJson.context || {};
-      window._resumeCtx = { ...serverCtx, ...ctxForTemplate };
+      // **Form values win** (so name/skills/certs never disappear)
+      window._resumeCtx = { ...(genJson.context || {}), ...liveCtx };
       showStep(stepIndexById("#step-finish"));
     } catch (err) {
       console.error("Generate/build error:", err);
@@ -377,18 +349,20 @@ function initWizard() {
     }
   });
 
-  // Preview / PDF (Design + Finish)
+  // Preview / PDF — **merge live form over any cached context**
   const previewBtn  = qs(builder, "#previewTemplate");
   const pdfBtn      = qs(builder, "#downloadTemplatePdf");
   const themeSelect = qs(builder, "#themeSelect");
 
+  function mergedCtx() {
+    const live = gatherContext(qs(builder, "#resumeForm"));
+    return { ...(window._resumeCtx || {}), ...live };
+  }
+
   previewBtn?.addEventListener("click", async () => {
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      // Merge live form over any stored context to avoid "Your Name"
-      const live = gatherContext(qs(builder, "#resumeForm"));
-      const ctx  = { ...(window._resumeCtx || {}), ...live };
-      await renderWithTemplateFromContext(ctx, "html", themeSelect?.value || "modern");
+      await renderWithTemplateFromContext(mergedCtx(), "html", themeSelect?.value || "modern");
     } catch (e) { console.error(e); alert(e.message || "Preview failed"); }
     finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
   });
@@ -396,9 +370,7 @@ function initWizard() {
   pdfBtn?.addEventListener("click", async () => {
     try {
       qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      const live = gatherContext(qs(builder, "#resumeForm"));
-      const ctx  = { ...(window._resumeCtx || {}), ...live };
-      await renderWithTemplateFromContext(ctx, "pdf", themeSelect?.value || "modern");
+      await renderWithTemplateFromContext(mergedCtx(), "pdf", themeSelect?.value || "modern");
     } catch (e) { console.error(e); alert(e.message || "PDF build failed"); }
     finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
   });
@@ -406,7 +378,7 @@ function initWizard() {
   qs(builder, "#previewTemplateFinish")?.addEventListener("click", () => previewBtn?.click());
   qs(builder, "#downloadTemplatePdfFinish")?.addEventListener("click", () => pdfBtn?.click());
 
-  // Start
+  // Start wizard
   showStep(0);
 }
 
@@ -430,30 +402,29 @@ async function maybePrefillFromAnalyzer(form, helpers) {
     const name = (ctx.name || "").trim().split(" ");
     if (form.firstName) form.firstName.value = name.shift() || "";
     if (form.lastName)  form.lastName.value  = name.join(" ");
-    if (form.title)   form.title.value   = ctx.title || "";
-    if (form.summary) form.summary.value = ctx.summary || "";
+    if (form.title)     form.title.value     = ctx.title || "";
+    if (form.summary)   form.summary.value   = ctx.summary || "";
     if (ctx.links && ctx.links[0] && form.portfolio) form.portfolio.value = ctx.links[0].url || "";
 
-    // skills
     if (Array.isArray(ctx.skills) && ctx.skills.length) {
       ctx.skills.forEach((s) => helpers.skillsSet.add(s));
       helpers.refreshChips();
     }
-    // experience
     const expList = document.querySelector("#exp-list");
     if (expList) {
       expList.innerHTML = "";
       (ctx.experience || []).forEach(addExperienceFromObj);
       if (!expList.children.length) addExperienceFromObj();
     }
-    // education
     const eduList = document.querySelector("#edu-list");
     if (eduList) {
       eduList.innerHTML = "";
       (ctx.education || []).forEach(addEducationFromObj);
       if (!eduList.children.length) addEducationFromObj();
     }
-    window._resumeCtx = ctx;
+
+    // Don’t clobber live values later
+    window._resumeCtx = { ...(window._resumeCtx || {}), ...ctx };
   } catch (e) {
     console.warn("Prefill from analyzer failed:", e);
   }
