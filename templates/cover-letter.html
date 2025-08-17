@@ -59,19 +59,18 @@
 
   <div class="cl">
     {# ----- Applicant (sender) ----- #}
-    {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
+    {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}</br>
 
     <div class="sender-address">
       {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
       {% if sender.city or sender.postcode %}
         <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
       {% endif %}
-      {% if sender.email or sender.phone %}
-        <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
-      {% endif %}
-    </div>
+      {% if sender.email %}<div class="muted">{{ sender.email }}</div>{% endif %}
+      {% if sender.phone %}<div>{{ sender.phone }}</div>{% endif %}
+    </div></br>
 
-    {% if sender.date %}<div class="sender-date">{{ sender.date }}</div>{% endif %}
+    {% if sender.date %}<div class="sender-date">{{ sender.date }}</div>{% endif %}</br>
 
     {# ----- Recruiter / Company ----- #}
     {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
@@ -83,7 +82,7 @@
           <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
         {% endif %}
       </div>
-    {% endif %}
+    {% endif %}</br>
 
     {# ----- Greeting, Body, Closing ----- #}
     <div class="salutation">Dear {{ recipient.name or 'Hiring Manager' }},</div>
