@@ -16,7 +16,7 @@
   padding-top: 3mm;
 }
 
-/* Section headings: small-caps feel (keep it restrained) */
+/* Section headings */
 .resume.resume--minimal .section h2{
   color: var(--accent);
   font-weight: 700;
@@ -42,14 +42,13 @@
 }
 .resume.resume--minimal .bullets li{ margin: 1.2mm 0; }
 
-/* Optional subtle separators between items */
+/* Optional separators */
 .resume.resume--minimal .item + .item{
   border-top: 1px solid #f1f3f6;
   padding-top: 4mm;
 }
 
-/* ---------- Skills ---------- */
-/* If minimal.html uses a bullet list like modern.html */
+/* Skills */
 .resume.resume--minimal .skills-section{ margin-bottom: 0; }
 .resume.resume--minimal .skills-section + .section{ margin-top: 8px; }
 
@@ -65,7 +64,7 @@
   margin: 2px 0;
 }
 
-/* If your older minimal.html still renders chips, keep them tidy */
+/* Chips (if used) */
 .resume.resume--minimal .skills{ display:flex; flex-wrap:wrap; gap:6px; margin-top:2mm; }
 .resume.resume--minimal .chip{
   border:1px solid #eef1f4;
