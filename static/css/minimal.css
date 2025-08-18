@@ -3,32 +3,26 @@
    Depends on resume-base.css being loaded first.
    ========================================================= */
 
-:root{
+.resume.resume--minimal{
   --accent: #0f172a;   /* deep slate */
 }
 
 /* Header: simple text stack, thin divider */
-.resume.resume--minimal .resume-header{
-  margin-bottom: 9mm;
-}
-.resume.resume--minimal .resume-name{
-  color: var(--accent);
-}
-.resume.resume--minimal .resume-title{
-  color: var(--muted);
-}
+.resume.resume--minimal .resume-header{ margin-bottom: 9mm; }
+.resume.resume--minimal .resume-name{ color: var(--accent); }
+.resume.resume--minimal .resume-title{ color: var(--muted); }
 .resume.resume--minimal .resume-contact{
   border-top: 1px solid var(--rule);
   padding-top: 3mm;
 }
 
-/* Section headings: small-caps feel without relying on font-variant */
+/* Section headings: small-caps feel (keep it restrained) */
 .resume.resume--minimal .section h2{
   color: var(--accent);
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
-  font-size: 10.8pt;     /* slightly smaller than base for restraint */
+  font-size: 10.8pt;
   margin-bottom: 3mm;
 }
 
@@ -38,26 +32,45 @@
   height: 1px;
 }
 
-/* Experience/Education layout: clean lines */
-.resume.resume--minimal .item-title{
-  font-weight: 700;
-}
-.resume.resume--minimal .item-meta{
+/* Experience/Education layout */
+.resume.resume--minimal .item{ margin: 8px 0 12px; }
+.resume.resume--minimal .item-title-line{ font-weight: 700; }
+.resume.resume--minimal .item-dates{
   color: var(--muted);
+  font-size: .95em;
+  margin: 2px 0 6px;
 }
-
-/* Skills: very subtle chips */
-.resume.resume--minimal .chip{
-  border-color:#eef1f4;
-  background:#fafbfd;
-}
-
-/* Tighten spacing slightly for minimal */
-.resume.resume--minimal .section{ margin-top: 6.5mm; }
 .resume.resume--minimal .bullets li{ margin: 1.2mm 0; }
 
-/* Optional subtle horizontal rules between items */
+/* Optional subtle separators between items */
 .resume.resume--minimal .item + .item{
   border-top: 1px solid #f1f3f6;
   padding-top: 4mm;
+}
+
+/* ---------- Skills ---------- */
+/* If minimal.html uses a bullet list like modern.html */
+.resume.resume--minimal .skills-section{ margin-bottom: 0; }
+.resume.resume--minimal .skills-section + .section{ margin-top: 8px; }
+
+.resume.resume--minimal .skills-list{
+  columns: 2;
+  column-gap: 24px;
+  list-style: disc outside;
+  padding-left: 1.15rem;
+  margin: 4px 0 0;
+}
+.resume.resume--minimal .skills-list li{
+  break-inside: avoid;
+  margin: 2px 0;
+}
+
+/* If your older minimal.html still renders chips, keep them tidy */
+.resume.resume--minimal .skills{ display:flex; flex-wrap:wrap; gap:6px; margin-top:2mm; }
+.resume.resume--minimal .chip{
+  border:1px solid #eef1f4;
+  background:#fafbfd;
+  border-radius:999px;
+  font-size:9.5pt;
+  padding:4px 8px;
 }
