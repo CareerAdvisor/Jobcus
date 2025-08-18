@@ -108,6 +108,76 @@ def _normalize_ctx(data: dict) -> dict:
 
     return ctx
 
+# --- Add near the top of resumes.py (above the route handlers) ---
+import re
+
+SECTION_KEYS = [
+    "summary", "objective", "experience", "work experience", "education",
+    "skills", "projects", "certifications", "achievements", "contact"
+]
+
+def _keyword_match(resume_text: str, job_desc: str):
+    if not job_desc:
+        return {"matched": [], "missing": []}, None
+    words = {w.lower() for w in re.findall(r"[A-Za-z][A-Za-z+\-/#]{2,}", job_desc)}
+    stop  = {"and","the","with","for","from","your","you","our","role","job",
+             "skills","experience","years","team","work","ability","responsibilities"}
+    targets = sorted(w for w in words if w not in stop)
+    txt = resume_text.lower()
+    matched = [w for w in targets if w in txt]
+    missing = [w for w in targets if w not in txt]
+    score = round(100 * len(matched) / max(1, len(targets)))
+    return {"matched": matched, "missing": missing}, score
+
+def _detect_sections(resume_text: str):
+    txt = resume_text.lower()
+    present = [s for s in SECTION_KEYS if re.search(rf"\b{s}\b", txt)]
+    missing = [s for s in SECTION_KEYS if s not in present]
+    score = round(100 * len(present) / len(SECTION_KEYS))
+    return {"present": present, "missing": missing}, score
+
+def _readability_score(resume_text: str):
+    words = re.findall(r"\w+", resume_text)
+    sents = re.split(r"[.!?]\s+", resume_text.strip())
+    w = len(words)
+    s = max(1, len([x for x in sents if x.strip()]))
+    avg = w / s  # words per sentence
+    # ideal range ~12–20 → score dips as you move away
+    diff = abs(avg - 16)
+    return max(0, min(100, round(100 - diff * 6)))
+
+def _length_score(resume_text: str):
+    w = len(re.findall(r"\w+", resume_text))
+    if w <= 100:  return 20
+    if w >= 1600: return 25
+    if 450 <= w <= 900:  # ~1–2 pages of text
+        return 95
+    if w < 450:
+        return max(30, round(95 - (450 - w) * 0.12))
+    return max(30, round(95 - (w - 900) * 0.06))
+
+def build_dashboard_payload(*, score:int, issues:list, strengths:list, suggestions:list,
+                            resume_text:str, job_desc:str):
+    kw, kw_score     = _keyword_match(resume_text, job_desc)
+    secs, sec_score  = _detect_sections(resume_text)
+    breakdown = {
+        "formatting": 80,                              # placeholder (tie to a real formatter if you have one)
+        "keywords": kw_score if kw_score is not None else None,
+        "sections": sec_score,
+        "readability": _readability_score(resume_text),
+        "length": _length_score(resume_text),
+        "parseable": bool(resume_text.strip()),
+    }
+    return {
+        "score": int(score or 0),
+        "lastAnalyzed": None,                          # UI can overwrite with client time
+        "analysis": {"issues": issues or [], "strengths": strengths or []},
+        "suggestions": suggestions or [],
+        "breakdown": breakdown,
+        "keywords": kw,
+        "sections": secs,
+    }
+
 # ---------- 1) Template-based resume (HTML/PDF) ----------
 @resumes_bp.post("/build-resume")
 def build_resume():
@@ -187,8 +257,9 @@ def build_resume_docx():
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
 def resume_analysis():
     client = current_app.config["OPENAI_CLIENT"]
-    data = request.get_json(force=True)
+    data = request.get_json(force=True) or {}
     resume_text = ""
+    job_desc = (data.get("jobDescription") or "").strip()
 
     if data.get("pdf"):
         pdf_bytes = base64.b64decode(data["pdf"])
@@ -206,11 +277,14 @@ def resume_analysis():
     if not resume_text.strip():
         return jsonify(error="Could not extract any text"), 400
 
+    # Keep LLM prompt minimal and reliable (score/issues/strengths/suggestions)
     prompt = (
         "You are an ATS-certified resume analyzer. Return only a JSON object with:\n"
         "score (0–100), issues[], strengths[], suggestions[].\n\n"
         f"Resume content:\n\n{resume_text}"
     )
+
+    overall_score, issues, strengths, suggestions = 0, [], [], []
     try:
         resp = client.chat.completions.create(
             model="gpt-4o",
@@ -222,20 +296,37 @@ def resume_analysis():
         start, end = content.find("{"), content.rfind("}")
         parsed = json.loads(content[start:end+1])
 
-        return jsonify({
-            "score": int(parsed.get("score", 0)),
-            "analysis": {
-                "issues": parsed.get("issues", []),
-                "strengths": parsed.get("strengths", [])
-            },
-            "suggestions": parsed.get("suggestions", [])
-        })
-    except json.JSONDecodeError:
-        logging.exception("Invalid JSON from analyzer")
-        return jsonify(error="Invalid JSON from Analyzer"), 500
+        overall_score = int(parsed.get("score", 0))
+        issues       = parsed.get("issues", []) or []
+        strengths    = parsed.get("strengths", []) or []
+        suggestions  = parsed.get("suggestions", []) or []
     except Exception:
-        logging.exception("Resume analysis error")
-        return jsonify(error="Resume analysis failed"), 500
+        logging.exception("Analyzer fallback: building payload without LLM fields")
+
+    # Build richer ATS-style payload for the dashboard
+    payload = build_dashboard_payload(
+        score=overall_score,
+        issues=issues,
+        strengths=strengths,
+        suggestions=suggestions,
+        resume_text=resume_text,
+        job_desc=job_desc
+    )
+
+    # Optional: persist for signed-in users
+    try:
+        from flask_login import current_user
+        supabase = current_app.config.get("SUPABASE")
+        if supabase and getattr(current_user, "is_authenticated", False):
+            supabase.table("resumes").insert({
+                "user_id": current_user.id,
+                "text": resume_text[:100000],
+                "analysis": json.dumps(payload),
+            }).execute()
+    except Exception:
+        current_app.logger.warning("resume save failed", exc_info=True)
+
+    return jsonify(payload), 200
 
 # ---------- 4) AI resume optimisation ----------
 @resumes_bp.route("/api/optimize-resume", methods=["POST"])
