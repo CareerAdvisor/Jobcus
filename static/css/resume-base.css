@@ -121,6 +121,7 @@ a:hover{ text-decoration:none; }
     width:auto;
     min-height:auto;
     margin:0;
+    overflow: visible;
     box-shadow:none;   /* ensure no shadow in print */
     padding:0;         /* IMPORTANT: avoid double margins; margins come from @page */
   }
@@ -202,5 +203,6 @@ a:hover{ text-decoration:none; }
     padding:12mm;
   }
 }
+
 
 
