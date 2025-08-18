@@ -15,12 +15,15 @@
   {% endif %}
 
   <style>
+    /* A4 with 0.75" margins */
     @page { size: A4; margin: 19mm; }
     .resume-page { padding: 0; }
 
+    /* Tight, print-safe spacing */
     .resume .section { margin: 12px 0 10px; }
     .resume .rule    { margin: 6px 0 10px; }
 
+    /* Ensure dates always render in PDF */
     .item-header{ display:block; }
     .item-meta,
     .item-dates{
@@ -31,6 +34,17 @@
       white-space:normal;
       overflow:visible;
     }
+
+    /* Bullet skills (like modern) */
+    .skills-section{ break-inside:auto; }
+    .skills-list{
+      columns: 2;
+      column-gap: 28px;
+      list-style: disc;
+      padding-left: 18px;
+      margin: 0;
+    }
+    .skills-list li{ break-inside: avoid; margin: 2px 0; }
   </style>
 </head>
 <body>
@@ -55,14 +69,13 @@
     {% endif %}
 
     {% if skills %}
-    <section class="section">
+    <section class="section skills-section">
       <h2>Skills</h2>
       <div class="rule"></div>
-      <div class="skills">
-        {% for s in (skills if skills is iterable and skills is not string else (skills.split(',') if skills else [])) %}
-          {% if s %}<span class="chip">{{ s|trim }}</span>{% endif %}
-        {% endfor %}
-      </div>
+      {% set skills_list = skills if skills is iterable and skills is not string else (skills.split(',') if skills else []) %}
+      <ul class="skills-list">
+        {% for s in skills_list if s %}<li>{{ s|trim }}</li>{% endfor %}
+      </ul>
     </section>
     {% endif %}
 
