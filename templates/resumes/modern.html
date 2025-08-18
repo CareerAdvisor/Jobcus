@@ -14,27 +14,6 @@
     <script type="module" src="{{ url_for('static', filename='js/modern.js') }}"></script>
   {% endif %}
 
-  <style>
-    /* A4 with 0.75" margins */
-    .resume-page { padding: 0; }
-
-    /* General section spacing */
-    .resume .section { margin: 12px 0 10px; break-before:auto; break-after:auto; break-inside:auto; }
-    .resume .rule    { margin: 6px 0 10px; }
-
-    /* Keep Skills tight to Summary and allow it to split if needed (fixes WeasyPrint big gap) */
-    .skills-section{ break-before:auto; break-after:auto; break-inside:auto; page-break-before:auto; page-break-after:auto; page-break-inside:auto; }
-
-    /* Skills as two-column list (works in WeasyPrint) */
-    .skills-list{
-      columns: 2;
-      column-gap: 28px;
-      list-style: disc;
-      padding-left: 18px;
-      margin: 0;
-    }
-    .skills-list li{ break-inside: avoid; margin: 2px 0; }
-  </style>
 </head>
 <body>
   <div class="resume-page resume resume--modern">
