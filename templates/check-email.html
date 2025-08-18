@@ -1,16 +1,35 @@
+{# templates/check-mail.html #}
 {% extends "base.html" %}
 
-{% block title %}Check Your Email - Jobcus{% endblock %}
+{% block title %}Check your email – Jobcus{% endblock %}
+{% block body_class %}account-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+{% endblock %}
 
 {% block content %}
-<section class="auth-section">
-  <div class="auth-box" data-aos="fade-up">
-    <h1>🎉 Thanks for Signing Up!</h1>
-    <p class="info-message">
-      We've sent a confirmation link to your email. Please check your inbox (and spam folder) to verify your account.
+<section class="auth-wrapper">
+  <div class="auth-card">
+    <h2 class="auth-title">Confirm your email</h2>
+    <p class="auth-subtitle">
+      {% if email %}
+        We sent a verification link to <strong>{{ email }}</strong>. Please click it to finish signing up.
+      {% else %}
+        We sent a verification link to your inbox. Please click it to finish signing up.
+      {% endif %}
     </p>
-    <p>
-      Once confirmed, you can <a href="{{ url_for('account', mode='login') }}">log in here</a>.
+
+    <p class="toggle-text">
+      Didn’t get it?
+      <a class="toggle-link" href="/resend-confirmation{% if email %}?email={{ email | urlencode }}{% endif %}">
+        Resend confirmation email
+      </a>
+    </p>
+
+    <p class="toggle-text">
+      Already confirmed?
+      <a class="toggle-link" href="/dashboard">Go to your dashboard</a>
     </p>
   </div>
 </section>
