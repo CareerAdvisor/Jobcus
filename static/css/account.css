@@ -1,107 +1,159 @@
-/* static/css/account.css */
-/* Scope everything to the account page */
-.account-page main{
-  max-width: none;          /* remove global 800px cap */
-  padding-top: 0;           /* we’ll pad inside the wrapper instead */
+/* static/css/account.css — scoped to the account page only */
+body.account-page { --header-h: 60px; }
+
+/* 1) Undo global <main> constraints only on the account page */
+body.account-page main {
+  max-width: none;      /* remove global 800px cap */
+  width: 100%;
+  padding: 0;           /* wrapper handles spacing */
 }
 
-.account-page .page-container{
-  min-height: 100vh;
+/* Keep the page full height with modern viewport units */
+body.account-page .page-container {
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
-.account-page .auth-wrapper{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-height: calc(100vh - 60px); /* header is ~60px */
-  padding: 60px 16px;
-  background:#f6f9fb;
-  width:100%;
+/* 2) Auth wrapper — centered, below fixed header, full width */
+body.account-page .auth-wrapper { 
+  /* push content below the fixed header (60px) + a little breathing room */
+  padding: calc(var(--header-h) + 20px) 20px 60px;
+  min-height: calc(100dvh - var(--header-h));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f6f9fb; /* soft page background */
+  width: 100%;
 }
 
-.account-page .auth-card{
-  width:100%;
-  max-width: 480px;
-  margin:0 auto;
-  background:#fff;
-  border-radius:12px;
-  box-shadow:0 8px 24px rgba(16,72,121,.08);
-  padding:28px 24px;
+/* 3) Card — responsive width (not fixed), capped for readability */
+body.account-page .auth-card { 
+  width: 100%;
+  max-width: 800px;           /* tweak as you like; remove for full-bleed */
+  margin: 0 auto;
+  background: #fff;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(16,72,121,.08);
+  text-align: center;
 }
 
-.account-page .auth-title{
-  font-size: 28px;
+/* 4) Typography */
+body.account-page .auth-title {
+  font-size: 2rem;
   font-weight: 700;
   line-height: 1.2;
-  margin: 0 0 6px;
-  color:#104879;
-  text-align:center;
+  margin: 0 0 8px;
+  color: #104879;
+  text-align: center;
 }
-.account-page .auth-subtitle{
-  font-size:14px;
-  color:#555;
-  margin:0 0 16px;
-  text-align:center;
-}
-
-.account-page .flash-message{ margin:8px 0 12px; color:#b42318; text-align:center; }
-
-/* Form */
-.account-page .auth-form{ display:flex; flex-direction:column; gap:14px; }
-.account-page .auth-form .form-group{ text-align:left; }
-.account-page .auth-form label{ font-weight:600; margin-bottom:6px; color:#333; }
-.account-page .auth-form input{
-  width:100%;
-  border:1px solid #d1d5db;
-  border-radius:8px;
-  padding:12px;
-  font-size:16px;
-}
-.account-page .auth-form input:focus{
-  border-color:#104879;
-  outline:2px solid #104879;
-  outline-offset:1px;
+body.account-page .auth-subtitle {
+  font-size: .95rem;
+  color: #444;
+  margin: 0 0 24px;
+  text-align: center;
 }
 
-/* Primary button (scoped so it doesn't fight global .btn-primary) */
-.account-page .btn-primary{
-  width:100%;
-  background:#104879;
-  color:#fff;
-  border:none;
-  border-radius:8px;
-  padding:12px 14px;
-  font-weight:600;
-  cursor:pointer;
+body.account-page .flash-message {
+  margin: 8px 0 12px;
+  color: #b42318;
+  text-align: center;
+}
+
+/* 5) Form */
+body.account-page .auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+body.account-page .auth-form .form-group { 
+  text-align: left; 
+}
+body.account-page .auth-form label { 
+  font-weight: 600; 
+  margin-bottom: 6px; 
+  color: #333; 
+}
+body.account-page .auth-form input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 16px;
+}
+body.account-page .auth-form input:focus {
+  border-color: #104879;
+  outline: 2px solid #104879;
+  outline-offset: 1px;
+}
+
+/* 6) Primary button (scoped so it overrides global .btn-primary safely) */
+body.account-page .btn-primary {
+  width: 100%;
+  background: #104879;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-weight: 600;
+  cursor: pointer;
   transition: background .2s ease;
 }
-.account-page .btn-primary:hover{ background:#0d3a66; }
+body.account-page .btn-primary:hover { background: #0d3a66; }
 
-/* Toggle / OR / Socials */
-.account-page .toggle-text{ margin-top:10px; font-size:14px; color:#555; text-align:center; }
-.account-page .toggle-link{ color:#104879; font-weight:600; text-decoration:none; }
-.account-page .toggle-link:hover{ text-decoration:underline; }
-
-.account-page .or-divider{
-  display:flex; align-items:center; gap:12px; margin:18px 0; color:#888; font-size:12px;
+/* 7) Toggle / OR / Socials */
+body.account-page .toggle-text { 
+  margin-top: 12px; 
+  font-size: 14px; 
+  color: #555; 
+  text-align: center; 
 }
-.account-page .or-divider::before,
-.account-page .or-divider::after{ content:""; flex:1; height:1px; background:#e5e7eb; }
-
-.account-page .social-buttons{ display:flex; justify-content:center; gap:12px; }
-.account-page .social-btn{
-  background:#f0f4f9; border:1px solid #e5e7eb;
-  border-radius:8px; padding:10px;
-  display:inline-flex; align-items:center; justify-content:center;
-  width:48px; height:48px; cursor:pointer;
+body.account-page .toggle-link { 
+  color: #104879; 
+  font-weight: 600; 
+  text-decoration: none; 
 }
-.account-page .social-btn:hover{ background:#e9eef6; }
-.account-page .social-btn img{ width:24px; height:24px; }
+body.account-page .toggle-link:hover { text-decoration: underline; }
 
-/* Small/mobile tweaks */
-@media (max-width: 480px){
-  .account-page .auth-wrapper{ padding: 32px 12px; }
-  .account-page .auth-card{ max-width: 100%; padding: 24px 18px; }
+body.account-page .or-divider {
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  margin: 18px 0; 
+  color: #888; 
+  font-size: 12px;
+}
+body.account-page .or-divider::before,
+body.account-page .or-divider::after {
+  content: ""; 
+  flex: 1; 
+  height: 1px; 
+  background: #e5e7eb; 
+}
+
+body.account-page .social-buttons { 
+  display: flex; 
+  justify-content: center; 
+  gap: 12px; 
+}
+body.account-page .social-btn {
+  background: #f0f4f9; 
+  border: 1px solid #e5e7eb;
+  border-radius: 8px; 
+  padding: 10px;
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center;
+  width: 48px; 
+  height: 48px; 
+  cursor: pointer;
+}
+body.account-page .social-btn:hover { background: #e9eef6; }
+body.account-page .social-btn img { width: 24px; height: 24px; }
+
+/* 8) Small/mobile tweaks */
+@media (max-width: 480px) {
+  body.account-page .auth-wrapper { padding: calc(var(--header-h) + 12px) 12px 32px; }
+  body.account-page .auth-card { max-width: 100%; padding: 24px 18px; }
 }
