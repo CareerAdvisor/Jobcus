@@ -23,9 +23,13 @@
     .resume .section { margin: 12px 0 10px; break-before:auto; break-after:auto; break-inside:auto; }
     .resume .rule    { margin: 6px 0 10px; }
 
-    /* Keep Skills tight to Summary and allow it to split if needed (fixes WeasyPrint big gap) */
+    /* Keep Skills tight to Summary and allow it to split (prevents big gaps) */
     .skills-section{ break-before:auto; break-after:auto; break-inside:auto; page-break-before:auto; page-break-after:auto; page-break-inside:auto; }
 
+    /* Ensure meta line never gets pushed off-page by theme styles */
+    .item-header{ display:block; }
+    .item-meta{ margin-top:2px; white-space:normal; overflow:visible; }
+    
     /* Skills as two-column list (works in WeasyPrint) */
     .skills-list{
       columns: 2;
@@ -76,10 +80,15 @@
       {% for e in experience %}
         <article class="item">
           <div class="item-header">
-            <div class="item-title">{{ e.role }}{% if e.company %} – {{ e.company }}{% endif %}</div>
+            <!-- Location BEFORE organisation, with a pipe -->
+            <div class="item-title">
+              {{ e.role }}
+              {% if e.location %} | {{ e.location }}{% endif %}
+              {% if e.company %} – {{ e.company }}{% endif %}
+            </div>
+            <!-- Dates always visible on their own line -->
             <div class="item-meta">
-              {% if e.location %}{{ e.location }}{% endif %}
-              {% if e.start or e.end %}{% if e.location %} · {% endif %}
+              {% if e.start or e.end %}
                 {% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}
               {% endif %}
             </div>
