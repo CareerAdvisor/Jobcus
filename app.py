@@ -324,11 +324,11 @@ def cover_letter():
 # ----------------------------
 # Email confirmation
 # ----------------------------
-@app.route("/check-email")
+@app.get("/check-email")
 def check_email():
-    # Try querystring first, then whatever we saved during signup.
-    email = request.args.get("email") or session.pop("pending_email", None)
-    return render_template("check-mail.html", email=email)
+    email = session.get("pending_email")  # set this during signup
+    return render_template("check-email.html", email=email)
+
 
 @app.route("/confirm")
 def confirm_page():
