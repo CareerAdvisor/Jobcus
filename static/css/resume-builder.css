@@ -255,3 +255,24 @@
 #resume-builder textarea[name="certifications"]{
   min-height: 140px;
 }
+
+/* Section spacing (already tight) */
+.resume .section { margin: 10px 0; }
+.resume .rule    { margin: 6px 0 8px; }
+.skills-section  { margin-bottom: 6px; }
+
+/* Let experience content flow across pages (no large white gap) */
+.experience-section { break-inside: auto !important; page-break-inside: auto !important; }
+
+/* Allow a single job block to split (so bullets can roll to next page) */
+.experience-section .item { break-inside: auto; page-break-inside: auto; margin-bottom: 10px; }
+
+/* Keep the heading lines together, but let bullets break freely */
+.item-title-line,
+.item-dates { break-after: avoid; page-break-after: avoid; }
+
+/* Bullets may split across pages (this is the key) */
+.experience-section .bullets li { break-inside: auto; page-break-inside: auto; }
+
+.item-title-line{ font-weight:700; font-size:1.05rem; }
+.item-dates{ color:#6b7280; margin:2px 0 6px; }
