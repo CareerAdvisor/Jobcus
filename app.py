@@ -369,8 +369,10 @@ def account():
             except Exception:
                 pass
 
+            # ⬇️ NEW: remember email for the /check-email page
             if not ud.get("email_confirmed_at"):
-                return jsonify(success=True, redirect="/check-email"), 200
+                session["pending_email"] = email
+                return jsonify(success=True, redirect=url_for("check_email")), 200
 
             login_user(User(auth_id=auth_id, email=email, fullname=name))
             return jsonify(success=True, redirect=url_for("dashboard")), 200
@@ -407,6 +409,8 @@ def account():
         except AuthApiError as e:
             msg = str(e).lower()
             if "email not confirmed" in msg or "not confirmed" in msg:
+                # Optionally remember email here too
+                session["pending_email"] = email
                 return jsonify(
                     success=False,
                     code="email_not_confirmed",
