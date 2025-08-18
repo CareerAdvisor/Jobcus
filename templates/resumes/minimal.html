@@ -19,10 +19,13 @@
     @page { size: A4; margin: 19mm; }
     .resume-page { padding: 0; }
 
-    /* Keep sections flowing; allow Skills to split */
+    /* Section flow */
     .resume .section { margin: 12px 0 10px; break-before:auto; break-after:auto; break-inside:auto; }
     .resume .rule    { margin: 6px 0 10px; }
     .skills-section  { break-before:auto; break-after:auto; break-inside:auto; page-break-before:auto; page-break-after:auto; page-break-inside:auto; }
+
+    .item-header{ display:block; }
+    .item-meta{ margin-top:2px; white-space:normal; overflow:visible; }
   </style>
 </head>
 <body>
@@ -65,10 +68,15 @@
       {% for e in experience %}
         <article class="item">
           <div class="item-header">
-            <div class="item-title">{{ e.role }}{% if e.company %} · {{ e.company }}{% endif %}</div>
+            <div class="item-title">
+              {{ e.role }}
+              {% if e.location %} | {{ e.location }}{% endif %}
+              {% if e.company %} · {{ e.company }}{% endif %}
+            </div>
             <div class="item-meta">
-              {% if e.location %}{{ e.location }} · {% endif %}
-              {% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}
+              {% if e.start or e.end %}
+                {% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}
+              {% endif %}
             </div>
           </div>
           {% if e.bullets %}<ul class="bullets">{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
