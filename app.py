@@ -329,6 +329,31 @@ def check_email():
     email = session.get("pending_email")  # set this during signup
     return render_template("check-email.html", email=email)
 
+from flask import request, session, redirect, url_for, flash, current_app
+
+@app.route("/resend-confirmation", methods=["GET"])
+def resend_confirmation():
+    """
+    Resend email confirmation for a user.
+    Looks for ?email=... first; falls back to session['pending_email'].
+    Redirects back to /check-email with a flash message.
+    """
+    email = (request.args.get("email") or session.get("pending_email") or "").strip().lower()
+    if not email:
+        flash("We couldn’t find an email address to resend to.", "error")
+        return redirect(url_for("check_email"))
+
+    try:
+        # Supabase Python SDK v2: resend a signup confirmation
+        # If your SDK signature differs, adjust the call accordingly.
+        supabase.auth.resend({"type": "signup", "email": email})
+
+        flash("Confirmation email resent. Please check your inbox.", "success")
+    except Exception:
+        current_app.logger.exception("Resend confirmation failed")
+        flash("Sorry, we couldn’t resend the email right now. Please try again later.", "error")
+
+    return redirect(url_for("check_email"))
 
 @app.route("/confirm")
 def confirm_page():
