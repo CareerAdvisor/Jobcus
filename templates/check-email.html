@@ -10,6 +10,18 @@
 {% block content %}
 <section class="auth-wrapper">
   <div class="auth-card">
+
+    {# Flash messages #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-message" style="margin-bottom:12px; text-align:center;">
+          {% for category, msg in messages %}
+            <div class="flash-item {{ category }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <h2 class="auth-title">Confirm your email</h2>
     <p class="auth-subtitle">
       {% if email %}
