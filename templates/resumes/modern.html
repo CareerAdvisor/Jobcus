@@ -19,31 +19,35 @@
     @page { size: A4; margin: 19mm; }
     .resume-page { padding: 0; }
 
-    /* Tight, print-safe section spacing */
+    /* Tight, print-safe spacing */
     .resume .section { margin: 12px 0 10px; }
     .resume .rule    { margin: 6px 0 10px; }
 
-    /* Skills in 2 columns */
-    .skills-section{ break-inside:auto; }
+    /* --- Skills: remove extra space in PDF --- */
+    .skills-section{ break-inside:auto; margin-bottom:0 !important; }
     .skills-list{
       columns: 2;
       column-gap: 28px;
       list-style: disc;
       padding-left: 18px;
-      margin: 0;
+      margin: 0 !important;   /* kill trailing gap */
     }
     .skills-list li{ break-inside: avoid; margin: 2px 0; }
 
-    /* Ensure dates line shows in PDF (no floats, always visible) */
-    .item-header{ display:block; }
-    .item-meta,
-    .item-dates{
-      display:block !important;
-      float:none !important;
-      clear:both !important;
-      margin-top:2px;
-      white-space:normal;
-      overflow:visible;
+    /* --- Experience header: title left, location+dates right --- */
+    .item{ page-break-inside: avoid; }
+    .item-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+    }
+    .item-title{ flex:1 1 auto; min-width:0; }
+    .item-meta{
+      flex:0 0 auto;
+      white-space:nowrap;
+      text-align:right;
+      color:#506070;
     }
   </style>
 </head>
@@ -84,18 +88,18 @@
       <h2>Relevant Experience</h2>
       <div class="rule"></div>
       {% for e in experience %}
-        {% set dates = e.dates
-                       or ( (e.start if e.start else '') ~ ((' – ' ~ e.end) if e.end else '') )
-        %}
+        {# build right-side meta: Location · Start – End #}
+        {% set _dates = (e.start or e.end) and ((e.start or '') ~ (' – ' ~ e.end if e.end else '')) or '' %}
+        {% set meta_parts = [] %}
+        {% if e.location %}{% set _ = meta_parts.append(e.location) %}{% endif %}
+        {% if _dates %}{% set _ = meta_parts.append(_dates) %}{% endif %}
         <article class="item">
           <div class="item-header">
             <div class="item-title">
-              {{ e.role }}
-              {% if e.company %}&nbsp;-&nbsp;{{ e.company }}{% endif %}
-              {% if e.location %}&nbsp;|&nbsp;{{ e.location }}{% endif %}
+              {{ e.role }}{% if e.company %} – {{ e.company }}{% endif %}
             </div>
-            {% if dates|trim %}
-              <div class="item-dates">{{ dates }}</div>
+            {% if meta_parts|length %}
+              <div class="item-meta">{{ meta_parts|join(' · ') }}</div>
             {% endif %}
           </div>
           {% if e.bullets %}<ul class="bullets">{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
@@ -113,9 +117,11 @@
           <div class="item-header">
             <div class="item-title">{{ ed.degree }}</div>
             <div class="item-meta">
-              {% if ed.school %}{{ ed.school }}{% endif %}
-              {% if ed.location %} · {{ ed.location }}{% endif %}
-              {% if ed.graduated %} · {{ ed.graduated }}{% endif %}
+              {% set bits = [] %}
+              {% if ed.school %}{% set _ = bits.append(ed.school) %}{% endif %}
+              {% if ed.location %}{% set _ = bits.append(ed.location) %}{% endif %}
+              {% if ed.graduated %}{% set _ = bits.append(ed.graduated) %}{% endif %}
+              {{ bits|join(' · ') }}
             </div>
           </div>
         </article>
@@ -123,7 +129,7 @@
     </section>
     {% endif %}
 
-    {# Certifications (array or newline-separated string) #}
+    {# Certifications can be array or newline-separated string #}
     {% set cert_list =
          certifications if certifications is iterable and certifications is not string
          else (certifications.split('\n') if certifications else []) %}
