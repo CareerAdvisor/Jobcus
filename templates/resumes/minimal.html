@@ -17,25 +17,12 @@
   <style>
     /* A4 with 0.75" margins */
     @page { size: A4; margin: 19mm; }
-    .resume-page { padding:0; }
+    .resume-page { padding: 0; }
 
-    .resume .section { margin: 10px 0 8px; }
-    .resume .rule    { margin: 6px 0 8px; }
-
-    /* Make Skills bullets like modern */
-    .skills-section{ break-after: avoid; page-break-after: avoid; margin-bottom: 6px; }
-    .skills-list{
-      columns: 2;
-      column-gap: 28px;
-      list-style: disc;
-      padding-left: 18px;
-      margin: 0;
-    }
-    .skills-list li{ break-inside: avoid; margin: 2px 0; }
-
-    .experience-section{ margin-top: 4px; }
-    .item-title-line{ font-weight:700; }
-    .item-dates{ color:#6b7280; margin:2px 0 6px; }
+    /* Keep sections flowing; allow Skills to split */
+    .resume .section { margin: 12px 0 10px; break-before:auto; break-after:auto; break-inside:auto; }
+    .resume .rule    { margin: 6px 0 10px; }
+    .skills-section  { break-before:auto; break-after:auto; break-inside:auto; page-break-before:auto; page-break-after:auto; page-break-inside:auto; }
   </style>
 </head>
 <body>
@@ -63,42 +50,29 @@
     <section class="section skills-section">
       <h2>Skills</h2>
       <div class="rule"></div>
-      {% set skills_list = skills if skills is iterable and skills is not string else (skills.split(',') if skills else []) %}
-      <ul class="skills-list">
-        {% for s in skills_list if s %}<li>{{ s|trim }}</li>{% endfor %}
-      </ul>
+      <div class="skills">
+        {% for s in (skills if skills is iterable and skills is not string else (skills.split(',') if skills else [])) %}
+          {% if s %}<span class="chip">{{ s|trim }}</span>{% endif %}
+        {% endfor %}
+      </div>
     </section>
     {% endif %}
 
-    {# ==== EXPERIENCE (as requested) ==== #}
     {% if experience %}
-    <section class="section experience-section">
+    <section class="section">
       <h2>Relevant Experience</h2>
       <div class="rule"></div>
-
       {% for e in experience %}
-      <article class="item">
-        <!-- line 1: Role - Company | Location -->
-        <div class="item-title-line">
-          {% if e.role %}{{ e.role }}{% endif %}
-          {% if e.company %}{% if e.role %}  -  {% endif %}{{ e.company }}{% endif %}
-          {% if e.location %}  |  {{ e.location }}{% endif %}
-        </div>
-
-        <!-- line 2: Dates -->
-        {% if e.start or e.end %}
-        <div class="item-dates">
-          {% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}
-        </div>
-        {% endif %}
-
-        <!-- bullets -->
-        {% if e.bullets %}
-        <ul class="bullets">
-          {% for b in e.bullets if b %}<li>{{ b }}</li>{% endfor %}
-        </ul>
-        {% endif %}
-      </article>
+        <article class="item">
+          <div class="item-header">
+            <div class="item-title">{{ e.role }}{% if e.company %} · {{ e.company }}{% endif %}</div>
+            <div class="item-meta">
+              {% if e.location %}{{ e.location }} · {% endif %}
+              {% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}
+            </div>
+          </div>
+          {% if e.bullets %}<ul class="bullets">{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+        </article>
       {% endfor %}
     </section>
     {% endif %}
@@ -122,7 +96,6 @@
     </section>
     {% endif %}
 
-    {# Certifications can be array or newline-separated string #}
     {% set cert_list =
          certifications if certifications is iterable and certifications is not string
          else (certifications.split('\n') if certifications else []) %}

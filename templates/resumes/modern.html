@@ -19,12 +19,14 @@
     @page { size: A4; margin: 19mm; }
     .resume-page { padding: 0; }
 
-    /* Gentle spacing below section rules */
-    .resume .section { margin: 10px 0 8px; }
-    .resume .rule    { margin: 6px 0 8px; }
+    /* General section spacing */
+    .resume .section { margin: 12px 0 10px; break-before:auto; break-after:auto; break-inside:auto; }
+    .resume .rule    { margin: 6px 0 10px; }
 
-    /* Skills as two-column bullet list */
-    .skills-section{ break-after: avoid; page-break-after: avoid; margin-bottom: 6px; }
+    /* Keep Skills tight to Summary and allow it to split if needed (fixes WeasyPrint big gap) */
+    .skills-section{ break-before:auto; break-after:auto; break-inside:auto; page-break-before:auto; page-break-after:auto; page-break-inside:auto; }
+
+    /* Skills as two-column list (works in WeasyPrint) */
     .skills-list{
       columns: 2;
       column-gap: 28px;
@@ -33,11 +35,6 @@
       margin: 0;
     }
     .skills-list li{ break-inside: avoid; margin: 2px 0; }
-
-    /* Experience header & dates line */
-    .experience-section{ margin-top: 4px; }
-    .item-title-line{ font-weight:700; font-size:1.05rem; }
-    .item-dates{ color:#6b7280; margin:2px 0 6px; }
   </style>
 </head>
 <body>
@@ -72,35 +69,23 @@
     </section>
     {% endif %}
 
-    {# ==== EXPERIENCE (as requested) ==== #}
     {% if experience %}
-    <section class="section experience-section">
+    <section class="section">
       <h2>Relevant Experience</h2>
       <div class="rule"></div>
-
       {% for e in experience %}
-      <article class="item">
-        <!-- line 1: Role - Company | Location -->
-        <div class="item-title-line">
-          {% if e.role %}{{ e.role }}{% endif %}
-          {% if e.company %}{% if e.role %}  -  {% endif %}{{ e.company }}{% endif %}
-          {% if e.location %}  |  {{ e.location }}{% endif %}
-        </div>
-
-        <!-- line 2: Dates -->
-        {% if e.start or e.end %}
-        <div class="item-dates">
-          {% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}
-        </div>
-        {% endif %}
-
-        <!-- bullets -->
-        {% if e.bullets %}
-        <ul class="bullets">
-          {% for b in e.bullets if b %}<li>{{ b }}</li>{% endfor %}
-        </ul>
-        {% endif %}
-      </article>
+        <article class="item">
+          <div class="item-header">
+            <div class="item-title">{{ e.role }}{% if e.company %} – {{ e.company }}{% endif %}</div>
+            <div class="item-meta">
+              {% if e.location %}{{ e.location }}{% endif %}
+              {% if e.start or e.end %}{% if e.location %} · {% endif %}
+                {% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}
+              {% endif %}
+            </div>
+          </div>
+          {% if e.bullets %}<ul class="bullets">{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+        </article>
       {% endfor %}
     </section>
     {% endif %}
@@ -124,7 +109,7 @@
     </section>
     {% endif %}
 
-    {# Certifications can be array or newline-separated string #}
+    {# Other Education & Certifications #}
     {% set cert_list =
          certifications if certifications is iterable and certifications is not string
          else (certifications.split('\n') if certifications else []) %}
