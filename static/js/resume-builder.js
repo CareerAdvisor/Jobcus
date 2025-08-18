@@ -375,7 +375,9 @@ function initWizard() {
       const genJson = await gen.json().catch(() => ({}));
       if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
 
-      window._resumeCtx = genJson.context || ctxForTemplate;
+      // Merge AI-enriched context *into* the current form context (never lose fields)
+      window._resumeCtx = { ...ctxForTemplate, ...(genJson.context || {}) };
+
       // jump to Finish
       const finishIdx = steps.findIndex(s => s && s.id === "step-finish");
       showStep(finishIdx >= 0 ? finishIdx : steps.length - 1);
