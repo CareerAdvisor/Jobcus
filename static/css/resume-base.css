@@ -160,3 +160,24 @@ a:hover{ text-decoration:none; }
   /* ... */
   --page-pad: 19mm; /* was 16mm */
 }
+
+/* No shadow for PDF/print; add it only for screen */
+.resume-page { /* no box-shadow here for print */ }
+
+@media screen {
+  .resume-page { box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+}
+
+@media screen and (max-width: 900px){
+  .grid-2{ grid-template-columns:1fr; }
+}
+
+@media screen and (max-width: 768px){
+  .resume-page{
+    width:100%;
+    min-height:auto;
+    margin:0;
+    box-shadow:none; /* screen mobile override is fine */
+    padding:12mm;
+  }
+}
