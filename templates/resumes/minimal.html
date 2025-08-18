@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>{{ (name or fullName or full_name) | default('Your Name', true) }} – {{ title }}</title>
+  <title>{{ (name or fullName or full_name) ~ (' – ' ~ title if title) }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   {% set base_css  = url_for('static', filename='css/resume-base.css') if not for_pdf else 'static/css/resume-base.css' %}
@@ -15,9 +15,14 @@
   {% endif %}
 
   <style>
-    /* Keep consistent margins in preview; PDF margins also handled server-side */
+    /* A4 with 0.75" margins */
     @page { size: A4; margin: 19mm; }
     .resume-page { padding: 0; }
+
+    /* Keep sections flowing; allow Skills to split */
+    .resume .section { margin: 12px 0 10px; break-before:auto; break-after:auto; break-inside:auto; }
+    .resume .rule    { margin: 6px 0 10px; }
+    .skills-section  { break-before:auto; break-after:auto; break-inside:auto; page-break-before:auto; page-break-after:auto; page-break-inside:auto; }
   </style>
 </head>
 <body>
@@ -35,18 +40,20 @@
 
     {% if summary %}
     <section class="section">
-      <h2>Summary</h2>
+      <h2>Professional Summary</h2>
       <div class="rule"></div>
       <div class="summary">{{ summary }}</div>
     </section>
     {% endif %}
 
     {% if skills %}
-    <section class="section">
+    <section class="section skills-section">
       <h2>Skills</h2>
       <div class="rule"></div>
       <div class="skills">
-        {% for s in skills %}<span class="chip">{{ s }}</span>{% endfor %}
+        {% for s in (skills if skills is iterable and skills is not string else (skills.split(',') if skills else [])) %}
+          {% if s %}<span class="chip">{{ s|trim }}</span>{% endif %}
+        {% endfor %}
       </div>
     </section>
     {% endif %}
@@ -89,12 +96,16 @@
     </section>
     {% endif %}
 
-    {# === Inserted exactly as requested === #}
-    {% if certifications %}
+    {% set cert_list =
+         certifications if certifications is iterable and certifications is not string
+         else (certifications.split('\n') if certifications else []) %}
+    {% if cert_list and cert_list|length %}
     <section class="section">
       <h2>Other Education & Certifications</h2>
       <div class="rule"></div>
-      <ul class="bullets">{% for c in certifications %}<li>{{ c }}</li>{% endfor %}</ul>
+      <ul class="bullets">
+        {% for c in cert_list if c %}<li>{{ c|trim }}</li>{% endfor %}
+      </ul>
     </section>
     {% endif %}
   </div>
