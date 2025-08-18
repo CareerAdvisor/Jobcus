@@ -51,7 +51,11 @@ html, body{
 .resume-title{ font-size:10.5pt; color:var(--muted); margin-top:2mm; }
 .resume-contact{ margin-top:3mm; color:var(--muted); font-size:var(--small); display:flex; flex-wrap:wrap; gap:6px 14px; }
 
-.section{ margin-top:7mm; break-inside: avoid; page-break-inside: avoid; }
+/* Keep only non-long sections intact */
+.section:not(.experience-section):not(.education-section){
+  break-inside: avoid; page-break-inside: avoid;
+}
+
 .section h2{ font-size:var(--h2); margin:0 0 4mm; color:var(--accent); letter-spacing:.02em; }
 .rule{ height:1px; background:var(--rule); margin:3.5mm 0 0; }
 
@@ -118,11 +122,7 @@ a:hover{ text-decoration:none; }
 @media print{
   html, body{ background:#fff; }
   .resume-page{
-    width:auto;
-    min-height:auto;
-    margin:0;
     overflow: visible;
-    box-shadow:none;   /* ensure no shadow in print */
     padding:0;         /* IMPORTANT: avoid double margins; margins come from @page */
   }
   .no-print{ display:none !important; }
@@ -162,17 +162,25 @@ a:hover{ text-decoration:none; }
 /* Skills sits tight to summary; can split if needed */
 .skills-section  { margin-bottom: 6px; break-inside: auto; page-break-inside: auto; }
 
-/* Experience flow: allow splitting so bullets can roll to next page */
-.experience-section { break-inside: auto; page-break-inside: auto; }
-.experience-section .item { break-inside: auto; page-break-inside: auto; margin-bottom: 10px; }
+/* Keep default spacing, but don't block all sections from splitting */
+.section { margin-top: 7mm; }
 
-/* Keep the title line and date line together with the header,
-   but don't block bullets from splitting across pages */
+/* Let these long sections flow naturally across pages */
+.experience-section,
+.education-section { break-inside: auto; page-break-inside: auto; }
+
+/* Each item can split if needed (no giant gaps) */
+.experience-section .item,
+.education-section .item { break-inside: auto; page-break-inside: auto; }
+
+/* Bullets can continue on the next page */
+.experience-section .bullets li,
+.education-section .bullets li { break-inside: auto; page-break-inside: auto; }
+
+/* Keep the title/date line together so headers don't orphan */
+.item-header,
 .item-title-line,
-.item-dates { break-after: avoid; page-break-after: avoid; }
-
-/* Bullets may split (prevents big white gaps) */
-.experience-section .bullets li { break-inside: auto; page-break-inside: auto; }
+.item-dates { break-inside: avoid; page-break-inside: avoid; }
 
 /* Basic styling for the two lines */
 .item-title-line { font-weight: 700; font-size: 1.05rem; }
@@ -203,6 +211,7 @@ a:hover{ text-decoration:none; }
     padding:12mm;
   }
 }
+
 
 
 
