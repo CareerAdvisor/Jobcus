@@ -396,22 +396,24 @@ function initWizard() {
   const themeSelect = qs(builder, "#themeSelect");
 
   previewBtn?.addEventListener("click", async () => {
-    try {
-      qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      const ctx = window._resumeCtx || gatherContext(qs(builder, "#resumeForm"));
-      await renderWithTemplateFromContext(ctx, "html", themeSelect?.value || "modern");
-    } catch (e) { console.error(e); alert(e.message || "Preview failed"); }
-    finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
-  });
+  try {
+    qs(builder, "#builderGeneratingIndicator").style.display = "block";
+    const live = gatherContext(qs(builder, "#resumeForm"));
+    const ctx = { ...(window._resumeCtx || {}), ...live }; // latest form values win
+    await renderWithTemplateFromContext(ctx, "html", themeSelect?.value || "modern");
+  } catch (e) { console.error(e); alert(e.message || "Preview failed"); }
+  finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
+});
 
-  pdfBtn?.addEventListener("click", async () => {
-    try {
-      qs(builder, "#builderGeneratingIndicator").style.display = "block";
-      const ctx = window._resumeCtx || gatherContext(qs(builder, "#resumeForm"));
-      await renderWithTemplateFromContext(ctx, "pdf", themeSelect?.value || "modern");
-    } catch (e) { console.error(e); alert(e.message || "PDF build failed"); }
-    finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
-  });
+pdfBtn?.addEventListener("click", async () => {
+  try {
+    qs(builder, "#builderGeneratingIndicator").style.display = "block";
+    const live = gatherContext(qs(builder, "#resumeForm"));
+    const ctx = { ...(window._resumeCtx || {}), ...live }; // latest form values win
+    await renderWithTemplateFromContext(ctx, "pdf", themeSelect?.value || "modern");
+  } catch (e) { console.error(e); alert(e.message || "PDF build failed"); }
+  finally { qs(builder, "#builderGeneratingIndicator").style.display = "none"; }
+});
 
   qs(builder, "#previewTemplateFinish")?.addEventListener("click", () => previewBtn?.click());
   qs(builder, "#downloadTemplatePdfFinish")?.addEventListener("click", () => pdfBtn?.click());
