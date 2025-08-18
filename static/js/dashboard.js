@@ -25,9 +25,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const metricNote      = document.getElementById("metric-note");
   const atsGrid         = document.getElementById("ats-grid");
 
-  // Upload panel
+  // Upload panel (dashboard re-analyze)
   const fileInput   = document.getElementById("dashResumeFile");
-  const textInput   = document.getElementById("dashResumeText");
+  const textInput   = document.getElementById("dashResumeText"); // optional textarea, safe if missing
   const jobDesc     = document.getElementById("dashJobDesc");
   const analyzeBtn  = document.getElementById("dashAnalyzeBtn");
   const analyzingEl = document.getElementById("dashAnalyzing");
@@ -52,6 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function renderATSBreakdown(breakdown = null) {
+    if (!atsGrid) return;
     atsGrid.innerHTML = "";
     if (!breakdown) return;
 
@@ -91,18 +92,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = circle.querySelector(".percentage");
 
     const color = colorForScore(score);
-    path.setAttribute("stroke", color);
+    if (path) path.setAttribute("stroke", color);
 
     let current = 0;
-    path.setAttribute("stroke-dasharray", `0,100`);
-    text.textContent = `0%`;
+    if (path) path.setAttribute("stroke-dasharray", `0,100`);
+    if (text) text.textContent = `0%`;
 
     const step = score > 0 ? 1 : -1;
     const iv = setInterval(() => {
       if (current === score) { clearInterval(iv); return; }
       current += step;
-      path.setAttribute("stroke-dasharray", `${current},100`);
-      text.textContent = `${current}%`;
+      if (path) path.setAttribute("stroke-dasharray", `${current},100`);
+      if (text) text.textContent = `${current}%`;
     }, 15);
 
     if (metricNote && lastAnalyzed) {
@@ -126,7 +127,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function showStateFromStorage() {
+  // ---------- fileToBase64 (used by dashboard upload) ----------
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => {
+        try { resolve(fr.result.split(",")[1]); } catch(e){ reject(e); }
+      };
+      fr.onerror = reject;
+      fr.readAsDataURL(file);
+    });
+  }
+
+  // ---------- Single renderer used everywhere (replaces showStateFromStorage) ----------
+  function renderFromStorage() {
     const raw = localStorage.getItem("resumeAnalysis");
     if (!raw) {
       if (card) card.style.display = "none";
@@ -171,19 +185,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 4) File → base64
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const fr = new FileReader();
-      fr.onload = () => {
-        try { resolve(fr.result.split(",")[1]); } catch(e){ reject(e); }
-      };
-      fr.onerror = reject;
-      fr.readAsDataURL(file);
-    });
-  }
+  // 4) Initial paint (so dashboard shows the last analysis if it exists)
+  renderFromStorage();
 
-  // 5) Run analysis (dashboard)
+  // 5) Run analysis (dashboard re-analyze – no redirect)
   async function runDashboardAnalysis() {
     if (analyzingEl) analyzingEl.style.display = "inline";
 
@@ -195,7 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (file) {
         const b64 = await fileToBase64(file);
-        localStorage.setItem("resumeBase64", b64);
+        localStorage.setItem("resumeBase64", b64); // reuse for optimize
         if (file.type === "application/pdf") {
           payload.pdf = b64;
         } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
@@ -228,8 +233,8 @@ document.addEventListener("DOMContentLoaded", () => {
       data.lastAnalyzed = new Date().toLocaleString();
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
 
-      // Show
-      showStateFromStorage();
+      // Repaint in place
+      renderFromStorage();
 
       // Reset file input for consecutive uploads
       if (fileInput) fileInput.value = "";
@@ -257,7 +262,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadingEl    = document.getElementById("optimized-loading");
   const outputEl     = document.getElementById("optimized-output");
   const downloadsEl  = document.getElementById("optimized-downloads");
-  const resumeBase64 = localStorage.getItem("resumeBase64");
 
   optimizeBtn?.addEventListener("click", async () => {
     if (loadingEl)   loadingEl.style.display    = "block";
@@ -292,9 +296,6 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Failed to optimize resume. Try again.");
     }
   });
-
-  // 8) Initial paint
-  showStateFromStorage();
 });
 
 // — Download helper for optimized resume —
