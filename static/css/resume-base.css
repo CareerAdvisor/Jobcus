@@ -132,3 +132,31 @@ a:hover{ text-decoration:none; }
 /* Small helpers */
 .muted{ color:var(--muted); }
 .small{ font-size: var(--small); }
+
+/* ==== Resume content rules (used by templates) ==== */
+
+/* Tight, predictable section spacing */
+.resume .section { margin: 10px 0; }
+.resume .rule    { margin: 6px 0 8px; }
+.skills-section  { margin-bottom: 6px; }
+
+/* Experience flow: allow splitting so bullets can roll to next page */
+.experience-section { break-inside: auto; page-break-inside: auto; }
+.experience-section .item { break-inside: auto; page-break-inside: auto; margin-bottom: 10px; }
+
+/* Keep the title line and date line together with the header,
+   but don't block bullets from splitting across pages */
+.item-title-line,
+.item-dates { break-after: avoid; page-break-after: avoid; }
+
+/* Bullets may split (prevents big white gaps) */
+.experience-section .bullets li { break-inside: auto; page-break-inside: auto; }
+
+/* Basic styling for the two lines */
+.item-title-line { font-weight: 700; font-size: 1.05rem; }
+.item-dates      { color: #6b7280; margin: 2px 0 6px; }
+
+:root{
+  /* ... */
+  --page-pad: 19mm; /* was 16mm */
+}
