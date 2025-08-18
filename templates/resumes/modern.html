@@ -19,36 +19,25 @@
     @page { size: A4; margin: 19mm; }
     .resume-page { padding: 0; }
 
-    /* Tight, print-safe spacing */
-    .resume .section { margin: 12px 0 10px; }
-    .resume .rule    { margin: 6px 0 10px; }
+    /* Gentle spacing below section rules */
+    .resume .section { margin: 10px 0 8px; }
+    .resume .rule    { margin: 6px 0 8px; }
 
-    /* --- Skills: remove extra space in PDF --- */
-    .skills-section{ break-inside:auto; margin-bottom:0 !important; }
+    /* Skills as two-column bullet list */
+    .skills-section{ break-after: avoid; page-break-after: avoid; margin-bottom: 6px; }
     .skills-list{
       columns: 2;
       column-gap: 28px;
       list-style: disc;
       padding-left: 18px;
-      margin: 0 !important;   /* kill trailing gap */
+      margin: 0;
     }
     .skills-list li{ break-inside: avoid; margin: 2px 0; }
 
-    /* --- Experience header: title left, location+dates right --- */
-    .item{ page-break-inside: avoid; }
-    .item-header{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:16px;
-    }
-    .item-title{ flex:1 1 auto; min-width:0; }
-    .item-meta{
-      flex:0 0 auto;
-      white-space:nowrap;
-      text-align:right;
-      color:#506070;
-    }
+    /* Experience header & dates line */
+    .experience-section{ margin-top: 4px; }
+    .item-title-line{ font-weight:700; font-size:1.05rem; }
+    .item-dates{ color:#6b7280; margin:2px 0 6px; }
   </style>
 </head>
 <body>
@@ -83,27 +72,35 @@
     </section>
     {% endif %}
 
+    {# ==== EXPERIENCE (as requested) ==== #}
     {% if experience %}
-    <section class="section">
+    <section class="section experience-section">
       <h2>Relevant Experience</h2>
       <div class="rule"></div>
+
       {% for e in experience %}
-        {# build right-side meta: Location · Start – End #}
-        {% set _dates = (e.start or e.end) and ((e.start or '') ~ (' – ' ~ e.end if e.end else '')) or '' %}
-        {% set meta_parts = [] %}
-        {% if e.location %}{% set _ = meta_parts.append(e.location) %}{% endif %}
-        {% if _dates %}{% set _ = meta_parts.append(_dates) %}{% endif %}
-        <article class="item">
-          <div class="item-header">
-            <div class="item-title">
-              {{ e.role }}{% if e.company %} – {{ e.company }}{% endif %}
-            </div>
-            {% if meta_parts|length %}
-              <div class="item-meta">{{ meta_parts|join(' · ') }}</div>
-            {% endif %}
-          </div>
-          {% if e.bullets %}<ul class="bullets">{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
-        </article>
+      <article class="item">
+        <!-- line 1: Role - Company | Location -->
+        <div class="item-title-line">
+          {% if e.role %}{{ e.role }}{% endif %}
+          {% if e.company %}{% if e.role %}  -  {% endif %}{{ e.company }}{% endif %}
+          {% if e.location %}  |  {{ e.location }}{% endif %}
+        </div>
+
+        <!-- line 2: Dates -->
+        {% if e.start or e.end %}
+        <div class="item-dates">
+          {% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}
+        </div>
+        {% endif %}
+
+        <!-- bullets -->
+        {% if e.bullets %}
+        <ul class="bullets">
+          {% for b in e.bullets if b %}<li>{{ b }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </article>
       {% endfor %}
     </section>
     {% endif %}
@@ -117,11 +114,9 @@
           <div class="item-header">
             <div class="item-title">{{ ed.degree }}</div>
             <div class="item-meta">
-              {% set bits = [] %}
-              {% if ed.school %}{% set _ = bits.append(ed.school) %}{% endif %}
-              {% if ed.location %}{% set _ = bits.append(ed.location) %}{% endif %}
-              {% if ed.graduated %}{% set _ = bits.append(ed.graduated) %}{% endif %}
-              {{ bits|join(' · ') }}
+              {% if ed.school %}{{ ed.school }}{% endif %}
+              {% if ed.location %} · {{ ed.location }}{% endif %}
+              {% if ed.graduated %} · {{ ed.graduated }}{% endif %}
             </div>
           </div>
         </article>
