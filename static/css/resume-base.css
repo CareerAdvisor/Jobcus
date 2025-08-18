@@ -135,10 +135,12 @@ a:hover{ text-decoration:none; }
 
 /* ==== Resume content rules (used by templates) ==== */
 
-/* Tight, predictable section spacing */
+/* Tight, consistent section spacing (removes gap after Skills) */
 .resume .section { margin: 10px 0; }
 .resume .rule    { margin: 6px 0 8px; }
-.skills-section  { margin-bottom: 6px; }
+
+/* Skills sits tight to summary; can split if needed */
+.skills-section  { margin-bottom: 6px; break-inside: auto; page-break-inside: auto; }
 
 /* Experience flow: allow splitting so bullets can roll to next page */
 .experience-section { break-inside: auto; page-break-inside: auto; }
@@ -181,3 +183,4 @@ a:hover{ text-decoration:none; }
     padding:12mm;
   }
 }
+
