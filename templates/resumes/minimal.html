@@ -13,16 +13,7 @@
   {% if not for_pdf %}
     <script type="module" src="{{ url_for('static', filename='js/minimal.js') }}"></script>
   {% endif %}
-
-  <style>
-    /* A4 with 0.75" margins */
-    .resume-page { padding: 0; }
-
-    /* Keep sections flowing; allow Skills to split */
-    .resume .section { margin: 12px 0 10px; break-before:auto; break-after:auto; break-inside:auto; }
-    .resume .rule    { margin: 6px 0 10px; }
-    .skills-section  { break-before:auto; break-after:auto; break-inside:auto; page-break-before:auto; page-break-after:auto; page-break-inside:auto; }
-  </style>
+  
 </head>
 <body>
   <div class="resume-page resume resume--minimal">
@@ -110,4 +101,5 @@
   </div>
 </body>
 </html>
+
 
