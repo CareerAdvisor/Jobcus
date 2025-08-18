@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>{{ name or fullName or full_name }} – {{ title }}</title>
+  <title>{{ (name or fullName or full_name) ~ (' – ' ~ title if title) }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   {% set base_css  = url_for('static', filename='css/resume-base.css') if not for_pdf else 'static/css/resume-base.css' %}
@@ -15,16 +15,18 @@
   {% endif %}
 
   <style>
-    /* A4 with 0.75" margins for preview too (PDF margins also set server-side) */
+    /* A4 with 0.75" margins */
     @page { size: A4; margin: 19mm; }
     .resume-page { padding: 0; }
 
-    /* Gentle spacing below section rules */
-    .resume .section { margin: 12px 0 10px; }
+    /* General section spacing */
+    .resume .section { margin: 12px 0 10px; break-before:auto; break-after:auto; break-inside:auto; }
     .resume .rule    { margin: 6px 0 10px; }
 
-    /* Skills as two-column bullet list */
-    .skills-section{ break-after: avoid; page-break-after: avoid; }
+    /* Keep Skills tight to Summary and allow it to split if needed (fixes WeasyPrint big gap) */
+    .skills-section{ break-before:auto; break-after:auto; break-inside:auto; page-break-before:auto; page-break-after:auto; page-break-inside:auto; }
+
+    /* Skills as two-column list (works in WeasyPrint) */
     .skills-list{
       columns: 2;
       column-gap: 28px;
@@ -50,7 +52,7 @@
 
     {% if summary %}
     <section class="section">
-      <h2>Summary</h2>
+      <h2>Professional Summary</h2>
       <div class="rule"></div>
       <div class="summary">{{ summary }}</div>
     </section>
@@ -107,12 +109,17 @@
     </section>
     {% endif %}
 
-    {# === Inserted exactly as requested === #}
-    {% if certifications %}
+    {# Other Education & Certifications #}
+    {% set cert_list =
+         certifications if certifications is iterable and certifications is not string
+         else (certifications.split('\n') if certifications else []) %}
+    {% if cert_list and cert_list|length %}
     <section class="section">
       <h2>Other Education & Certifications</h2>
       <div class="rule"></div>
-      <ul class="bullets">{% for c in certifications %}<li>{{ c }}</li>{% endfor %}</ul>
+      <ul class="bullets">
+        {% for c in cert_list if c %}<li>{{ c|trim }}</li>{% endfor %}
+      </ul>
     </section>
     {% endif %}
   </div>
