@@ -85,6 +85,18 @@
     <a href="/resume-analyzer" class="cta-primary" style="display:inline-block;background:#104879;color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:600;">Analyze on Analyzer page</a>
   </div>
 
+  <!-- Add this block somewhere above the analysis section -->
+<section class="dash-reanalyze">
+  <h2>↻ Re-analyze an updated resume</h2>
+  <p style="margin:6px 0 12px;">Upload a new PDF or DOCX. Optionally paste a job description to improve keyword matching.</p>
+
+  <input type="file" id="dashResumeFile" accept=".pdf,.docx" style="margin-bottom:8px;">
+  <textarea id="dashJobDesc" placeholder="(Optional) Paste job description..." style="width:100%;min-height:80px;margin-bottom:8px;"></textarea>
+
+  <button id="dashAnalyzeBtn" class="cta-primary">Analyze on dashboard</button>
+  <span id="dashAnalyzing" style="display:none;margin-left:8px;color:#555;">Analyzing…</span>
+</section>
+
   <!-- ===== Detailed Analysis ===== -->
   <section id="resume-analysis" class="analysis-section" style="display:none; margin-top:22px;">
     <h2 style="margin:0 0 10px;">🔍 Detailed Findings & Recommendations</h2>
