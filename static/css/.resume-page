@@ -39,7 +39,8 @@ html, body{
   min-height:var(--page-h);
   margin:12px auto;
   background:#fff;
-  box-shadow:0 4px 20px rgba(0,0,0,.08);
+  /* REMOVE this next line (WeasyPrint doesn't support box-shadow):
+     box-shadow:0 4px 20px rgba(0,0,0,.08); */
   padding:var(--page-pad);
   overflow:hidden;
 }
@@ -94,10 +95,23 @@ html, body{
 a{ color:inherit; text-decoration:underline; text-decoration-thickness: from-font; }
 a:hover{ text-decoration:none; }
 
-/* Print: force A4 without extra margins (we add padding on the canvas) */
+/* A4 canvas */
+.resume-page{
+  box-sizing:border-box;
+  width:var(--page-w);
+  min-height:var(--page-h);
+  margin:12px auto;
+  background:#fff;
+  /* REMOVE this next line (WeasyPrint doesn't support box-shadow):
+     box-shadow:0 4px 20px rgba(0,0,0,.08); */
+  padding:var(--page-pad);
+  overflow:hidden;
+}
+
+/* Print: force A4 + set margins for PDF/print explicitly */
 @page{
   size: A4;
-  margin: 0;
+  margin: 0.075in; /* = 0.075 inches on all sides */
 }
 
 /* Print tweaks */
@@ -107,8 +121,8 @@ a:hover{ text-decoration:none; }
     width:auto;
     min-height:auto;
     margin:0;
-    box-shadow:none;
-    padding:var(--page-pad);
+    box-shadow:none;   /* ensure no shadow in print */
+    padding:0;         /* IMPORTANT: avoid double margins; margins come from @page */
   }
   .no-print{ display:none !important; }
   a{ text-decoration:none; }
@@ -123,6 +137,11 @@ a:hover{ text-decoration:none; }
     box-shadow:none;
     padding:12mm;
   }
+}
+
+/* Screen-only shadow so WeasyPrint never sees it */
+@media screen {
+  .resume-page { box-shadow: 0 4px 20px rgba(0,0,0,.08); }
 }
 
 /* Page-break utilities (WeasyPrint supports modern break-* props) */
@@ -183,4 +202,5 @@ a:hover{ text-decoration:none; }
     padding:12mm;
   }
 }
+
 
