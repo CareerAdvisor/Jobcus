@@ -329,8 +329,6 @@ def check_email():
     email = session.get("pending_email")  # set this during signup
     return render_template("check-email.html", email=email)
 
-from flask import request, session, redirect, url_for, flash, current_app
-
 @app.route("/resend-confirmation", methods=["GET"])
 def resend_confirmation():
     """
