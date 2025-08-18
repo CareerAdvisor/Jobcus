@@ -111,7 +111,7 @@ a:hover{ text-decoration:none; }
 /* Print: force A4 + set margins for PDF/print explicitly */
 @page{
   size: A4;
-  margin: 0.075in; /* = 0.075 inches on all sides */
+  margin: 0.75in; /* = 0.075 inches on all sides */
 }
 
 /* Print tweaks */
