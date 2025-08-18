@@ -15,17 +15,16 @@
   {% endif %}
 
   <style>
+    /* A4 with 0.75" margins */
     @page { size: A4; margin: 19mm; }
     .resume-page { padding: 0; }
 
-    .resume .section { margin: 12px 0 10px; break-before:auto; break-after:auto; break-inside:auto; }
+    /* Tight, print-safe section spacing */
+    .resume .section { margin: 12px 0 10px; }
     .resume .rule    { margin: 6px 0 10px; }
 
-    .skills-section{ break-before:auto; break-after:auto; break-inside:auto; page-break-before:auto; page-break-after:auto; page-break-inside:auto; }
-
-    .item-header{ display:block; }
-    .item-meta{ margin-top:2px; white-space:normal; overflow:visible; }
-
+    /* Skills in 2 columns */
+    .skills-section{ break-inside:auto; }
     .skills-list{
       columns: 2;
       column-gap: 28px;
@@ -34,6 +33,18 @@
       margin: 0;
     }
     .skills-list li{ break-inside: avoid; margin: 2px 0; }
+
+    /* Ensure dates line shows in PDF (no floats, always visible) */
+    .item-header{ display:block; }
+    .item-meta,
+    .item-dates{
+      display:block !important;
+      float:none !important;
+      clear:both !important;
+      margin-top:2px;
+      white-space:normal;
+      overflow:visible;
+    }
   </style>
 </head>
 <body>
@@ -73,6 +84,9 @@
       <h2>Relevant Experience</h2>
       <div class="rule"></div>
       {% for e in experience %}
+        {% set dates = e.dates
+                       or ( (e.start if e.start else '') ~ ((' – ' ~ e.end) if e.end else '') )
+        %}
         <article class="item">
           <div class="item-header">
             <div class="item-title">
@@ -80,11 +94,9 @@
               {% if e.company %}&nbsp;-&nbsp;{{ e.company }}{% endif %}
               {% if e.location %}&nbsp;|&nbsp;{{ e.location }}{% endif %}
             </div>
-            <div class="item-meta">
-              {% if e.start or e.end %}
-                {% if e.start %}{{ e.start }}{% endif %}{% if e.end %} – {{ e.end }}{% endif %}
-              {% endif %}
-            </div>
+            {% if dates|trim %}
+              <div class="item-dates">{{ dates }}</div>
+            {% endif %}
           </div>
           {% if e.bullets %}<ul class="bullets">{% for b in e.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
         </article>
@@ -111,6 +123,7 @@
     </section>
     {% endif %}
 
+    {# Certifications (array or newline-separated string) #}
     {% set cert_list =
          certifications if certifications is iterable and certifications is not string
          else (certifications.split('\n') if certifications else []) %}
