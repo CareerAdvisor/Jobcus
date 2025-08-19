@@ -2,158 +2,148 @@
 
 {% block title %}My Dashboard – Jobcus{% endblock %}
 
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
 {% block content %}
-<section class="dashboard-container" style="max-width:1100px;margin:0 auto;padding:20px 16px;">
+<section class="dash-wrap">
+  <h1 id="dashboardGreeting" class="dashboard-title"></h1>
+  <p class="dashboard-subtitle">Track your career growth and insights powered by Jobcus AI.</p>
 
-  <h1 id="dashboardGreeting" class="dashboard-title" style="margin:0 0 6px;text-align:center;"></h1>
-  <p class="dashboard-subtitle" style="margin:0 0 18px;color:#555;text-align:center;">
-    Track your career growth and insights powered by Jobcus AI.
-  </p>
-
-  <!-- ===== Top row: Score + Quick Re-analyze ===== -->
-  <div style="display:grid;grid-template-columns:1fr 1.1fr;gap:16px;align-items:start;">
-    
+  <div class="top-stack">
     <!-- Score card -->
-    <div class="dashboard-card" id="resume-score-card" style="display:none;background:#fff;border:1px solid #ececec;border-radius:12px;padding:18px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <h3 style="margin:0;">📄 Resume Score</h3>
-        <button id="openReanalyze" class="cta-secondary" style="border:1px solid #104879;background:#fff;color:#104879;padding:8px 12px;border-radius:8px;font-weight:600;cursor:pointer;">
-          Analyze updated resume
-        </button>
+    <div class="dashboard-card score-card" id="resume-score-card" style="display:none;">
+      <div class="score-card__head">
+        <h3>📄 Resume Score</h3>
+        <button id="openReanalyze" class="btn btn-outline">Analyze updated resume</button>
       </div>
 
-      <div style="display:flex;gap:16px;align-items:center;">
-        <div class="progress-circle" data-score="0" style="width:130px;height:130px;">
-          <svg viewBox="0 0 36 36">
-            <!-- track -->
-            <path class="bg" stroke="#eee" stroke-width="3.8" fill="none"
-              d="M18 2.0845
-                 a 15.9155 15.9155 0 0 1 0 31.831
-                 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-            <!-- progress (color set in JS) -->
-            <path class="progress" stroke="#16A34A" stroke-width="3.8" fill="none" stroke-linecap="round"
-              stroke-dasharray="0,100"
-              d="M18 2.0845
-                 a 15.9155 15.9155 0 0 1 0 31.831
-                 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-            <!-- center text -->
-            <text x="18" y="20.35" class="percentage" text-anchor="middle" font-size="8" fill="#104879">0%</text>
-          </svg>
-          <p class="metric-note" id="metric-note" style="font-size:12px;color:#666;margin:8px 0 0;text-align:center;">
-            Last analyzed: just now
-          </p>
+      <div class="score-card__body">
+        <!-- score ring -->
+        <div class="ring-wrap">
+          <div class="progress-circle" data-score="0">
+            <svg viewBox="0 0 36 36" class="ring">
+              <path class="ring-track"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              <path class="ring-progress" stroke-dasharray="0,100"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              <text x="18" y="20.35" class="ring-text" text-anchor="middle">0%</text>
+            </svg>
+          </div>
+          <p id="metric-note" class="metric-note">Last analyzed: just now</p>
         </div>
 
         <!-- ATS breakdown -->
-        <div style="flex:1;">
-          <h4 style="margin:0 0 8px;">ATS Readiness</h4>
-          <div id="ats-grid" style="display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:8px;">
-            <!-- filled by JS -->
-          </div>
-          <small style="display:block;color:#666;margin-top:8px;">Higher is better. Aim for green across the board.</small>
+        <div class="ats-wrap">
+          <h4>ATS Readiness</h4>
+          <div id="ats-grid" class="ats-grid"><!-- filled by JS --></div>
+          <small class="ats-hint">Higher is better. Aim for green across the board.</small>
         </div>
       </div>
     </div>
 
-    <!-- Upload panel (upload-only) -->
-    <div class="dashboard-card" style="background:#fff;border:1px solid #ececec;border-radius:12px;padding:18px;">
-      <h3 style="margin:0 0 8px;">Analyze a resume</h3>
-      <p style="margin:0 0 12px;color:#555;">Upload a PDF/DOCX. Optionally add a job description to check keyword match.</p>
+    <!-- Upload / re-analyze -->
+    <div class="dashboard-card upload-card">
+      <h3>Analyze a resume</h3>
+      <p class="upload-card__sub">Upload a PDF/DOCX. Optionally add a job description to check keyword match.</p>
 
-      <input type="file" id="dashResumeFile" accept=".pdf,.docx" style="display:block;margin:6px 0 10px;">
-
-      <textarea id="dashJobDesc" placeholder="Optional: paste job description to check keywords…"
-        style="width:100%;height:70px;padding:12px;border:1px solid #ccc;border-radius:8px;margin:0 0 12px;font-size:14px;"></textarea>
-
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <button id="dashAnalyzeBtn" class="primary-btn"
-          style="background:#104879;color:#fff;padding:12px 16px;border:none;border-radius:8px;font-weight:600;cursor:pointer;">
-          Analyze resume
-        </button>
-        <span id="dashAnalyzing" style="display:none;color:#555;">🤖 Analyzing…</span>
+      <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload resume">
+        <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 15.75a4.5 4.5 0 0 0 4.5 4.5h9a4.5 4.5 0 0 0 .9-8.91A6 6 0 1 0 6.75 9" />
+          <path d="M12 12v8M9 14l3-3 3 3" />
+        </svg>
+        <div class="dz-title">Browse Files</div>
+        <p class="dz-sub">Drag and drop files here</p>
+        <div id="dzFileName" class="dz-file" style="display:none;"></div>
+        <input id="dashResumeFile" type="file" accept=".pdf,.docx" hidden>
       </div>
-      <small style="display:block;margin-top:10px;color:#666;">We’ll store your latest result on this device for quick access.</small>
+
+      <textarea id="dashJobDesc" class="textarea"
+        placeholder="Optional: paste job description to check keywords…"></textarea>
+
+      <div class="upload-actions">
+        <button id="dashAnalyzeBtn" class="btn btn-primary">Analyze resume</button>
+        <span id="dashAnalyzing" class="analyzing">🤖 Analyzing…</span>
+      </div>
+
+      <small class="upload-note">We’ll store your latest result on this device for quick access.</small>
     </div>
   </div>
 
   <!-- Empty state -->
-  <div id="no-analysis-cta" style="text-align:center; margin:18px 0 0;">
+  <div id="no-analysis-cta" class="empty-state">
     <p>You haven’t analyzed a resume yet. Use the upload panel above to get started.</p>
   </div>
 
-  <!-- ===== Detailed Analysis ===== -->
-  <section id="resume-analysis" class="analysis-section" style="display:none; margin-top:22px;">
-    <h2 style="margin:0 0 10px;">🔍 Detailed Findings & Recommendations</h2>
+  <!-- Detailed analysis -->
+  <section id="resume-analysis" class="analysis-section" style="display:none;">
+    <h2>🔍 Detailed Findings & Recommendations</h2>
 
-    <!-- Keyword match & sections (optional; only shown if data exists) -->
-    <div id="optional-panels" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:10px 0;">
-      <div id="kw-panel" class="analysis-block" style="display:none;background:#fff;border:1px solid #ececec;border-radius:12px;padding:16px;">
-        <h3 style="margin:0 0 8px;">🎯 Job Keyword Match</h3>
-        <div style="display:flex;gap:16px;">
-          <div style="flex:1;">
-            <h4 style="margin:0 0 6px;font-size:14px;">Matched</h4>
-            <ul id="kw-matched" style="margin:0;padding-left:18px;"></ul>
+    <div class="opt-panels">
+      <div id="kw-panel" class="panel" style="display:none;">
+        <h3>🎯 Job Keyword Match</h3>
+        <div class="panel-split">
+          <div>
+            <h4>Matched</h4>
+            <ul id="kw-matched" class="list"></ul>
           </div>
-          <div style="flex:1;">
-            <h4 style="margin:0 0 6px;font-size:14px;">Missing</h4>
-            <ul id="kw-missing" style="margin:0;padding-left:18px;"></ul>
-          </div>
-        </div>
-      </div>
-
-      <div id="sections-panel" class="analysis-block" style="display:none;background:#fff;border:1px solid #ececec;border-radius:12px;padding:16px;">
-        <h3 style="margin:0 0 8px;">📋 Resume Sections</h3>
-        <div style="display:flex;gap:16px;">
-          <div style="flex:1;">
-            <h4 style="margin:0 0 6px;font-size:14px;">Present</h4>
-            <ul id="sec-present" style="margin:0;padding-left:18px;"></ul>
-          </div>
-          <div style="flex:1;">
-            <h4 style="margin:0 0 6px;font-size:14px;">Missing</h4>
-            <ul id="sec-missing" style="margin:0;padding-left:18px;"></ul>
+          <div>
+            <h4>Missing</h4>
+            <ul id="kw-missing" class="list"></ul>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Core issues/strengths/suggestions -->
-    <div class="analysis-block issues" style="background:#fff;border:1px solid #ececec;border-radius:12px;padding:16px;">
-      <h3 style="margin:0 0 8px;">⚠️ Issues Found</h3>
-      <ul id="top-issues" style="margin:0;padding-left:18px;"></ul>
-    </div>
-
-    <div class="analysis-block strengths" style="margin-top:16px;background:#fff;border:1px solid #ececec;border-radius:12px;padding:16px;">
-      <h3 style="margin:0 0 8px;">✅ What You Did Well</h3>
-      <ul id="good-points" style="margin:0;padding-left:18px;"></ul>
-    </div>
-
-    <div class="analysis-block suggestions" style="margin-top:16px;background:#fff;border:1px solid #ececec;border-radius:12px;padding:16px;">
-      <h3 style="margin:0 0 8px;">💡 Suggestions</h3>
-      <ul id="suggestions-list" style="margin:0;padding-left:18px;"></ul>
-    </div>
-
-    <!-- Optimize -->
-    <div class="analysis-cta" style="margin-top:16px; background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:16px;text-align:center;">
-      <p style="margin:0 0 8px;">Want us to apply these fixes automatically? ✨</p>
-      <button id="optimize-btn" class="btn-optimize" style="background:#104879;color:#fff;padding:10px 14px;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Optimize My Resume</button>
-    </div>
-
-    <div id="optimize-section" style="margin-top:14px; display:flex; flex-direction:column; align-items:center;">
-      <div id="optimized-loading" style="display:none; color:#555;">
-        🤖 Optimizing your resume, please wait…
+      <div id="sections-panel" class="panel" style="display:none;">
+        <h3>📋 Resume Sections</h3>
+        <div class="panel-split">
+          <div>
+            <h4>Present</h4>
+            <ul id="sec-present" class="list"></ul>
+          </div>
+          <div>
+            <h4>Missing</h4>
+            <ul id="sec-missing" class="list"></ul>
+          </div>
+        </div>
       </div>
-      <pre id="optimized-output" style="display:none; white-space:pre-wrap; background:#fff;border:1px solid #ececec; padding:12px; border-radius:8px; max-width:100%; overflow:auto;"></pre>
+    </div>
+
+    <div class="panel">
+      <h3>⚠️ Issues Found</h3>
+      <ul id="top-issues" class="list"></ul>
+    </div>
+
+    <div class="panel">
+      <h3>✅ What You Did Well</h3>
+      <ul id="good-points" class="list"></ul>
+    </div>
+
+    <div class="panel">
+      <h3>💡 Suggestions</h3>
+      <ul id="suggestions-list" class="list"></ul>
+    </div>
+
+    <div class="opt-cta">
+      <p>Want us to apply these fixes automatically? ✨</p>
+      <button id="optimize-btn" class="btn btn-primary">Optimize My Resume</button>
+    </div>
+
+    <div class="opt-output">
+      <div id="optimized-loading" class="loading">🤖 Optimizing your resume, please wait…</div>
+      <pre id="optimized-output" class="output"></pre>
 
       {% if current_user.is_authenticated %}
-        <div id="optimized-downloads" style="display:none; margin-top:10px;">
-          <button onclick="downloadOptimizedResume('pdf')" style="margin-right:6px;">⬇️ Download PDF</button>
-          <button onclick="downloadOptimizedResume('txt')">⬇️ Download TXT</button>
+        <div id="optimized-downloads" class="downloads">
+          <button onclick="downloadOptimizedResume('pdf')" class="btn">⬇️ Download PDF</button>
+          <button onclick="downloadOptimizedResume('txt')" class="btn">⬇️ Download TXT</button>
         </div>
       {% else %}
-        <div style="margin-top:10px; text-align:center;">
-          <p>
-            To download your optimized resume, 
-            <strong><a href="/account" style="color: #104879; text-decoration: none;">Sign up or log in</a></strong>.
+        <div class="downloads">
+          <p>To download your optimized resume,
+            <strong><a href="/account">Sign up or log in</a></strong>.
           </p>
         </div>
       {% endif %}
@@ -163,11 +153,8 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- DOCX / FileSaver / jsPDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<!-- Dashboard logic -->
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
