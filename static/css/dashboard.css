@@ -218,3 +218,32 @@ body{overflow-x:hidden}
 
 /* Utilities */
 .sr-only{position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); border:0}
+
+/* center that label */
+.field__label.center{ text-align:center; }
+
+/* show chosen file name */
+.file-name{
+  margin-top:8px;
+  text-align:center;
+  color:var(--muted);
+  font-weight:600;
+  word-break: break-word;
+}
+
+/* click feedback for Analyze updated resume */
+.btn-outline.is-hot,
+.btn-outline:active{
+  background:var(--brand);
+  color:#fff;
+  border-color:var(--brand);
+}
+
+/* small pulse outline on jump */
+.dropzone.pulse{ box-shadow:0 0 0 3px rgba(16,72,121,.15); }
+
+/* little spacing for the new line above Optimize button */
+.opt-explain{
+  margin:0 0 10px;
+  color:#475569;
+}
