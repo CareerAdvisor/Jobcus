@@ -5,8 +5,8 @@
 {% block content %}
 <section class="dashboard-container" style="max-width:1100px;margin:0 auto;padding:20px 16px;">
 
-  <h1 id="dashboardGreeting" class="dashboard-title" style="margin:0 0 6px;"></h1>
-  <p class="dashboard-subtitle" style="margin:0 0 18px;color:#555;">
+  <h1 id="dashboardGreeting" class="dashboard-title" style="margin:0 0 6px;text-align:center;"></h1>
+  <p class="dashboard-subtitle" style="margin:0 0 18px;color:#555;text-align:center;">
     Track your career growth and insights powered by Jobcus AI.
   </p>
 
@@ -55,15 +55,12 @@
       </div>
     </div>
 
-    <!-- Re-analyze / Upload panel (always visible) -->
+    <!-- Upload panel (upload-only) -->
     <div class="dashboard-card" style="background:#fff;border:1px solid #ececec;border-radius:12px;padding:18px;">
       <h3 style="margin:0 0 8px;">Analyze a resume</h3>
-      <p style="margin:0 0 12px;color:#555;">Upload a PDF/DOCX or paste text. Optionally add a job description to check keyword match.</p>
+      <p style="margin:0 0 12px;color:#555;">Upload a PDF/DOCX. Optionally add a job description to check keyword match.</p>
 
       <input type="file" id="dashResumeFile" accept=".pdf,.docx" style="display:block;margin:6px 0 10px;">
-
-      <textarea id="dashResumeText" placeholder="Or paste your resume text here…"
-        style="width:100%;height:90px;padding:12px;border:1px solid #ccc;border-radius:8px;margin:0 0 10px;font-size:14px;"></textarea>
 
       <textarea id="dashJobDesc" placeholder="Optional: paste job description to check keywords…"
         style="width:100%;height:70px;padding:12px;border:1px solid #ccc;border-radius:8px;margin:0 0 12px;font-size:14px;"></textarea>
@@ -79,23 +76,10 @@
     </div>
   </div>
 
-  <!-- If no analysis saved yet, show CTA under the top row -->
+  <!-- Empty state -->
   <div id="no-analysis-cta" style="text-align:center; margin:18px 0 0;">
-    <p>You haven’t analyzed a resume yet.</p>
-    <a href="/resume-analyzer" class="cta-primary" style="display:inline-block;background:#104879;color:#fff;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:600;">Analyze on Analyzer page</a>
+    <p>You haven’t analyzed a resume yet. Use the upload panel above to get started.</p>
   </div>
-
-  <!-- Add this block somewhere above the analysis section -->
-<section class="dash-reanalyze">
-  <h2>↻ Re-analyze an updated resume</h2>
-  <p style="margin:6px 0 12px;">Upload a new PDF or DOCX. Optionally paste a job description to improve keyword matching.</p>
-
-  <input type="file" id="dashResumeFile" accept=".pdf,.docx" style="margin-bottom:8px;">
-  <textarea id="dashJobDesc" placeholder="(Optional) Paste job description..." style="width:100%;min-height:80px;margin-bottom:8px;"></textarea>
-
-  <button id="dashAnalyzeBtn" class="cta-primary">Analyze on dashboard</button>
-  <span id="dashAnalyzing" style="display:none;margin-left:8px;color:#555;">Analyzing…</span>
-</section>
 
   <!-- ===== Detailed Analysis ===== -->
   <section id="resume-analysis" class="analysis-section" style="display:none; margin-top:22px;">
