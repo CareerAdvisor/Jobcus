@@ -3,197 +3,126 @@
 {% block title %}My Dashboard – Jobcus{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 {% endblock %}
 
 {% block content %}
-<section class="dash-wrap">
-  <h1 id="dashboardGreeting" class="dashboard-title"></h1>
-  <p class="dashboard-subtitle">Track your career growth and insights powered by Jobcus AI.</p>
+<section class="dashboard-container">
 
-  <div class="top-stack">
-    <!-- Score card -->
-    <div class="dashboard-card score-card" id="resume-score-card" style="display:none;">
-      <div class="score-card__head">
-        <h3>📄 Resume Score</h3>
-        <button id="openReanalyze" class="btn btn-outline">Analyze updated resume</button>
-      </div>
+  <!-- Upload Card -->
+  <div id="uploadCard" class="card upload-card">
+    <p class="upload-lead">
+      Upload a PDF/DOCX. Optionally add a job description to check keyword match.
+    </p>
 
-      <div class="score-card__body">
-        <!-- Score ring -->
-        <div class="ring-wrap">
-          <div class="progress-circle" data-score="0">
-            <svg viewBox="0 0 36 36" class="ring">
-              <path class="ring-track"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-              <path class="ring-progress" stroke-dasharray="0,100"
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-              <text x="18" y="20.35" class="ring-text" text-anchor="middle">0%</text>
-            </svg>
-          </div>
-          <p id="metric-note" class="metric-note">Last analyzed: just now</p>
-        </div>
-
-        <!-- ATS breakdown -->
-        <div class="ats-wrap">
-          <h4>ATS Readiness</h4>
-          <div id="ats-grid" class="ats-grid"><!-- pills inserted by JS --></div>
-          <small class="ats-hint">Higher is better. Aim for green across the board.</small>
-        </div>
-      </div>
+    <!-- Dropzone (click hits the hidden input) -->
+    <div id="dropZone" class="dropzone" tabindex="0" role="button" aria-label="Browse files">
+      <div class="dropzone-icon" aria-hidden="true">⤴︎</div>
+      <div class="dropzone-title">Browse Files</div>
+      <div class="dropzone-sub">Drag and drop files here</div>
+      <input id="dashResumeFile" type="file" accept=".pdf,.docx" hidden />
     </div>
 
-    <!-- Upload / analyze -->
-    <div class="dashboard-card upload-card">
-      <h3>Analyze a resume</h3>
-      <p class="upload-card__sub">Upload a PDF/DOCX. Optionally add a job description to check keyword match.</p>
+    <!-- Optional JD + Role relevance -->
+    <textarea id="dashJobDesc" class="input textarea" placeholder="Optional: paste job description to check keywords…"></textarea>
 
-      <!-- File dropzone -->
-      <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload resume">
-        <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 15.75a4.5 4.5 0 0 0 4.5 4.5h9a4.5 4.5 0 0 0 .9-8.91A6 6 0 1 0 6.75 9" />
-          <path d="M12 12v8M9 14l3-3 3 3" />
-        </svg>
-        <div class="dz-title">Browse Files</div>
-        <p class="dz-sub">Drag and drop files here</p>
-        <div id="dzFileName" class="dz-file" style="display:none;"></div>
-        <input id="dashResumeFile" type="file" accept=".pdf,.docx" hidden>
-      </div>
-
-      <!-- Optional JD + Role -->
-      <textarea id="dashJobDesc" class="textarea"
-        placeholder="Optional: paste job description to check keywords…"></textarea>
-
-      <label for="dashRoleSelect" class="label">Or pick a target role to assess relevance</label>
-      <select id="dashRoleSelect" class="select">
+    <div class="role-picker">
+      <label for="roleSelect">Or pick a target role to assess relevance</label>
+      <select id="roleSelect" class="input select">
         <option value="">— Choose a role (optional) —</option>
+        <option>IT Support Specialist</option>
         <option>Software Engineer</option>
         <option>Data Analyst</option>
         <option>Project Manager</option>
         <option>UX Designer</option>
         <option>Cybersecurity Analyst</option>
-        <option>IT Support</option>
-        <option>Product Manager</option>
-        <option>Marketing Manager</option>
       </select>
-
-      <div class="upload-actions">
-        <button id="dashAnalyzeBtn" class="btn btn-primary" disabled>Analyze resume</button>
-        <span id="dashAnalyzing" class="analyzing">🤖 Analyzing…</span>
-      </div>
-
-      <small class="upload-note">We’ll store your latest result on this device for quick access.</small>
     </div>
+
+    <div class="actions">
+      <button id="dashAnalyzeBtn" class="btn btn-primary">Analyze resume</button>
+      <span id="dashAnalyzing" class="analyzing" hidden>🤖 Analyzing…</span>
+    </div>
+
+    <small class="muted">We’ll store your latest result on this device for quick access.</small>
   </div>
 
-  <!-- Empty state -->
-  <div id="no-analysis-cta" class="empty-state">
+  <!-- Score + Breakdown -->
+  <div class="grid">
+    <div class="card score-card">
+      <div class="score-card__top">
+        <div class="doc-chip" aria-hidden="true">📄</div>
+        <button id="openReanalyze" class="btn btn-outlined">Analyze updated resume</button>
+      </div>
+
+      <div class="score-ring">
+        <svg viewBox="0 0 36 36" class="ring">
+          <path class="ring-track" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <path class="ring-progress" stroke-dasharray="0,100"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <text x="18" y="21" class="ring-label">0%</text>
+        </svg>
+      </div>
+
+      <div class="mini-metrics">
+        <div class="metric"><span>Formatting</span><strong id="m-formatting">—</strong><div class="bar"><div id="b-formatting"></div></div></div>
+        <div class="metric"><span>Sections</span><strong id="m-sections">—</strong><div class="bar"><div id="b-sections"></div></div></div>
+        <div class="metric"><span>Readability</span><strong id="m-readability">—</strong><div class="bar"><div id="b-readability"></div></div></div>
+        <div class="metric"><span>Length</span><strong id="m-length">—</strong><div class="bar"><div id="b-length"></div></div></div>
+        <div class="metric"><span>Parseable</span><strong id="m-parseable">—</strong><div class="bar"><div id="b-parseable"></div></div></div>
+      </div>
+
+      <p id="metric-note" class="metric-note">Last analyzed: —</p>
+    </div>
+
+    <!-- Optimize side menu + single dynamic panel -->
+    <aside class="card optimize">
+      <h3>Optimize</h3>
+      <nav class="opt-menu" role="tablist" aria-label="Resume optimization">
+        <button class="opt-tab is-active" data-target="fixes" role="tab" aria-selected="true">Fixes needed</button>
+        <button class="opt-tab" data-target="strengths" role="tab" aria-selected="false">Done well</button>
+        <button class="opt-tab" data-target="ats" role="tab" aria-selected="false">ATS keywords</button>
+        <button class="opt-tab" data-target="writing" role="tab" aria-selected="false">Writing quality</button>
+      </nav>
+    </aside>
+  </div>
+
+  <!-- SINGLE dynamic panel that swaps content -->
+  <section id="optimize-panel" class="card panel">
+    <!-- filled by JS depending on selected tab -->
+  </section>
+
+  <!-- Optimize CTA: always shown -->
+  <section class="card optimize-cta">
+    <p>Want us to apply these fixes automatically? ✨</p>
+    <button id="optimize-btn" class="btn btn-primary">Optimize My Resume</button>
+
+    <div id="optimized-loading" class="muted" hidden>🤖 Optimizing your resume, please wait…</div>
+    <pre id="optimized-output" class="opt-output" hidden></pre>
+
+    {% if current_user.is_authenticated %}
+      <div id="optimized-downloads" class="opt-dl" hidden>
+        <button onclick="downloadOptimizedResume('pdf')" class="btn btn-light">⬇️ Download PDF</button>
+        <button onclick="downloadOptimizedResume('txt')" class="btn btn-light">⬇️ Download TXT</button>
+      </div>
+    {% else %}
+      <div class="muted">
+        To download your optimized resume, <a href="/account">Sign up or log in</a>.
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Empty state if nothing analyzed yet -->
+  <div id="no-analysis-cta" class="empty">
     <p>You haven’t analyzed a resume yet. Use the upload panel above to get started.</p>
   </div>
 
-  <!-- RESULTS LAYOUT -->
-  <div id="analysisLayout" class="analysis-grid" style="display:none;">
-    <!-- Actions / side menu -->
-    <aside id="actionsMenu" class="actions-menu">
-      <h3 class="actions-title">Optimize</h3>
-      <button class="menu-item" data-target="#panel-issues">
-        <span>Fixes needed</span><span class="badge" id="countIssues">0</span>
-      </button>
-      <button class="menu-item" data-target="#panel-strengths">
-        <span>What you did well</span><span class="badge" id="countStrengths">0</span>
-      </button>
-      <button class="menu-item" data-target="#panel-keywords">
-        <span>ATS Keywords</span><span class="badge" id="countMissing">0</span>
-      </button>
-      <button class="menu-item" data-target="#panel-writing">
-        <span>Writing quality</span>
-      </button>
-      <button class="menu-item" data-target="#dropzone">
-        <span>Upload new version</span>
-      </button>
-    </aside>
-
-    <!-- Main results -->
-    <div class="analysis-main">
-      <section id="resume-analysis" class="analysis-section" style="display:none;">
-        <h2>🔍 Detailed Findings & Recommendations</h2>
-
-        <div id="panel-relevance" class="panel" style="display:none;">
-          <h3>🎯 Relevance to “<span id="rel-role"></span>” <small id="rel-score"></small></h3>
-          <p id="rel-explain" class="muted"></p>
-        </div>
-
-        <div id="panel-keywords" class="panel" style="display:none;">
-          <h3>📑 ATS Keywords</h3>
-          <p class="muted" id="kw-note"></p>
-          <div class="panel-split">
-            <div>
-              <h4>Matched</h4>
-              <ul id="kw-matched" class="list"></ul>
-            </div>
-            <div>
-              <h4>Missing</h4>
-              <ul id="kw-missing" class="list"></ul>
-            </div>
-          </div>
-        </div>
-
-        <div id="panel-issues" class="panel">
-          <h3>⚠️ Fixes needed</h3>
-          <ul id="top-issues" class="list"></ul>
-        </div>
-
-        <div id="panel-strengths" class="panel">
-          <h3>✅ What you did well</h3>
-          <ul id="good-points" class="list"></ul>
-        </div>
-
-        <div id="panel-writing" class="panel">
-          <h3>✍️ Writing quality</h3>
-          <p>Readability: <strong id="read-grade">—</strong></p>
-          <h4>Repeated words</h4>
-          <ul id="rep-terms" class="list"></ul>
-          <h4>Grammar/Phrasing tips</h4>
-          <ul id="grammar-tips" class="list"></ul>
-        </div>
-
-        <div class="panel">
-          <h3>💡 Suggestions</h3>
-          <ul id="suggestions-list" class="list"></ul>
-        </div>
-
-        <div class="opt-cta">
-          <p>Want us to apply these fixes automatically? ✨</p>
-          <button id="optimize-btn" class="btn btn-primary">Optimize My Resume</button>
-        </div>
-
-        <div class="opt-output">
-          <div id="optimized-loading" class="loading">🤖 Optimizing your resume, please wait…</div>
-          <pre id="optimized-output" class="output"></pre>
-
-          {% if current_user.is_authenticated %}
-            <div id="optimized-downloads" class="downloads">
-              <button onclick="downloadOptimizedResume('pdf')" class="btn">⬇️ Download PDF</button>
-              <button onclick="downloadOptimizedResume('txt')" class="btn">⬇️ Download TXT</button>
-            </div>
-          {% else %}
-            <div class="downloads">
-              <p>To download your optimized resume,
-                <strong><a href="/account">Sign up or log in</a></strong>.
-              </p>
-            </div>
-          {% endif %}
-        </div>
-      </section>
-    </div>
-  </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
