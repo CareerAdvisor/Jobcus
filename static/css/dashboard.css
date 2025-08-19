@@ -247,3 +247,77 @@ body{overflow-x:hidden}
   margin:0 0 10px;
   color:#475569;
 }
+
+/* Page container (if not already present) */
+.dashboard-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+/* Stacked layout: score card above upload on ALL breakpoints */
+.dash-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 900px;        /* feel free to tweak (860–980 look great) */
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Cards */
+.dashboard-card {
+  background: #fff;
+  border: 1px solid #e6ecf2;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 1px 0 rgba(16,72,121,0.02);
+}
+
+/* Upload card: center heading + controls like your screenshot */
+.upload-card h3,
+.upload-card .upload-title,
+.upload-card .helper,
+.upload-card .role-title {
+  text-align: center;
+  margin: 0 0 12px;
+}
+
+/* Dropzone look */
+#dropzone {
+  border: 2px dashed #d7e1ea;
+  border-radius: 12px;
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+#dropzone.is-drag { border-color: #104879; box-shadow: 0 0 0 3px rgba(16,72,121,0.12); }
+#dropzone .dz-title   { font-weight: 800; color: #0f3a5f; font-size: 22px; }
+#dropzone .dz-sub     { color: #6b7c8f; margin-top: 6px; }
+
+/* Role line centered */
+.role-title { text-align: center; font-weight: 700; color: #0f3a5f; }
+
+/* Analyze button full width */
+#dashAnalyzeBtn {
+  width: 100%;
+  border-radius: 12px;
+}
+
+/* Make sure no legacy two-column grid fights this layout */
+.dash-top, .dash-grid {
+  display: block !important;
+  grid-template-columns: unset !important;
+}
+
+/* Prevent horizontal cut-offs on narrow phones */
+html, body { overflow-x: hidden; }
+
+/* “Analyze updated resume” pressed/active state (white text on blue) */
+#openReanalyze.is-hot {
+  background: #104879 !important;
+  color: #fff !important;
+  border-color: #104879 !important;
+}
