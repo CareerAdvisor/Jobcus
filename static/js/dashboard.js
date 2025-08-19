@@ -1,5 +1,5 @@
 // Keep cookies for SameSite/Lax
-;(function () {
+;(function(){
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
@@ -17,266 +17,330 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Elements
-  const card            = document.getElementById("resume-score-card");
-  const noCTA           = document.getElementById("no-analysis-cta");
-  const analysisSection = document.getElementById("resume-analysis");
-  const metricNote      = document.getElementById("metric-note");
-  const atsGrid         = document.getElementById("ats-grid");
+  const uploadCard   = document.getElementById("uploadCard");
+  const dropZone     = document.getElementById("dropZone");
+  const fileInput    = document.getElementById("dashResumeFile");
+  const jobDesc      = document.getElementById("dashJobDesc");
+  const roleSelect   = document.getElementById("roleSelect");
+  const analyzeBtn   = document.getElementById("dashAnalyzeBtn");
+  const analyzingEl  = document.getElementById("dashAnalyzing");
+  const openReBtn    = document.getElementById("openReanalyze");
+  const panel        = document.getElementById("optimize-panel");
+  const noCTA        = document.getElementById("no-analysis-cta");
 
-  const fileInput   = document.getElementById("dashResumeFile");
-  const jobDesc     = document.getElementById("dashJobDesc");
-  const analyzeBtn  = document.getElementById("dashAnalyzeBtn");
-  const analyzingEl = document.getElementById("dashAnalyzing");
-  const openReBtn   = document.getElementById("openReanalyze");
+  // Score ring bits
+  const ringProgress = document.querySelector(".ring-progress");
+  const ringLabel    = document.querySelector(".ring-label");
+  const metricNote   = document.getElementById("metric-note");
 
-  const dropzone     = document.getElementById("dropzone");
-  const dzFileNameEl = document.getElementById("dzFileName");
+  // Mini metrics
+  const mini = {
+    formatting: { m: "m-formatting", b: "b-formatting" },
+    sections:   { m: "m-sections",   b: "b-sections" },
+    readability:{ m: "m-readability",b: "b-readability" },
+    length:     { m: "m-length",     b: "b-length" },
+    parseable:  { m: "m-parseable",  b: "b-parseable" }
+  };
 
-  const issuesUL      = document.getElementById("top-issues");
-  const strengthsUL   = document.getElementById("good-points");
-  const suggestionsUL = document.getElementById("suggestions-list");
+  // Role → sample ATS keywords (expand as needed)
+  const ROLE_KEYWORDS = {
+    "IT Support Specialist": [
+      "Troubleshooting","Ticketing","Active Directory","Windows Server","SLA",
+      "Customer Support","Hardware","Software","Networking","Incident Management"
+    ],
+    "Software Engineer": [
+      "Algorithms","Data Structures","APIs","REST","Unit Testing",
+      "CI/CD","Git","Microservices","Cloud","Agile"
+    ],
+    "Data Analyst": [
+      "SQL","Excel","Data Cleaning","Visualization","Tableau",
+      "Power BI","A/B Testing","Regression","Python","Statistics"
+    ],
+    "Project Manager": [
+      "Stakeholders","Roadmap","Scheduling","Risk Management","Budget",
+      "Scrum","Agile","KPIs","Resource Planning","Communication"
+    ],
+    "UX Designer": [
+      "Wireframes","Prototyping","User Research","Usability Testing","Personas",
+      "Figma","Information Architecture","Accessibility","Interaction Design","Heuristics"
+    ],
+    "Cybersecurity Analyst": [
+      "SIEM","Incident Response","Threat Hunting","Vulnerability Management","IDS/IPS",
+      "NIST","SOC","Risk Assessment","OSINT","Security Monitoring"
+    ]
+  };
 
-  const kwPanel     = document.getElementById("kw-panel");
-  const kwMatchedUL = document.getElementById("kw-matched");
-  const kwMissingUL = document.getElementById("kw-missing");
+  // ---------- helpers ----------
+  const clamp = (n) => Math.max(0, Math.min(100, Number(n) || 0));
 
-  const sectionsPanel = document.getElementById("sections-panel");
-  const secPresentUL  = document.getElementById("sec-present");
-  const secMissingUL  = document.getElementById("sec-missing");
-
-  // Helpers
-  const colorForScore = (s = 0) => (s >= 80 ? "#16A34A" : s >= 60 ? "#F59E0B" : "#E11D48");
-
-  function renderATSBreakdown(breakdown = null) {
-    atsGrid.innerHTML = "";
-    if (!breakdown) return;
-
-    const rows = [
-      ["Formatting",  breakdown.formatting],
-      ["Keywords",    breakdown.keywords],
-      ["Sections",    breakdown.sections],
-      ["Readability", breakdown.readability],
-      ["Length",      breakdown.length],
-      ["Parseable",   breakdown.parseable === true ? 100 : (breakdown.parseable === false ? 0 : null)]
-    ];
-
-    rows.forEach(([label, val]) => {
-      if (val == null) return;
-      const color = colorForScore(val);
-      const pill  = document.createElement("div");
-      pill.className = "ats-pill";
-      pill.innerHTML = `
-        <div class="ats-top">
-          <span class="ats-label">${label}</span>
-          <span class="ats-percent" style="color:${color}">${Math.round(val)}%</span>
-        </div>
-        <div class="ats-bar">
-          <div class="ats-bar__fill" style="width:${Math.max(0, Math.min(100, val))}%;background:${color}"></div>
-        </div>`;
-      atsGrid.appendChild(pill);
-    });
+  function setMiniMetric(key, value) {
+    const ids = mini[key]; if (!ids) return;
+    const v = clamp(value);
+    const mEl = document.getElementById(ids.m);
+    const bEl = document.getElementById(ids.b);
+    if (mEl) mEl.textContent = v === 0 && value !== 0 ? "—" : `${v}%`;
+    if (bEl) {
+      bEl.style.width = `${v}%`;
+      bEl.style.background = v >= 80 ? "#16A34A" : (v >= 60 ? "#F59E0B" : "#E11D48");
+    }
   }
 
-  function renderScore(score = 0, lastAnalyzed = null) {
-    const circle = document.querySelector(".progress-circle");
-    if (!circle) return;
-    const path = circle.querySelector(".ring-progress");
-    const text = circle.querySelector(".ring-text");
-
-    const color = colorForScore(score);
-    path.setAttribute("stroke", color);
-
-    let current = 0;
-    path.setAttribute("stroke-dasharray", `0,100`);
-    text.textContent = `0%`;
-
-    const step = score > 0 ? 1 : -1;
+  function animateRing(score) {
+    const target = clamp(score);
+    let cur = 0;
+    ringProgress.setAttribute("stroke-dasharray", "0,100");
+    ringLabel.textContent = "0%";
+    ringProgress.setAttribute("stroke", target >= 80 ? "#16A34A" : (target >= 60 ? "#F59E0B" : "#E11D48"));
     const iv = setInterval(() => {
-      if (current === score) { clearInterval(iv); return; }
-      current += step;
-      path.setAttribute("stroke-dasharray", `${current},100`);
-      text.textContent = `${current}%`;
-    }, 15);
-
-    if (metricNote && lastAnalyzed) {
-      metricNote.textContent = `Last analyzed: ${lastAnalyzed}`;
-    }
-  }
-
-  function listFill(ul, items) {
-    if (!ul) return;
-    ul.innerHTML = "";
-    (items || []).forEach(t => {
-      const li = document.createElement("li");
-      li.textContent = t;
-      ul.appendChild(li);
-    });
-    if ((items || []).length === 0) {
-      const li = document.createElement("li");
-      li.style.color = "#64748b";
-      li.textContent = "No items.";
-      ul.appendChild(li);
-    }
-  }
-
-  function showStateFromStorage() {
-    const raw = localStorage.getItem("resumeAnalysis");
-    if (!raw) {
-      card && (card.style.display = "none");
-      analysisSection && (analysisSection.style.display = "none");
-      noCTA && (noCTA.style.display = "block");
-      return;
-    }
-
-    let data;
-    try { data = JSON.parse(raw); } catch { return; }
-
-    card && (card.style.display = "block");
-    analysisSection && (analysisSection.style.display = "block");
-    noCTA && (noCTA.style.display = "none");
-
-    renderScore(data.score || 0, data.lastAnalyzed || null);
-    renderATSBreakdown(data.breakdown || null);
-    listFill(issuesUL,      data.analysis?.issues || []);
-    listFill(strengthsUL,   data.analysis?.strengths || []);
-    listFill(suggestionsUL, data.suggestions || []);
-
-    const matched = data.keywords?.matched || [];
-    const missing = data.keywords?.missing || [];
-    if (matched.length || missing.length) {
-      kwPanel && (kwPanel.style.display = "block");
-      listFill(kwMatchedUL, matched);
-      listFill(kwMissingUL, missing);
-    } else {
-      kwPanel && (kwPanel.style.display = "none");
-    }
-
-    const secPresent = data.sections?.present || [];
-    const secMissing = data.sections?.missing || [];
-    if (secPresent.length || secMissing.length) {
-      sectionsPanel && (sectionsPanel.style.display = "block");
-      listFill(secPresentUL, secPresent);
-      listFill(secMissingUL, secMissing);
-    } else {
-      sectionsPanel && (sectionsPanel.style.display = "none");
-    }
+      if (cur === target) return clearInterval(iv);
+      cur += (target > cur ? 1 : -1);
+      ringProgress.setAttribute("stroke-dasharray", `${cur},100`);
+      ringLabel.textContent = `${cur}%`;
+    }, 12);
   }
 
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
-      fr.onload = () => { try { resolve(fr.result.split(",")[1]); } catch (e) { reject(e); } };
+      fr.onload = () => resolve(fr.result.split(",")[1]);
       fr.onerror = reject;
       fr.readAsDataURL(file);
     });
   }
 
+  // ---------- renderers ----------
+  function renderFromStorage() {
+    const raw = localStorage.getItem("resumeAnalysis");
+    if (!raw) {
+      document.querySelector(".score-card")?.classList.add("hidden");
+      noCTA?.classList.remove("hidden");
+      return;
+    }
+    let data;
+    try { data = JSON.parse(raw); } catch { return; }
+
+    // Show score card; hide empty state
+    document.querySelector(".score-card")?.classList.remove("hidden");
+    noCTA?.classList.add("hidden");
+
+    // Score ring + timestamp
+    animateRing(data.score || 0);
+    if (metricNote && data.lastAnalyzed) metricNote.textContent = `Last analyzed: ${data.lastAnalyzed}`;
+
+    // Mini metrics (will be "—" if not provided)
+    const br = data.breakdown || {};
+    setMiniMetric("formatting",  br.formatting);
+    setMiniMetric("sections",    br.sections);
+    setMiniMetric("readability", br.readability);
+    setMiniMetric("length",      br.length);
+    setMiniMetric("parseable",   br.parseable === true ? 100 : br.parseable === false ? 0 : br.parseable);
+
+    // Render default panel (fixes) on load
+    const active = document.querySelector(".opt-tab.is-active")?.dataset.target || "fixes";
+    renderPanel(active, data);
+  }
+
+  function bulletList(arr) {
+    if (!arr || !arr.length) return '<p class="empty">Nothing to show.</p>';
+    return `<ul class="list">${arr.map(x => `<li>${x}</li>`).join("")}</ul>`;
+  }
+
+  function renderFixes(data) {
+    const issues = data.analysis?.issues || [];
+    const suggestions = data.suggestions || [];
+    return `
+      <h3>⚠️ Fixes needed</h3>
+      ${bulletList(issues)}
+      <h4>Recommendations</h4>
+      ${bulletList(suggestions)}
+    `;
+  }
+
+  function renderStrengths(data) {
+    const good = data.analysis?.strengths || [];
+    return `
+      <h3>✅ What you did well</h3>
+      ${bulletList(good)}
+    `;
+  }
+
+  function renderATS(data) {
+    // Try using keywords from server; else role-based samples
+    const matched = data.keywords?.matched || [];
+    const missing = data.keywords?.missing || [];
+
+    let rows = "";
+    const all = matched.map(k => ({ k, inRes: true }))
+      .concat(missing.map(k => ({ k, inRes: false })));
+
+    if (all.length) {
+      rows = all.map(({k,inRes}) => `
+        <tr>
+          <td>${k}</td>
+          <td class="${inRes ? 'yes' : 'no'}">${inRes ? "✓" : "✕"}</td>
+        </tr>`).join("");
+    } else {
+      const role = roleSelect?.value || "";
+      const samples = ROLE_KEYWORDS[role] || ROLE_KEYWORDS["IT Support Specialist"];
+      rows = samples.map(k => `<tr><td>${k}</td><td class="na">—</td></tr>`).join("");
+    }
+
+    return `
+      <h3>🎯 ATS keywords</h3>
+      <p class="muted">These are skills/terms recruiters often search for. Add the ones you genuinely have.</p>
+      <div class="table-wrap">
+        <table class="kw-table">
+          <thead><tr><th>Keyword</th><th>In Resume?</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderWriting(data) {
+    const writing = data.writing || {};
+    const repetition = writing.repetition || {};
+    const grammar    = writing.grammar || {};
+
+    // If backend didn’t send details, show helpful defaults
+    const repScore = repetition.score ?? null;
+    const repItems = repetition.items || [];
+    const hasRep   = repItems.length > 0;
+
+    const gramIssues = grammar.issues || [];
+    const gramNote = gramIssues.length ? bulletList(gramIssues) : `<p class="empty">No critical grammar issues detected.</p>`;
+
+    // Suggestions to diversify action verbs
+    const diversify = [
+      "managed → led / coordinated / oversaw / orchestrated",
+      "responsible for → owned / delivered / executed",
+      "worked on → built / implemented / developed",
+      "helped → supported / enabled / facilitated"
+    ];
+
+    return `
+      <h3>✍️ Writing quality</h3>
+      <p class="muted">Readability, phrasing and repetition affect how quickly hiring managers grasp impact.</p>
+
+      <h4>Repetition</h4>
+      ${repScore != null ? `<p>Score: <strong>${repScore}/10</strong> (higher is better)</p>` : ``}
+      ${hasRep ? bulletList(repItems) : `<ul class="list"><li>✅ No repetitive phrases</li><li>✅ No repetitive bullet points</li><li>✅ Varied action verbs</li></ul>`}
+
+      <h4>Grammar & clarity</h4>
+      ${gramNote}
+
+      <h4>Stronger phrasing (ideas)</h4>
+      ${bulletList(diversify)}
+    `;
+  }
+
+  function renderPanel(which, data) {
+    let html = "";
+    if (which === "fixes")       html = renderFixes(data);
+    else if (which === "strengths") html = renderStrengths(data);
+    else if (which === "ats")    html = renderATS(data);
+    else if (which === "writing")html = renderWriting(data);
+    panel.innerHTML = html || `<p class="empty">No details available yet.</p>`;
+    // Keep “Optimize My Resume” section always visible (separate card)
+  }
+
+  // ---------- analysis flow ----------
   async function runDashboardAnalysis() {
-    analyzingEl && (analyzingEl.style.display = "inline");
+    const file = fileInput?.files?.[0] || null;
+    if (!file) { alert("Choose a PDF or DOCX first."); return; }
 
     try {
-      const file = fileInput?.files?.[0] || null;
-      if (!file) { alert("Please choose a PDF or DOCX."); return; }
+      analyzingEl.hidden = false;
+      analyzeBtn.disabled = true;
 
       const b64 = await fileToBase64(file);
-      localStorage.setItem("resumeBase64", b64);
-
       const payload = { jobDescription: (jobDesc?.value || "").trim() };
-      if (file.type === "application/pdf") {
-        payload.pdf = b64;
-      } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-        payload.docx = b64;
-      } else {
-        alert("Unsupported file. Upload PDF or DOCX."); return;
-      }
+      if (file.type === "application/pdf") payload.pdf = b64;
+      else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") payload.docx = b64;
+      else { alert("Unsupported type. Upload PDF or DOCX."); return; }
 
       const res = await fetch("/api/resume-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || res.statusText);
 
       data.lastAnalyzed = new Date().toLocaleString();
+      // Persist for score/mini/panels; keep file for optimizer
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
+      localStorage.setItem("resumeBase64", b64);
 
-      showStateFromStorage();
-      document.getElementById("resume-score-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      renderFromStorage();
+      // Reset input for consecutive uploads
+      fileInput.value = "";
 
-      // reset chosen file name
-      if (fileInput) fileInput.value = "";
-      if (dzFileNameEl) { dzFileNameEl.style.display = "none"; dzFileNameEl.textContent = ""; }
+      // Scroll to score card
+      document.querySelector(".score-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-    } catch (err) {
-      console.error("Dashboard analysis error:", err);
+    } catch (e) {
+      console.error("Dashboard analysis error:", e);
       alert("Analysis failed. Please try again.");
     } finally {
-      analyzingEl && (analyzingEl.style.display = "none");
+      analyzingEl.hidden = true;
+      analyzeBtn.disabled = false;
     }
   }
 
-  // Dropzone UX
-  function setDZFilename(name) {
-    if (!dzFileNameEl) return;
-    dzFileNameEl.textContent = name;
-    dzFileNameEl.style.display = "block";
-  }
-
-  if (dropzone && fileInput) {
-    const openPicker = () => fileInput.click();
-    dropzone.addEventListener("click", openPicker);
-    dropzone.addEventListener("keypress", (e) => {
-      if (e.key === "Enter" || e.key === " ") openPicker();
-    });
-
-    ["dragenter", "dragover"].forEach(evt =>
-      dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add("dragover"); })
-    );
-    ["dragleave", "drop"].forEach(evt =>
-      dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove("dragover"); })
-    );
-
-    dropzone.addEventListener("drop", (e) => {
-      const files = e.dataTransfer?.files || [];
-      if (files.length) {
-        fileInput.files = files;
-        setDZFilename(files[0].name);
-      }
-    });
-
-    fileInput.addEventListener("change", (e) => {
-      const f = e.target.files?.[0];
-      if (f) setDZFilename(f.name);
-    });
-  }
-
-  // Wire buttons
+  // ---------- events ----------
   analyzeBtn?.addEventListener("click", runDashboardAnalysis);
 
-  // Fix: make “Analyze updated resume” actually open the picker and scroll
   openReBtn?.addEventListener("click", () => {
-    dropzone?.scrollIntoView({ behavior: "smooth", block: "center" });
-    dropzone?.focus();
+    uploadCard?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Also open native picker
     fileInput?.click();
   });
 
-  // Optimize
+  // Dropzone interactions
+  function highlight(on) {
+    dropZone.classList.toggle("is-hover", !!on);
+  }
+  dropZone?.addEventListener("click", () => fileInput?.click());
+  dropZone?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput?.click(); }
+  });
+  dropZone?.addEventListener("dragover", (e) => { e.preventDefault(); highlight(true); });
+  dropZone?.addEventListener("dragleave", () => highlight(false));
+  dropZone?.addEventListener("drop", (e) => {
+    e.preventDefault(); highlight(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) { fileInput.files = e.dataTransfer.files; }
+  });
+
+  // Optimize menu (single active panel)
+  document.querySelectorAll(".opt-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".opt-tab").forEach(b => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      const key = btn.dataset.target;
+      try {
+        const data = JSON.parse(localStorage.getItem("resumeAnalysis") || "{}");
+        renderPanel(key, data);
+      } catch { panel.innerHTML = `<p class="empty">No analysis yet.</p>`; }
+    });
+  });
+
+  // Optimize action (unchanged)
   const optimizeBtn  = document.getElementById("optimize-btn");
   const loadingEl    = document.getElementById("optimized-loading");
   const outputEl     = document.getElementById("optimized-output");
   const downloadsEl  = document.getElementById("optimized-downloads");
 
   optimizeBtn?.addEventListener("click", async () => {
-    if (loadingEl)   loadingEl.style.display    = "block";
-    if (outputEl)    outputEl.style.display     = "none";
-    if (downloadsEl) downloadsEl.style.display  = "none";
+    loadingEl.hidden   = false;
+    outputEl.hidden    = true;
+    downloadsEl && (downloadsEl.hidden = true);
 
     const b64 = localStorage.getItem("resumeBase64");
     if (!b64) {
       alert("Missing your original resume file. Upload it above and analyze again.");
-      if (loadingEl) loadingEl.style.display = "none";
+      loadingEl.hidden = true;
       return;
     }
 
@@ -289,21 +353,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const js = await res.json();
       if (!res.ok || js.error) throw new Error(js.error || res.statusText);
 
-      if (loadingEl)   loadingEl.style.display   = "none";
-      if (outputEl) { outputEl.textContent = js.optimized; outputEl.style.display = "block"; }
-      if (downloadsEl) downloadsEl.style.display = "block";
+      loadingEl.hidden = true;
+      outputEl.textContent = js.optimized || "";
+      outputEl.hidden = false;
+      downloadsEl && (downloadsEl.hidden = false);
     } catch (err) {
       console.error("Optimize error:", err);
-      if (loadingEl) loadingEl.style.display = "none";
+      loadingEl.hidden = true;
       alert("Failed to optimize resume. Try again.");
     }
   });
 
-  // First paint
-  showStateFromStorage();
+  // Initial paint
+  renderFromStorage();
 });
 
-// — Download helper —
+// — Download helper for optimized resume —
 function downloadHelper(format, text, filename) {
   if (format === "txt") {
     const blob = new Blob([text], { type: "text/plain" });
@@ -331,8 +396,7 @@ function downloadHelper(format, text, filename) {
     pdf.save(`${filename}.pdf`);
   }
 }
-
-window.downloadOptimizedResume = function (format) {
+window.downloadOptimizedResume = function(format) {
   const text = document.getElementById("optimized-output").innerText || "";
   downloadHelper(format, text, "resume-optimized");
 };
