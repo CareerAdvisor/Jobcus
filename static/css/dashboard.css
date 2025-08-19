@@ -1,0 +1,150 @@
+/* Layout */
+.dash-wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  text-align: center;
+}
+.dashboard-title { margin: 0 0 6px; }
+.dashboard-subtitle { margin: 0 0 18px; color: #555; }
+
+.top-stack {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  justify-items: center;
+}
+.top-stack > * { width: 100%; }
+
+.dashboard-card {
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+  padding: 18px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: #fff;
+  color: #0f172a;
+}
+.btn-primary {
+  background: #104879;
+  color: #fff;
+  border-color: #104879;
+}
+.btn-outline {
+  background: #fff;
+  color: #104879;
+  border-color: #104879;
+}
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Upload card */
+.upload-card h3 { margin: 0 0 6px; }
+.upload-card__sub { margin: 0 0 12px; color: #555; }
+.upload-actions {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center;
+}
+.upload-note { display: block; margin-top: 12px; color: #666; }
+
+/* Dropzone */
+.dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 28px;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  margin-bottom: 12px;
+}
+.dropzone:hover { background: #f1f5f9; }
+.dropzone.dragover { background: #eef6ff; border-color: #104879; }
+.dz-icon {
+  width: 44px; height: 44px; margin: 0 auto 10px; color: #94a3b8;
+}
+.dz-title { font-weight: 700; margin: 2px 0; }
+.dz-sub { color: #64748b; font-size: 14px; margin: 0; }
+.dz-file { margin-top: 8px; font-size: 13px; color: #0f172a; word-break: break-word; }
+
+/* Textarea */
+.textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Score card */
+.score-card__head {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+}
+.score-card__body {
+  display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap;
+}
+.ring-wrap { text-align: center; }
+.metric-note { font-size: 12px; color: #666; margin-top: 8px; }
+
+/* Ring */
+.ring { width: 130px; height: 130px; }
+.ring-track { stroke: #eee; stroke-width: 3.8; fill: none; }
+.ring-progress { stroke: #16A34A; stroke-width: 3.8; fill: none; stroke-linecap: round; }
+.ring-text { font-size: 8px; fill: #104879; }
+
+/* ATS */
+.ats-wrap { flex: 1; min-width: 280px; text-align: left; }
+.ats-wrap h4 { margin: 0 0 8px; }
+.ats-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px;
+}
+.ats-pill {
+  border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; background: #fff;
+}
+.ats-top {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;
+}
+.ats-label { font-weight: 600; color: #0f172a; }
+.ats-percent { font-weight: 700; }
+.ats-bar {
+  height: 6px; background: #f1f5f9; border-radius: 6px; overflow: hidden;
+}
+.ats-bar__fill { height: 100%; width: 0%; background: #16A34A; }
+
+/* Empty */
+.empty-state { text-align: center; margin: 18px 0 0; }
+
+/* Panels / lists */
+.analysis-section { margin-top: 22px; text-align: left; }
+.analysis-section > h2 { text-align: center; margin: 0 0 10px; }
+.panel {
+  background: #fff; border: 1px solid #ececec; border-radius: 12px; padding: 16px; margin-top: 16px;
+}
+.panel:first-of-type { margin-top: 0; }
+.panel-split { display: flex; gap: 16px; }
+.panel h3 { margin: 0 0 8px; }
+.panel h4 { margin: 0 0 6px; font-size: 14px; }
+.list { margin: 0; padding-left: 18px; }
+
+.opt-cta {
+  margin-top: 16px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 16px; text-align: center;
+}
+.opt-output { margin-top: 14px; display: flex; flex-direction: column; align-items: center; }
+.loading { display: none; color: #555; }
+.output {
+  display: none; white-space: pre-wrap; background: #fff; border: 1px solid #ececec; padding: 12px; border-radius: 8px; max-width: 100%; overflow: auto;
+}
+.downloads { margin-top: 10px; text-align: center; }
+.downloads .btn { margin-right: 6px; }
+.downloads .btn:last-child { margin-right: 0; }
+
+@media (max-width: 560px) {
+  .ats-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
