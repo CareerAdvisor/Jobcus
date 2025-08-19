@@ -64,7 +64,7 @@
         placeholder="Optional: paste job description to check keywords…"></textarea>
 
       <div class="upload-actions">
-        <button id="dashAnalyzeBtn" class="btn btn-primary">Analyze resume</button>
+        <button id="dashAnalyzeBtn" class="btn btn-primary" disabled>Analyze resume</button>
         <span id="dashAnalyzing" class="analyzing">🤖 Analyzing…</span>
       </div>
 
@@ -77,78 +77,117 @@
     <p>You haven’t analyzed a resume yet. Use the upload panel above to get started.</p>
   </div>
 
-  <!-- Detailed analysis -->
-  <section id="resume-analysis" class="analysis-section" style="display:none;">
-    <h2>🔍 Detailed Findings & Recommendations</h2>
+  <!-- RESULTS LAYOUT: side menu + main content -->
+  <div id="analysisLayout" class="analysis-grid" style="display:none;">
+    <!-- Dynamic actions/menu -->
+    <aside id="actionsMenu" class="actions-menu">
+      <h3 class="actions-title">Optimize</h3>
+      <button class="menu-item" data-target="#panel-issues">
+        <span>Fixes needed</span>
+        <span class="badge" id="countIssues">0</span>
+      </button>
+      <button class="menu-item" data-target="#panel-strengths">
+        <span>What you did well</span>
+        <span class="badge" id="countStrengths">0</span>
+      </button>
+      <button class="menu-item" data-target="#panel-keywords">
+        <span>ATS Keywords</span>
+        <span class="badge" id="countMissing">0</span>
+      </button>
+      <button class="menu-item" data-target="#aiEditor">
+        <span>AI editor</span>
+      </button>
+      <button class="menu-item" data-target="#dropzone">
+        <span>Upload new version</span>
+      </button>
+    </aside>
 
-    <div class="opt-panels">
-      <div id="kw-panel" class="panel" style="display:none;">
-        <h3>🎯 Job Keyword Match</h3>
-        <div class="panel-split">
-          <div>
-            <h4>Matched</h4>
-            <ul id="kw-matched" class="list"></ul>
+    <!-- Main results -->
+    <div class="analysis-main">
+      <section id="resume-analysis" class="analysis-section" style="display:none;">
+        <h2>🔍 Detailed Findings & Recommendations</h2>
+
+        <div class="opt-panels">
+          <div id="panel-keywords" class="panel" style="display:none;">
+            <h3>🎯 Job Keyword Match</h3>
+            <div class="panel-split">
+              <div>
+                <h4>Matched</h4>
+                <ul id="kw-matched" class="list"></ul>
+              </div>
+              <div>
+                <h4>Missing</h4>
+                <ul id="kw-missing" class="list"></ul>
+              </div>
+            </div>
           </div>
-          <div>
-            <h4>Missing</h4>
-            <ul id="kw-missing" class="list"></ul>
+
+          <div id="panel-sections" class="panel" style="display:none;">
+            <h3>📋 Resume Sections</h3>
+            <div class="panel-split">
+              <div>
+                <h4>Present</h4>
+                <ul id="sec-present" class="list"></ul>
+              </div>
+              <div>
+                <h4>Missing</h4>
+                <ul id="sec-missing" class="list"></ul>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div id="sections-panel" class="panel" style="display:none;">
-        <h3>📋 Resume Sections</h3>
-        <div class="panel-split">
-          <div>
-            <h4>Present</h4>
-            <ul id="sec-present" class="list"></ul>
+        <div id="panel-issues" class="panel">
+          <h3>⚠️ Fixes needed</h3>
+          <ul id="top-issues" class="list"></ul>
+        </div>
+
+        <div id="panel-strengths" class="panel">
+          <h3>✅ What you did well</h3>
+          <ul id="good-points" class="list"></ul>
+        </div>
+
+        <div class="panel">
+          <h3>💡 Suggestions</h3>
+          <ul id="suggestions-list" class="list"></ul>
+        </div>
+
+        <div class="opt-cta">
+          <p>Want us to apply these fixes automatically? ✨</p>
+          <button id="optimize-btn" class="btn btn-primary">Optimize My Resume</button>
+        </div>
+
+        <div class="panel" id="aiEditor">
+          <h3>🤖 AI editor</h3>
+          <p>Paste a sentence or bullet you want to improve and say how to change it.</p>
+          <textarea id="aiEditInput" class="textarea" placeholder="Paste a bullet or short paragraph…"></textarea>
+          <input id="aiEditInstruction" class="input" placeholder="e.g., Make it concise and add a metric" />
+          <div class="upload-actions">
+            <button id="aiEditRun" class="btn btn-outline">Rewrite</button>
           </div>
-          <div>
-            <h4>Missing</h4>
-            <ul id="sec-missing" class="list"></ul>
-          </div>
+          <pre id="aiEditOutput" class="output"></pre>
         </div>
-      </div>
-    </div>
 
-    <div class="panel">
-      <h3>⚠️ Issues Found</h3>
-      <ul id="top-issues" class="list"></ul>
-    </div>
+        <div class="opt-output">
+          <div id="optimized-loading" class="loading">🤖 Optimizing your resume, please wait…</div>
+          <pre id="optimized-output" class="output"></pre>
 
-    <div class="panel">
-      <h3>✅ What You Did Well</h3>
-      <ul id="good-points" class="list"></ul>
-    </div>
-
-    <div class="panel">
-      <h3>💡 Suggestions</h3>
-      <ul id="suggestions-list" class="list"></ul>
-    </div>
-
-    <div class="opt-cta">
-      <p>Want us to apply these fixes automatically? ✨</p>
-      <button id="optimize-btn" class="btn btn-primary">Optimize My Resume</button>
-    </div>
-
-    <div class="opt-output">
-      <div id="optimized-loading" class="loading">🤖 Optimizing your resume, please wait…</div>
-      <pre id="optimized-output" class="output"></pre>
-
-      {% if current_user.is_authenticated %}
-        <div id="optimized-downloads" class="downloads">
-          <button onclick="downloadOptimizedResume('pdf')" class="btn">⬇️ Download PDF</button>
-          <button onclick="downloadOptimizedResume('txt')" class="btn">⬇️ Download TXT</button>
+          {% if current_user.is_authenticated %}
+            <div id="optimized-downloads" class="downloads">
+              <button onclick="downloadOptimizedResume('pdf')" class="btn">⬇️ Download PDF</button>
+              <button onclick="downloadOptimizedResume('txt')" class="btn">⬇️ Download TXT</button>
+            </div>
+          {% else %}
+            <div class="downloads">
+              <p>To download your optimized resume,
+                <strong><a href="/account">Sign up or log in</a></strong>.
+              </p>
+            </div>
+          {% endif %}
         </div>
-      {% else %}
-        <div class="downloads">
-          <p>To download your optimized resume,
-            <strong><a href="/account">Sign up or log in</a></strong>.
-          </p>
-        </div>
-      {% endif %}
+      </section>
     </div>
-  </section>
+  </div>
 </section>
 {% endblock %}
 
