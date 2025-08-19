@@ -10,8 +10,9 @@
   <h1 id="dashboardGreeting" class="dash-title"></h1>
   <p class="dash-subtitle">Track your career growth and insights powered by Jobcus AI.</p>
 
-  <div class="dash-grid">
-    <!-- SCORE CARD -->
+  <!-- ===== Score card + Upload (stacked, centered) ===== -->
+  <div class="dash-stack">
+    <!-- Score card -->
     <article class="card score-card" id="resume-score-card" aria-live="polite" style="display:none">
       <div class="score-card__top">
         <div class="score-card__icon" aria-hidden="true"></div>
@@ -42,7 +43,7 @@
       </footer>
     </article>
 
-    <!-- UPLOAD / ANALYZE -->
+    <!-- Upload card -->
     <article class="card upload-card">
       <h3 class="upload-title">Upload a PDF/DOCX. Optionally add a job description to check keyword match.</h3>
 
@@ -52,7 +53,6 @@
         <div class="dropzone__hint">Drag and drop files here</div>
         <input id="dashResumeFile" type="file" accept=".pdf,.docx" hidden>
       </div>
-      <!-- NEW: file name preview -->
       <div id="fileName" class="file-name" aria-live="polite"></div>
 
       <label class="field">
@@ -61,7 +61,6 @@
       </label>
 
       <label class="field">
-        <!-- NEW: centered label -->
         <span class="field__label center">Or pick a target role to assess relevance</span>
         <select id="dashRoleSelect" class="select">
           <option value="">— Choose a role (optional) —</option>
@@ -103,7 +102,6 @@
 
   <!-- Optimize CTA -->
   <section class="opt-cta">
-    <!-- NEW explanatory line -->
     <p class="opt-explain">Want us to apply these fixes automatically?</p>
     <button id="optimize-btn" class="btn btn-primary">Optimize my resume</button>
     <div id="optimized-loading" class="loading" style="display:none;">🤖 Optimizing your resume, please wait…</div>
