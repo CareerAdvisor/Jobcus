@@ -1,7 +1,5 @@
-// static/js/dashboard.js
-
-// 0) Keep cookies for SameSite/Lax
-;(function(){
+// Keep cookies for SameSite/Lax
+;(function () {
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
@@ -10,7 +8,7 @@
 })();
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 1) Greeting
+  // Greeting
   const greetEl = document.getElementById("dashboardGreeting");
   if (greetEl) {
     const first = !localStorage.getItem("dashboardVisited");
@@ -18,40 +16,38 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("dashboardVisited", "true");
   }
 
-  // 2) Elements we’ll need
+  // Elements
   const card            = document.getElementById("resume-score-card");
   const noCTA           = document.getElementById("no-analysis-cta");
   const analysisSection = document.getElementById("resume-analysis");
   const metricNote      = document.getElementById("metric-note");
   const atsGrid         = document.getElementById("ats-grid");
 
-  // Upload panel (upload-only)
   const fileInput   = document.getElementById("dashResumeFile");
   const jobDesc     = document.getElementById("dashJobDesc");
   const analyzeBtn  = document.getElementById("dashAnalyzeBtn");
   const analyzingEl = document.getElementById("dashAnalyzing");
   const openReBtn   = document.getElementById("openReanalyze");
 
-  // Lists
-  const issuesUL       = document.getElementById("top-issues");
-  const strengthsUL    = document.getElementById("good-points");
-  const suggestionsUL  = document.getElementById("suggestions-list");
-  const kwPanel        = document.getElementById("kw-panel");
-  const kwMatchedUL    = document.getElementById("kw-matched");
-  const kwMissingUL    = document.getElementById("kw-missing");
-  const sectionsPanel  = document.getElementById("sections-panel");
-  const secPresentUL   = document.getElementById("sec-present");
-  const secMissingUL   = document.getElementById("sec-missing");
+  const dropzone     = document.getElementById("dropzone");
+  const dzFileNameEl = document.getElementById("dzFileName");
 
-  // 3) Helpers
-  const colorForScore = (s=0) => {
-    if (s >= 80) return "#16A34A"; // green
-    if (s >= 60) return "#F59E0B"; // amber
-    return "#E11D48";              // red
-  };
+  const issuesUL      = document.getElementById("top-issues");
+  const strengthsUL   = document.getElementById("good-points");
+  const suggestionsUL = document.getElementById("suggestions-list");
+
+  const kwPanel     = document.getElementById("kw-panel");
+  const kwMatchedUL = document.getElementById("kw-matched");
+  const kwMissingUL = document.getElementById("kw-missing");
+
+  const sectionsPanel = document.getElementById("sections-panel");
+  const secPresentUL  = document.getElementById("sec-present");
+  const secMissingUL  = document.getElementById("sec-missing");
+
+  // Helpers
+  const colorForScore = (s = 0) => (s >= 80 ? "#16A34A" : s >= 60 ? "#F59E0B" : "#E11D48");
 
   function renderATSBreakdown(breakdown = null) {
-    if (!atsGrid) return;
     atsGrid.innerHTML = "";
     if (!breakdown) return;
 
@@ -65,44 +61,41 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
 
     rows.forEach(([label, val]) => {
-      if (val == null) return; // skip if backend didn’t send it
+      if (val == null) return;
       const color = colorForScore(val);
       const pill  = document.createElement("div");
-      pill.style.border = "1px solid #e5e7eb";
-      pill.style.borderRadius = "10px";
-      pill.style.padding = "10px";
+      pill.className = "ats-pill";
       pill.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-weight:600;">${label}</span>
-          <span style="font-weight:700;color:${color};">${val}%</span>
+        <div class="ats-top">
+          <span class="ats-label">${label}</span>
+          <span class="ats-percent" style="color:${color}">${Math.round(val)}%</span>
         </div>
-        <div style="height:6px;margin-top:6px;background:#f1f5f9;border-radius:6px;overflow:hidden;">
-          <div style="height:100%;width:${Math.max(0, Math.min(100, val))}%;background:${color};"></div>
-        </div>
-      `;
+        <div class="ats-bar">
+          <div class="ats-bar__fill" style="width:${Math.max(0, Math.min(100, val))}%;background:${color}"></div>
+        </div>`;
       atsGrid.appendChild(pill);
     });
   }
 
-  function renderScore(score=0, lastAnalyzed=null) {
+  function renderScore(score = 0, lastAnalyzed = null) {
     const circle = document.querySelector(".progress-circle");
     if (!circle) return;
-    const path = circle.querySelector(".progress");
-    const text = circle.querySelector(".percentage");
+    const path = circle.querySelector(".ring-progress");
+    const text = circle.querySelector(".ring-text");
 
     const color = colorForScore(score);
-    path?.setAttribute("stroke", color);
+    path.setAttribute("stroke", color);
 
     let current = 0;
-    path?.setAttribute("stroke-dasharray", `0,100`);
-    if (text) text.textContent = `0%`;
+    path.setAttribute("stroke-dasharray", `0,100`);
+    text.textContent = `0%`;
 
     const step = score > 0 ? 1 : -1;
     const iv = setInterval(() => {
       if (current === score) { clearInterval(iv); return; }
       current += step;
-      path?.setAttribute("stroke-dasharray", `${current},100`);
-      if (text) text.textContent = `${current}%`;
+      path.setAttribute("stroke-dasharray", `${current},100`);
+      text.textContent = `${current}%`;
     }, 15);
 
     if (metricNote && lastAnalyzed) {
@@ -126,18 +119,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // File → base64
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const fr = new FileReader();
-      fr.onload = () => {
-        try { resolve(fr.result.split(",")[1]); } catch(e){ reject(e); }
-      };
-      fr.onerror = reject;
-      fr.readAsDataURL(file);
-    });
-  }
-
   function showStateFromStorage() {
     const raw = localStorage.getItem("resumeAnalysis");
     if (!raw) {
@@ -156,7 +137,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderScore(data.score || 0, data.lastAnalyzed || null);
     renderATSBreakdown(data.breakdown || null);
-
     listFill(issuesUL,      data.analysis?.issues || []);
     listFill(strengthsUL,   data.analysis?.strengths || []);
     listFill(suggestionsUL, data.suggestions || []);
@@ -182,35 +162,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Initial paint
-  showStateFromStorage();
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => { try { resolve(fr.result.split(",")[1]); } catch (e) { reject(e); } };
+      fr.onerror = reject;
+      fr.readAsDataURL(file);
+    });
+  }
 
-  // Run analysis (upload-only)
   async function runDashboardAnalysis() {
     analyzingEl && (analyzingEl.style.display = "inline");
 
     try {
       const file = fileInput?.files?.[0] || null;
-      if (!file) {
-        alert("Please upload a PDF or DOCX.");
-        return;
-      }
+      if (!file) { alert("Please choose a PDF or DOCX."); return; }
 
       const b64 = await fileToBase64(file);
       localStorage.setItem("resumeBase64", b64);
 
-      const payload = {};
+      const payload = { jobDescription: (jobDesc?.value || "").trim() };
       if (file.type === "application/pdf") {
         payload.pdf = b64;
       } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
         payload.docx = b64;
       } else {
-        alert("Unsupported file. Upload PDF or DOCX.");
-        return;
+        alert("Unsupported file. Upload PDF or DOCX."); return;
       }
-
-      const jd = (jobDesc?.value || "").trim();
-      if (jd) payload.jobDescription = jd; // backend may ignore if unsupported
 
       const res = await fetch("/api/resume-analysis", {
         method: "POST",
@@ -224,11 +202,12 @@ document.addEventListener("DOMContentLoaded", () => {
       data.lastAnalyzed = new Date().toLocaleString();
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
 
-      // Repaint + reset input
       showStateFromStorage();
-      if (fileInput) fileInput.value = "";
-
       document.getElementById("resume-score-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      // reset chosen file name
+      if (fileInput) fileInput.value = "";
+      if (dzFileNameEl) { dzFileNameEl.style.display = "none"; dzFileNameEl.textContent = ""; }
 
     } catch (err) {
       console.error("Dashboard analysis error:", err);
@@ -238,28 +217,66 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Wire events
+  // Dropzone UX
+  function setDZFilename(name) {
+    if (!dzFileNameEl) return;
+    dzFileNameEl.textContent = name;
+    dzFileNameEl.style.display = "block";
+  }
+
+  if (dropzone && fileInput) {
+    const openPicker = () => fileInput.click();
+    dropzone.addEventListener("click", openPicker);
+    dropzone.addEventListener("keypress", (e) => {
+      if (e.key === "Enter" || e.key === " ") openPicker();
+    });
+
+    ["dragenter", "dragover"].forEach(evt =>
+      dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add("dragover"); })
+    );
+    ["dragleave", "drop"].forEach(evt =>
+      dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove("dragover"); })
+    );
+
+    dropzone.addEventListener("drop", (e) => {
+      const files = e.dataTransfer?.files || [];
+      if (files.length) {
+        fileInput.files = files;
+        setDZFilename(files[0].name);
+      }
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      const f = e.target.files?.[0];
+      if (f) setDZFilename(f.name);
+    });
+  }
+
+  // Wire buttons
   analyzeBtn?.addEventListener("click", runDashboardAnalysis);
+
+  // Fix: make “Analyze updated resume” actually open the picker and scroll
   openReBtn?.addEventListener("click", () => {
-    fileInput?.focus();
-    fileInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+    dropzone?.scrollIntoView({ behavior: "smooth", block: "center" });
+    dropzone?.focus();
+    fileInput?.click();
   });
 
-  // Optimize flow
+  // Optimize
   const optimizeBtn  = document.getElementById("optimize-btn");
   const loadingEl    = document.getElementById("optimized-loading");
   const outputEl     = document.getElementById("optimized-output");
   const downloadsEl  = document.getElementById("optimized-downloads");
 
   optimizeBtn?.addEventListener("click", async () => {
-    loadingEl && (loadingEl.style.display = "block");
-    outputEl && (outputEl.style.display = "none");
-    downloadsEl && (downloadsEl.style.display = "none");
+    if (loadingEl)   loadingEl.style.display    = "block";
+    if (outputEl)    outputEl.style.display     = "none";
+    if (downloadsEl) downloadsEl.style.display  = "none";
 
     const b64 = localStorage.getItem("resumeBase64");
     if (!b64) {
       alert("Missing your original resume file. Upload it above and analyze again.");
-      loadingEl && (loadingEl.style.display = "none");
+      if (loadingEl) loadingEl.style.display = "none";
       return;
     }
 
@@ -272,21 +289,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const js = await res.json();
       if (!res.ok || js.error) throw new Error(js.error || res.statusText);
 
-      loadingEl && (loadingEl.style.display = "none");
-      if (outputEl) {
-        outputEl.textContent = js.optimized;
-        outputEl.style.display = "block";
-      }
-      downloadsEl && (downloadsEl.style.display = "block");
+      if (loadingEl)   loadingEl.style.display   = "none";
+      if (outputEl) { outputEl.textContent = js.optimized; outputEl.style.display = "block"; }
+      if (downloadsEl) downloadsEl.style.display = "block";
     } catch (err) {
       console.error("Optimize error:", err);
-      loadingEl && (loadingEl.style.display = "none");
+      if (loadingEl) loadingEl.style.display = "none";
       alert("Failed to optimize resume. Try again.");
     }
   });
+
+  // First paint
+  showStateFromStorage();
 });
 
-// — Download helper for optimized resume —
+// — Download helper —
 function downloadHelper(format, text, filename) {
   if (format === "txt") {
     const blob = new Blob([text], { type: "text/plain" });
@@ -315,7 +332,7 @@ function downloadHelper(format, text, filename) {
   }
 }
 
-window.downloadOptimizedResume = function(format) {
+window.downloadOptimizedResume = function (format) {
   const text = document.getElementById("optimized-output").innerText || "";
   downloadHelper(format, text, "resume-optimized");
 };
