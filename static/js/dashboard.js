@@ -25,9 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const metricNote      = document.getElementById("metric-note");
   const atsGrid         = document.getElementById("ats-grid");
 
-  // Upload panel (dashboard re-analyze)
+  // Upload panel (upload-only)
   const fileInput   = document.getElementById("dashResumeFile");
-  const textInput   = document.getElementById("dashResumeText"); // optional textarea, safe if missing
   const jobDesc     = document.getElementById("dashJobDesc");
   const analyzeBtn  = document.getElementById("dashAnalyzeBtn");
   const analyzingEl = document.getElementById("dashAnalyzing");
@@ -92,17 +91,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = circle.querySelector(".percentage");
 
     const color = colorForScore(score);
-    if (path) path.setAttribute("stroke", color);
+    path?.setAttribute("stroke", color);
 
     let current = 0;
-    if (path) path.setAttribute("stroke-dasharray", `0,100`);
+    path?.setAttribute("stroke-dasharray", `0,100`);
     if (text) text.textContent = `0%`;
 
     const step = score > 0 ? 1 : -1;
     const iv = setInterval(() => {
       if (current === score) { clearInterval(iv); return; }
       current += step;
-      if (path) path.setAttribute("stroke-dasharray", `${current},100`);
+      path?.setAttribute("stroke-dasharray", `${current},100`);
       if (text) text.textContent = `${current}%`;
     }, 15);
 
@@ -127,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ---------- fileToBase64 (used by dashboard upload) ----------
+  // File → base64
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
@@ -139,22 +138,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- Single renderer used everywhere (replaces showStateFromStorage) ----------
-  function renderFromStorage() {
+  function showStateFromStorage() {
     const raw = localStorage.getItem("resumeAnalysis");
     if (!raw) {
-      if (card) card.style.display = "none";
-      if (analysisSection) analysisSection.style.display = "none";
-      if (noCTA) noCTA.style.display = "block";
+      card && (card.style.display = "none");
+      analysisSection && (analysisSection.style.display = "none");
+      noCTA && (noCTA.style.display = "block");
       return;
     }
 
     let data;
     try { data = JSON.parse(raw); } catch { return; }
 
-    if (card) card.style.display = "block";
-    if (analysisSection) analysisSection.style.display = "block";
-    if (noCTA) noCTA.style.display = "none";
+    card && (card.style.display = "block");
+    analysisSection && (analysisSection.style.display = "block");
+    noCTA && (noCTA.style.display = "none");
 
     renderScore(data.score || 0, data.lastAnalyzed || null);
     renderATSBreakdown(data.breakdown || null);
@@ -163,62 +161,56 @@ document.addEventListener("DOMContentLoaded", () => {
     listFill(strengthsUL,   data.analysis?.strengths || []);
     listFill(suggestionsUL, data.suggestions || []);
 
-    // Optional panels
     const matched = data.keywords?.matched || [];
     const missing = data.keywords?.missing || [];
     if (matched.length || missing.length) {
-      if (kwPanel) kwPanel.style.display = "block";
+      kwPanel && (kwPanel.style.display = "block");
       listFill(kwMatchedUL, matched);
       listFill(kwMissingUL, missing);
     } else {
-      if (kwPanel) kwPanel.style.display = "none";
+      kwPanel && (kwPanel.style.display = "none");
     }
 
     const secPresent = data.sections?.present || [];
     const secMissing = data.sections?.missing || [];
     if (secPresent.length || secMissing.length) {
-      if (sectionsPanel) sectionsPanel.style.display = "block";
+      sectionsPanel && (sectionsPanel.style.display = "block");
       listFill(secPresentUL, secPresent);
       listFill(secMissingUL, secMissing);
     } else {
-      if (sectionsPanel) sectionsPanel.style.display = "none";
+      sectionsPanel && (sectionsPanel.style.display = "none");
     }
   }
 
-  // 4) Initial paint (so dashboard shows the last analysis if it exists)
-  renderFromStorage();
+  // Initial paint
+  showStateFromStorage();
 
-  // 5) Run analysis (dashboard re-analyze – no redirect)
+  // Run analysis (upload-only)
   async function runDashboardAnalysis() {
-    if (analyzingEl) analyzingEl.style.display = "inline";
+    analyzingEl && (analyzingEl.style.display = "inline");
 
     try {
-      // Build payload from file or text
-      let payload = {};
       const file = fileInput?.files?.[0] || null;
-      const pasted = (textInput?.value || "").trim();
+      if (!file) {
+        alert("Please upload a PDF or DOCX.");
+        return;
+      }
 
-      if (file) {
-        const b64 = await fileToBase64(file);
-        localStorage.setItem("resumeBase64", b64); // reuse for optimize
-        if (file.type === "application/pdf") {
-          payload.pdf = b64;
-        } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-          payload.docx = b64;
-        } else {
-          alert("Unsupported file. Upload PDF or DOCX.");
-          return;
-        }
-      } else if (pasted) {
-        payload.text = pasted;
-        localStorage.setItem("resumeTextRaw", pasted);
+      const b64 = await fileToBase64(file);
+      localStorage.setItem("resumeBase64", b64);
+
+      const payload = {};
+      if (file.type === "application/pdf") {
+        payload.pdf = b64;
+      } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+        payload.docx = b64;
       } else {
-        alert("Please upload a PDF/DOCX or paste your resume text.");
+        alert("Unsupported file. Upload PDF or DOCX.");
         return;
       }
 
       const jd = (jobDesc?.value || "").trim();
-      if (jd) payload.jobDescription = jd;
+      if (jd) payload.jobDescription = jd; // backend may ignore if unsupported
 
       const res = await fetch("/api/resume-analysis", {
         method: "POST",
@@ -229,49 +221,45 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.error) throw new Error(data.error || res.statusText);
 
-      // Enrich and persist
       data.lastAnalyzed = new Date().toLocaleString();
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
 
-      // Repaint in place
-      renderFromStorage();
-
-      // Reset file input for consecutive uploads
+      // Repaint + reset input
+      showStateFromStorage();
       if (fileInput) fileInput.value = "";
 
-      // Scroll to score
       document.getElementById("resume-score-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
     } catch (err) {
       console.error("Dashboard analysis error:", err);
       alert("Analysis failed. Please try again.");
     } finally {
-      if (analyzingEl) analyzingEl.style.display = "none";
+      analyzingEl && (analyzingEl.style.display = "none");
     }
   }
 
-  // 6) Wire events
+  // Wire events
   analyzeBtn?.addEventListener("click", runDashboardAnalysis);
   openReBtn?.addEventListener("click", () => {
-    document.getElementById("dashResumeFile")?.focus();
-    document.getElementById("dashResumeFile")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    fileInput?.focus();
+    fileInput?.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
-  // 7) Optimize flow (unchanged)
+  // Optimize flow
   const optimizeBtn  = document.getElementById("optimize-btn");
   const loadingEl    = document.getElementById("optimized-loading");
   const outputEl     = document.getElementById("optimized-output");
   const downloadsEl  = document.getElementById("optimized-downloads");
 
   optimizeBtn?.addEventListener("click", async () => {
-    if (loadingEl)   loadingEl.style.display    = "block";
-    if (outputEl)    outputEl.style.display     = "none";
-    if (downloadsEl) downloadsEl.style.display  = "none";
+    loadingEl && (loadingEl.style.display = "block");
+    outputEl && (outputEl.style.display = "none");
+    downloadsEl && (downloadsEl.style.display = "none");
 
     const b64 = localStorage.getItem("resumeBase64");
     if (!b64) {
       alert("Missing your original resume file. Upload it above and analyze again.");
-      if (loadingEl) loadingEl.style.display = "none";
+      loadingEl && (loadingEl.style.display = "none");
       return;
     }
 
@@ -284,15 +272,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const js = await res.json();
       if (!res.ok || js.error) throw new Error(js.error || res.statusText);
 
-      if (loadingEl)   loadingEl.style.display   = "none";
+      loadingEl && (loadingEl.style.display = "none");
       if (outputEl) {
-        outputEl.textContent    = js.optimized;
-        outputEl.style.display  = "block";
+        outputEl.textContent = js.optimized;
+        outputEl.style.display = "block";
       }
-      if (downloadsEl) downloadsEl.style.display = "block";
+      downloadsEl && (downloadsEl.style.display = "block");
     } catch (err) {
       console.error("Optimize error:", err);
-      if (loadingEl) loadingEl.style.display = "none";
+      loadingEl && (loadingEl.style.display = "none");
       alert("Failed to optimize resume. Try again.");
     }
   });
