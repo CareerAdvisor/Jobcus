@@ -256,77 +256,187 @@ def build_resume_docx():
 # ---------- 3) AI resume analysis ----------
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
 def resume_analysis():
+    """
+    Analyze a resume (PDF/DOCX/text) and return a rich ATS-style JSON payload.
+    Optionally compares against a job description or target role.
+    Optionally persists the result to Supabase for signed-in users.
+    """
     client = current_app.config["OPENAI_CLIENT"]
     data = request.get_json(force=True) or {}
+
     resume_text = ""
     job_desc = (data.get("jobDescription") or "").strip()
+    job_role = (data.get("jobRole") or "").strip()
 
-    if data.get("pdf"):
-        pdf_bytes = base64.b64decode(data["pdf"])
-        reader = PdfReader(BytesIO(pdf_bytes))
-        resume_text = "\n".join((p.extract_text() or "") for p in reader.pages)
-    elif data.get("docx"):
-        docx_bytes = base64.b64decode(data["docx"])
-        d = docx.Document(BytesIO(docx_bytes))
-        resume_text = "\n".join(p.text for p in d.paragraphs)
-    elif data.get("text"):
-        resume_text = data["text"].strip()
-    else:
-        return jsonify(error="No resume data provided"), 400
+    # ---- Input decoding ------------------------------------------------------
+    try:
+        if data.get("pdf"):
+            pdf_bytes = base64.b64decode(data["pdf"])
+            reader = PdfReader(BytesIO(pdf_bytes))
+            resume_text = "\n".join((p.extract_text() or "") for p in reader.pages)
+        elif data.get("docx"):
+            docx_bytes = base64.b64decode(data["docx"])
+            d = docx.Document(BytesIO(docx_bytes))
+            resume_text = "\n".join(p.text for p in d.paragraphs)
+        elif data.get("text"):
+            resume_text = (data.get("text") or "").strip()
+        else:
+            return jsonify(error="No resume data provided"), 400
+    except Exception:
+        current_app.logger.exception("Resume file decode error")
+        return jsonify(error="Unable to read resume content"), 400
 
     if not resume_text.strip():
         return jsonify(error="Could not extract any text"), 400
 
-    # Keep LLM prompt minimal and reliable (score/issues/strengths/suggestions)
-    prompt = (
-        "You are an ATS-certified resume analyzer. Return only a JSON object with:\n"
-        "score (0–100), issues[], strengths[], suggestions[].\n\n"
-        f"Resume content:\n\n{resume_text}"
+    # ---- Prompt: ask for richer, ATS-style JSON ------------------------------
+    role_or_desc = (
+        f"Job description:\n{job_desc}"
+        if job_desc else
+        (
+            f"Target role: {job_role}. If no JD, infer typical responsibilities and keywords for this role."
+            if job_role else
+            "No job description provided."
+        )
     )
 
-    overall_score, issues, strengths, suggestions = 0, [], [], []
+    # Keep the schema explicit and forbid markdown fences/backticks.
+    prompt = f"""
+You are an ATS-certified resume analyst. Return ONLY valid JSON (no markdown, no code fences, no commentary)
+with this exact schema and keys:
+
+{{
+  "score": 0-100,
+  "analysis": {{
+    "issues": ["..."],
+    "strengths": ["..."]
+  }},
+  "suggestions": ["..."],
+  "breakdown": {{
+    "formatting": 0-100,
+    "keywords": 0-100,
+    "sections": 0-100,
+    "readability": 0-100,
+    "length": 0-100,
+    "parseable": true
+  }},
+  "keywords": {{
+    "matched": ["..."],
+    "missing": ["..."]
+  }},
+  "sections": {{
+    "present": ["Summary","Experience","Education","Skills","Certifications"],
+    "missing": ["..."]
+  }},
+  "writing": {{
+    "readability": "e.g., Grade 8–10 / B2",
+    "repetition": [{{"term":"managed","count":5,"alternatives":["led","owned","coordinated"]}}],
+    "grammar": ["Short, actionable phrasing fixes or notes."]
+  }},
+  "relevance": {{
+    "role": "{job_role}",
+    "score": 0-100,
+    "explanation": "1–2 sentences on how well the resume aligns.",
+    "aligned_keywords": ["..."],
+    "missing_keywords": ["..."]
+  }}
+}}
+
+Base your keyword/relevance comparison on the following if available.
+{role_or_desc}
+
+Resume content:
+{resume_text[:8000]}
+""".strip()
+
     try:
         resp = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0
         )
-        content = resp.choices[0].message.content
-        content = re.sub(r"```(?:json)?", "", content).strip()
+        content = (resp.choices[0].message.content or "").strip()
+        # Strip any accidental code fences
+        content = re.sub(r"^```(?:json)?|```$", "", content, flags=re.MULTILINE).strip()
+        # Extract JSON substring
         start, end = content.find("{"), content.rfind("}")
-        parsed = json.loads(content[start:end+1])
-
-        overall_score = int(parsed.get("score", 0))
-        issues       = parsed.get("issues", []) or []
-        strengths    = parsed.get("strengths", []) or []
-        suggestions  = parsed.get("suggestions", []) or []
+        parsed = json.loads(content[start:end + 1])
+    except json.JSONDecodeError:
+        current_app.logger.exception("Invalid JSON from analyzer")
+        return jsonify(error="Invalid JSON from Analyzer"), 500
     except Exception:
-        logging.exception("Analyzer fallback: building payload without LLM fields")
+        current_app.logger.exception("Resume analysis error")
+        return jsonify(error="Resume analysis failed"), 500
 
-    # Build richer ATS-style payload for the dashboard
-    payload = build_dashboard_payload(
-        score=overall_score,
-        issues=issues,
-        strengths=strengths,
-        suggestions=suggestions,
-        resume_text=resume_text,
-        job_desc=job_desc
-    )
+    # ---- Build safe response with defaults -----------------------------------
+    def _int(v, default=0):
+        try:
+            return int(v)
+        except Exception:
+            return default
 
-    # Optional: persist for signed-in users
+    analysis    = parsed.get("analysis", {}) or {}
+    breakdown   = parsed.get("breakdown", {}) or {}
+    keywords    = parsed.get("keywords", {}) or {}
+    sections    = parsed.get("sections", {}) or {}
+    writing     = parsed.get("writing", {}) or {}
+    relevance   = parsed.get("relevance", {}) or {}
+
+    out = {
+        "score": _int(parsed.get("score"), 0),
+        "analysis": {
+            "issues": analysis.get("issues", []) or [],
+            "strengths": analysis.get("strengths", []) or [],
+        },
+        "suggestions": parsed.get("suggestions", []) or [],
+        "breakdown": {
+            "formatting": _int(breakdown.get("formatting"), None),
+            "keywords":   _int(breakdown.get("keywords"),   None),
+            "sections":   _int(breakdown.get("sections"),   None),
+            "readability":_int(breakdown.get("readability"),None),
+            "length":     _int(breakdown.get("length"),     None),
+            "parseable":  bool(breakdown.get("parseable")) if "parseable" in breakdown else None
+        },
+        "keywords": {
+            "matched": keywords.get("matched", []) or [],
+            "missing": keywords.get("missing", []) or [],
+        },
+        "sections": {
+            "present": sections.get("present", []) or [],
+            "missing": sections.get("missing", []) or [],
+        },
+        "writing": {
+            "readability": writing.get("readability", "") or "",
+            "repetition":  writing.get("repetition", []) or [],
+            "grammar":     writing.get("grammar", []) or [],
+        },
+        "relevance": {
+            "role":         relevance.get("role", job_role) or job_role,
+            "score":        _int(relevance.get("score"), None),
+            "explanation":  relevance.get("explanation", "") or "",
+            "aligned_keywords": relevance.get("aligned_keywords", []) or [],
+            "missing_keywords": relevance.get("missing_keywords", []) or [],
+        },
+    }
+
+    # ---- Optional: persist to Supabase for signed-in users -------------------
     try:
         from flask_login import current_user
         supabase = current_app.config.get("SUPABASE")
         if supabase and getattr(current_user, "is_authenticated", False):
+            # If your 'analysis' column is jsonb you can pass 'out' directly; otherwise json.dumps(out).
             supabase.table("resumes").insert({
-                "user_id": current_user.id,
-                "text": resume_text[:100000],
-                "analysis": json.dumps(payload),
+                "user_id":   current_user.id,
+                "text":      resume_text[:100000],  # avoid huge payloads
+                "analysis":  json.dumps(out),
+                "score":     out.get("score", 0),
+                "job_role":  job_role or None,
+                "job_desc":  job_desc or None,
             }).execute()
     except Exception:
         current_app.logger.warning("resume save failed", exc_info=True)
 
-    return jsonify(payload), 200
+    return jsonify(out), 200
 
 # ---------- 4) AI resume optimisation ----------
 @resumes_bp.route("/api/optimize-resume", methods=["POST"])
