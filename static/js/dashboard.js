@@ -20,38 +20,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const card            = document.getElementById("resume-score-card");
   const noCTA           = document.getElementById("no-analysis-cta");
   const analysisSection = document.getElementById("resume-analysis");
-  const analysisLayout  = document.getElementById("analysisLayout");
   const metricNote      = document.getElementById("metric-note");
   const atsGrid         = document.getElementById("ats-grid");
 
+  const fileInput   = document.getElementById("dashResumeFile");
+  const jobDesc     = document.getElementById("dashJobDesc");
+  const analyzeBtn  = document.getElementById("dashAnalyzeBtn");
+  const analyzingEl = document.getElementById("dashAnalyzing");
+  const openReBtn   = document.getElementById("openReanalyze");
+
   const dropzone     = document.getElementById("dropzone");
-  const fileInput    = document.getElementById("dashResumeFile");
   const dzFileNameEl = document.getElementById("dzFileName");
-  const jobDesc      = document.getElementById("dashJobDesc");
-  const analyzeBtn   = document.getElementById("dashAnalyzeBtn");
-  const analyzingEl  = document.getElementById("dashAnalyzing");
-  const openReBtn    = document.getElementById("openReanalyze");
 
   const issuesUL      = document.getElementById("top-issues");
   const strengthsUL   = document.getElementById("good-points");
   const suggestionsUL = document.getElementById("suggestions-list");
 
-  const kwPanel     = document.getElementById("panel-keywords");
+  const kwPanel     = document.getElementById("kw-panel");
   const kwMatchedUL = document.getElementById("kw-matched");
   const kwMissingUL = document.getElementById("kw-missing");
 
-  const sectionsPanel = document.getElementById("panel-sections");
+  const sectionsPanel = document.getElementById("sections-panel");
   const secPresentUL  = document.getElementById("sec-present");
   const secMissingUL  = document.getElementById("sec-missing");
-
-  const countIssues     = document.getElementById("countIssues");
-  const countStrengths  = document.getElementById("countStrengths");
-  const countMissing    = document.getElementById("countMissing");
-
-  const aiEditRun   = document.getElementById("aiEditRun");
-  const aiEditInput = document.getElementById("aiEditInput");
-  const aiEditInst  = document.getElementById("aiEditInstruction");
-  const aiEditOut   = document.getElementById("aiEditOutput");
 
   // Helpers
   const colorForScore = (s = 0) => (s >= 80 ? "#16A34A" : s >= 60 ? "#F59E0B" : "#E11D48");
@@ -128,21 +119,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function updateActionCounts(data) {
-    const issues     = data.analysis?.issues || [];
-    const strengths  = data.analysis?.strengths || [];
-    const missingKW  = data.keywords?.missing || [];
-    if (countIssues)    countIssues.textContent    = issues.length;
-    if (countStrengths) countStrengths.textContent = strengths.length;
-    if (countMissing)   countMissing.textContent   = missingKW.length;
-  }
-
   function showStateFromStorage() {
     const raw = localStorage.getItem("resumeAnalysis");
     if (!raw) {
       card && (card.style.display = "none");
       analysisSection && (analysisSection.style.display = "none");
-      analysisLayout && (analysisLayout.style.display = "none");
       noCTA && (noCTA.style.display = "block");
       return;
     }
@@ -152,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     card && (card.style.display = "block");
     analysisSection && (analysisSection.style.display = "block");
-    analysisLayout && (analysisLayout.style.display = "grid");
     noCTA && (noCTA.style.display = "none");
 
     renderScore(data.score || 0, data.lastAnalyzed || null);
@@ -160,7 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
     listFill(issuesUL,      data.analysis?.issues || []);
     listFill(strengthsUL,   data.analysis?.strengths || []);
     listFill(suggestionsUL, data.suggestions || []);
-    updateActionCounts(data);
 
     const matched = data.keywords?.matched || [];
     const missing = data.keywords?.missing || [];
@@ -193,13 +172,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function runDashboardAnalysis() {
-    const file = fileInput?.files?.[0] || null;
-    if (!file) { alert("Please choose a PDF or DOCX."); return; }
-
-    // show spinner ONLY once a file is present and we’re about to call the API
     analyzingEl && (analyzingEl.style.display = "inline");
 
     try {
+      const file = fileInput?.files?.[0] || null;
+      if (!file) { alert("Please choose a PDF or DOCX."); return; }
+
       const b64 = await fileToBase64(file);
       localStorage.setItem("resumeBase64", b64);
 
@@ -209,8 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
         payload.docx = b64;
       } else {
-        alert("Unsupported file. Upload PDF or DOCX.");
-        return;
+        alert("Unsupported file. Upload PDF or DOCX."); return;
       }
 
       const res = await fetch("/api/resume-analysis", {
@@ -228,10 +205,9 @@ document.addEventListener("DOMContentLoaded", () => {
       showStateFromStorage();
       document.getElementById("resume-score-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-      // reset chooser UI
+      // reset chosen file name
       if (fileInput) fileInput.value = "";
       if (dzFileNameEl) { dzFileNameEl.style.display = "none"; dzFileNameEl.textContent = ""; }
-      analyzeBtn && (analyzeBtn.disabled = true);
 
     } catch (err) {
       console.error("Dashboard analysis error:", err);
@@ -267,60 +243,26 @@ document.addEventListener("DOMContentLoaded", () => {
       if (files.length) {
         fileInput.files = files;
         setDZFilename(files[0].name);
-        analyzeBtn && (analyzeBtn.disabled = false);
       }
     });
 
     fileInput.addEventListener("change", (e) => {
       const f = e.target.files?.[0];
-      if (f) {
-        setDZFilename(f.name);
-        analyzeBtn && (analyzeBtn.disabled = false);
-      } else {
-        analyzeBtn && (analyzeBtn.disabled = true);
-      }
+      if (f) setDZFilename(f.name);
     });
   }
 
-  // Menu click → smooth scroll
-  document.querySelectorAll(".actions-menu .menu-item").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const target = document.querySelector(btn.dataset.target);
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  });
-
   // Wire buttons
   analyzeBtn?.addEventListener("click", runDashboardAnalysis);
+
+  // Fix: make “Analyze updated resume” actually open the picker and scroll
   openReBtn?.addEventListener("click", () => {
     dropzone?.scrollIntoView({ behavior: "smooth", block: "center" });
     dropzone?.focus();
     fileInput?.click();
   });
 
-  // AI editor (lightweight: rewrites the snippet with your optimizer endpoint)
-  aiEditRun?.addEventListener("click", async () => {
-    const text = (aiEditInput?.value || "").trim();
-    const inst = (aiEditInst?.value || "").trim();
-    if (!text) return alert("Paste the text you want to improve.");
-    aiEditOut.textContent = "Working…";
-    aiEditOut.style.display = "block";
-    try {
-      const res = await fetch("/api/optimize-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: `Instruction: ${inst}\n\nResume snippet:\n${text}` })
-      });
-      const js = await res.json();
-      if (!res.ok || js.error) throw new Error(js.error || res.statusText);
-      aiEditOut.textContent = js.optimized || "(No rewrite returned)";
-    } catch (e) {
-      console.error(e);
-      aiEditOut.textContent = "Failed to rewrite. Try again.";
-    }
-  });
-
-  // Optimize whole resume (unchanged)
+  // Optimize
   const optimizeBtn  = document.getElementById("optimize-btn");
   const loadingEl    = document.getElementById("optimized-loading");
   const outputEl     = document.getElementById("optimized-output");
