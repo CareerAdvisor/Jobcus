@@ -20,7 +20,7 @@
       </div>
 
       <div class="score-card__body">
-        <!-- score ring -->
+        <!-- Score ring -->
         <div class="ring-wrap">
           <div class="progress-circle" data-score="0">
             <svg viewBox="0 0 36 36" class="ring">
@@ -37,17 +37,18 @@
         <!-- ATS breakdown -->
         <div class="ats-wrap">
           <h4>ATS Readiness</h4>
-          <div id="ats-grid" class="ats-grid"><!-- filled by JS --></div>
+          <div id="ats-grid" class="ats-grid"><!-- pills inserted by JS --></div>
           <small class="ats-hint">Higher is better. Aim for green across the board.</small>
         </div>
       </div>
     </div>
 
-    <!-- Upload / re-analyze -->
+    <!-- Upload / analyze -->
     <div class="dashboard-card upload-card">
       <h3>Analyze a resume</h3>
       <p class="upload-card__sub">Upload a PDF/DOCX. Optionally add a job description to check keyword match.</p>
 
+      <!-- File dropzone -->
       <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload resume">
         <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -60,8 +61,22 @@
         <input id="dashResumeFile" type="file" accept=".pdf,.docx" hidden>
       </div>
 
+      <!-- Optional JD + Role -->
       <textarea id="dashJobDesc" class="textarea"
         placeholder="Optional: paste job description to check keywords…"></textarea>
+
+      <label for="dashRoleSelect" class="label">Or pick a target role to assess relevance</label>
+      <select id="dashRoleSelect" class="select">
+        <option value="">— Choose a role (optional) —</option>
+        <option>Software Engineer</option>
+        <option>Data Analyst</option>
+        <option>Project Manager</option>
+        <option>UX Designer</option>
+        <option>Cybersecurity Analyst</option>
+        <option>IT Support</option>
+        <option>Product Manager</option>
+        <option>Marketing Manager</option>
+      </select>
 
       <div class="upload-actions">
         <button id="dashAnalyzeBtn" class="btn btn-primary" disabled>Analyze resume</button>
@@ -77,25 +92,22 @@
     <p>You haven’t analyzed a resume yet. Use the upload panel above to get started.</p>
   </div>
 
-  <!-- RESULTS LAYOUT: side menu + main content -->
+  <!-- RESULTS LAYOUT -->
   <div id="analysisLayout" class="analysis-grid" style="display:none;">
-    <!-- Dynamic actions/menu -->
+    <!-- Actions / side menu -->
     <aside id="actionsMenu" class="actions-menu">
       <h3 class="actions-title">Optimize</h3>
       <button class="menu-item" data-target="#panel-issues">
-        <span>Fixes needed</span>
-        <span class="badge" id="countIssues">0</span>
+        <span>Fixes needed</span><span class="badge" id="countIssues">0</span>
       </button>
       <button class="menu-item" data-target="#panel-strengths">
-        <span>What you did well</span>
-        <span class="badge" id="countStrengths">0</span>
+        <span>What you did well</span><span class="badge" id="countStrengths">0</span>
       </button>
       <button class="menu-item" data-target="#panel-keywords">
-        <span>ATS Keywords</span>
-        <span class="badge" id="countMissing">0</span>
+        <span>ATS Keywords</span><span class="badge" id="countMissing">0</span>
       </button>
-      <button class="menu-item" data-target="#aiEditor">
-        <span>AI editor</span>
+      <button class="menu-item" data-target="#panel-writing">
+        <span>Writing quality</span>
       </button>
       <button class="menu-item" data-target="#dropzone">
         <span>Upload new version</span>
@@ -107,32 +119,22 @@
       <section id="resume-analysis" class="analysis-section" style="display:none;">
         <h2>🔍 Detailed Findings & Recommendations</h2>
 
-        <div class="opt-panels">
-          <div id="panel-keywords" class="panel" style="display:none;">
-            <h3>🎯 Job Keyword Match</h3>
-            <div class="panel-split">
-              <div>
-                <h4>Matched</h4>
-                <ul id="kw-matched" class="list"></ul>
-              </div>
-              <div>
-                <h4>Missing</h4>
-                <ul id="kw-missing" class="list"></ul>
-              </div>
-            </div>
-          </div>
+        <div id="panel-relevance" class="panel" style="display:none;">
+          <h3>🎯 Relevance to “<span id="rel-role"></span>” <small id="rel-score"></small></h3>
+          <p id="rel-explain" class="muted"></p>
+        </div>
 
-          <div id="panel-sections" class="panel" style="display:none;">
-            <h3>📋 Resume Sections</h3>
-            <div class="panel-split">
-              <div>
-                <h4>Present</h4>
-                <ul id="sec-present" class="list"></ul>
-              </div>
-              <div>
-                <h4>Missing</h4>
-                <ul id="sec-missing" class="list"></ul>
-              </div>
+        <div id="panel-keywords" class="panel" style="display:none;">
+          <h3>📑 ATS Keywords</h3>
+          <p class="muted" id="kw-note"></p>
+          <div class="panel-split">
+            <div>
+              <h4>Matched</h4>
+              <ul id="kw-matched" class="list"></ul>
+            </div>
+            <div>
+              <h4>Missing</h4>
+              <ul id="kw-missing" class="list"></ul>
             </div>
           </div>
         </div>
@@ -147,6 +149,15 @@
           <ul id="good-points" class="list"></ul>
         </div>
 
+        <div id="panel-writing" class="panel">
+          <h3>✍️ Writing quality</h3>
+          <p>Readability: <strong id="read-grade">—</strong></p>
+          <h4>Repeated words</h4>
+          <ul id="rep-terms" class="list"></ul>
+          <h4>Grammar/Phrasing tips</h4>
+          <ul id="grammar-tips" class="list"></ul>
+        </div>
+
         <div class="panel">
           <h3>💡 Suggestions</h3>
           <ul id="suggestions-list" class="list"></ul>
@@ -155,17 +166,6 @@
         <div class="opt-cta">
           <p>Want us to apply these fixes automatically? ✨</p>
           <button id="optimize-btn" class="btn btn-primary">Optimize My Resume</button>
-        </div>
-
-        <div class="panel" id="aiEditor">
-          <h3>🤖 AI editor</h3>
-          <p>Paste a sentence or bullet you want to improve and say how to change it.</p>
-          <textarea id="aiEditInput" class="textarea" placeholder="Paste a bullet or short paragraph…"></textarea>
-          <input id="aiEditInstruction" class="input" placeholder="e.g., Make it concise and add a metric" />
-          <div class="upload-actions">
-            <button id="aiEditRun" class="btn btn-outline">Rewrite</button>
-          </div>
-          <pre id="aiEditOutput" class="output"></pre>
         </div>
 
         <div class="opt-output">
