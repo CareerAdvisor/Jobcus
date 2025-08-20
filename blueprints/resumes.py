@@ -178,135 +178,348 @@ def build_dashboard_payload(*, score:int, issues:list, strengths:list, suggestio
         "sections": secs,
     }
 
-# --- Analysis helpers (deterministic) ---
-STOPWORDS = set("""
-a an and the of for with from into onto within across about above below under over
-at by to in on as is are was were be been being this that those these your you
-their my our they he she it we or nor not but if then so such than very more most
-""".split())
+# === ATS model: weights and deterministic checks ===
+import math, datetime, collections, statistics, itertools, re
 
-ACTION_VERBS = {
-    "achieved","analyzed","built","configured","created","designed","developed","drove",
-    "enabled","enhanced","established","executed","implemented","improved","increased",
-    "launched","led","managed","mentored","migrated","optimized","owned","reduced",
-    "resolved","shipped","streamlined","supported","spearheaded"
-}
+# We’ll use this to approximate pages for text resumes (PDF page count is not reliable post-OCR)
+WORDS_PER_PAGE = 600
 
-GROWTH_TERMS = {
-    "promoted","promotion","grew","growth","increased","revenue","retention","expanded",
-    "led","lead","mentor","mentored","managed","launched","ownership","scope","scaled",
-    "impact","strategy","roadmap","stakeholder","cross-functional","cross functional"
+MONTHS = "(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)"
+DATE_PAT = re.compile(
+    rf"\b({MONTHS})\.?\s+\d{{4}}|\b\d{{4}}\b", re.I
+)  # "Jan 2021" or "2021"
+
+EMAIL_PAT = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.I)
+PHONE_PAT = re.compile(r"\+?\d[\d\-\s()]{7,}\d")
+LOC_PAT   = re.compile(r"\b([A-Z][a-z]+(?:[ ,][A-Z][a-z]+)*)\b")  # very light
+
+# Weak/buzzwords and action verbs
+ACTION_VERBS_STRONG = {
+    "achieved","analyzed","built","configured","created","delivered","designed","developed","drove",
+    "implemented","improved","increased","launched","led","managed","optimized","owned","resolved",
+    "reduced","shipped","streamlined","spearheaded","supported","automated","coordinated","deployed",
+    "orchestrated","migrated","modernized","scaled","mentored"
 }
+WEAK_PHRASES = {
+    "responsible for","helped","assisted","worked on","participated in","involved in"
+}
+BUZZWORDS = {
+    "synergy","go-getter","outside the box","hard worker","team player","self-starter",
+    "results-driven","rockstar","guru","ninja","dynamic","best-in-class","fast-paced"
+}
+PERSONAL_DATA = {"marital status","religion","nationality","date of birth","dob","photo","photograph"}
+
+CERT_HINTS = {"aws","amazon web services","itil","pmp","cissp","cisa","az-","ms-","scrum","csm","ccna"}
 
 BULLET_MARKERS = ("•","-","–","—","*")
 
+def _clean_lines(text: str):
+    return [ln.strip() for ln in text.splitlines() if ln.strip()]
+
 def _tokenize(text: str):
-    import re
-    return [t.lower() for t in re.findall(r"[a-zA-Z][a-zA-Z\-+/#0-9]*", text)]
+    return re.findall(r"[A-Za-z][A-Za-z+\-/#0-9]*", text.lower())
 
-def _word_count(text: str) -> int:
-    import re
-    return len(re.findall(r"\b\w+\b", text))
+def _split_sections(text: str):
+    """Roughly split into named sections so we can measure distribution."""
+    lines = _clean_lines(text)
+    sections = collections.OrderedDict()
+    cur = "_start"
+    sections[cur] = []
+    for ln in lines:
+        low = ln.lower()
+        if len(ln) <= 48 and re.match(r"^[A-Z][A-Za-z &/]+$", ln):
+            if any(k in low for k in ("experience","work","employment","education","skills","projects","certification","summary","objective")):
+                cur = low.split()[0]
+                sections[cur] = []
+                continue
+        sections[cur].append(ln)
+    return sections
 
-def _split_bullets(text: str):
-    lines = []
-    for raw in text.splitlines():
-        s = raw.strip()
-        if not s:
-            continue
-        if s.startswith(BULLET_MARKERS) or re.match(r"^(?:\d+\.|\(\d+\))\s", s):
-            s = s.lstrip("".join(BULLET_MARKERS) + " ").strip()
-            lines.append(s)
-    return lines
+def _extract_roles_with_dates(text: str):
+    """Return list of roles with date hints + lines (to weight recency and detect gaps)."""
+    sections = _split_sections(text)
+    all_lines = list(itertools.chain.from_iterable(sections.values()))
+    roles = []
+    buf = []
+    for ln in all_lines:
+        if DATE_PAT.search(ln):
+            # close previous
+            if buf:
+                roles.append({"lines": buf[:]})
+                buf.clear()
+        buf.append(ln)
+    if buf:
+        roles.append({"lines": buf[:]})
 
-def _bullet_stats(text: str):
-    bullets = _split_bullets(text)
+    # Very light date parsing (year only); newest first assumption if “present/current” exists
+    now = datetime.date.today().year
+    for r in roles:
+        years = [int(y) for y in re.findall(r"\b(20\d{2}|19\d{2})\b", " ".join(r["lines"]))]
+        r["start"] = (min(years) if years else None)
+        r["end"]   = (now if re.search(r"\b(present|current)\b", " ".join(r["lines"]), re.I) else (max(years) if years else None))
+    return roles
+
+def _years_of_experience(roles):
+    yrs = 0
+    for r in roles:
+        if r.get("start") and r.get("end"):
+            yrs += max(0, r["end"] - r["start"])
+    return yrs
+
+def _has_action_verb_start(line: str):
+    s = line
+    s = re.sub(r"^(\*|•|-|\u2022|\u25CF)\s+", "", s)
+    m = re.match(r"^([A-Za-z\-']+)", s)
+    w = m.group(1).lower() if m else ""
+    return w in ACTION_VERBS_STRONG, w
+
+def _quant_stats(text: str):
+    lines = _clean_lines(text)
+    bullets = [ln for ln in lines if ln[:2] in ( "- ", "* ", "• ") or (ln and ln[0] in BULLET_MARKERS)]
     if not bullets:
-        return {"count":0,"avg_words":0,"too_short":0,"too_long":0,"ok":0}
-    lengths = [ _word_count(b) for b in bullets ]
-    too_short = sum(1 for n in lengths if n < 8)
-    too_long  = sum(1 for n in lengths if n > 26)
-    ok        = len(bullets) - too_short - too_long
-    avg       = round(sum(lengths) / len(lengths), 1)
-    return {"count":len(bullets),"avg_words":avg,"too_short":too_short,"too_long":too_long,"ok":ok}
-
-def _impact_stats(text: str):
-    import re
-    bullets = _split_bullets(text)
-    if not bullets:
-        return {"with_numbers":0,"without_numbers":0,"percent_with_numbers":0}
-    has_num = [ bool(re.search(r"[\d%$£€]", b)) for b in bullets ]
-    with_numbers = sum(1 for v in has_num if v)
-    pct = int(round(100 * with_numbers / max(1,len(bullets))))
-    return {"with_numbers":with_numbers,"without_numbers":len(bullets)-with_numbers,"percent_with_numbers":pct}
-
-def _repetition(text: str):
-    tokens = [t for t in _tokenize(text) if t not in STOPWORDS]
-    def stem(w):
-        for suf in ("ing","ed","es","s"):
-            if w.endswith(suf) and len(w) > len(suf)+2:
-                return w[:-len(suf)]
-        return w
-    stems = [stem(t) for t in tokens]
-    from collections import Counter
-    c = Counter(stems)
-    reps = []
-    for term,count in c.most_common(8):
-        if term in ACTION_VERBS and count >= 4:
-            alts = list({"led","owned","executed","drove","implemented","delivered","orchestrated"} - {term})
-            reps.append({"term":term, "count":count, "alternatives":alts[:3]})
-    return reps
-
-def _tense_health(text: str):
-    import re
-    bullets = _split_bullets(text)
-    present_roots = {"manage","lead","own","coordinate","design","operate","support"}
-    past_bad = 0
-    for b in bullets:
-        if re.search(r"\b(201\d|202\d)\b.*\b(present|current)\b", b, flags=re.I):
-            continue
-        words = set(_tokenize(b))
-        if any(root in words for root in present_roots) and not re.search(r"\b(ed|ing)\b", " ".join(words)):
-            past_bad += 1
-    score = max(0, 100 - past_bad*10)
-    return {"mismatch_count": past_bad, "score": score}
-
-def _growth_signals(text: str):
-    toks = set(_tokenize(text))
-    found = sorted({t for t in GROWTH_TERMS if t.replace(" ","") in "".join(toks) or t in toks})
-    score = min(100, int(round(100 * len(found) / 6)))
-    return {"found": found, "score": score}
-
-def _unnecessary_sections(text: str):
-    import re
-    flags = []
-    if re.search(r"\breferences\b", text, re.I): flags.append("References")
-    if re.search(r"\bobjective\b", text, re.I): flags.append("Objective")
-    if re.search(r"\bhobbies\b|\binterests\b", text, re.I): flags.append("Hobbies/Interests")
-    score = 100 if not flags else (50 if len(flags)==1 else 20)
-    return {"flagged": flags, "score": score}
-
-def _length_depth(text: str, level: str = "mid"):
-    wc = _word_count(text)
-    ranges = {
-        "entry": (250, 450),
-        "mid":   (400, 750),
-        "senior":(500, 900),
-        "exec":  (600, 1100),
+        bullets = [ln for ln in lines if ln.startswith("-") or ln.startswith("•") or ln.startswith("*")]
+    has_num = [bool(re.search(r"(\d+(\.\d+)?%|\$?\£?\€?\d+[kKmM]?|reduced|increased|saved|cut|grew|boosted)", b, re.I)) for b in bullets]
+    starts  = [_has_action_verb_start(b)[0] for b in bullets]
+    avg_len = statistics.mean([len(b.split()) for b in bullets]) if bullets else 0
+    return {
+        "bullet_count": len(bullets),
+        "pct_with_numbers": int(round(100*sum(has_num)/max(1,len(bullets)))),
+        "pct_action_starts": int(round(100*sum(starts)/max(1,len(bullets)))),
+        "avg_words_per_bullet": round(avg_len,1)
     }
-    lo, hi = ranges.get(level, ranges["mid"])
-    if wc < lo:
-        gap = max(1, lo - wc)
-        score = max(10, int(round(100 * wc / lo)))
-        advice = f"Resume is too short for {level} level. Add ~{gap} words (more bullets/impact)."
-    elif wc > hi:
-        over = wc - hi
-        score = max(40, int(round(100 - min(60, (over/(hi*0.75))*100))))
-        advice = f"Resume may be too long for {level} level. Trim ~{over} words."
+
+def _parse_and_format_score(resume_text: str, file_kind: str, raw_bytes: bytes|None):
+    # 1) selectable text
+    selectable = len(resume_text.strip()) >= 180
+    s1 = 4 if selectable else 0
+
+    # 2) file type
+    s2 = 2 if file_kind in ("docx","pdf") else 0
+
+    # 3) parsing traps: tables/columns/headers—heuristics
+    txt = resume_text
+    traps = 0
+    if re.search(r"\|.+\|", txt): traps += 1               # ascii tables
+    if txt.count("\t") > 30: traps += 1                    # tabular layout
+    if re.search(r"\s{4,}\S", txt): traps += 1             # multi-column alignment
+    s3 = max(0, 3 - traps)
+
+    # 4) standard bullets/fonts (we can only check bullets)
+    s4 = 1 if re.search(r"(^|\n)\s*(?:•|\-|\*)\s+", txt) else 0
+
+    # image-only PDF heuristic (bytes >> text)
+    hard_fail = False
+    if raw_bytes and file_kind == "pdf":
+        bpc = len(raw_bytes) / max(1, len(txt.encode("utf-8")))
+        if selectable is False or bpc > 60:
+            hard_fail = True
+
+    return (0 if hard_fail else (s1+s2+s3+s4)), hard_fail
+
+def _sections_structure_score(text: str):
+    sec = _split_sections(text)
+    has_std = {
+        "experience": any("experience" in k for k in sec.keys()),
+        "education": any("education" in k for k in sec.keys()),
+        "skills": any("skills" in k for k in sec.keys()),
+        "certs": any("certification" in k for k in sec.keys()),
+    }
+    base = 0
+    base += 2 if EMAIL_PAT.search(text) else 0
+    base += 2 if PHONE_PAT.search(text) else 0
+    base += 1 if LOC_PAT.search(text) else 0
+
+    # reverse chronological & date presence (very rough)
+    roles = _extract_roles_with_dates(text)
+    dated   = sum(1 for r in roles if r.get("start") or r.get("end"))
+    chrono  = 1 if len(roles) < 2 else int(all((roles[i].get("end") or 0) >= (roles[i+1].get("end") or 0) for i in range(len(roles)-1)))
+    rc = min(5, dated) + chrono  # max 6 for this part
+
+    return {
+        "score": (8 * sum(has_std.values())/4) + min(5, rc) + base,  # cap at 15
+        "std": has_std,
+        "reverse_chrono": bool(chrono),
+        "roles_parsed": len(roles)
+    }
+
+def _build_jd_terms(jd: str):
+    """Very light extractor: skills/tools/certs/titles/domains + synonym/acro maps."""
+    toks = _tokenize(jd)
+    raw = set(toks)
+    # acronyms → full and back
+    acronyms = {
+        "aws": "amazon web services",
+        "ad": "active directory",
+        "sql": "structured query language",
+        "k8s": "kubernetes",
+        "mdm": "mobile device management",
+        "sso": "single sign on"
+    }
+    synonyms = {
+        "sysadmin": ["systems administrator"],
+        "helpdesk": ["service desk","it support"],
+        "it support": ["technical support", "service desk"],
+        "pm": ["project manager"]
+    }
+    expanded = set(raw)
+    for a, full in acronyms.items():
+        if a in raw: expanded.add(full)
+        if full in raw: expanded.add(a)
+    for k, vs in synonyms.items():
+        if k in raw:
+            expanded.update(vs)
+        if any(v in raw for v in vs):
+            expanded.add(k)
+
+    # very rough category guesses
+    certs  = [w for w in expanded if any(c in w for c in CERT_HINTS)]
+    titles = [w for w in expanded if any(t in w for t in ("engineer","analyst","manager","administrator","specialist","developer"))]
+    skills = list(expanded - set(certs) - set(titles))
+    return {"skills": skills, "titles": titles, "certs": certs, "all": list(expanded), "acronyms": acronyms}
+
+def _keyword_match_to_jd(resume_text: str, jd_terms: dict, roles: list):
+    if not jd_terms["all"]:
+        return {"score": 0, "matched": [], "missing": [], "distribution_ok": True}
+
+    txt = resume_text.lower()
+    hits = collections.Counter()
+    for term in jd_terms["all"]:
+        if len(term) < 3: 
+            continue
+        # fuzzy-ish: accept exact token or spaced variant
+        if term in txt or re.search(rf"\b{re.escape(term)}\b", txt):
+            hits[term] += 1
+
+    # cap repeats at 3
+    capped = {k: min(3, v) for k, v in hits.items()}
+
+    # recency weighting: lines from “last two roles” = 1.0 else 0.6 / 0.3
+    weights = {}
+    if roles:
+        recent = roles[:2]
+        recent_txt = " ".join(" ".join(r["lines"]).lower() for r in recent)
+        older_txt  = " ".join(" ".join(r["lines"]).lower() for r in roles[2:])
+        for t in capped.keys():
+            w = 0
+            if t in recent_txt: w += 1.0
+            if t in older_txt:  w += 0.6
+            if w == 0 and t in txt: w = 0.3
+            weights[t] = w
     else:
-        score = 100
-        advice = "Length looks appropriate for your level."
-    return {"word_count": wc, "target_min": lo, "target_max": hi, "score": score, "advice": advice}
+        weights = {t:1.0 for t in capped.keys()}
+
+    weighted = sum(capped[t]*weights.get(t,1.0) for t in capped.keys())
+    # normalize against target: assume 20 meaningful terms for scale
+    denom = max(10, len(jd_terms["all"]))
+    raw_score = min(1.0, weighted / (denom * 0.6))  # tighter bar
+    score = int(round(100 * raw_score))
+
+    # distribution (not only in "skills" section)
+    sections = _split_sections(resume_text)
+    skills_blob = " ".join(sections.get("skills", []))
+    in_skills = sum(1 for t in capped.keys() if t in skills_blob.lower())
+    distribution_ok = in_skills < max(2, int(0.6 * len(capped)))
+
+    missing = [t for t in jd_terms["all"] if t not in capped]
+    return {"score": score, "matched": list(capped.keys()), "missing": missing, "distribution_ok": distribution_ok}
+
+def _experience_relevance(jd_text: str, roles: list, resume_text: str):
+    # years vs requirement
+    m = re.search(r"(\d+)\+?\s+years", jd_text, re.I)
+    req = int(m.group(1)) if m else None
+    yoe = _years_of_experience(roles)
+    years_ok = (yoe >= req) if req else (yoe >= 2)
+    s_years = 6 if years_ok else max(0, int(6 * (yoe / max(1, req or 6))))
+
+    # seniority fit via titles progression
+    titles = [ln.lower() for r in roles for ln in r["lines"][:2]]
+    has_lead = any(re.search(r"\b(lead|manager|senior|principal)\b", t) for t in titles)
+    s_senior = 4 if has_lead or yoe >= 5 else 2 if yoe >= 3 else 1
+
+    # recency coverage: JD verbs overlap in recent roles
+    verbs = {"implement","migrate","optimize","build","design","automate","support","troubleshoot","manage"}
+    recent_txt = " ".join(" ".join(r["lines"]).lower() for r in roles[:2])
+    overlap = len([v for v in verbs if v in recent_txt])
+    s_recent = 3 if overlap >= 4 else 2 if overlap >= 2 else 1
+
+    # task-verb overlap (global)
+    jd_verbs = {w for w in _tokenize(jd_text) if w in verbs}
+    res_verbs= {w for w in _tokenize(resume_text) if w in verbs}
+    s_task   = 2 if len(jd_verbs & res_verbs) >= 2 else 1 if (jd_verbs & res_verbs) else 0
+
+    return {"score": s_years + s_senior + s_recent + s_task, "yoe": yoe, "req": req}
+
+def _education_and_certs(resume_text: str, jd_terms: dict):
+    score = 0
+    if re.search(r"\b(bsc|msc|b\.?sc|m\.?sc|bachelor|master|degree)\b", resume_text, re.I):
+        score += 3
+    certs_found = [c for c in jd_terms["certs"] if c in resume_text.lower()]
+    if certs_found: score += 3
+    return {"score": score, "certs_found": certs_found}
+
+def _eligibility_location(resume_text: str):
+    score = 0
+    if LOC_PAT.search(resume_text): score += 1
+    if re.search(r"\b(eligible to work|work authorization|right to work|visa|relocat)\b", resume_text, re.I):
+        score += 2
+    return {"score": score}
+
+def _readability_brevity(resume_text: str, level: str):
+    words = len(_tokenize(resume_text))
+    est_pages = max(1, int(round(words/WORDS_PER_PAGE)))
+    # length target
+    if level in ("exec","senior"):
+        length_ok = est_pages <= 3
+    else:
+        length_ok = est_pages <= 2
+    s_len = 3 if length_ok else 1
+
+    # bullet density
+    qs = _quant_stats(resume_text)
+    within = 8 <= qs["avg_words_per_bullet"] <= 20 if qs["bullet_count"] else False
+    s_bul = 3 if within else 1
+
+    # consistency: simple date-format & punctuation presence
+    dates = re.findall(r"(?:\b\d{2}/\d{4}\b|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.?\s+\d{4})", resume_text, re.I)
+    has_consistency = len(dates) >= 2
+    s_con = 2 if has_consistency else 1
+    return {"score": s_len + s_bul + s_con, "length_pages": est_pages, "bullets": qs}
+
+def _penalties(resume_text: str, roles: list, hard_fail: bool):
+    pts = 0
+    reasons = []
+
+    if hard_fail:
+        return 100, ["Image-only/unparseable PDF"]
+
+    # missing dates or employer (no years present across roles)
+    if sum(1 for r in roles if r.get("start") or r.get("end")) == 0:
+        pts += 5; reasons.append("Missing dates on roles")
+
+    # stuffing: top term density
+    toks = _tokenize(resume_text)
+    if toks:
+        counts = collections.Counter(toks)
+        top, n = counts.most_common(1)[0]
+        if n/len(toks) > 0.05 or n >= 25:
+            pts += 4; reasons.append("Possible keyword stuffing")
+
+    # non-standard headings pretending to be core
+    if re.search(r"\bmy journey\b", resume_text, re.I):
+        pts += 3; reasons.append("Non-standard headings")
+
+    # gaps > 6 months (very rough: consecutive year gaps)
+    years = sorted({r["start"] for r in roles if r.get("start")} | {r["end"] for r in roles if r.get("end")})
+    for a, b in zip(years, years[1:]):
+        if b - a >= 2:  # ~24 months
+            pts += 3; reasons.append("Potential gaps")
+            break
+
+    # personal data
+    if any(re.search(rf"\b{re.escape(p)}\b", resume_text, re.I) for p in PERSONAL_DATA):
+        pts += 2; reasons.append("Personal data (DOB/photo/etc.)")
+
+    return pts, reasons
 
 # ---------- 1) Template-based resume (HTML/PDF) ----------
 @resumes_bp.post("/build-resume")
@@ -716,29 +929,32 @@ def build_cover_letter():
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
 def resume_analysis():
     """
-    Hybrid ATS analysis: deterministic checks + LLM judgment.
-    Returns a rich JSON payload while keeping existing fields for the dashboard.
+    ATS scoring model (100 pts) + penalties, aligned to industry best practice.
+    Preserves your existing response shape for the dashboard.
     """
-    client = current_app.config["OPENAI_CLIENT"]
-    data = request.get_json(force=True)
-    resume_text = ""
+    client = current_app.config.get("OPENAI_CLIENT")
+    data = request.get_json(force=True) or {}
 
-    # ------- Input decoding -------
+    # ---- Decode input ----
+    resume_text, file_kind, raw_bytes = "", None, None
     try:
         if data.get("pdf"):
-            pdf_bytes = base64.b64decode(data["pdf"])
-            reader = PdfReader(BytesIO(pdf_bytes))
+            raw_bytes = base64.b64decode(data["pdf"])
+            reader = PdfReader(BytesIO(raw_bytes))
             resume_text = "\n".join((p.extract_text() or "") for p in reader.pages)
+            file_kind = "pdf"
         elif data.get("docx"):
-            docx_bytes = base64.b64decode(data["docx"])
-            d = docx.Document(BytesIO(docx_bytes))
+            raw_bytes = base64.b64decode(data["docx"])
+            d = docx.Document(BytesIO(raw_bytes))
             resume_text = "\n".join(p.text for p in d.paragraphs)
+            file_kind = "docx"
         elif data.get("text"):
             resume_text = (data["text"] or "").strip()
+            file_kind = "text"
         else:
             return jsonify(error="No resume data provided"), 400
     except Exception:
-        current_app.logger.exception("resume-analysis: file decode error")
+        current_app.logger.exception("resume-analysis: decode failed")
         return jsonify(error="Could not read the resume file"), 400
 
     if not resume_text.strip():
@@ -746,220 +962,135 @@ def resume_analysis():
 
     job_desc = (data.get("jobDescription") or "").strip()
     job_role = (data.get("jobRole") or "").strip()
-    level    = (data.get("careerLevel") or "mid").lower()  # optional hint from UI
+    level    = (data.get("careerLevel") or "mid").lower()
 
-    # ------- Deterministic checks (scored 0–100) -------
-    length_depth   = _length_depth(resume_text, level=level)
-    bullet_stats   = _bullet_stats(resume_text)
-    impact_stats   = _impact_stats(resume_text)
-    repetition     = _repetition(resume_text)
-    tense_health   = _tense_health(resume_text)
-    growth         = _growth_signals(resume_text)
-    unnecessary    = _unnecessary_sections(resume_text)
+    # ---- 1) Deterministic ATS categories ----
+    pf_score, hard_fail = _parse_and_format_score(resume_text, file_kind, raw_bytes)        # /10
+    sec_struct   = _sections_structure_score(resume_text)                                   # /15
+    roles        = _extract_roles_with_dates(resume_text)
+    jd_terms     = _build_jd_terms(job_desc) if job_desc else {"all": [], "skills": [], "titles": [], "certs": [], "acronyms": {}}
+    kw_match     = _keyword_match_to_jd(resume_text, jd_terms, roles)                       # /35 (normalized 0–100)
+    exp_rel      = _experience_relevance(job_desc, roles, resume_text)                      # /15
+    quant        = _quant_stats(resume_text)                                                # for achievements
+    ach_score    = (5 if quant["pct_with_numbers"] >= 50 else int(5 * quant["pct_with_numbers"]/50)) \
+                   + (3 if quant["pct_action_starts"] >= 70 else int(3 * quant["pct_action_starts"]/70))  # /8
+    edu_certs    = _education_and_certs(resume_text, jd_terms)                              # /6
+    elig_loc     = _eligibility_location(resume_text)                                       # /3
+    read_brief   = _readability_brevity(resume_text, level)                                 # /8
+    pen_pts, pen_reasons = _penalties(resume_text, roles, hard_fail)                        # up to -20
 
-    # Bullet-length score: share of bullets within the 8–26 word “sweet spot”
-    if bullet_stats["count"] > 0:
-        good_ratio = bullet_stats["ok"] / bullet_stats["count"]
-        bullet_len_score = int(round(good_ratio * 100))
-    else:
-        bullet_len_score = 40  # encourage using bullets
+    # ---- 2) Assemble score (100) ----
+    # Normalize keyword score (already 0–100) into 35-pt bucket, etc.
+    score = 0
+    score += pf_score                                # 10
+    score += min(15, sec_struct["score"])            # 15
+    score += int(round(35 * (kw_match["score"]/100)))# 35
+    score += min(15, exp_rel["score"])               # 15
+    score += min(8,  ach_score)                      # 8
+    score += min(6,  edu_certs["score"])             # 6
+    score += min(3,  elig_loc["score"])              # 3
+    score += min(8,  read_brief["score"])            # 8
 
-    # Quantify impact score: % bullets with numbers/metrics
-    impact_score = impact_stats["percent_with_numbers"]
+    score = max(0, min(100, score - min(20, pen_pts)))
 
-    # Basic sections presence (to support UI even if LLM fails)
-    sections_present = []
-    for key, label in [
-        (r"\bsummary|profile|professional summary\b", "Summary"),
-        (r"\bexperience|employment|work history\b",   "Experience"),
-        (r"\beducation|degree|university|college\b",  "Education"),
-        (r"\bskills\b",                                "Skills"),
-        (r"\bcertifications?|licenses?\b",            "Certifications")
-    ]:
-        if re.search(key, resume_text, re.I):
-            sections_present.append(label)
-    sections_missing = [s for s in ["Summary","Experience","Education","Skills","Certifications"]
-                        if s not in sections_present]
-    # provisional section score
-    sections_score = int(round(100 * len(sections_present) / 5))
-
-    # Readability proxy (very rough): shorter average sentence & bullets → higher score
-    sentences = [s.strip() for s in re.split(r"[.!?]\s+", resume_text) if s.strip()]
-    avg_sentence_words = (sum(_word_count(s) for s in sentences) / max(1, len(sentences)))
-    readability_score = max(20, min(100, int(round(120 - avg_sentence_words))))  # 18–22 words ≈ ~98–100
-
-    # Parseable (we extracted text) → 100
-    parseable_score = 100
-
-    # ------- LLM pass for nuanced JSON (keywords, strengths/issues, grammar tips, relevance) -------
-    role_or_desc = f"Job description:\n{job_desc}" if job_desc else (
-        f"Target role: {job_role}. If no JD, infer typical responsibilities and keywords for this role."
-        if job_role else "No job description provided."
-    )
-
-    llm_fields = {
-        "score": 0, "analysis": {"issues": [], "strengths": []},
-        "suggestions": [],
-        "keywords": {"matched": [], "missing": []},
-        "writing": {"readability": "", "repetition": [], "grammar": []},
-        "relevance": {"role": job_role, "score": 0, "explanation": "", "aligned_keywords": [], "missing_keywords": []},
-        "formatting_score": None  # we’ll map into breakdown
-    }
-
-    try:
-        prompt = f"""
-You are an ATS-certified resume analyst. Return ONLY valid JSON (no backticks) with this schema:
-
+    # ---- 3) Optional LLM pass for qualitative output (grammar/suggestions/keywords) ----
+    llm = {"analysis":{"issues":[],"strengths":[]}, "suggestions":[], "writing":{"readability":"","repetition":[],"grammar":[]},
+           "keywords":{"matched": kw_match.get("matched",[]), "missing": kw_match.get("missing",[])},
+           "relevance":{"role": job_role, "score": 0, "explanation":"","aligned_keywords":[],"missing_keywords":[]}}
+    if client:
+        try:
+            role_or_desc = f"Job description:\n{job_desc}" if job_desc else (f"Target role: {job_role}" if job_role else "No job description provided.")
+            prompt = f"""
+You are an ATS-certified resume analyst. Return ONLY valid JSON (no backticks) with:
 {{
-  "score": 0-100,
-  "formatting_score": 0-100,
   "analysis": {{"issues": ["..."], "strengths": ["..."]}},
   "suggestions": ["..."],
-  "keywords": {{"matched": ["..."], "missing": ["..."]}},
   "writing": {{
-    "readability": "Grade level or CEFR (e.g., Grade 8–10 / B2)",
+    "readability": "Grade level (e.g., Grade 8–10 / B2)",
     "repetition": [{{"term":"managed","count":5,"alternatives":["led","owned","coordinated"]}}],
-    "grammar": ["Concise, actionable grammar/style suggestions"]
+    "grammar": ["Short, actionable fixes."]
   }},
   "relevance": {{
     "role": "{job_role}",
     "score": 0-100,
-    "explanation": "How well it aligns and why",
+    "explanation": "1–2 sentences",
     "aligned_keywords": ["..."],
     "missing_keywords": ["..."]
   }}
 }}
-
-Use this context for keywords/relevance if present:
-{role_or_desc}
-
-Resume:
-{resume_text[:8000]}
+Context:\n{role_or_desc}\n\nResume:\n{resume_text[:8000]}
 """.strip()
+            resp = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role":"user","content":prompt}],
+                temperature=0.0
+            )
+            content = (resp.choices[0].message.content or "").strip()
+            content = re.sub(r"```(?:json)?", "", content)
+            s,e = content.find("{"), content.rfind("}")
+            if s>=0 and e>s:
+                js = json.loads(content[s:e+1])
+                for k,v in js.items(): llm[k] = v
+        except Exception:
+            current_app.logger.warning("LLM step skipped; continuing with deterministic output", exc_info=True)
 
-        resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role":"user","content":prompt}],
-            temperature=0.0
-        )
-        content = (resp.choices[0].message.content or "").strip()
-        content = re.sub(r"```(?:json)?", "", content).strip()
-        start, end = content.find("{"), content.rfind("}")
-        if start >= 0 and end > start:
-            llm = json.loads(content[start:end+1])
-            # merge safely
-            for k in llm_fields.keys():
-                if k in llm:
-                    llm_fields[k] = llm[k]
-
-    except Exception:
-        current_app.logger.warning("LLM analyzer step failed; continuing with heuristics", exc_info=True)
-
-    # ------- Compose breakdown and final score -------
+    # ---- 4) Map to your existing breakdown keys so UI stays the same ----
     breakdown = {
-        "formatting": llm_fields.get("formatting_score") if isinstance(llm_fields.get("formatting_score"), int) else 75,
-        "keywords":   int(round(100 * len(llm_fields["keywords"].get("matched", [])) /
-                                max(1, len(llm_fields["keywords"].get("matched", []) + llm_fields["keywords"].get("missing", [])))) )
-                        if (llm_fields["keywords"].get("matched") is not None) else 60,
-        "sections":   sections_score,
-        "readability": readability_score,
-        "length":     length_depth["score"],     # <- our stricter length/depth score
-        "parseable":  True if parseable_score == 100 else False
+        "formatting": int(round((pf_score/10)*100)),
+        "keywords":   kw_match["score"],
+        "sections":   int(round((sec_struct["score"]/15)*100)),
+        "readability": int(round((read_brief["score"]/8)*100)),   # proxy
+        "length":     int(round((min(3, read_brief["score"])/3)*100)),  # length component only
+        "parseable":  (not hard_fail)
     }
 
-    # Additional sub-scores that influence the final score
-    sub_scores = {
-        "impact": impact_score,                  # bullets with numbers
-        "bullet_length": bullet_len_score,       # bullets 8–26 words
-        "tenses": tense_health["score"],         # crude tense health
-        "growth": growth["score"],               # growth signals present
-        "unnecessary": unnecessary["score"],     # penalize for "References", "Objective", etc.
+    # Extra diagnostics (you can surface these later in the UI)
+    diagnostics = {
+        "achievements": quant,
+        "eligibility_location": elig_loc,
+        "education_certs": edu_certs,
+        "experience_relevance": exp_rel,
+        "keyword_distribution_ok": kw_match["distribution_ok"],
+        "penalties": {"points": pen_pts, "reasons": pen_reasons},
+        "roles_parsed": roles[:4],
+        "length_pages_est": read_brief["length_pages"]
     }
 
-    # Weighting: emphasize depth/impact/keywords so short resumes are penalized
-    w = {
-        "formatting": 0.12,
-        "sections":   0.12,
-        "readability":0.08,
-        "length":     0.18,
-        "keywords":   0.18 if job_desc or job_role else 0.12,
-        "impact":     0.12,
-        "bullet_length": 0.06,
-        "tenses":     0.05,
-        "growth":     0.05,
-        "parseable":  0.02,
-        "unnecessary":0.02,
-    }
-
-    # Score assembly
-    overall = (
-        breakdown["formatting"] * w["formatting"] +
-        breakdown["sections"]   * w["sections"]   +
-        breakdown["readability"]* w["readability"]+
-        breakdown["length"]     * w["length"]     +
-        breakdown["keywords"]   * w["keywords"]   +
-        sub_scores["impact"]    * w["impact"]     +
-        sub_scores["bullet_length"] * w["bullet_length"] +
-        sub_scores["tenses"]    * w["tenses"]     +
-        sub_scores["growth"]    * w["growth"]     +
-        (100 if breakdown["parseable"] else 0) * w["parseable"] +
-        sub_scores["unnecessary"] * w["unnecessary"]
-    )
-    overall_score = int(round(overall))
-
-    # ------- Build response -------
+    # ---- 5) Final payload (keeps your keys) ----
     out = {
-        "score": overall_score,
+        "score": int(score),
         "analysis": {
-            "issues": llm_fields["analysis"].get("issues", []),
-            "strengths": llm_fields["analysis"].get("strengths", [])
+            "issues": llm.get("analysis",{}).get("issues", []),
+            "strengths": llm.get("analysis",{}).get("strengths", [])
         },
-        "suggestions": llm_fields.get("suggestions", []),
+        "suggestions": llm.get("suggestions", []),
         "breakdown": breakdown,
-        "keywords": llm_fields.get("keywords", {"matched":[], "missing":[]}),
-        "sections": {"present": sections_present, "missing": sections_missing},
-        "writing": {
-            "readability": llm_fields.get("writing", {}).get("readability", ""),
-            "repetition": llm_fields.get("writing", {}).get("repetition", []) or repetition,
-            "grammar":    llm_fields.get("writing", {}).get("grammar", [])
+        "keywords": {"matched": kw_match["matched"], "missing": kw_match["missing"]},
+        "sections": {
+            "present": [k for k,v in sec_struct["std"].items() if v],
+            "missing": [k for k,v in sec_struct["std"].items() if not v]
         },
-        "relevance": llm_fields.get("relevance", {}),
-        # Extra detail you can show in future panels/tabs
-        "diagnostics": {
-            "length_depth": length_depth,
-            "bullet_stats": bullet_stats,
-            "impact": impact_stats,
-            "tenses": tense_health,
-            "growth_signals": growth,
-            "unnecessary_sections": unnecessary,
-            "sub_scores": sub_scores,
-        }
+        "writing": {
+            "readability": llm.get("writing",{}).get("readability",""),
+            "repetition": llm.get("writing",{}).get("repetition", []),
+            "grammar": llm.get("writing",{}).get("grammar", [])
+        },
+        "relevance": llm.get("relevance", {}),
+        "diagnostics": diagnostics
     }
 
-    # Add actionable, ATS-style issues if heuristics detect gaps
-    gaps = []
-    if length_depth["score"] < 80:
-        gaps.append(length_depth["advice"])
-    if impact_score < 40:
-        gaps.append("Add more hard numbers (%, $, counts, time saved) to quantify impact in your bullets.")
-    if bullet_len_score < 75:
-        gaps.append("Tighten your bullets to ~8–26 words; avoid one-liners and very long sentences.")
-    if tense_health["mismatch_count"] >= 2:
-        gaps.append("Use past tense for previous roles; present tense only for current responsibilities.")
-    if unnecessary["flagged"]:
-        gaps.append(f"Remove unnecessary section(s): {', '.join(unnecessary['flagged'])}.")
-    if gaps:
-        out["analysis"]["issues"] = (out["analysis"]["issues"] or []) + gaps
-
-    # Strengths from heuristics
-    wins = []
-    if bullet_stats["count"] >= 6:
-        wins.append("Uses bullet points to present achievements clearly.")
-    if growth["found"]:
-        wins.append("Shows growth indicators: " + ", ".join(growth["found"][:4]) + ".")
-    if impact_score >= 60:
-        wins.append("Multiple bullets quantify impact with numbers/metrics.")
-    if wins:
-        out["analysis"]["strengths"] = (out["analysis"]["strengths"] or []) + wins
+    # Add automatic, concrete fixes based on this model
+    fixes = []
+    if breakdown["length"] < 70:
+        fixes.append("Expand to 1–2 pages with impact bullets (8–20 words each).")
+    if kw_match["score"] < 60:
+        fixes.append("Target missing JD keywords inside experience bullets, not only in Skills.")
+    if quant["pct_with_numbers"] < 50:
+        fixes.append("Add hard numbers (%, $, time saved, counts) to at least half of recent bullets.")
+    if not sec_struct["std"]["experience"] or not sec_struct["reverse_chrono"]:
+        fixes.append("Use a reverse-chronological Work Experience section with title, employer, location, and MM/YYYY dates.")
+    if pen_pts:
+        fixes.append("Remove red flags: " + "; ".join(pen_reasons))
+    out["analysis"]["issues"] = (out["analysis"]["issues"] or []) + fixes
 
     return jsonify(out), 200
