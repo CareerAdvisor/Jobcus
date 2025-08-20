@@ -178,6 +178,136 @@ def build_dashboard_payload(*, score:int, issues:list, strengths:list, suggestio
         "sections": secs,
     }
 
+# --- Analysis helpers (deterministic) ---
+STOPWORDS = set("""
+a an and the of for with from into onto within across about above below under over
+at by to in on as is are was were be been being this that those these your you
+their my our they he she it we or nor not but if then so such than very more most
+""".split())
+
+ACTION_VERBS = {
+    "achieved","analyzed","built","configured","created","designed","developed","drove",
+    "enabled","enhanced","established","executed","implemented","improved","increased",
+    "launched","led","managed","mentored","migrated","optimized","owned","reduced",
+    "resolved","shipped","streamlined","supported","spearheaded"
+}
+
+GROWTH_TERMS = {
+    "promoted","promotion","grew","growth","increased","revenue","retention","expanded",
+    "led","lead","mentor","mentored","managed","launched","ownership","scope","scaled",
+    "impact","strategy","roadmap","stakeholder","cross-functional","cross functional"
+}
+
+BULLET_MARKERS = ("•","-","–","—","*")
+
+def _tokenize(text: str):
+    import re
+    return [t.lower() for t in re.findall(r"[a-zA-Z][a-zA-Z\-+/#0-9]*", text)]
+
+def _word_count(text: str) -> int:
+    import re
+    return len(re.findall(r"\b\w+\b", text))
+
+def _split_bullets(text: str):
+    lines = []
+    for raw in text.splitlines():
+        s = raw.strip()
+        if not s:
+            continue
+        if s.startswith(BULLET_MARKERS) or re.match(r"^(?:\d+\.|\(\d+\))\s", s):
+            s = s.lstrip("".join(BULLET_MARKERS) + " ").strip()
+            lines.append(s)
+    return lines
+
+def _bullet_stats(text: str):
+    bullets = _split_bullets(text)
+    if not bullets:
+        return {"count":0,"avg_words":0,"too_short":0,"too_long":0,"ok":0}
+    lengths = [ _word_count(b) for b in bullets ]
+    too_short = sum(1 for n in lengths if n < 8)
+    too_long  = sum(1 for n in lengths if n > 26)
+    ok        = len(bullets) - too_short - too_long
+    avg       = round(sum(lengths) / len(lengths), 1)
+    return {"count":len(bullets),"avg_words":avg,"too_short":too_short,"too_long":too_long,"ok":ok}
+
+def _impact_stats(text: str):
+    import re
+    bullets = _split_bullets(text)
+    if not bullets:
+        return {"with_numbers":0,"without_numbers":0,"percent_with_numbers":0}
+    has_num = [ bool(re.search(r"[\d%$£€]", b)) for b in bullets ]
+    with_numbers = sum(1 for v in has_num if v)
+    pct = int(round(100 * with_numbers / max(1,len(bullets))))
+    return {"with_numbers":with_numbers,"without_numbers":len(bullets)-with_numbers,"percent_with_numbers":pct}
+
+def _repetition(text: str):
+    tokens = [t for t in _tokenize(text) if t not in STOPWORDS]
+    def stem(w):
+        for suf in ("ing","ed","es","s"):
+            if w.endswith(suf) and len(w) > len(suf)+2:
+                return w[:-len(suf)]
+        return w
+    stems = [stem(t) for t in tokens]
+    from collections import Counter
+    c = Counter(stems)
+    reps = []
+    for term,count in c.most_common(8):
+        if term in ACTION_VERBS and count >= 4:
+            alts = list({"led","owned","executed","drove","implemented","delivered","orchestrated"} - {term})
+            reps.append({"term":term, "count":count, "alternatives":alts[:3]})
+    return reps
+
+def _tense_health(text: str):
+    import re
+    bullets = _split_bullets(text)
+    present_roots = {"manage","lead","own","coordinate","design","operate","support"}
+    past_bad = 0
+    for b in bullets:
+        if re.search(r"\b(201\d|202\d)\b.*\b(present|current)\b", b, flags=re.I):
+            continue
+        words = set(_tokenize(b))
+        if any(root in words for root in present_roots) and not re.search(r"\b(ed|ing)\b", " ".join(words)):
+            past_bad += 1
+    score = max(0, 100 - past_bad*10)
+    return {"mismatch_count": past_bad, "score": score}
+
+def _growth_signals(text: str):
+    toks = set(_tokenize(text))
+    found = sorted({t for t in GROWTH_TERMS if t.replace(" ","") in "".join(toks) or t in toks})
+    score = min(100, int(round(100 * len(found) / 6)))
+    return {"found": found, "score": score}
+
+def _unnecessary_sections(text: str):
+    import re
+    flags = []
+    if re.search(r"\breferences\b", text, re.I): flags.append("References")
+    if re.search(r"\bobjective\b", text, re.I): flags.append("Objective")
+    if re.search(r"\bhobbies\b|\binterests\b", text, re.I): flags.append("Hobbies/Interests")
+    score = 100 if not flags else (50 if len(flags)==1 else 20)
+    return {"flagged": flags, "score": score}
+
+def _length_depth(text: str, level: str = "mid"):
+    wc = _word_count(text)
+    ranges = {
+        "entry": (250, 450),
+        "mid":   (400, 750),
+        "senior":(500, 900),
+        "exec":  (600, 1100),
+    }
+    lo, hi = ranges.get(level, ranges["mid"])
+    if wc < lo:
+        gap = max(1, lo - wc)
+        score = max(10, int(round(100 * wc / lo)))
+        advice = f"Resume is too short for {level} level. Add ~{gap} words (more bullets/impact)."
+    elif wc > hi:
+        over = wc - hi
+        score = max(40, int(round(100 - min(60, (over/(hi*0.75))*100))))
+        advice = f"Resume may be too long for {level} level. Trim ~{over} words."
+    else:
+        score = 100
+        advice = "Length looks appropriate for your level."
+    return {"word_count": wc, "target_min": lo, "target_max": hi, "score": score, "advice": advice}
+
 # ---------- 1) Template-based resume (HTML/PDF) ----------
 @resumes_bp.post("/build-resume")
 def build_resume():
