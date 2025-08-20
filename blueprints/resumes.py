@@ -28,7 +28,6 @@ PDF_CSS_OVERRIDES = """
 # ---------- Helper: fallback context if OpenAI is unavailable ----------
 def naive_context(data: dict) -> dict:
     """Fallback: coerce raw form fields into your template context."""
-    # name: honor fullName if present, else try first+last
     first = (data.get("firstName") or "").strip()
     last  = (data.get("lastName") or "").strip()
     derived = " ".join([p for p in (first, last) if p]).strip()
@@ -78,7 +77,6 @@ def _normalize_ctx(data: dict) -> dict:
     Make sure template fields are present and in the correct types,
     no matter how the client sent them.
     """
-    # ---- Name (prefer explicit, then fullName, then first+last) ----
     first = (data.get("firstName") or "").strip()
     last  = (data.get("lastName") or "").strip()
     derived = " ".join([p for p in (first, last) if p]).strip()
@@ -107,76 +105,6 @@ def _normalize_ctx(data: dict) -> dict:
     ctx["links"]      = ctx.get("links")      or []
 
     return ctx
-
-# --- Add near the top of resumes.py (above the route handlers) ---
-import re
-
-SECTION_KEYS = [
-    "summary", "objective", "experience", "work experience", "education",
-    "skills", "projects", "certifications", "achievements", "contact"
-]
-
-def _keyword_match(resume_text: str, job_desc: str):
-    if not job_desc:
-        return {"matched": [], "missing": []}, None
-    words = {w.lower() for w in re.findall(r"[A-Za-z][A-Za-z+\-/#]{2,}", job_desc)}
-    stop  = {"and","the","with","for","from","your","you","our","role","job",
-             "skills","experience","years","team","work","ability","responsibilities"}
-    targets = sorted(w for w in words if w not in stop)
-    txt = resume_text.lower()
-    matched = [w for w in targets if w in txt]
-    missing = [w for w in targets if w not in txt]
-    score = round(100 * len(matched) / max(1, len(targets)))
-    return {"matched": matched, "missing": missing}, score
-
-def _detect_sections(resume_text: str):
-    txt = resume_text.lower()
-    present = [s for s in SECTION_KEYS if re.search(rf"\b{s}\b", txt)]
-    missing = [s for s in SECTION_KEYS if s not in present]
-    score = round(100 * len(present) / len(SECTION_KEYS))
-    return {"present": present, "missing": missing}, score
-
-def _readability_score(resume_text: str):
-    words = re.findall(r"\w+", resume_text)
-    sents = re.split(r"[.!?]\s+", resume_text.strip())
-    w = len(words)
-    s = max(1, len([x for x in sents if x.strip()]))
-    avg = w / s  # words per sentence
-    # ideal range ~12–20 → score dips as you move away
-    diff = abs(avg - 16)
-    return max(0, min(100, round(100 - diff * 6)))
-
-def _length_score(resume_text: str):
-    w = len(re.findall(r"\w+", resume_text))
-    if w <= 100:  return 20
-    if w >= 1600: return 25
-    if 450 <= w <= 900:  # ~1–2 pages of text
-        return 95
-    if w < 450:
-        return max(30, round(95 - (450 - w) * 0.12))
-    return max(30, round(95 - (w - 900) * 0.06))
-
-def build_dashboard_payload(*, score:int, issues:list, strengths:list, suggestions:list,
-                            resume_text:str, job_desc:str):
-    kw, kw_score     = _keyword_match(resume_text, job_desc)
-    secs, sec_score  = _detect_sections(resume_text)
-    breakdown = {
-        "formatting": 80,                              # placeholder (tie to a real formatter if you have one)
-        "keywords": kw_score if kw_score is not None else None,
-        "sections": sec_score,
-        "readability": _readability_score(resume_text),
-        "length": _length_score(resume_text),
-        "parseable": bool(resume_text.strip()),
-    }
-    return {
-        "score": int(score or 0),
-        "lastAnalyzed": None,                          # UI can overwrite with client time
-        "analysis": {"issues": issues or [], "strengths": strengths or []},
-        "suggestions": suggestions or [],
-        "breakdown": breakdown,
-        "keywords": kw,
-        "sections": secs,
-    }
 
 # === ATS model: weights and deterministic checks ===
 import math, datetime, collections, statistics, itertools, re
@@ -243,7 +171,6 @@ def _extract_roles_with_dates(text: str):
     buf = []
     for ln in all_lines:
         if DATE_PAT.search(ln):
-            # close previous
             if buf:
                 roles.append({"lines": buf[:]})
                 buf.clear()
@@ -251,7 +178,6 @@ def _extract_roles_with_dates(text: str):
     if buf:
         roles.append({"lines": buf[:]})
 
-    # Very light date parsing (year only); newest first assumption if “present/current” exists
     now = datetime.date.today().year
     for r in roles:
         years = [int(y) for y in re.findall(r"\b(20\d{2}|19\d{2})\b", " ".join(r["lines"]))]
@@ -329,7 +255,6 @@ def _sections_structure_score(text: str):
     base += 2 if PHONE_PAT.search(text) else 0
     base += 1 if LOC_PAT.search(text) else 0
 
-    # reverse chronological & date presence (very rough)
     roles = _extract_roles_with_dates(text)
     dated   = sum(1 for r in roles if r.get("start") or r.get("end"))
     chrono  = 1 if len(roles) < 2 else int(all((roles[i].get("end") or 0) >= (roles[i+1].get("end") or 0) for i in range(len(roles)-1)))
@@ -343,10 +268,10 @@ def _sections_structure_score(text: str):
     }
 
 def _build_jd_terms(jd: str):
-    """Very light extractor: skills/tools/certs/titles/domains + synonym/acro maps."""
+    """Extract basic JD categories and small synonym/acro maps."""
     toks = _tokenize(jd)
     raw = set(toks)
-    # acronyms → full and back
+
     acronyms = {
         "aws": "amazon web services",
         "ad": "active directory",
@@ -358,91 +283,113 @@ def _build_jd_terms(jd: str):
     synonyms = {
         "sysadmin": ["systems administrator"],
         "helpdesk": ["service desk","it support"],
-        "it support": ["technical support", "service desk"],
-        "pm": ["project manager"]
+        "it support": ["technical support","service desk"],
+        "pm": ["project manager"],
+        "product manager": ["pm"]
     }
+
     expanded = set(raw)
     for a, full in acronyms.items():
         if a in raw: expanded.add(full)
         if full in raw: expanded.add(a)
     for k, vs in synonyms.items():
-        if k in raw:
-            expanded.update(vs)
-        if any(v in raw for v in vs):
-            expanded.add(k)
+        if k in raw: expanded.update(vs)
+        if any(v in raw for v in vs): expanded.add(k)
 
-    # very rough category guesses
     certs  = [w for w in expanded if any(c in w for c in CERT_HINTS)]
-    titles = [w for w in expanded if any(t in w for t in ("engineer","analyst","manager","administrator","specialist","developer"))]
-    skills = list(expanded - set(certs) - set(titles))
+    titles = [w for w in expanded if any(t in w for t in ("engineer","analyst","manager","administrator","specialist","developer","architect","lead"))]
+    skills = sorted(expanded - set(certs) - set(titles))
     return {"skills": skills, "titles": titles, "certs": certs, "all": list(expanded), "acronyms": acronyms}
 
 def _keyword_match_to_jd(resume_text: str, jd_terms: dict, roles: list):
-    if not jd_terms["all"]:
-        return {"score": 0, "matched": [], "missing": [], "distribution_ok": True}
-
+    """
+    Category-based keyword scoring to 35 points total:
+      - Skills/tools coverage .......... 15
+      - Role/domain/title terms ........  8
+      - Certifications/quals ...........  6
+      - Acronym ↔ full form coverage ...  3
+      - Natural distribution ...........  3
+    """
     txt = resume_text.lower()
-    hits = collections.Counter()
-    for term in jd_terms["all"]:
-        if len(term) < 3: 
-            continue
-        # fuzzy-ish: accept exact token or spaced variant
-        if term in txt or re.search(rf"\b{re.escape(term)}\b", txt):
-            hits[term] += 1
-
-    # cap repeats at 3
-    capped = {k: min(3, v) for k, v in hits.items()}
-
-    # recency weighting: lines from “last two roles” = 1.0 else 0.6 / 0.3
-    weights = {}
-    if roles:
-        recent = roles[:2]
-        recent_txt = " ".join(" ".join(r["lines"]).lower() for r in recent)
-        older_txt  = " ".join(" ".join(r["lines"]).lower() for r in roles[2:])
-        for t in capped.keys():
-            w = 0
-            if t in recent_txt: w += 1.0
-            if t in older_txt:  w += 0.6
-            if w == 0 and t in txt: w = 0.3
-            weights[t] = w
-    else:
-        weights = {t:1.0 for t in capped.keys()}
-
-    weighted = sum(capped[t]*weights.get(t,1.0) for t in capped.keys())
-    # normalize against target: assume 20 meaningful terms for scale
-    denom = max(10, len(jd_terms["all"]))
-    raw_score = min(1.0, weighted / (denom * 0.6))  # tighter bar
-    score = int(round(100 * raw_score))
-
-    # distribution (not only in "skills" section)
     sections = _split_sections(resume_text)
-    skills_blob = " ".join(sections.get("skills", []))
-    in_skills = sum(1 for t in capped.keys() if t in skills_blob.lower())
-    distribution_ok = in_skills < max(2, int(0.6 * len(capped)))
+    skills_blob = " ".join(sections.get("skills", [])).lower()
 
-    missing = [t for t in jd_terms["all"] if t not in capped]
-    return {"score": score, "matched": list(capped.keys()), "missing": missing, "distribution_ok": distribution_ok}
+    def cover(terms):
+        if not terms:
+            return 0.0, [], terms
+        hits = []
+        for t in terms:
+            if len(t) < 3:
+                continue
+            if t in txt or re.search(rf"\b{re.escape(t)}\b", txt):
+                hits.append(t)
+        matched = sorted(set(hits))
+        missing = sorted(set(terms) - set(matched))
+        cov = len(matched) / max(1, len(set(terms)))
+        return cov, matched, missing
+
+    cov_sk, m_sk, miss_sk = cover(jd_terms.get("skills", []))
+    cov_ti, m_ti, miss_ti = cover(jd_terms.get("titles", []))
+    cov_ce, m_ce, miss_ce = cover(jd_terms.get("certs", []))
+
+    recent_txt = " ".join(" ".join(r["lines"]).lower() for r in (roles or [])[:2])
+
+    def recency_boost(cov, matched):
+        if not matched:
+            return cov
+        in_recent = sum(1 for t in matched if t in recent_txt)
+        if in_recent:
+            cov = min(1.0, cov + 0.1)
+        return cov
+
+    cov_sk = recency_boost(cov_sk, m_sk)
+    cov_ti = recency_boost(cov_ti, m_ti)
+    cov_ce = recency_boost(cov_ce, m_ce)
+
+    pts_sk = int(round(15 * min(1.0, cov_sk)))
+    pts_ti = int(round( 8 * min(1.0, cov_ti)))
+    pts_ce = int(round( 6 * min(1.0, cov_ce)))
+
+    acro_ok = 0
+    for a, full in jd_terms.get("acronyms", {}).items():
+        if re.search(rf"\b{re.escape(a)}\b", txt) and re.search(rf"\b{re.escape(full)}\b", txt):
+            acro_ok = 3
+            break
+
+    in_skills = sum(1 for t in set(m_sk + m_ti + m_ce) if t in skills_blob)
+    distribution_ok = in_skills < max(2, int(0.6 * len(set(m_sk + m_ti + m_ce))))
+    pts_dist = 3 if distribution_ok else 0
+
+    total_pts = pts_sk + pts_ti + pts_ce + acro_ok + pts_dist
+    matched_all = sorted(set(m_sk + m_ti + m_ce))
+    missing_all = sorted(set((jd_terms.get("skills", []) or []) +
+                             (jd_terms.get("titles", []) or []) +
+                             (jd_terms.get("certs", [])  or [])) - set(matched_all))
+
+    return {
+        "score": total_pts,  # 0–35
+        "matched": matched_all,
+        "missing": missing_all,
+        "distribution_ok": distribution_ok,
+        "components": {"skills": pts_sk, "titles": pts_ti, "certs": pts_ce, "acro": acro_ok, "distribution": pts_dist}
+    }
 
 def _experience_relevance(jd_text: str, roles: list, resume_text: str):
-    # years vs requirement
     m = re.search(r"(\d+)\+?\s+years", jd_text, re.I)
     req = int(m.group(1)) if m else None
     yoe = _years_of_experience(roles)
     years_ok = (yoe >= req) if req else (yoe >= 2)
     s_years = 6 if years_ok else max(0, int(6 * (yoe / max(1, req or 6))))
 
-    # seniority fit via titles progression
     titles = [ln.lower() for r in roles for ln in r["lines"][:2]]
     has_lead = any(re.search(r"\b(lead|manager|senior|principal)\b", t) for t in titles)
     s_senior = 4 if has_lead or yoe >= 5 else 2 if yoe >= 3 else 1
 
-    # recency coverage: JD verbs overlap in recent roles
     verbs = {"implement","migrate","optimize","build","design","automate","support","troubleshoot","manage"}
     recent_txt = " ".join(" ".join(r["lines"]).lower() for r in roles[:2])
     overlap = len([v for v in verbs if v in recent_txt])
     s_recent = 3 if overlap >= 4 else 2 if overlap >= 2 else 1
 
-    # task-verb overlap (global)
     jd_verbs = {w for w in _tokenize(jd_text) if w in verbs}
     res_verbs= {w for w in _tokenize(resume_text) if w in verbs}
     s_task   = 2 if len(jd_verbs & res_verbs) >= 2 else 1 if (jd_verbs & res_verbs) else 0
@@ -467,23 +414,54 @@ def _eligibility_location(resume_text: str):
 def _readability_brevity(resume_text: str, level: str):
     words = len(_tokenize(resume_text))
     est_pages = max(1, int(round(words/WORDS_PER_PAGE)))
-    # length target
     if level in ("exec","senior"):
         length_ok = est_pages <= 3
     else:
         length_ok = est_pages <= 2
     s_len = 3 if length_ok else 1
 
-    # bullet density
     qs = _quant_stats(resume_text)
     within = 8 <= qs["avg_words_per_bullet"] <= 20 if qs["bullet_count"] else False
     s_bul = 3 if within else 1
 
-    # consistency: simple date-format & punctuation presence
     dates = re.findall(r"(?:\b\d{2}/\d{4}\b|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.?\s+\d{4})", resume_text, re.I)
     has_consistency = len(dates) >= 2
     s_con = 2 if has_consistency else 1
-    return {"score": s_len + s_bul + s_con, "length_pages": est_pages, "bullets": qs}
+    return {
+        "score": s_len + s_bul + s_con,
+        "length_pages": est_pages,
+        "bullets": qs,
+        "length_component": s_len,
+        "bullet_component": s_bul,
+        "consistency_component": s_con,
+    }
+
+def _content_depth_penalty(resume_text: str, level: str):
+    """Penalise very short / sparse resumes so 1-page thin CVs can't score high."""
+    words = len(_tokenize(resume_text))
+    qs = _quant_stats(resume_text)
+    bullets = qs["bullet_count"]
+
+    min_words = 300 if level in ("entry",) else 350
+    min_bullets = 6 if level in ("entry",) else 8
+
+    pts = 0; reasons = []
+    if words < min_words:
+        gap = min_words - words
+        pts += 4 if gap < 100 else 6 if gap < 180 else 8
+        reasons.append("Too little content — add more impact bullets and detail.")
+    if bullets < min_bullets:
+        pts += 3 if bullets >= (min_bullets - 2) else 6
+        reasons.append("Too few bullet points — aim for concise 8–20 word bullets.")
+
+    return min(12, pts), reasons
+
+def _detect_unnecessary_sections(resume_text: str):
+    found = []
+    if re.search(r"(?i)^\s*references\b", resume_text, re.M): found.append("References")
+    if re.search(r"(?i)^\s*objective\b",  resume_text, re.M): found.append("Objective")
+    if re.search(r"(?i)^\s*(hobbies|interests)\b", resume_text, re.M): found.append("Hobbies/Interests")
+    return found
 
 def _penalties(resume_text: str, roles: list, hard_fail: bool):
     pts = 0
@@ -492,11 +470,9 @@ def _penalties(resume_text: str, roles: list, hard_fail: bool):
     if hard_fail:
         return 100, ["Image-only/unparseable PDF"]
 
-    # missing dates or employer (no years present across roles)
     if sum(1 for r in roles if r.get("start") or r.get("end")) == 0:
         pts += 5; reasons.append("Missing dates on roles")
 
-    # stuffing: top term density
     toks = _tokenize(resume_text)
     if toks:
         counts = collections.Counter(toks)
@@ -504,22 +480,24 @@ def _penalties(resume_text: str, roles: list, hard_fail: bool):
         if n/len(toks) > 0.05 or n >= 25:
             pts += 4; reasons.append("Possible keyword stuffing")
 
-    # non-standard headings pretending to be core
     if re.search(r"\bmy journey\b", resume_text, re.I):
         pts += 3; reasons.append("Non-standard headings")
 
-    # gaps > 6 months (very rough: consecutive year gaps)
     years = sorted({r["start"] for r in roles if r.get("start")} | {r["end"] for r in roles if r.get("end")})
     for a, b in zip(years, years[1:]):
-        if b - a >= 2:  # ~24 months
-            pts += 3; reasons.append("Potential gaps")
+        if b - a >= 2:
+            pts += 3; reasons.append("Potential career gaps")
             break
 
-    # personal data
     if any(re.search(rf"\b{re.escape(p)}\b", resume_text, re.I) for p in PERSONAL_DATA):
         pts += 2; reasons.append("Personal data (DOB/photo/etc.)")
 
-    return pts, reasons
+    unnec = _detect_unnecessary_sections(resume_text)
+    if unnec:
+        pts += min(6, 2*len(unnec))
+        reasons.append("Remove unnecessary sections: " + ", ".join(unnec))
+
+    return min(20, pts), reasons
 
 # ---------- 1) Template-based resume (HTML/PDF) ----------
 @resumes_bp.post("/build-resume")
@@ -528,10 +506,8 @@ def build_resume():
     theme = (data.get("theme") or "modern").lower()
     fmt   = (data.get("format") or "html").lower()
 
-    # Always normalize first (fixes name/skills/certifications issues)
     ctx = _normalize_ctx(data)
 
-    # Build final template context
     tpl_ctx = {
         "name":           ctx.get("name", ""),
         "title":          ctx.get("title", ""),
@@ -544,22 +520,18 @@ def build_resume():
         "certifications": ctx.get("certifications", []),
     }
 
-    # templates are in templates/resumes/<theme>.html
     template_path = f"resumes/{'minimal' if theme == 'minimal' else 'modern'}.html"
     html = render_template(template_path, for_pdf=(fmt == "pdf"), **tpl_ctx)
 
     if fmt == "pdf":
-        # Attach optional files plus our print overrides
         stylesheets = [CSS(string=PDF_CSS_OVERRIDES)]
-
-        # If you keep separate pdf.css, include it too (optional)
         pdf_css_path = os.path.join(current_app.root_path, "static", "pdf.css")
         if os.path.exists(pdf_css_path):
             stylesheets.append(CSS(filename=pdf_css_path))
 
         pdf_bytes = HTML(
             string=html,
-            base_url=current_app.root_path  # enables relative 'static/...' paths in the template
+            base_url=current_app.root_path
         ).write_pdf(stylesheets=stylesheets)
 
         resp = make_response(pdf_bytes)
@@ -567,7 +539,6 @@ def build_resume():
         resp.headers["Content-Disposition"] = "inline; filename=resume.pdf"
         return resp
 
-    # HTML preview
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
@@ -692,7 +663,6 @@ portfolio: {data.get('portfolio',"")}
         content = re.sub(r"```(?:json)?", "", content).strip()
         ctx = json.loads(content)
 
-        # Guarantee essential fields
         first = (data.get("firstName") or "").strip()
         last  = (data.get("lastName") or "").strip()
         derived = " ".join([p for p in (first, last) if p]).strip()
@@ -700,7 +670,6 @@ portfolio: {data.get('portfolio',"")}
         ctx.setdefault("title", (data.get("title") or ""))
         ctx.setdefault("contact", (data.get("contact") or ""))
 
-        # Normalize lists
         if isinstance(ctx.get("skills"), str):
             ctx["skills"] = [s.strip() for s in ctx["skills"].replace(",", "\n").splitlines() if s.strip()]
         ctx["certifications"] = _coerce_list(ctx.get("certifications")) or _coerce_list(data.get("certifications"))
@@ -875,9 +844,6 @@ def ai_suggest():
             "Led D cross-functional effort resulting in E"
         ]))
 
-    # Unreachable
-    # return jsonify({"text": "No suggestion available."})
-
 # ---------- Cover Letter builder ----------
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 def build_cover_letter():
@@ -964,41 +930,65 @@ def resume_analysis():
     job_role = (data.get("jobRole") or "").strip()
     level    = (data.get("careerLevel") or "mid").lower()
 
-    # ---- 1) Deterministic ATS categories ----
-    pf_score, hard_fail = _parse_and_format_score(resume_text, file_kind, raw_bytes)        # /10
-    sec_struct   = _sections_structure_score(resume_text)                                   # /15
+    # ---- Deterministic ATS categories ----
+    pf_score, hard_fail = _parse_and_format_score(resume_text, file_kind, raw_bytes)  # /10
+    sec_struct   = _sections_structure_score(resume_text)                              # /15
     roles        = _extract_roles_with_dates(resume_text)
     jd_terms     = _build_jd_terms(job_desc) if job_desc else {"all": [], "skills": [], "titles": [], "certs": [], "acronyms": {}}
-    kw_match     = _keyword_match_to_jd(resume_text, jd_terms, roles)                       # /35 (normalized 0–100)
-    exp_rel      = _experience_relevance(job_desc, roles, resume_text)                      # /15
-    quant        = _quant_stats(resume_text)                                                # for achievements
+    kw_match     = _keyword_match_to_jd(resume_text, jd_terms, roles)                  # points 0–35
+    kw_points    = kw_match["score"]
+    exp_rel      = _experience_relevance(job_desc, roles, resume_text)                 # /15
+    quant        = _quant_stats(resume_text)                                           # achievements
     ach_score    = (5 if quant["pct_with_numbers"] >= 50 else int(5 * quant["pct_with_numbers"]/50)) \
                    + (3 if quant["pct_action_starts"] >= 70 else int(3 * quant["pct_action_starts"]/70))  # /8
-    edu_certs    = _education_and_certs(resume_text, jd_terms)                              # /6
-    elig_loc     = _eligibility_location(resume_text)                                       # /3
-    read_brief   = _readability_brevity(resume_text, level)                                 # /8
-    pen_pts, pen_reasons = _penalties(resume_text, roles, hard_fail)                        # up to -20
+    edu_certs    = _education_and_certs(resume_text, jd_terms)                         # /6
+    elig_loc     = _eligibility_location(resume_text)                                  # /3
+    read_brief   = _readability_brevity(resume_text, level)                            # /8
 
-    # ---- 2) Assemble score (100) ----
-    # Normalize keyword score (already 0–100) into 35-pt bucket, etc.
+    # ---- Penalties ----
+    depth_pts, depth_reasons = _content_depth_penalty(resume_text, level)
+    pen_pts, pen_reasons = _penalties(resume_text, roles, hard_fail)
+    pen_pts += depth_pts
+    pen_reasons += depth_reasons
+    if not sec_struct["std"]["experience"]:
+        pen_pts += 5; pen_reasons.append("Missing Work Experience section")
+    if not sec_struct["std"]["education"]:
+        pen_pts += 3; pen_reasons.append("Missing Education section")
+
+    # ---- Raw score (0–100) ----
     score = 0
-    score += pf_score                                # 10
-    score += min(15, sec_struct["score"])            # 15
-    score += int(round(35 * (kw_match["score"]/100)))# 35
-    score += min(15, exp_rel["score"])               # 15
-    score += min(8,  ach_score)                      # 8
-    score += min(6,  edu_certs["score"])             # 6
-    score += min(3,  elig_loc["score"])              # 3
-    score += min(8,  read_brief["score"])            # 8
+    score += pf_score                              # 10
+    score += min(15, sec_struct["score"])          # 15
+    score += kw_points                              # 35
+    score += min(15, exp_rel["score"])             # 15
+    score += min(8,  ach_score)                    # 8
+    score += min(6,  edu_certs["score"])           # 6
+    score += min(3,  elig_loc["score"])            # 3
+    score += min(8,  read_brief["score"])          # 8
 
     score = max(0, min(100, score - min(20, pen_pts)))
 
-    # ---- 3) Optional LLM pass for qualitative output (grammar/suggestions/keywords) ----
-    llm = {"analysis":{"issues":[],"strengths":[]}, "suggestions":[], "writing":{"readability":"","repetition":[],"grammar":[]},
-           "keywords":{"matched": kw_match.get("matched",[]), "missing": kw_match.get("missing",[])},
-           "relevance":{"role": job_role, "score": 0, "explanation":"","aligned_keywords":[],"missing_keywords":[]}}
-    if client:
+    # ---- Gates/caps so thin resumes can't look “good” ----
+    cap = 100
+    if job_desc:
+        if kw_points < 14 or not kw_match["distribution_ok"]:
+            cap = min(cap, 69)  # Needs revision
+    if sec_struct["score"] < 9:
+        cap = min(cap, 69)
+    if quant["bullet_count"] < 6:
+        cap = min(cap, 74)
+    score = min(score, cap)
+
+    # ---- Optional LLM pass for qualitative commentary ----
+    llm = {
+        "analysis":{"issues":[],"strengths":[]},
+        "suggestions":[],
+        "writing":{"readability":"","repetition":[],"grammar":[]},
+        "relevance":{"role": job_role, "score": 0, "explanation":"", "aligned_keywords":[], "missing_keywords":[]}
+    }
+    if current_app.config.get("OPENAI_CLIENT"):
         try:
+            client = current_app.config["OPENAI_CLIENT"]
             role_or_desc = f"Job description:\n{job_desc}" if job_desc else (f"Target role: {job_role}" if job_role else "No job description provided.")
             prompt = f"""
 You are an ATS-certified resume analyst. Return ONLY valid JSON (no backticks) with:
@@ -1018,7 +1008,11 @@ You are an ATS-certified resume analyst. Return ONLY valid JSON (no backticks) w
     "missing_keywords": ["..."]
   }}
 }}
-Context:\n{role_or_desc}\n\nResume:\n{resume_text[:8000]}
+Context:
+{role_or_desc}
+
+Resume:
+{resume_text[:8000]}
 """.strip()
             resp = client.chat.completions.create(
                 model="gpt-4o",
@@ -1034,29 +1028,28 @@ Context:\n{role_or_desc}\n\nResume:\n{resume_text[:8000]}
         except Exception:
             current_app.logger.warning("LLM step skipped; continuing with deterministic output", exc_info=True)
 
-    # ---- 4) Map to your existing breakdown keys so UI stays the same ----
+    # ---- Map to your UI breakdown bars ----
     breakdown = {
         "formatting": int(round((pf_score/10)*100)),
-        "keywords":   kw_match["score"],
+        "keywords":   int(round((kw_points/35)*100)),
         "sections":   int(round((sec_struct["score"]/15)*100)),
-        "readability": int(round((read_brief["score"]/8)*100)),   # proxy
-        "length":     int(round((min(3, read_brief["score"])/3)*100)),  # length component only
+        "readability": int(round((read_brief["score"]/8)*100)),
+        "length":     int(round((read_brief["length_component"]/3)*100)),
         "parseable":  (not hard_fail)
     }
 
-    # Extra diagnostics (you can surface these later in the UI)
     diagnostics = {
         "achievements": quant,
         "eligibility_location": elig_loc,
         "education_certs": edu_certs,
         "experience_relevance": exp_rel,
         "keyword_distribution_ok": kw_match["distribution_ok"],
-        "penalties": {"points": pen_pts, "reasons": pen_reasons},
+        "keyword_components": kw_match["components"],
+        "penalties": {"points": min(20, pen_pts), "reasons": pen_reasons},
         "roles_parsed": roles[:4],
         "length_pages_est": read_brief["length_pages"]
     }
 
-    # ---- 5) Final payload (keeps your keys) ----
     out = {
         "score": int(score),
         "analysis": {
@@ -1079,18 +1072,18 @@ Context:\n{role_or_desc}\n\nResume:\n{resume_text[:8000]}
         "diagnostics": diagnostics
     }
 
-    # Add automatic, concrete fixes based on this model
+    # Concrete fixes
     fixes = []
     if breakdown["length"] < 70:
         fixes.append("Expand to 1–2 pages with impact bullets (8–20 words each).")
-    if kw_match["score"] < 60:
+    if (kw_points/35) < 0.6 and job_desc:
         fixes.append("Target missing JD keywords inside experience bullets, not only in Skills.")
     if quant["pct_with_numbers"] < 50:
         fixes.append("Add hard numbers (%, $, time saved, counts) to at least half of recent bullets.")
     if not sec_struct["std"]["experience"] or not sec_struct["reverse_chrono"]:
         fixes.append("Use a reverse-chronological Work Experience section with title, employer, location, and MM/YYYY dates.")
-    if pen_pts:
-        fixes.append("Remove red flags: " + "; ".join(pen_reasons))
+    if diagnostics["penalties"]["points"]:
+        fixes.append("Remove red flags: " + "; ".join(diagnostics["penalties"]["reasons"]))
     out["analysis"]["issues"] = (out["analysis"]["issues"] or []) + fixes
 
     return jsonify(out), 200
