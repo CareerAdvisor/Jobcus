@@ -112,10 +112,11 @@ import math, datetime, collections, statistics, itertools, re
 # We’ll use this to approximate pages for text resumes (PDF page count is not reliable post-OCR)
 WORDS_PER_PAGE = 600
 
-MONTHS = "(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)"
+MONTHS = r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
 DATE_PAT = re.compile(
-    rf"\b({MONTHS})\.?\s+\d{{4}}|\b\d{{4}}\b", re.I
-)  # "Jan 2021" or "2021"
+    rf"\b{MONTHS}\s+\d{{4}}\b|\b\d{{1,2}}/\d{{4}}\b|\b(20\d{{2}}|19\d{{2}})\b",
+    re.I
+)  # "January 2021" or "2021"
 
 EMAIL_PAT = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.I)
 PHONE_PAT = re.compile(r"\+?\d[\d\-\s()]{7,}\d")
@@ -148,16 +149,27 @@ def _tokenize(text: str):
     return re.findall(r"[A-Za-z][A-Za-z+\-/#0-9]*", text.lower())
 
 def _split_sections(text: str):
-    """Roughly split into named sections so we can measure distribution."""
-    lines = _clean_lines(text)
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
     sections = collections.OrderedDict()
-    cur = "_start"
-    sections[cur] = []
+    cur = "_start"; sections[cur] = []
+
+    def canonical(h: str) -> str:
+        h = re.sub(r"[^a-z]+", " ", h.lower()).strip()
+        if any(w in h for w in ("experience","work history","employment history","relevant experience","professional experience")):
+            return "experience"
+        if "education" in h:        return "education"
+        if "skill" in h:            return "skills"
+        if "project" in h:          return "projects"
+        if "cert" in h or "license" in h: return "certifications"
+        if "summary" in h or "profile" in h: return "summary"
+        if "objective" in h:        return "objective"
+        return h
+
     for ln in lines:
-        low = ln.lower()
-        if len(ln) <= 48 and re.match(r"^[A-Z][A-Za-z &/]+$", ln):
-            if any(k in low for k in ("experience","work","employment","education","skills","projects","certification","summary","objective")):
-                cur = low.split()[0]
+        if len(ln) <= 48 and re.match(r"^[A-Z][A-Za-z0-9 &/]+$", ln):
+            key = canonical(ln)
+            if key != "_start":
+                cur = key
                 sections[cur] = []
                 continue
         sections[cur].append(ln)
@@ -200,13 +212,26 @@ def _has_action_verb_start(line: str):
     return w in ACTION_VERBS_STRONG, w
 
 def _quant_stats(text: str):
-    lines = _clean_lines(text)
-    bullets = [ln for ln in lines if ln[:2] in ( "- ", "* ", "• ") or (ln and ln[0] in BULLET_MARKERS)]
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    bullets = [ln for ln in lines if ln[:2] in ("- ", "* ", "• ") or (ln and ln[0] in BULLET_MARKERS)]
+
+    # Fallback: treat experience lines that start with a strong action verb as bullets
     if not bullets:
-        bullets = [ln for ln in lines if ln.startswith("-") or ln.startswith("•") or ln.startswith("*")]
-    has_num = [bool(re.search(r"(\d+(\.\d+)?%|\$?\£?\€?\d+[kKmM]?|reduced|increased|saved|cut|grew|boosted)", b, re.I)) for b in bullets]
+        ex = _split_sections(text).get("experience", [])
+        pseudo = []
+        for ln in ex:
+            starts_with_verb, first = _has_action_verb_start(ln)
+            if starts_with_verb and 6 <= len(ln.split()) <= 30:
+                pseudo.append(ln)
+        bullets = pseudo
+
+    has_num = [
+        bool(re.search(r"(\b\d{1,3}(?:,\d{3})*(?:\.\d+)?\b|\b\d+%|\b\d+\s?(?:k|m)\b|reduced|increased|saved|cut|grew|boosted)", b, re.I))
+        for b in bullets
+    ]
     starts  = [_has_action_verb_start(b)[0] for b in bullets]
     avg_len = statistics.mean([len(b.split()) for b in bullets]) if bullets else 0
+
     return {
         "bullet_count": len(bullets),
         "pct_with_numbers": int(round(100*sum(has_num)/max(1,len(bullets)))),
@@ -464,40 +489,36 @@ def _detect_unnecessary_sections(resume_text: str):
     return found
 
 def _penalties(resume_text: str, roles: list, hard_fail: bool):
-    pts = 0
-    reasons = []
+    pts, reasons = 0, []
+    if hard_fail: return 100, ["Image-only/unparseable PDF"]
 
-    if hard_fail:
-        return 100, ["Image-only/unparseable PDF"]
-
+    # missing any dates across roles
     if sum(1 for r in roles if r.get("start") or r.get("end")) == 0:
         pts += 5; reasons.append("Missing dates on roles")
 
     toks = _tokenize(resume_text)
     if toks:
         counts = collections.Counter(toks)
-        top, n = counts.most_common(1)[0]
-        if n/len(toks) > 0.05 or n >= 25:
-            pts += 4; reasons.append("Possible keyword stuffing")
+        common_actions = {"managed","led","delivered","supported","coordinated"}
+        # exclude common action verbs from stuffing check
+        for a in common_actions: counts.pop(a, None)
+        if counts:
+            top, n = counts.most_common(1)[0]
+            if n/len(toks) > 0.08 or n >= 40:
+                pts += 4; reasons.append("Possible keyword stuffing")
 
     if re.search(r"\bmy journey\b", resume_text, re.I):
         pts += 3; reasons.append("Non-standard headings")
 
     years = sorted({r["start"] for r in roles if r.get("start")} | {r["end"] for r in roles if r.get("end")})
-    for a, b in zip(years, years[1:]):
+    for a,b in zip(years, years[1:]):
         if b - a >= 2:
-            pts += 3; reasons.append("Potential career gaps")
-            break
+            pts += 3; reasons.append("Potential gaps"); break
 
     if any(re.search(rf"\b{re.escape(p)}\b", resume_text, re.I) for p in PERSONAL_DATA):
         pts += 2; reasons.append("Personal data (DOB/photo/etc.)")
 
-    unnec = _detect_unnecessary_sections(resume_text)
-    if unnec:
-        pts += min(6, 2*len(unnec))
-        reasons.append("Remove unnecessary sections: " + ", ".join(unnec))
-
-    return min(20, pts), reasons
+    return pts, reasons
 
 # ---------- 1) Template-based resume (HTML/PDF) ----------
 @resumes_bp.post("/build-resume")
