@@ -1094,17 +1094,18 @@ Resume:
     }
 
     # Concrete fixes
+    # Add automatic, concrete fixes based on structure
     fixes = []
-    if breakdown["length"] < 70:
-        fixes.append("Expand to 1–2 pages with impact bullets (8–20 words each).")
-    if (kw_points/35) < 0.6 and job_desc:
-        fixes.append("Target missing JD keywords inside experience bullets, not only in Skills.")
-    if quant["pct_with_numbers"] < 50:
-        fixes.append("Add hard numbers (%, $, time saved, counts) to at least half of recent bullets.")
-    if not sec_struct["std"]["experience"] or not sec_struct["reverse_chrono"]:
-        fixes.append("Use a reverse-chronological Work Experience section with title, employer, location, and MM/YYYY dates.")
-    if diagnostics["penalties"]["points"]:
-        fixes.append("Remove red flags: " + "; ".join(diagnostics["penalties"]["reasons"]))
+    if not sec_struct["std"]["experience"]:
+      fixes.append("Add a Work Experience section (titles like “Experience” or “Relevant Experience” are fine).")
+    elif not sec_struct["reverse_chrono"]:
+      fixes.append("Ensure roles are in reverse-chronological order (most recent first) with Month YYYY dates.")
+
+    # keep your existing fixes after these, e.g. length/keywords/metrics, etc.
+    if breakdown.get("length", 100) < 70:
+      fixes.append("Expand to 1–2 pages with impact bullets (8–20 words each).")
+    # ... any other existing fix rules ...
+
     out["analysis"]["issues"] = (out["analysis"]["issues"] or []) + fixes
 
     return jsonify(out), 200
