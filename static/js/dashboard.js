@@ -246,7 +246,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (view === "keywords") {
-      const samples = ["Troubleshooting","Ticketing","Active Directory","Windows Server","SLA","Customer Support","Hardware","Software","Networking","Incident Management"];
+      const role = (roleSelect?.value || data?.relevance?.role || "").toLowerCase();
+      const SAMPLE_KEYS = {
+        "project manager": ["Agile","Scrum","Waterfall","Stakeholders","RAID log","Risk Register","Scope","Timeline","Budget",
+                      "Dependencies","Roadmap","Jira","MS Project","Change Control","KPIs","Delivery","Sprint Planning"],
+        "it support specialist": ["Troubleshooting","Ticketing","Active Directory","Windows Server","SLA","Hardware","Software",
+                            "Networking","Incident Management"],
+        "default": ["Stakeholders","Deliverables","Timeline","Budget","Risks","Dependencies","KPIs","Reporting"]
+      };
+      const samples = SAMPLE_KEYS[role] || SAMPLE_KEYS["default"];
+
       const matched = new Set((kw.matched || []).map(s => String(s).toLowerCase()));
       const rows = (kw.missing || []).concat(kw.matched || []).length
         ? [...new Set([...(kw.matched||[]), ...(kw.missing||[]), ...samples])]
