@@ -955,7 +955,20 @@ def resume_analysis():
     pf_score, hard_fail = _parse_and_format_score(resume_text, file_kind, raw_bytes)  # /10
     sec_struct   = _sections_structure_score(resume_text)                              # /15
     roles        = _extract_roles_with_dates(resume_text)
-    jd_terms     = _build_jd_terms(job_desc) if job_desc else {"all": [], "skills": [], "titles": [], "certs": [], "acronyms": {}}
+  
+    # Build JD terms with fallbacks: JD > role > summary/skills
+    jd_source = (job_desc or "").strip()
+    if not jd_source and job_role:
+      jd_source = job_role
+
+    if not jd_source:
+      secs = _split_sections(resume_text)
+      summary_blob = " ".join(secs.get("summary", []))
+      skills_blob  = " ".join(secs.get("skills", []))
+      jd_source = f"{summary_blob}\n{skills_blob}".strip()
+
+    jd_terms = _build_jd_terms(jd_source) if jd_source else {"all": [], "skills": [], "titles": [], "certs": [], "acronyms": {}}
+
     kw_match     = _keyword_match_to_jd(resume_text, jd_terms, roles)                  # points 0–35
     kw_points    = kw_match["score"]
     exp_rel      = _experience_relevance(job_desc, roles, resume_text)                 # /15
