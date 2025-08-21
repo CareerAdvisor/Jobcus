@@ -116,7 +116,7 @@ MONTHS = r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul
 DATE_PAT = re.compile(
     rf"\b{MONTHS}\s+\d{{4}}\b|\b\d{{1,2}}/\d{{4}}\b|\b(20\d{{2}}|19\d{{2}})\b",
     re.I
-)  # "January 2021" or "2021"
+)  # "January 2021", "01/2021", or "2021"
 
 EMAIL_PAT = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.I)
 PHONE_PAT = re.compile(r"\+?\d[\d\-\s()]{7,}\d")
@@ -142,6 +142,43 @@ CERT_HINTS = {"aws","amazon web services","itil","pmp","cissp","cisa","az-","ms-
 
 BULLET_MARKERS = ("•","-","–","—","*")
 
+# --- Keyword filtering (to avoid junk like 'a, in, of, led, public, private') ---
+STOPWORDS_KW = {
+    "a","an","and","the","of","for","with","from","into","onto","within","across",
+    "about","above","below","under","over","at","by","to","in","on","as","is","are",
+    "was","were","be","been","being","it","its","this","that","those","these","your",
+    "you","our","their","my","we","or","nor","not","but","if","then","so","than",
+    "very","more","most","can","will","would","should","could","may","might","etc",
+    "currently","presently","strong","solid","excellent","good","great","private",
+    "public","sector","known","having","combines","background","bridge","secure"
+}
+NOISE_VERBS = {
+    # remove generic action words that shouldn't be ATS keywords
+    "led","lead","manage","managed","own","owned","coordinate","coordinated","work",
+    "worked","help","helped","assist","assisted","support","supported","drive","drove"
+}
+NOISE_NOUNS = {
+    "experience","summary","objective","profile","responsibilities","duties",
+    "team","teams","environment","company","organization","client","customers",
+    "role","position","project","projects"  # kept as noise unless paired (see bigrams)
+}
+# Whitelist hints for real skills/tools/methods/titles/domains (extend freely)
+SKILL_HINTS = {
+    "agile","scrum","kanban","waterfall","prince2","pmp","itil","change","risk",
+    "stakeholder","stakeholders","governance","scope","budget","timeline","schedule",
+    "roadmap","dependency","dependencies","ra id","raid","risk register","issue log",
+    "project charter","business case","u at","uat","test plan","qa","kpi","okrs","okr",
+    "jira","confluence","microsoft project","ms project","azure devops","power bi",
+    "excel","visio","sharepoint","service now","servicenow","sql","api","sd lc","sdlc"
+}
+TITLE_HINTS = {"project manager","delivery manager","scrum master","program manager"}
+DOMAIN_HINTS = {"healthcare","fintech","ecommerce","telecom","banking","government","cloud","security","cybersecurity"}
+
+def _is_acronym(w: str) -> bool:
+    """Keep ALLCAPS 2–6 letters as acronyms."""
+    return len(w) >= 2 and len(w) <= 6 and w.isupper()
+
+# --------------------------- helpers ---------------------------
 def _clean_lines(text: str):
     return [ln.strip() for ln in text.splitlines() if ln.strip()]
 
@@ -149,6 +186,7 @@ def _tokenize(text: str):
     return re.findall(r"[A-Za-z][A-Za-z+\-/#0-9]*", text.lower())
 
 def _split_sections(text: str):
+    """Split into canonical sections so we can measure distribution."""
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
     sections = collections.OrderedDict()
     cur = "_start"; sections[cur] = []
@@ -292,48 +330,90 @@ def _sections_structure_score(text: str):
         "roles_parsed": len(roles)
     }
 
+# ---------------------- Improved JD term extraction ----------------------
 def _build_jd_terms(jd: str):
-    """Extract basic JD categories and small synonym/acro maps."""
-    toks = _tokenize(jd)
-    raw = set(toks)
+    """
+    Extract meaningful JD terms:
+    - remove stopwords/boilerplate/generic verbs
+    - keep skills/tools/methods/titles/certs/domains (+ acronyms)
+    - include useful bigrams/trigrams (e.g., 'risk register', 'ms project')
+    """
+    if not jd:
+        return {"skills": [], "titles": [], "certs": [], "all": [], "acronyms": {}}
 
+    # Base tokens (lowercased)
+    words = re.findall(r"[A-Za-z][A-Za-z+\-/#0-9]*", jd)
+    toks  = [w.lower() for w in words]
+
+    # N-grams (2–3) in lowercase, preserving original order
+    bigrams  = [" ".join([toks[i], toks[i+1]]) for i in range(len(toks)-1)]
+    trigrams = [" ".join([toks[i], toks[i+1], toks[i+2]]) for i in range(len(toks)-2)]
+
+    # Candidate singles: filter hard
+    singles = [
+        t for t in toks
+        if (_is_acronym(words[toks.index(t)]) or len(t) >= 3)
+        and t not in STOPWORDS_KW
+        and t not in NOISE_VERBS
+        and t not in NOISE_NOUNS
+    ]
+
+    # Useful phrases if they contain any hint word or look like a tool/cert
+    def looks_useful_phrase(p: str) -> bool:
+        if any(h in p for h in SKILL_HINTS | TITLE_HINTS | DOMAIN_HINTS):
+            return True
+        if any(c in p for c in CERT_HINTS):
+            return True
+        if any(t in p for t in TITLE_HINTS):
+            return True
+        return False
+
+    phrases = [p for p in (bigrams + trigrams) if looks_useful_phrase(p)]
+
+    # Expand acronyms ↔ full forms
     acronyms = {
         "aws": "amazon web services",
         "ad": "active directory",
         "sql": "structured query language",
         "k8s": "kubernetes",
         "mdm": "mobile device management",
-        "sso": "single sign on"
-    }
-    synonyms = {
-        "sysadmin": ["systems administrator"],
-        "helpdesk": ["service desk","it support"],
-        "it support": ["technical support","service desk"],
-        "pm": ["project manager"],
-        "product manager": ["pm"]
+        "sso": "single sign on",
+        "u at": "user acceptance testing",
+        "sd lc": "software development life cycle"
     }
 
-    expanded = set(raw)
+    expanded = set(singles) | set(phrases)
     for a, full in acronyms.items():
-        if a in raw: expanded.add(full)
-        if full in raw: expanded.add(a)
-    for k, vs in synonyms.items():
-        if k in raw: expanded.update(vs)
-        if any(v in raw for v in vs): expanded.add(k)
+        if a in expanded:   expanded.add(full)
+        if full in expanded: expanded.add(a)
 
-    certs  = [w for w in expanded if any(c in w for c in CERT_HINTS)]
-    titles = [w for w in expanded if any(t in w for t in ("engineer","analyst","manager","administrator","specialist","developer","architect","lead"))]
-    skills = sorted(expanded - set(certs) - set(titles))
-    return {"skills": skills, "titles": titles, "certs": certs, "all": list(expanded), "acronyms": acronyms}
+    # Categorize
+    certs  = sorted({w for w in expanded if any(c in w for c in CERT_HINTS)})
+    titles = sorted({w for w in expanded if any(t in w for t in TITLE_HINTS)})
+    skills = sorted({
+        w for w in expanded
+        if w not in set(certs) | set(titles)
+        and (
+            any(h in w for h in SKILL_HINTS | DOMAIN_HINTS)
+            or _is_acronym(w.replace(" ", "").upper())
+        )
+    })
 
+    # Final "all" list (dedup + order by length desc so phrases show first)
+    all_terms = sorted(set(skills) | set(titles) | set(certs), key=lambda x: (-len(x), x))
+
+    return {"skills": skills, "titles": titles, "certs": certs, "all": all_terms, "acronyms": acronyms}
+
+# ---------------------- JD keyword scoring (0–100) ----------------------
 def _keyword_match_to_jd(resume_text: str, jd_terms: dict, roles: list):
     """
-    Category-based keyword scoring to 35 points total:
-      - Skills/tools coverage .......... 15
-      - Role/domain/title terms ........  8
-      - Certifications/quals ...........  6
-      - Acronym ↔ full form coverage ...  3
-      - Natural distribution ...........  3
+    Bucketed keyword scoring → normalized to 0–100.
+      Buckets (max points 35 total):
+        - Skills/tools coverage .......... 15
+        - Role/domain/title terms ........  8
+        - Certifications/quals ...........  6
+        - Acronym ↔ full form coverage ...  3
+        - Natural distribution ...........  3
     """
     txt = resume_text.lower()
     sections = _split_sections(resume_text)
@@ -344,7 +424,10 @@ def _keyword_match_to_jd(resume_text: str, jd_terms: dict, roles: list):
             return 0.0, [], terms
         hits = []
         for t in terms:
-            if len(t) < 3:
+            # skip tiny/generic terms
+            if (len(t) < 3 and not _is_acronym(t.upper())): 
+                continue
+            if t in STOPWORDS_KW or t in NOISE_VERBS or t in NOISE_NOUNS:
                 continue
             if t in txt or re.search(rf"\b{re.escape(t)}\b", txt):
                 hits.append(t)
@@ -375,28 +458,32 @@ def _keyword_match_to_jd(resume_text: str, jd_terms: dict, roles: list):
     pts_ti = int(round( 8 * min(1.0, cov_ti)))
     pts_ce = int(round( 6 * min(1.0, cov_ce)))
 
+    # Acronym ↔ full-form coverage
     acro_ok = 0
     for a, full in jd_terms.get("acronyms", {}).items():
         if re.search(rf"\b{re.escape(a)}\b", txt) and re.search(rf"\b{re.escape(full)}\b", txt):
             acro_ok = 3
             break
 
+    # Distribution (not only in "skills" section)
     in_skills = sum(1 for t in set(m_sk + m_ti + m_ce) if t in skills_blob)
     distribution_ok = in_skills < max(2, int(0.6 * len(set(m_sk + m_ti + m_ce))))
     pts_dist = 3 if distribution_ok else 0
 
-    total_pts = pts_sk + pts_ti + pts_ce + acro_ok + pts_dist
+    total_pts = pts_sk + pts_ti + pts_ce + acro_ok + pts_dist          # 0–35
+    score_pct = int(round(100 * total_pts / 35))                        # 0–100
+
     matched_all = sorted(set(m_sk + m_ti + m_ce))
     missing_all = sorted(set((jd_terms.get("skills", []) or []) +
                              (jd_terms.get("titles", []) or []) +
                              (jd_terms.get("certs", [])  or [])) - set(matched_all))
 
     return {
-        "score": total_pts,  # 0–35
+        "score": score_pct,  # normalized 0–100
         "matched": matched_all,
         "missing": missing_all,
         "distribution_ok": distribution_ok,
-        "components": {"skills": pts_sk, "titles": pts_ti, "certs": pts_ce, "acro": acro_ok, "distribution": pts_dist}
+        "components": {"skills": pts_sk, "titles": pts_ti, "certs": pts_ce, "acro": acro_ok, "distribution": pts_dist, "total_points": total_pts}
     }
 
 def _experience_relevance(jd_text: str, roles: list, resume_text: str):
