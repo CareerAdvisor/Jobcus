@@ -1165,11 +1165,29 @@ Resume:
     # ---- Map to your UI breakdown bars ----
     breakdown = {
         "formatting": int(round((pf_score/10)*100)),
-        "keywords":   int(round((kw_points/35)*100)),
+        "keywords":   kw_match["score"],                # 0–100 already
         "sections":   int(round((sec_struct["score"]/15)*100)),
         "readability": int(round((read_brief["score"]/8)*100)),
-        "length":     int(round((read_brief["length_component"]/3)*100)),
-        "parseable":  (not hard_fail)
+        "length":     int(round((read_brief.get("length_component", 0)/3)*100)) if isinstance(read_brief.get("length_component"), int)
+                  else int(round((min(3, read_brief["score"])/3)*100)),
+        "parseable":  (not hard_fail),
+    }
+
+    # ----- CAP the headline so 100% only when all visible meters are 100 -----
+    visible = [
+        breakdown["formatting"],
+        breakdown["sections"],
+        breakdown.get("keywords"),
+        breakdown["readability"],
+        breakdown["length"],
+        100 if breakdown["parseable"] else 0
+    ]
+    all_hundred = all((v is not None) and (int(v) >= 100) for v in visible)
+    headline = score if all_hundred else min(score, 99)
+
+    out = {
+        "score": int(headline),
+        ...
     }
 
     diagnostics = {
