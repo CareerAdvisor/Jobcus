@@ -373,3 +373,5 @@ html, body { overflow-x: hidden; }
 
 /* undo the old global rule that was hiding overflow and making things look "cut off" */
 html, body { overflow-x: initial; } /* or simply remove the old overflow-x:hidden line */
+
+.metric__head span { white-space: nowrap; }
