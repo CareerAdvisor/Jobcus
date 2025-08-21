@@ -321,3 +321,55 @@ html, body { overflow-x: hidden; }
   color: #fff !important;
   border-color: #104879 !important;
 }
+
+/* --- Center everything & prevent edge cut-offs --- */
+:root{
+  --page-max: 980px;          /* outer container width */
+  --panel-max: 900px;         /* card/panel width */
+  --gutter-l: max(16px, env(safe-area-inset-left));
+  --gutter-r: max(16px, env(safe-area-inset-right));
+}
+
+/* outer page container */
+.dash-shell{
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-left: var(--gutter-l);
+  padding-right: var(--gutter-r);
+}
+
+/* stack that holds Upload + Score */
+.dash-stack{
+  max-width: var(--panel-max);
+  margin-inline: auto;
+  padding-inline: 0;          /* keep gutters from dash-shell */
+}
+
+/* make all cards stay centered with a friendly width */
+.upload-card,
+.score-card,
+.opt-panel,
+.opt-nav{
+  max-width: var(--panel-max);
+  margin-inline: auto;
+}
+
+/* the optimize area should center its single column on mobile */
+@media (max-width: 860px){
+  .opt-shell{ grid-template-columns: 1fr; justify-items: center; }
+  .opt-nav{ position: static; }   /* sticky side menu can cause overflow on phones */
+}
+
+/* long words/URLs won’t push the layout wider than the viewport */
+.upload-card,
+.score-card,
+.opt-panel,
+.metric,
+.kv,
+.list{
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* undo the old global rule that was hiding overflow and making things look "cut off" */
+html, body { overflow-x: initial; } /* or simply remove the old overflow-x:hidden line */
