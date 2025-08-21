@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const metrics = {
     formatting:  { meter: document.getElementById("bFormatting"),  label: document.getElementById("mFormatting") },
     sections:    { meter: document.getElementById("bSections"),    label: document.getElementById("mSections") },
+    keywords:    { meter: document.getElementById("bKeywords"),    label: document.getElementById("mKeywords") }, // NEW
     readability: { meter: document.getElementById("bReadability"), label: document.getElementById("mReadability") },
     length:      { meter: document.getElementById("bLength"),      label: document.getElementById("mLength") },
     parseable:   { meter: document.getElementById("bParseable"),   label: document.getElementById("mParseable") },
@@ -132,6 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const b = data.breakdown || {};
     setMetric(metrics.formatting,  b.formatting);
     setMetric(metrics.sections,    b.sections);
+    setMetric(metrics.keywords,    b.keywords);   // NEW
     setMetric(metrics.readability, b.readability);
     setMetric(metrics.length,      b.length);
     setMetric(metrics.parseable,   b.parseable === true ? 100 : (b.parseable === false ? 0 : null));
@@ -230,6 +232,15 @@ document.addEventListener("DOMContentLoaded", () => {
         <h3 class="panel-title">✅ What you did well</h3>
         <p class="panel-sub">Strengths that are already working for you.</p>
         <ul class="list">${(a.strengths || []).map(s => `<li>${s}</li>`).join("") || "<li>No strengths extracted.</li>"}</ul>`;
+      return;
+    }
+
+    if (view === "recs") {
+      const recs = (data?.suggestions || []);
+      optPanel.innerHTML = `
+        <h3 class="panel-title">🛠️ Recommendations</h3>
+        <p class="panel-sub">Quick, concrete improvements tailored to your resume.</p>
+        <ul class="list">${recs.length ? recs.map(r => `<li>${r}</li>`).join("") : "<li>No recommendations yet.</li>"}</ul>`;
       return;
     }
 
