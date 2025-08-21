@@ -682,18 +682,31 @@ def optimize_resume():
     data = request.get_json(force=True)
     resume_text = ""
 
+    # NEW: support docx alongside pdf/text
     if data.get("pdf"):
         try:
             pdf_bytes = base64.b64decode(data["pdf"])
             reader = PdfReader(BytesIO(pdf_bytes))
             resume_text = "\n".join((p.extract_text() or "") for p in reader.pages)
             if not resume_text.strip():
-                return jsonify(error="PDF content empty"), 400
+                return jsonify(error="PDF content appears to have no selectable text (likely scanned). Upload a text-based PDF or DOCX."), 400
         except Exception:
             logging.exception("PDF Decode Error")
-            return jsonify(error="Unable to extract PDF text"), 400
+            return jsonify(error="Unable to extract PDF text (corrupt or scanned). Upload a text-based PDF or DOCX."), 400
+
+    elif data.get("docx"):  # <— NEW
+        try:
+            docx_bytes = base64.b64decode(data["docx"])
+            d = docx.Document(BytesIO(docx_bytes))
+            resume_text = "\n".join(p.text for p in d.paragraphs)
+            if not resume_text.strip():
+                return jsonify(error="DOCX appears empty. Please check the file content."), 400
+        except Exception:
+            logging.exception("DOCX Decode Error")
+            return jsonify(error="Unable to read DOCX. Re-save as .docx and try again."), 400
+
     elif data.get("text"):
-        resume_text = data.get("text", "").strip()
+        resume_text = (data.get("text") or "").strip()
         if not resume_text:
             return jsonify(error="No text provided"), 400
     else:
@@ -710,7 +723,7 @@ def optimize_resume():
             messages=[{"role":"user","content":prompt}],
             temperature=0.3
         )
-        optimized = resp.choices[0].message.content.strip()
+        optimized = (resp.choices[0].message.content or "").strip()
         optimized = re.sub(r"```(?:[\s\S]*?)```", "", optimized).strip()
         return jsonify({"optimized": optimized})
     except Exception:
