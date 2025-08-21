@@ -12,37 +12,6 @@
 
   <!-- ===== Score card + Upload (stacked, centered) ===== -->
   <div class="dash-stack">
-    <!-- Score card -->
-    <article class="card score-card" id="resume-score-card" aria-live="polite" style="display:none">
-      <div class="score-card__top">
-        <div class="score-card__icon" aria-hidden="true"></div>
-        <button id="openReanalyze" class="btn btn-outline">Analyze updated resume</button>
-      </div>
-
-      <div class="score-card__body">
-        <div class="ring" role="img" aria-label="Resume score">
-          <svg viewBox="0 0 120 120">
-            <circle class="ring__track" cx="60" cy="60" r="52"></circle>
-            <circle class="ring__progress" cx="60" cy="60" r="52" stroke-dasharray="0 400"></circle>
-            <text x="60" y="68" class="ring__label">0%</text>
-          </svg>
-        </div>
-
-        <div class="metrics">
-          <div class="metric"><div class="metric__head"><span>Formatting</span><strong id="mFormatting">—%</strong></div><div class="bar"><div class="bar__fill" id="bFormatting"></div></div></div>
-          <div class="metric"><div class="metric__head"><span>Sections</span><strong id="mSections">—%</strong></div><div class="bar"><div class="bar__fill" id="bSections"></div></div></div>
-          <div class="metric"><div class="metric__head"><span>Readability</span><strong id="mReadability">—%</strong></div><div class="bar"><div class="bar__fill" id="bReadability"></div></div></div>
-          <div class="metric"><div class="metric__head"><span>Length</span><strong id="mLength">—%</strong></div><div class="bar"><div class="bar__fill" id="bLength"></div></div></div>
-          <div class="metric metric--wide"><div class="metric__head"><span>Parseable</span><strong id="mParseable">—%</strong></div><div class="bar"><div class="bar__fill" id="bParseable"></div></div></div>
-        </div>
-      </div>
-
-      <footer class="score-card__foot">
-        <p class="metric-note" id="metric-note">Last analyzed: —</p>
-        <small>Higher is better. Aim for green across the board.</small>
-      </footer>
-    </article>
-
     <!-- Upload card -->
     <article class="card upload-card">
       <h3 class="upload-title">Upload a PDF/DOCX. Optionally add a job description to check keyword match.</h3>
@@ -90,6 +59,37 @@
       </div>
 
       <p class="help">We’ll store your latest result on this device for quick access.</p>
+    </article>
+
+    <!-- Score card -->
+    <article class="card score-card" id="resume-score-card" aria-live="polite" style="display:none">
+      <div class="score-card__top">
+        <div class="score-card__icon" aria-hidden="true"></div>
+        <button id="openReanalyze" class="btn btn-outline">Analyze updated resume</button>
+      </div>
+
+      <div class="score-card__body">
+        <div class="ring" role="img" aria-label="Resume score">
+          <svg viewBox="0 0 120 120">
+            <circle class="ring__track" cx="60" cy="60" r="52"></circle>
+            <circle class="ring__progress" cx="60" cy="60" r="52" stroke-dasharray="0 400"></circle>
+            <text x="60" y="68" class="ring__label">0%</text>
+          </svg>
+        </div>
+
+        <div class="metrics">
+          <div class="metric"><div class="metric__head"><span>Formatting</span><strong id="mFormatting">—%</strong></div><div class="bar"><div class="bar__fill" id="bFormatting"></div></div></div>
+          <div class="metric"><div class="metric__head"><span>Sections</span><strong id="mSections">—%</strong></div><div class="bar"><div class="bar__fill" id="bSections"></div></div></div>
+          <div class="metric"><div class="metric__head"><span>Readability</span><strong id="mReadability">—%</strong></div><div class="bar"><div class="bar__fill" id="bReadability"></div></div></div>
+          <div class="metric"><div class="metric__head"><span>Length</span><strong id="mLength">—%</strong></div><div class="bar"><div class="bar__fill" id="bLength"></div></div></div>
+          <div class="metric metric--wide"><div class="metric__head"><span>Parseable</span><strong id="mParseable">—%</strong></div><div class="bar"><div class="bar__fill" id="bParseable"></div></div></div>
+        </div>
+      </div>
+
+      <footer class="score-card__foot">
+        <p class="metric-note" id="metric-note">Last analyzed: —</p>
+        <small>Higher is better. Aim for green across the board.</small>
+      </footer>
     </article>
   </div>
 
