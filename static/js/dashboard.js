@@ -138,7 +138,8 @@ document.addEventListener("DOMContentLoaded", () => {
     setMetric(metrics.length,      b.length);
     setMetric(metrics.parseable,   b.parseable === true ? 100 : (b.parseable === false ? 0 : null));
 
-    paintPanel("fixes", data); // default view
+    const defaultView = (data.suggestions && data.suggestions.length) ? "recs" : "fixes";
+    paintPanel(defaultView, data); // default view
   }
 
   // ===== Dropzone / picker =====
