@@ -78,13 +78,37 @@
         </div>
 
         <div class="metrics">
-          <div class="metric"><div class="metric__head"><span>Formatting</span><strong id="mFormatting">—%</strong></div><div class="bar"><div class="bar__fill" id="bFormatting"></div></div></div>
-          <div class="metric"><div class="metric__head"><span>Sections</span><strong id="mSections">—%</strong></div><div class="bar"><div class="bar__fill" id="bSections"></div></div></div>
-          <div class="metric"><div class="metric__head"><span>Readability</span><strong id="mReadability">—%</strong></div><div class="bar"><div class="bar__fill" id="bReadability"></div></div></div>
-          <div class="metric"><div class="metric__head"><span>Length</span><strong id="mLength">—%</strong></div><div class="bar"><div class="bar__fill" id="bLength"></div></div></div>
-          <div class="metric metric--wide"><div class="metric__head"><span>Parseable</span><strong id="mParseable">—%</strong></div><div class="bar"><div class="bar__fill" id="bParseable"></div></div></div>
+          <div class="metric">
+            <div class="metric__head"><span>Formatting</span><strong id="mFormatting">—%</strong></div>
+            <div class="bar"><div class="bar__fill" id="bFormatting"></div></div>
+          </div>
+
+          <div class="metric">
+            <div class="metric__head"><span>Sections</span><strong id="mSections">—%</strong></div>
+            <div class="bar"><div class="bar__fill" id="bSections"></div></div>
+          </div>
+
+          <!-- NEW: Keywords -->
+          <div class="metric">
+            <div class="metric__head"><span>Keywords</span><strong id="mKeywords">—%</strong></div>
+            <div class="bar"><div class="bar__fill" id="bKeywords"></div></div>
+          </div>
+
+          <div class="metric">
+            <div class="metric__head"><span>Readability</span><strong id="mReadability">—%</strong></div>
+            <div class="bar"><div class="bar__fill" id="bReadability"></div></div>
+          </div>
+
+          <div class="metric">
+            <div class="metric__head"><span>Length</span><strong id="mLength">—%</strong></div>
+            <div class="bar"><div class="bar__fill" id="bLength"></div></div>
+          </div>
+
+          <div class="metric metric--wide">
+            <div class="metric__head"><span>Parseable</span><strong id="mParseable">—%</strong></div>
+            <div class="bar"><div class="bar__fill" id="bParseable"></div></div>
+          </div>
         </div>
-      </div>
 
       <footer class="score-card__foot">
         <p class="metric-note" id="metric-note">Last analyzed: —</p>
@@ -104,7 +128,9 @@
       <button class="opt-btn" data-view="done">Done well</button>
       <button class="opt-btn" data-view="keywords">ATS keywords</button>
       <button class="opt-btn" data-view="writing">Writing quality</button>
+      <button class="opt-btn" data-view="recs">Recommendations</button>
     </aside>
+
 
     <div class="opt-panel" id="optPanel"></div>
   </section>
