@@ -194,6 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
       data.lastAnalyzed = new Date().toLocaleString();
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
       localStorage.setItem("resumeBase64", b64);
+      localStorage.setItem("resumeKind", f.type);
 
       // reset controls & repaint
       fileInput.value = ""; showFileName(null);
