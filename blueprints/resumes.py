@@ -325,36 +325,33 @@ def _sections_structure_score(text: str):
     }
 
 # ---------------------- Improved JD term extraction ----------------------
-def _build_jd_terms(jd: str):
-    """
-    Extract meaningful JD terms:
-    - remove stopwords/boilerplate/generic verbs
-    - keep skills/tools/methods/titles/certs/domains (+ acronyms)
-    - include useful bigrams/trigrams (e.g., 'risk register', 'ms project')
-    """
+
     if not jd:
         return {"skills": [], "titles": [], "certs": [], "all": [], "acronyms": {}}
 
-    # Base tokens (lowercased)
     words = re.findall(r"[A-Za-z][A-Za-z+\-/#0-9]*", jd)
     toks  = [w.lower() for w in words]
 
-    # N-grams (2–3) in lowercase, preserving original order
-    bigrams  = [" ".join([toks[i], toks[i+1]]) for i in range(len(toks)-1)]
-    trigrams = [" ".join([toks[i], toks[i+1], toks[i+2]]) for i in range(len(toks)-2)]
+    # Clean tokens first (remove stopwords/noise; keep acronyms)
+    clean_toks = []
+    for i, t in enumerate(toks):
+        raw = words[i]
+        if (len(t) < 3 and not _is_acronym(raw)):     # keep real acronyms only
+            continue
+        if t in STOPWORDS_KW or t in NOISE_VERBS or t in NOISE_NOUNS:
+            continue
+        clean_toks.append(t)
 
-    # Candidate singles: filter hard
-    singles = [
-        t for t in toks
-        if (_is_acronym(words[toks.index(t)]) or len(t) >= 3)
-        and t not in STOPWORDS_KW
-        and t not in NOISE_VERBS
-        and t not in NOISE_NOUNS
-    ]
+    # n-grams from CLEAN tokens → eliminates “in agile”, “on time …”
+    bigrams  = [" ".join([clean_toks[i], clean_toks[i+1]]) for i in range(len(clean_toks)-1)]
+    trigrams = [" ".join([clean_toks[i], clean_toks[i+1], clean_toks[i+2]]) for i in range(len(clean_toks)-2)]
 
-    # Useful phrases if they contain any hint word or look like a tool/cert
     def looks_useful_phrase(p: str) -> bool:
-        if any(h in p for h in SKILL_HINTS | TITLE_HINTS | DOMAIN_HINTS):
+        tokens = p.split()
+        # must not begin/end with stopwords
+        if tokens[0] in STOPWORDS_KW or tokens[-1] in STOPWORDS_KW:
+            return False
+        if any(h in p for h in (SKILL_HINTS | TITLE_HINTS | DOMAIN_HINTS)):
             return True
         if any(c in p for c in CERT_HINTS):
             return True
@@ -364,7 +361,6 @@ def _build_jd_terms(jd: str):
 
     phrases = [p for p in (bigrams + trigrams) if looks_useful_phrase(p)]
 
-    # Expand acronyms ↔ full forms
     acronyms = {
         "aws": "amazon web services",
         "ad": "active directory",
@@ -373,29 +369,23 @@ def _build_jd_terms(jd: str):
         "mdm": "mobile device management",
         "sso": "single sign on",
         "u at": "user acceptance testing",
-        "sd lc": "software development life cycle"
+        "sd lc": "software development life cycle",
     }
 
-    expanded = set(singles) | set(phrases)
+    expanded = set(clean_toks) | set(phrases)
     for a, full in acronyms.items():
-        if a in expanded:   expanded.add(full)
+        if a in expanded:    expanded.add(full)
         if full in expanded: expanded.add(a)
 
-    # Categorize
     certs  = sorted({w for w in expanded if any(c in w for c in CERT_HINTS)})
     titles = sorted({w for w in expanded if any(t in w for t in TITLE_HINTS)})
     skills = sorted({
         w for w in expanded
         if w not in set(certs) | set(titles)
-        and (
-            any(h in w for h in SKILL_HINTS | DOMAIN_HINTS)
-            or _is_acronym(w.replace(" ", "").upper())
-        )
+        and (any(h in w for h in SKILL_HINTS | DOMAIN_HINTS) or _is_acronym(w.replace(" ", "").upper()))
     })
 
-    # Final "all" list (dedup + order by length desc so phrases show first)
     all_terms = sorted(set(skills) | set(titles) | set(certs), key=lambda x: (-len(x), x))
-
     return {"skills": skills, "titles": titles, "certs": certs, "all": all_terms, "acronyms": acronyms}
 
 # ---------------------- JD keyword scoring (0–100) ----------------------
@@ -414,11 +404,9 @@ def _keyword_match_to_jd(resume_text: str, jd_terms: dict, roles: list):
     skills_blob = " ".join(sections.get("skills", [])).lower()
 
     def cover(terms):
-        if not terms:
-            return 0.0, [], terms
+        if not terms: return 0.0, [], terms
         hits = []
         for t in terms:
-            # skip tiny/generic terms
             if (len(t) < 3 and not _is_acronym(t.upper())): 
                 continue
             if t in STOPWORDS_KW or t in NOISE_VERBS or t in NOISE_NOUNS:
