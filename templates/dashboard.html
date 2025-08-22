@@ -10,6 +10,14 @@
   <h1 id="dashboardGreeting" class="dash-title"></h1>
   <p class="dash-subtitle">Track your career growth and insights powered by Jobcus AI.</p>
 
+  <!-- NUDGE: appears after 3 free analyses for anonymous users -->
+  <div id="registerNudge" class="nudge" style="display:none">
+    <strong>Enjoying the analyzer?</strong>
+    You’ve used your 3 free analyses. Create a free account to save history and unlock more features.
+    <a class="btn btn-primary" href="/account">Create account</a>
+    <button class="btn-link" id="dismissNudge" aria-label="dismiss">Dismiss</button>
+  </div>
+
   <!-- ===== Score card + Upload (stacked, centered) ===== -->
   <div class="dash-stack">
     <!-- Upload card -->
