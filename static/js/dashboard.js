@@ -183,13 +183,28 @@ document.addEventListener("DOMContentLoaded", () => {
       else if (f.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") body.docx = b64;
       else { alert("Unsupported type. Upload PDF or DOCX."); analyzingEl.style.display = "none"; analyzeBtn.disabled = false; return; }
 
-      const res = await fetch("/api/resume-analysis", {
+      const res  = await fetch("/api/resume-analysis", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || res.statusText);
+      
+      const text = await res.text();
+      if (!res.ok) {
+        console.error("Resume analysis failed:", text);
+        alert("Resume analysis failed. Please try again.");
+        return;
+      }
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error("Invalid JSON from /api/resume-analysis:", text);
+        alert("Unexpected server response. Please try again.");
+        return;
+      }
+
 
       data.lastAnalyzed = new Date().toLocaleString();
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
