@@ -237,6 +237,11 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("resumeBase64", b64);
       localStorage.setItem("resumeKind", f.type);
 
+      // after saving to localStorage…
+      const count = parseInt(localStorage.getItem("analysisCount") || "0", 10) + 1;
+      localStorage.setItem("analysisCount", String(count));
+
+
       // reset controls & repaint
       fileInput.value = ""; showFileName(null);
       analyzeBtn.disabled = true;
