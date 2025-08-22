@@ -258,9 +258,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const samples = SAMPLE_KEYS[role] || SAMPLE_KEYS["default"];
 
       const matched = new Set((kw.matched || []).map(s => String(s).toLowerCase()));
-      const rows = (kw.missing || []).concat(kw.matched || []).length
-        ? [...new Set([...(kw.matched||[]), ...(kw.missing||[]), ...samples])]
-        : samples;
+      const hasKW = (kw.matched && kw.matched.length) || (kw.missing && kw.missing.length);
+      const rows = hasKW
+        ? [...new Set([...(kw.matched || []), ...(kw.missing || [])])]
+        : samples;  // only when NOTHING is returned by the backend
 
       optPanel.innerHTML = `
         <h3 class="panel-title">🎯 ATS keywords</h3>
