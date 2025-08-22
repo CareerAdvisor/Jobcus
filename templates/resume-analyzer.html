@@ -18,19 +18,47 @@
   </section>
 </div>
 
-<!-- Analyzer -->
 <section id="resume-analyzer" style="padding:30px 16px; background:#f9fafb;">
   <div style="max-width:880px;margin:0 auto;">
     <h2 style="color:#104879;margin:0 0 10px;">AI Resume Analyzer</h2>
     <p style="color:#555;margin:0 0 16px;">
-      Paste your resume text or upload a PDF / DOCX for analysis.
+      Upload a PDF/DOCX and (optionally) add a job description. We’ll show your results on the dashboard.
     </p>
-    <textarea id="resume-text"
-      placeholder="Paste your resume text here…"
-      style="width:100%;height:80px;padding:12px;border:1px solid #ccc;border-radius:8px;margin-bottom:10px;font-size:14px;"></textarea>
+    
+    <!-- **REPLACE WITH THIS CARD** -->
+    <section class="card">
+      <h2>AI Resume Analyzer</h2>
 
-    <input type="file" id="resumeFile" accept=".pdf,.docx"
-           style="display:block;margin-bottom:12px;">
+      <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload resume">
+        <div class="dz-inner">
+          <strong>Click to upload</strong> or drag a PDF/DOCX here
+        </div>
+        <input id="dashResumeFile" type="file" hidden
+               accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+      </div>
+      <p id="fileName" class="muted" style="margin:.5rem 0 1rem;"></p>
+
+      <label class="muted">Job description (optional)</label>
+      <textarea id="dashJobDesc" rows="4" placeholder="Paste the job description here…"></textarea>
+
+      <label class="muted">Target role (optional)</label>
+      <select id="dashRoleSelect">
+        <option value="">— Select a role —</option>
+        <option>Project Manager</option>
+        <option>IT Support Specialist</option>
+        <option>Business Analyst</option>
+        <!-- … -->
+      </select>
+
+      <div style="display:flex;gap:.75rem;align-items:center;margin-top:1rem">
+        <button id="dashAnalyzeBtn" class="btn btn-primary" disabled>Analyze</button>
+        <span id="dashAnalyzing" class="muted" style="display:none">Analyzing…</span>
+      </div>
+    </section>
+    <!-- **END REPLACEMENT** -->
+ </div>
+</section>
+    
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button id="analyze-btn" class="primary-btn"
