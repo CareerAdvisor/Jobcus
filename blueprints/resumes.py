@@ -1169,7 +1169,27 @@ Resume:
 
     out = {
         "score": int(headline),
-        ...
+        "analysis": {
+            "issues": llm.get("analysis", {}).get("issues", []),
+            "strengths": llm.get("analysis", {}).get("strengths", [])
+        },
+        "suggestions": llm.get("suggestions", []),
+        "breakdown": breakdown,
+        "keywords": {
+            "matched": kw_match.get("matched", []),
+            "missing": kw_match.get("missing", [])
+        },
+        "sections": {
+            "present": [k for k, v in sec_struct["std"].items() if v],
+            "missing": [k for k, v in sec_struct["std"].items() if not v]
+        },
+        "writing": {
+            "readability": llm.get("writing", {}).get("readability", ""),
+            "repetition": llm.get("writing", {}).get("repetition", []),
+            "grammar": llm.get("writing", {}).get("grammar", [])
+        },
+        "relevance": llm.get("relevance", {}),
+        "diagnostics": diagnostics
     }
 
     diagnostics = {
