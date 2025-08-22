@@ -25,6 +25,7 @@
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
+  <body data-authed="{{ '1' if current_user.is_authenticated else '0' }}">
   <div class="page-container">
 
     {% if not for_pdf %}
