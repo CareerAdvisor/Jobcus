@@ -176,6 +176,25 @@ DOMAIN_HINTS = {"healthcare","fintech","ecommerce","telecom","banking","governme
 def _is_acronym(w: str) -> bool:
     return len(w) >= 2 and len(w) <= 6 and w.isupper()
 
+# NEW: sanitize keyword lists before sending to the UI
+def _clean_kw_list(lst):
+    out = []
+    for t in lst:
+        t = t.strip().lower()
+        parts = re.findall(r"[a-z0-9+\-/#]+", t)
+        # trim leading/trailing stopwords
+        while parts and parts[0] in STOPWORDS_KW: parts.pop(0)
+        while parts and parts[-1] in STOPWORDS_KW: parts.pop()
+        if not parts:
+            continue
+        cleaned = " ".join(parts)
+        if (len(cleaned) < 3 and not _is_acronym(cleaned.upper())):
+            continue
+        if cleaned in STOPWORDS_KW or cleaned in NOISE_NOUNS or cleaned in NOISE_VERBS:
+            continue
+        out.append(cleaned)
+    return sorted(set(out))
+
 def _build_jd_terms(jd: str):
     """
     Extract meaningful JD terms:
@@ -1127,6 +1146,10 @@ def resume_analysis():
     edu_certs    = _education_and_certs(resume_text, jd_terms)                         # /6
     elig_loc     = _eligibility_location(resume_text)                                  # /3
     read_brief   = _readability_brevity(resume_text, level)                            # /8
+  
+    # NEW: clean the keyword lists before returning
+    matched = _clean_kw_list(kw_match.get("matched", []))
+    missing = _clean_kw_list(kw_match.get("missing", []))
 
     # ---- Penalties ----
     depth_pts, depth_reasons = _content_depth_penalty(resume_text, level)
@@ -1222,22 +1245,20 @@ Resume:
         "parseable":  (not hard_fail),
     }
 
-    # ----- CAP headline so 100% only when all bars are 100 -----
+    # ----- CAP headline (match what you show on the UI) -----
     visible = [
         int(breakdown["formatting"]),
         int(breakdown["sections"]),
         int(breakdown.get("keywords", 0)),
         int(breakdown["readability"]),
         int(breakdown["length"]),
-        100 if breakdown["parseable"] else 0,
+        100 if breakdown["parseable"] else 0
     ]
     avg_visible = int(round(sum(visible) / len(visible)))
     all_hundred = all(v >= 100 for v in visible)
-
-    # Ring respects bars; still allows model score to matter but never exceed the average
-    headline = score if all_hundred else min(score, avg_visible)
-
-    # ---- diagnostics (build AFTER all components exist) ----
+    headline = score if all_hundred else min(score, avg_visible)   # or use min(visible) if you want stricter
+    
+    # ----- Diagnostics (build BEFORE using) -----
     diagnostics = {
         "achievements": quant,
         "eligibility_location": elig_loc,
@@ -1247,19 +1268,19 @@ Resume:
         "keyword_components": kw_match["components"],
         "penalties": {"points": min(20, pen_pts), "reasons": pen_reasons},
         "roles_parsed": roles[:4],
-        "length_pages_est": read_brief["length_pages"],
+        "length_pages_est": read_brief["length_pages"]
     }
-
-    # ---- single final payload ----
+    
+    # ----- Single, final response payload -----
     out = {
-        "score": final_score,
+        "score": int(headline),                                    # ← don't use undefined final_score
         "analysis": {
             "issues": llm.get("analysis", {}).get("issues", []),
             "strengths": llm.get("analysis", {}).get("strengths", [])
         },
         "suggestions": llm.get("suggestions", []),
         "breakdown": breakdown,
-        "keywords": {"matched": kw_match["matched"], "missing": kw_match["missing"]},
+        "keywords": {"matched": matched, "missing": missing},      # ← cleaned lists
         "sections": {
             "present": [k for k, v in sec_struct["std"].items() if v],
             "missing": [k for k, v in sec_struct["std"].items() if not v]
@@ -1272,8 +1293,8 @@ Resume:
         "relevance": llm.get("relevance", {}),
         "diagnostics": diagnostics
     }
-
-    # append your rule-based fixes
+    
+    # Concrete fixes (append to issues)
     fixes = []
     if not sec_struct["std"]["experience"]:
         fixes.append("Add a Work Experience section (titles like “Experience” or “Relevant Experience” are fine).")
@@ -1281,7 +1302,7 @@ Resume:
         fixes.append("Ensure roles are in reverse-chronological order (most recent first) with Month YYYY dates.")
     if breakdown.get("length", 100) < 70:
         fixes.append("Expand to 1–2 pages with impact bullets (8–20 words each).")
+    
     out["analysis"]["issues"] = (out["analysis"]["issues"] or []) + fixes
-
+    
     return jsonify(out), 200
-
