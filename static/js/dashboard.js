@@ -32,6 +32,23 @@ document.addEventListener("DOMContentLoaded", () => {
     parseable:   { meter: document.getElementById("bParseable"),   label: document.getElementById("mParseable") },
   };
 
+    // ----- Free-usage nudge -----
+  const registerNudge = document.getElementById("registerNudge");
+  const dismissNudge  = document.getElementById("dismissNudge");
+
+  function maybeShowRegisterNudge() {
+    const used = parseInt(localStorage.getItem("analysisCount") || "0", 10);
+    const authed = (document.body.dataset.authed === "1");
+    const dismissed = localStorage.getItem("nudgeDismissed") === "1";
+    if (!authed && used >= 3 && !dismissed && registerNudge) {
+      registerNudge.style.display = "block";
+    }
+  }
+  dismissNudge?.addEventListener("click", () => {
+    localStorage.setItem("nudgeDismissed", "1");
+    registerNudge.style.display = "none";
+  });
+
   // ----- Upload controls -----
   const dropzone    = document.getElementById("dropzone");
   const fileInput   = document.getElementById("dashResumeFile");
@@ -139,7 +156,16 @@ document.addEventListener("DOMContentLoaded", () => {
     setMetric(metrics.parseable,   b.parseable === true ? 100 : (b.parseable === false ? 0 : null));
 
     const defaultView = (data.suggestions && data.suggestions.length) ? "recs" : "fixes";
-    paintPanel(defaultView, data); // default view
+    paintPanel(defaultView, data);
+
+    // show prompt if needed
+    maybeShowRegisterNudge();
+  }
+
+  // Initial paint
+  renderFromStorage();
+  maybeShowRegisterNudge();
+  
   }
 
   // ===== Dropzone / picker =====
