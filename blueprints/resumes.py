@@ -1139,6 +1139,11 @@ def resume_analysis():
 
     kw_match     = _keyword_match_to_jd(resume_text, jd_terms, roles)                  # points 0–35
     kw_points    = kw_match["score"]
+
+     # NEW: clean the keyword lists before returning
+    matched = _clean_kw_list(kw_match.get("matched", []))
+    missing = _clean_kw_list(kw_match.get("missing", []))
+  
     exp_rel      = _experience_relevance(job_desc, roles, resume_text)                 # /15
     quant        = _quant_stats(resume_text)                                           # achievements
     ach_score    = (5 if quant["pct_with_numbers"] >= 50 else int(5 * quant["pct_with_numbers"]/50)) \
@@ -1146,10 +1151,6 @@ def resume_analysis():
     edu_certs    = _education_and_certs(resume_text, jd_terms)                         # /6
     elig_loc     = _eligibility_location(resume_text)                                  # /3
     read_brief   = _readability_brevity(resume_text, level)                            # /8
-  
-    # NEW: clean the keyword lists before returning
-    matched = _clean_kw_list(kw_match.get("matched", []))
-    missing = _clean_kw_list(kw_match.get("missing", []))
 
     # ---- Penalties ----
     depth_pts, depth_reasons = _content_depth_penalty(resume_text, level)
@@ -1280,7 +1281,12 @@ Resume:
         },
         "suggestions": llm.get("suggestions", []),
         "breakdown": breakdown,
-        "keywords": {"matched": matched, "missing": missing},      # ← cleaned lists
+        # in the final response payload
+        "keywords": {
+            "matched": matched,
+            "missing": missing,
+        },
+     # ← cleaned lists
         "sections": {
             "present": [k for k, v in sec_struct["std"].items() if v],
             "missing": [k for k, v in sec_struct["std"].items() if not v]
