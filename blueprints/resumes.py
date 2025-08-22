@@ -142,7 +142,7 @@ CERT_HINTS = {"aws","amazon web services","itil","pmp","cissp","cisa","az-","ms-
 
 BULLET_MARKERS = ("•","-","–","—","*")
 
-# --- Keyword filtering (to avoid junk like 'a, in, of, led, public, private') ---
+# --- Keyword filtering (already in your file) ---
 STOPWORDS_KW = {
     "a","an","and","the","of","for","with","from","into","onto","within","across",
     "about","above","below","under","over","at","by","to","in","on","as","is","are",
@@ -152,17 +152,12 @@ STOPWORDS_KW = {
     "currently","presently","strong","solid","excellent","good","great","private",
     "public","sector","known","having","combines","background","bridge","secure"
 }
-NOISE_VERBS = {
-    # remove generic action words that shouldn't be ATS keywords
-    "led","lead","manage","managed","own","owned","coordinate","coordinated","work",
-    "worked","help","helped","assist","assisted","support","supported","drive","drove"
-}
-NOISE_NOUNS = {
-    "experience","summary","objective","profile","responsibilities","duties",
-    "team","teams","environment","company","organization","client","customers",
-    "role","position","project","projects"  # kept as noise unless paired (see bigrams)
-}
-# Whitelist hints for real skills/tools/methods/titles/domains (extend freely)
+NOISE_VERBS = {"led","lead","manage","managed","own","owned","coordinate","coordinated",
+               "work","worked","help","helped","assist","assisted","support","supported","drive","drove"}
+NOISE_NOUNS = {"experience","summary","objective","profile","responsibilities","duties",
+               "team","teams","environment","company","organization","client","customers",
+               "role","position","project","projects"}
+
 SKILL_HINTS = {
     "agile","scrum","kanban","waterfall","prince2","pmp","itil","change","risk",
     "stakeholder","stakeholders","governance","scope","budget","timeline","schedule",
@@ -175,8 +170,7 @@ TITLE_HINTS = {"project manager","delivery manager","scrum master","program mana
 DOMAIN_HINTS = {"healthcare","fintech","ecommerce","telecom","banking","government","cloud","security","cybersecurity"}
 
 def _is_acronym(w: str) -> bool:
-    """Keep ALLCAPS 2–6 letters as acronyms."""
-    return len(w) >= 2 and len(w) <= 6 and w.isupper()
+    return 2 <= len(w) <= 6 and w.isupper()
 
 # --------------------------- helpers ---------------------------
 def _clean_lines(text: str):
