@@ -1222,30 +1222,42 @@ Resume:
         "parseable":  (not hard_fail),
     }
 
-    # ----- CAP the headline so 100% only when all visible meters are 100 -----
+    # ----- CAP headline so 100% only when all bars are 100 -----
     visible = [
         breakdown["formatting"],
         breakdown["sections"],
         breakdown.get("keywords"),
         breakdown["readability"],
         breakdown["length"],
-        100 if breakdown["parseable"] else 0
+        100 if breakdown["parseable"] else 0,
     ]
     all_hundred = all((v is not None) and (int(v) >= 100) for v in visible)
     headline = score if all_hundred else min(score, 99)
+    final_score = int(headline)
 
+    # ---- diagnostics (build AFTER all components exist) ----
+    diagnostics = {
+        "achievements": quant,
+        "eligibility_location": elig_loc,
+        "education_certs": edu_certs,
+        "experience_relevance": exp_rel,
+        "keyword_distribution_ok": kw_match["distribution_ok"],
+        "keyword_components": kw_match["components"],
+        "penalties": {"points": min(20, pen_pts), "reasons": pen_reasons},
+        "roles_parsed": roles[:4],
+        "length_pages_est": read_brief["length_pages"],
+    }
+
+    # ---- single final payload ----
     out = {
-        "score": int(headline),
+        "score": final_score,
         "analysis": {
             "issues": llm.get("analysis", {}).get("issues", []),
             "strengths": llm.get("analysis", {}).get("strengths", [])
         },
         "suggestions": llm.get("suggestions", []),
         "breakdown": breakdown,
-        "keywords": {
-            "matched": kw_match.get("matched", []),
-            "missing": kw_match.get("missing", [])
-        },
+        "keywords": {"matched": kw_match["matched"], "missing": kw_match["missing"]},
         "sections": {
             "present": [k for k, v in sec_struct["std"].items() if v],
             "missing": [k for k, v in sec_struct["std"].items() if not v]
@@ -1259,53 +1271,15 @@ Resume:
         "diagnostics": diagnostics
     }
 
-    diagnostics = {
-        "achievements": quant,
-        "eligibility_location": elig_loc,
-        "education_certs": edu_certs,
-        "experience_relevance": exp_rel,
-        "keyword_distribution_ok": kw_match["distribution_ok"],
-        "keyword_components": kw_match["components"],
-        "penalties": {"points": min(20, pen_pts), "reasons": pen_reasons},
-        "roles_parsed": roles[:4],
-        "length_pages_est": read_brief["length_pages"]
-    }
-
-    out = {
-        "score": int(score),
-        "analysis": {
-            "issues": llm.get("analysis",{}).get("issues", []),
-            "strengths": llm.get("analysis",{}).get("strengths", [])
-        },
-        "suggestions": llm.get("suggestions", []),
-        "breakdown": breakdown,
-        "keywords": {"matched": kw_match["matched"], "missing": kw_match["missing"]},
-        "sections": {
-            "present": [k for k,v in sec_struct["std"].items() if v],
-            "missing": [k for k,v in sec_struct["std"].items() if not v]
-        },
-        "writing": {
-            "readability": llm.get("writing",{}).get("readability",""),
-            "repetition": llm.get("writing",{}).get("repetition", []),
-            "grammar": llm.get("writing",{}).get("grammar", [])
-        },
-        "relevance": llm.get("relevance", {}),
-        "diagnostics": diagnostics
-    }
-
-    # Concrete fixes
-    # Add automatic, concrete fixes based on structure
+    # append your rule-based fixes
     fixes = []
     if not sec_struct["std"]["experience"]:
-      fixes.append("Add a Work Experience section (titles like “Experience” or “Relevant Experience” are fine).")
+        fixes.append("Add a Work Experience section (titles like “Experience” or “Relevant Experience” are fine).")
     elif not sec_struct["reverse_chrono"]:
-      fixes.append("Ensure roles are in reverse-chronological order (most recent first) with Month YYYY dates.")
-
-    # keep your existing fixes after these, e.g. length/keywords/metrics, etc.
+        fixes.append("Ensure roles are in reverse-chronological order (most recent first) with Month YYYY dates.")
     if breakdown.get("length", 100) < 70:
-      fixes.append("Expand to 1–2 pages with impact bullets (8–20 words each).")
-    # ... any other existing fix rules ...
-
+        fixes.append("Expand to 1–2 pages with impact bullets (8–20 words each).")
     out["analysis"]["issues"] = (out["analysis"]["issues"] or []) + fixes
 
     return jsonify(out), 200
+
