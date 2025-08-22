@@ -142,7 +142,7 @@ CERT_HINTS = {"aws","amazon web services","itil","pmp","cissp","cisa","az-","ms-
 
 BULLET_MARKERS = ("•","-","–","—","*")
 
-# --- Keyword filtering (already in your file) ---
+# --- Keyword filtering & hints ----------------------------------------------
 STOPWORDS_KW = {
     "a","an","and","the","of","for","with","from","into","onto","within","across",
     "about","above","below","under","over","at","by","to","in","on","as","is","are",
@@ -152,11 +152,15 @@ STOPWORDS_KW = {
     "currently","presently","strong","solid","excellent","good","great","private",
     "public","sector","known","having","combines","background","bridge","secure"
 }
-NOISE_VERBS = {"led","lead","manage","managed","own","owned","coordinate","coordinated",
-               "work","worked","help","helped","assist","assisted","support","supported","drive","drove"}
-NOISE_NOUNS = {"experience","summary","objective","profile","responsibilities","duties",
-               "team","teams","environment","company","organization","client","customers",
-               "role","position","project","projects"}
+NOISE_VERBS = {
+    "led","lead","manage","managed","own","owned","coordinate","coordinated","work",
+    "worked","help","helped","assist","assisted","support","supported","drive","drove"
+}
+NOISE_NOUNS = {
+    "experience","summary","objective","profile","responsibilities","duties",
+    "team","teams","environment","company","organization","client","customers",
+    "role","position","project","projects"
+}
 
 SKILL_HINTS = {
     "agile","scrum","kanban","waterfall","prince2","pmp","itil","change","risk",
@@ -166,11 +170,74 @@ SKILL_HINTS = {
     "jira","confluence","microsoft project","ms project","azure devops","power bi",
     "excel","visio","sharepoint","service now","servicenow","sql","api","sd lc","sdlc"
 }
-TITLE_HINTS = {"project manager","delivery manager","scrum master","program manager"}
+TITLE_HINTS  = {"project manager","delivery manager","scrum master","program manager"}
 DOMAIN_HINTS = {"healthcare","fintech","ecommerce","telecom","banking","government","cloud","security","cybersecurity"}
 
 def _is_acronym(w: str) -> bool:
-    return 2 <= len(w) <= 6 and w.isupper()
+    return len(w) >= 2 and len(w) <= 6 and w.isupper()
+
+def _build_jd_terms(jd: str):
+    """
+    Extract meaningful JD terms:
+    - remove stopwords/boilerplate/generic verbs
+    - keep skills/tools/methods/titles/certs/domains (+ acronyms)
+    - include useful bigrams/trigrams (e.g., 'risk register', 'ms project')
+    """
+    if not jd:
+        return {"skills": [], "titles": [], "certs": [], "all": [], "acronyms": {}}
+
+    words = re.findall(r"[A-Za-z][A-Za-z+\-/#0-9]*", jd)
+    toks  = [w.lower() for w in words]
+
+    bigrams  = [" ".join([toks[i], toks[i+1]]) for i in range(len(toks)-1)]
+    trigrams = [" ".join([toks[i], toks[i+1], toks[i+2]]) for i in range(len(toks)-2)]
+
+    singles = [
+        t for t in toks
+        if (_is_acronym(words[toks.index(t)]) or len(t) >= 3)
+        and t not in STOPWORDS_KW
+        and t not in NOISE_VERBS
+        and t not in NOISE_NOUNS
+    ]
+
+    def looks_useful_phrase(p: str) -> bool:
+        if any(h in p for h in (SKILL_HINTS | TITLE_HINTS | DOMAIN_HINTS)):
+            return True
+        if any(c in p for c in CERT_HINTS):
+            return True
+        if any(t in p for t in TITLE_HINTS):
+            return True
+        return False
+
+    phrases = [p for p in (bigrams + trigrams) if looks_useful_phrase(p)]
+
+    acronyms = {
+        "aws": "amazon web services",
+        "ad": "active directory",
+        "sql": "structured query language",
+        "k8s": "kubernetes",
+        "mdm": "mobile device management",
+        "sso": "single sign on",
+        "u at": "user acceptance testing",
+        "sd lc": "software development life cycle"
+    }
+
+    expanded = set(singles) | set(phrases)
+    for a, full in acronyms.items():
+        if a in expanded:   expanded.add(full)
+        if full in expanded: expanded.add(a)
+
+    certs  = sorted({w for w in expanded if any(c in w for c in CERT_HINTS)})
+    titles = sorted({w for w in expanded if any(t in w for t in TITLE_HINTS)})
+    skills = sorted({
+        w for w in expanded
+        if w not in set(certs) | set(titles)
+        and (any(h in w for h in (SKILL_HINTS | DOMAIN_HINTS))
+             or _is_acronym(w.replace(" ", "").upper()))
+    })
+
+    all_terms = sorted(set(skills) | set(titles) | set(certs), key=lambda x: (-len(x), x))
+    return {"skills": skills, "titles": titles, "certs": certs, "all": all_terms, "acronyms": acronyms}
 
 # --------------------------- helpers ---------------------------
 def _clean_lines(text: str):
