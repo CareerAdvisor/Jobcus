@@ -1224,16 +1224,18 @@ Resume:
 
     # ----- CAP headline so 100% only when all bars are 100 -----
     visible = [
-        breakdown["formatting"],
-        breakdown["sections"],
-        breakdown.get("keywords"),
-        breakdown["readability"],
-        breakdown["length"],
+        int(breakdown["formatting"]),
+        int(breakdown["sections"]),
+        int(breakdown.get("keywords", 0)),
+        int(breakdown["readability"]),
+        int(breakdown["length"]),
         100 if breakdown["parseable"] else 0,
     ]
-    all_hundred = all((v is not None) and (int(v) >= 100) for v in visible)
-    headline = score if all_hundred else min(score, 99)
-    final_score = int(headline)
+    avg_visible = int(round(sum(visible) / len(visible)))
+    all_hundred = all(v >= 100 for v in visible)
+
+    # Ring respects bars; still allows model score to matter but never exceed the average
+    headline = score if all_hundred else min(score, avg_visible)
 
     # ---- diagnostics (build AFTER all components exist) ----
     diagnostics = {
