@@ -39,26 +39,12 @@
 
       <label class="field">
         <span class="field__label center">Or pick a target role to assess relevance</span>
-        <select id="dashRoleSelect" class="select">
-          <option value="">— Choose a role (optional) —</option>
-          <option>IT Support Specialist</option>
-          <option>Technical Support Engineer</option>
-          <option>Systems Administrator</option>
-          <option>Service Desk Analyst</option>
-          <option>Network Engineer</option>
-          <option>Product Manager</option>
-          <option>Data Analyst</option>
-          <option>Software Engineer</option>
-          <option>Project Manager</option>
-          <option>Care Assistant</option>
-          <option>Support Worker</option>
-          <option>Accountant</option>
-          <option>Quality Assurance</option>
-          <option>Tester</option>
-          <option>Graphic Designer</option>
-          <option>UI/UX Designer</option>
-          <option>Scrum Master</option>
-        </select>
+      
+        <input id="dashRoleSelect" class="select"
+               list="roleList"
+               placeholder="Start typing a role (e.g., Business Analyst, Azure Architect, Animator)…" />
+      
+        <datalist id="roleList"></datalist>
       </label>
 
       <div class="actions">
