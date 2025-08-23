@@ -1,6 +1,5 @@
 <!-- static/js/resume-analyzer.js -->
 <!-- keep this as the only script the page loads -->
-<script>
 // Keep cookies for SameSite/Lax
 ;(function(){
   const _fetch = window.fetch.bind(window);
@@ -217,4 +216,3 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = "/cover-letter";
   });
 })();
-</script>
