@@ -296,9 +296,9 @@ def job_insights():
 def employers():
     return render_template("employers.html")
 
-@app.route("/price")
-def price():
-    return render_template("price.html")
+@app.route("/pricing")
+def pricing():
+    return render_template("pricing.html")
 
 @app.route("/faq")
 def faq():
