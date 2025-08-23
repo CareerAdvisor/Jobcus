@@ -2,73 +2,106 @@
 
 {% block title %}Resume Analyzer – Jobcus{% endblock %}
 
+{# Reuse the dashboard styles so the upload card/dropzone matches exactly #}
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
 {% block content %}
+<main class="res-page">
 
-<main class="res-page"> 
-<!-- Hero -->
-<div class="interview-container" style="padding:20px 16px;width:100%;background:#104879;">
-  <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
-    <h5 style="color:#ffc957;font-weight:600;font-size:14px;letter-spacing:1px;">AI RESUME ANALYZER</h5>
-    <h1 style="font-size:28px;font-weight:700;color:#fff;margin:10px 0;">
-      Improve your <span style="color:#ffc957;">resume</span> with instant feedback
-    </h1>
-    <p style="max-width:420px;color:#fff;font-size:16px;margin:10px 0 10px;">
-      Get a score, keyword insights and actionable suggestions.
-    </p>
-  </section>
-</div>
-
-<section id="resume-analyzer" style="padding:30px 16px; background:#f9fafb;">
-  <div style="max-width:880px;margin:0 auto;">
-    <h2 style="color:#104879;margin:0 0 10px;">AI Resume Analyzer</h2>
-    <p style="color:#555;margin:0 0 16px;">
-      Upload a PDF/DOCX and (optionally) add a job description. We’ll show your results on the dashboard.
-    </p>
-    
-    <!-- **REPLACE WITH THIS CARD** -->
-    <section class="card">
-      <h2>AI Resume Analyzer</h2>
-
-        <input id="dashResumeFile" type="file" hidden
-               accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
-      </div>
-      <p id="fileName" class="muted" style="margin:.5rem 0 1rem;"></p>
-
-      <label class="muted">Job description (optional)</label>
-      <textarea id="dashJobDesc" rows="4" placeholder="Paste the job description here…"></textarea>
-
-      <label class="muted">Target role (optional)</label>
-      <select id="dashRoleSelect">
-        <option value="">— Select a role —</option>
-        <option>Project Manager</option>
-        <option>IT Support Specialist</option>
-        <option>Business Analyst</option>
-        <!-- … -->
-      </select>
-
-      <div style="display:flex;gap:.75rem;align-items:center;margin-top:1rem">
-        <button id="dashAnalyzeBtn" class="btn btn-primary" disabled>Analyze</button>
-        <span id="dashAnalyzing" class="muted" style="display:none">Analyzing…</span>
-      </div>
+  <!-- Hero -->
+  <div class="interview-container" style="padding:20px 16px;width:100%;background:#104879;">
+    <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+      <h5 style="color:#ffc957;font-weight:600;font-size:14px;letter-spacing:1px;">AI RESUME ANALYZER</h5>
+      <h1 style="font-size:28px;font-weight:700;color:#fff;margin:10px 0;">
+        Improve your <span style="color:#ffc957;">resume</span> with instant feedback
+      </h1>
+      <p style="max-width:420px;color:#fff;font-size:16px;margin:10px 0 10px;">
+        Get a score, keyword insights and actionable suggestions.
+      </p>
     </section>
-    <!-- **END REPLACEMENT** -->
- </div>
-</section>
+  </div>
 
-  <!-- Cover Letter button (navigates to another page) -->
-  <a href="/cover-letter" class="primary-btn"
-   style="background:#ffc957;color:#104879;padding:12px 16px;
-          border-radius:6px;text-decoration:none;font-weight:600;
-          font-size:16px;display:inline-block; align-items:center;text-align:center;">
-  ➜ Create Cover Letter
-  <small style="display:block;font-weight:400;font-size:14px;color:#104879; align-items:center;text-align:center;">
-    Opens cover letter page
-  </small>
-</a>
+  <!-- Analyzer (uses the same markup/IDs as the dashboard upload card) -->
+  <section id="resume-analyzer" style="padding:30px 16px; background:#f9fafb;">
+    <div style="max-width:880px;margin:0 auto;">
+      <h2 style="color:#104879;margin:0 0 10px;">AI Resume Analyzer</h2>
+      <p style="color:#555;margin:0 0 16px;">
+        Upload a PDF/DOCX and (optionally) add a job description. We’ll show your results on the dashboard.
+      </p>
+
+      <!-- Upload card (identical to dashboard) -->
+      <article class="card upload-card">
+        <h3 class="upload-title">Upload a PDF/DOCX. Optionally add a job description to check keyword match.</h3>
+
+        <div id="dropzone" class="dropzone" role="button" tabindex="0"
+             aria-label="Browse files, drag and drop files here">
+          <div class="dropzone__cloud" aria-hidden="true"></div>
+          <div class="dropzone__title">Browse Files</div>
+          <div class="dropzone__hint">Drag and drop files here</div>
+          <input id="dashResumeFile" type="file"
+                 accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                 hidden>
+        </div>
+        <div id="fileName" class="file-name" aria-live="polite"></div>
+
+        <label class="field">
+          <span class="field__label sr-only">Job description (optional)</span>
+          <textarea id="dashJobDesc" class="textarea"
+                    placeholder="Optional: paste job description to check keywords…"></textarea>
+        </label>
+
+        <label class="field">
+          <span class="field__label center">Or pick a target role to assess relevance</span>
+          <select id="dashRoleSelect" class="select">
+            <option value="">— Choose a role (optional) —</option>
+            <option>IT Support Specialist</option>
+            <option>Technical Support Engineer</option>
+            <option>Systems Administrator</option>
+            <option>Service Desk Analyst</option>
+            <option>Network Engineer</option>
+            <option>Product Manager</option>
+            <option>Data Analyst</option>
+            <option>Software Engineer</option>
+            <option>Project Manager</option>
+            <option>Care Assistant</option>
+            <option>Support Worker</option>
+            <option>Accountant</option>
+            <option>Quality Assurance</option>
+            <option>Tester</option>
+            <option>Graphic Designer</option>
+            <option>UI/UX Designer</option>
+            <option>Scrum Master</option>
+          </select>
+        </label>
+
+        <div class="actions">
+          <button id="dashAnalyzeBtn" class="btn btn-primary" disabled>Analyze resume</button>
+          <span id="dashAnalyzing" class="loading" style="display:none;">Analyzing…</span>
+        </div>
+
+        <p class="help">We’ll store your latest result on this device for quick access.</p>
+      </article>
+
+      <!-- Centered Cover Letter CTA -->
+      <div style="text-align:center; margin-top:24px;">
+        <a href="/cover-letter" class="primary-btn"
+           style="background:#ffc957;color:#104879;padding:12px 16px;border-radius:6px;
+                  text-decoration:none;font-weight:600;font-size:16px;display:inline-block;">
+          ➜ Create Cover Letter
+          <small style="display:block;font-weight:400;font-size:14px;color:#104879;">
+            Opens cover letter page
+          </small>
+        </a>
+      </div>
+    </div>
+  </section>
 
 </main>
 {% endblock %}
 
 {% block scripts %}
+  {# This script should be your consolidated one that detects these IDs and redirects to /dashboard after analysis #}
   <script defer src="{{ url_for('static', filename='js/resume-analyzer.js') }}"></script>
 {% endblock %}
