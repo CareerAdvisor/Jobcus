@@ -3,163 +3,153 @@
 {% block title %}Pricing – Jobcus{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pricing.css') }}">
+<style>
+/* ——— Layout ——— */
+.pricing-wrap{max-width:1100px;margin:0 auto;padding:28px 16px}
+.pricing-head{text-align:center;margin-bottom:18px}
+.pricing-head h1{color:#104879;font-size:34px;margin:0 0 6px}
+.pricing-head p{color:#475569;margin:0}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px;margin-top:14px}
+
+/* ——— Card ——— */
+.plan{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;display:flex;flex-direction:column;position:relative;box-shadow:0 2px 10px rgba(16,72,121,.06)}
+.plan--popular{border-color:#ffd166;box-shadow:0 6px 18px rgba(255,209,102,.25)}
+.ribbon{position:absolute;top:-10px;right:16px;background:#ffd166;color:#104879;padding:6px 10px;border-radius:10px;font-weight:700;font-size:12px}
+.plan__head{text-align:center;margin-bottom:10px}
+.plan__name{margin:0;color:#0f172a;font-size:20px}
+.plan__price{display:flex;justify-content:center;align-items:baseline;gap:4px;margin:6px 0}
+.price__amt{font-size:34px;font-weight:800;color:#104879}
+.price__per{color:#475569;font-size:14px}
+.plan__tag{color:#6b7280;font-size:13px;margin:4px 0 0}
+
+/* ——— Features ——— */
+.plan__list{list-style:none;margin:12px 0 16px;padding:0;display:grid;gap:8px}
+.plan__list li{position:relative;padding-left:24px;color:#1f2937;line-height:1.35}
+.plan__list li::before{
+  content:"";width:14px;height:14px;border-radius:50%;background:#16a34a;position:absolute;left:0;top:2px;
+  mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>') no-repeat center/contain
+}
+.plan__foot{margin-top:auto}
+.btn{display:block;text-align:center;padding:10px 14px;border-radius:10px;font-weight:700;text-decoration:none}
+.btn-primary{background:#104879;color:#fff}
+.btn-outline{background:#fff;color:#104879;border:2px solid #104879}
+.btn:hover{opacity:.95}
+.w-full{width:100%}
+
+/* ——— Fine print ——— */
+.pricing-fine{margin-top:14px;text-align:center;color:#6b7280;font-size:12px}
+</style>
 {% endblock %}
 
 {% block content %}
-<section class="pricing">
-  <h1 class="pricing__title">Choose your plan</h1>
-  <p class="pricing__sub">Switch anytime. No hidden fees.</p>
+<section class="pricing-wrap">
+  <header class="pricing-head">
+    <h1>Simple pricing for job seekers</h1>
+    <p>Start free. Upgrade when you need the AI chat & advanced tools.</p>
+  </header>
 
   <div class="plans">
+
     <!-- Free -->
-    <article class="plan-card" data-plan="free">
-      <header class="plan-card__head">
-        <h2 class="plan-card__name">Free</h2>
-        <div class="plan-card__price">
-          <span class="price__amount">$0</span><span class="price__per">/mo</span>
-        </div>
-        <p class="plan-card__tagline">Great for a quick check</p>
+    <article class="plan" data-plan="free">
+      <header class="plan__head">
+        <h2 class="plan__name">Free</h2>
+        <div class="plan__price"><span class="price__amt">$0</span><span class="price__per">/mo</span></div>
+        <p class="plan__tag">Great for a quick check</p>
       </header>
-
-      <ul class="plan-card__features">
-        <li><strong>3</strong> resume analyses / month</li>
+      <ul class="plan__list">
+        <li><strong>3</strong> resume analyses / month (basic score + tips)</li>
         <li><strong>2</strong> cover letters / month</li>
-        <li>Scorecard + formatting + readability</li>
-        <li>Basic ATS keyword suggestions</li>
-        <li>Store latest result on this device</li>
+        <li>AI Resume Builder (basic templates)</li>
+        <li>Skill Gap snapshot (1 basic assessment)</li>
+        <li>AI Chat trial: <strong>15 messages</strong> total</li>
+        <li>Local device history</li>
       </ul>
-
-      <footer class="plan-card__foot">
+      <footer class="plan__foot">
         <a class="btn btn-outline w-full" href="/subscribe?plan=free">Continue Free</a>
       </footer>
     </article>
 
-    <!-- Standard (Most Popular) -->
-    <article class="plan-card plan-card--popular" data-plan="standard" aria-label="Standard plan, most popular">
-      <div class="ribbon" aria-hidden="true">Most Popular</div>
-      <header class="plan-card__head">
-        <h2 class="plan-card__name">Standard</h2>
-        <div class="plan-card__price">
-          <span class="price__amount">$9</span><span class="price__per">/mo</span>
-        </div>
-        <p class="plan-card__tagline">Serious applications, smarter tools</p>
+    <!-- Weekly Pass -->
+    <article class="plan" data-plan="weekly">
+      <header class="plan__head">
+        <h2 class="plan__name">Weekly Pass</h2>
+        <div class="plan__price"><span class="price__amt">$9.99</span><span class="price__per">/week</span></div>
+        <p class="plan__tag">For urgent applications</p>
       </header>
+      <ul class="plan__list">
+        <li>AI Chat credits: <strong>200 messages</strong> / week</li>
+        <li><strong>10</strong> resume analyses / week</li>
+        <li><strong>5</strong> AI cover letters / week</li>
+        <li>“Rebuild with AI” for resumes</li>
+        <li>Email support</li>
+      </ul>
+      <footer class="plan__foot">
+        <a class="btn btn-primary w-full" href="/subscribe?plan=weekly">Get Weekly Pass</a>
+      </footer>
+    </article>
 
-      <ul class="plan-card__features">
-        <li><strong>50</strong> resume analyses / month</li>
-        <li><strong>10</strong> cover letters / month</li>
-        <li>AI Optimize + <em>Rebuild with AI</em></li>
-        <li>Deep ATS keywords &amp; relevance</li>
+    <!-- Standard (Monthly) -->
+    <article class="plan plan--popular" data-plan="standard">
+      <div class="ribbon" aria-hidden="true">Most Popular</div>
+      <header class="plan__head">
+        <h2 class="plan__name">Standard</h2>
+        <div class="plan__price"><span class="price__amt">$24.99</span><span class="price__per">/mo</span></div>
+        <p class="plan__tag">Serious applications, smarter tools</p>
+      </header>
+      <ul class="plan__list">
+        <li>AI Chat credits: <strong>800 messages</strong> / month</li>
+        <li><strong>50</strong> resume analyses / month (deep ATS + JD match)</li>
+        <li><strong>20</strong> AI cover letters / month</li>
+        <li>Interview Coach sessions</li>
         <li>Download optimized PDF / DOCX / TXT</li>
         <li>Save history across devices</li>
         <li>Email support</li>
       </ul>
-
-      <footer class="plan-card__foot">
+      <footer class="plan__foot">
         <a class="btn btn-primary w-full" href="/subscribe?plan=standard">Get Standard</a>
       </footer>
     </article>
 
-    <!-- Premium -->
-    <article class="plan-card" data-plan="premium">
-      <header class="plan-card__head">
-        <h2 class="plan-card__name">Premium</h2>
-        <div class="plan-card__price">
-          <span class="price__amount">$19</span><span class="price__per">/mo</span>
-        </div>
-        <p class="plan-card__tagline">For power users &amp; heavy applicants</p>
+    <!-- Premium (Yearly best value) -->
+    <article class="plan" data-plan="premium">
+      <header class="plan__head">
+        <h2 class="plan__name">Premium</h2>
+        <div class="plan__price"><span class="price__amt">$199</span><span class="price__per">/yr</span></div>
+        <p class="plan__tag">Best value for ongoing career growth</p>
       </header>
-
-      <ul class="plan-card__features">
+      <ul class="plan__list">
+        <li>AI Chat credits: <strong>12,000 messages</strong> / year (~1,000 / mo)</li>
         <li><strong>Unlimited*</strong> resume analyses (fair use)</li>
-        <li><strong>Unlimited</strong> cover letters</li>
-        <li>Everything in Standard</li>
-        <li>Multi-resume versions &amp; template pack</li>
-        <li>Priority support</li>
+        <li><strong>Unlimited</strong> AI cover letters (fair use)</li>
+        <li>All Standard features + multi-resume versions & template pack</li>
+        <li>Priority support & early access to new AI tools</li>
       </ul>
-
-      <footer class="plan-card__foot">
+      <footer class="plan__foot">
         <a class="btn btn-primary w-full" href="/subscribe?plan=premium">Get Premium</a>
       </footer>
     </article>
+
   </div>
 
-  <p class="pricing__fine">* “Unlimited” is subject to fair use to prevent abuse.</p>
+  <p class="pricing-fine">
+    * “Unlimited” is governed by fair-use limits to prevent abuse. AI Chat credits are per user; a “message” counts each user prompt.
+    Jobcus uses AI—responses may include mistakes.
+  </p>
 </section>
-
-<section class="compare">
-  <h2>Compare features</h2>
-  <div class="table-wrap" role="table" aria-label="Feature comparison">
-    <div class="t-row t-head" role="row">
-      <div class="t-cell"></div>
-      <div class="t-cell">Free</div>
-      <div class="t-cell">Standard</div>
-      <div class="t-cell">Premium</div>
-    </div>
-
-    <div class="t-row" role="row">
-      <div class="t-cell">Resume analyses</div>
-      <div class="t-cell">3 / mo</div>
-      <div class="t-cell">50 / mo</div>
-      <div class="t-cell">Unlimited*</div>
-    </div>
-    <div class="t-row" role="row">
-      <div class="t-cell">Scorecard (format/sections/readability)</div>
-      <div class="t-cell">✓</div>
-      <div class="t-cell">✓</div>
-      <div class="t-cell">✓</div>
-    </div>
-    <div class="t-row" role="row">
-      <div class="t-cell">ATS keyword deep dive</div>
-      <div class="t-cell">Basic</div>
-      <div class="t-cell">Advanced</div>
-      <div class="t-cell">Advanced + priority</div>
-    </div>
-    <div class="t-row" role="row">
-      <div class="t-cell">AI Optimize & Rebuild with AI</div>
-      <div class="t-cell">—</div>
-      <div class="t-cell">✓</div>
-      <div class="t-cell">✓</div>
-    </div>
-    <div class="t-row" role="row">
-      <div class="t-cell">Cover letters</div>
-      <div class="t-cell">2 / mo</div>
-      <div class="t-cell">10 / mo</div>
-      <div class="t-cell">Unlimited</div>
-    </div>
-    <div class="t-row" role="row">
-      <div class="t-cell">Download optimized files</div>
-      <div class="t-cell">—</div>
-      <div class="t-cell">PDF/DOCX/TXT</div>
-      <div class="t-cell">PDF/DOCX/TXT</div>
-    </div>
-    <div class="t-row" role="row">
-      <div class="t-cell">Support</div>
-      <div class="t-cell">Community</div>
-      <div class="t-cell">Email</div>
-      <div class="t-cell">Priority</div>
-    </div>
-  </div>
-  <p class="fine">* “Unlimited” is subject to fair-use to keep the service fast for everyone.</p>
-</section>
-
-<!-- Modal: shows unlocked features before continuing -->
-<div id="planModal" class="plan-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="planModalTitle" aria-modal="true">
-  <div class="plan-modal__inner">
-    <button class="plan-modal__close" id="planModalClose" aria-label="Close">×</button>
-    <h3 id="planModalTitle">You’re choosing <span id="modalPlanName">—</span></h3>
-    <p class="muted">Here’s what you’ll unlock:</p>
-    <ul id="planModalFeatures" class="modal-features"></ul>
-
-    <div class="modal-actions">
-      <button id="planContinueBtn" class="btn btn-primary">Continue</button>
-      <button id="planCancelBtn" class="btn btn-outline">Cancel</button>
-    </div>
-  </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
-<script defer src="{{ url_for('static', filename='js/pricing.js') }}"></script>
+<script>
+/* Optional: mark current selection locally (replace with real checkout later) */
+document.querySelectorAll('.plan [href*="/subscribe"]').forEach(a=>{
+  a.addEventListener('click', (e)=>{
+    try{
+      const url = new URL(a.href, window.location.origin);
+      const plan = url.searchParams.get('plan');
+      localStorage.setItem('intendedPlan', plan || '');
+    }catch(_){} // ignore
+  });
+});
+</script>
 {% endblock %}
