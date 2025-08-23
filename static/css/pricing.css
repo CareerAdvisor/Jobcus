@@ -83,15 +83,17 @@
 
 /* --- HERO: stack title + subheader inside one bar --- */
 .pricing-head{
-  /* give the bar room so the subheader isn't clipped */
-  display:flex;
+  display:flex;                /* stack the two lines */
   flex-direction:column;
-  align-items:center;
-  gap:6px;
-  padding:16px 18px;
-  background:#fff;
+  align-items:center;          /* center horizontally */
+  justify-content:center;      /* center vertically */
+  gap:6px;                     /* space between lines */
+  padding:18px 20px;           /* inner space */
+  min-height:110px;            /* increase height of the bar */
+  background:#fff;             /* visible container */
   border:1px solid #e5e7eb;
   border-radius:12px;
+  box-shadow:0 2px 10px rgba(16,72,121,.06);
 }
 
 /* --- PLAN CARD HEADERS: always stack, not side-by-side --- */
@@ -124,3 +126,15 @@
 /* if you use the centered “Most Popular” badge, keep space for it */
 .plan--popular .plan__head{ padding-top:22px; }
 .plan__badge{ top:-14px; }   /* keep your existing badge placement */
+
+.pricing-head h1{
+  margin:0;
+  line-height:1.15;
+}
+
+.pricing-head p{
+  margin:0;
+  line-height:1.4;
+  max-width:900px;             /* keep the subhead from stretching too wide */
+  text-align:center;
+}
