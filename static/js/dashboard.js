@@ -94,10 +94,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // ----- Optimize controls -----
   const optNav      = document.querySelector(".opt-nav");
   const optPanel    = document.getElementById("optPanel");
-  const optimizeBtn = document.getElementById("optimize-btn");
-  const loadingEl   = document.getElementById("optimized-loading");
-  const outputEl    = document.getElementById("optimized-output");
-  const downloadsEl = document.getElementById("optimized-downloads");
 
   // ----- “Analyze updated resume” pressed state + jump -----
   const openReBtn = document.getElementById("openReanalyze");
