@@ -1,0 +1,63 @@
+.pricing-hero {
+  text-align:center;
+  padding:40px 16px;
+}
+.pricing-hero h1 { color:#104879; font-size:32px; margin:0 0 8px; }
+.pricing-hero p { color:#444; margin:0; }
+
+.pricing-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+  gap:16px;
+  max-width:1100px;
+  margin:20px auto;
+  padding:0 16px;
+}
+.plan-card {
+  background:#fff;
+  border:1px solid #e6e6e6;
+  border-radius:12px;
+  padding:18px;
+  position:relative;
+}
+.plan-card .badge {
+  position:absolute; top:-10px; right:-10px;
+  background:#ffc957; color:#104879; font-weight:700; font-size:12px;
+  padding:6px 10px; border-radius:999px;
+}
+.plan-card.highlight { box-shadow: 0 8px 24px rgba(0,0,0,.06); border-color:#ffd98a; }
+.plan-head h3 { margin:0 0 6px; color:#104879; }
+.plan-head .price { display:flex; align-items:baseline; gap:4px; }
+.plan-head .amount { font-size:28px; font-weight:800; color:#104879; }
+.plan-head .period { color:#666; }
+.plan-head .tagline { margin:6px 0 0; color:#555; }
+.features { margin:14px 0 0; padding-left:18px; color:#333; }
+.plan-cta { margin-top:14px; }
+
+.compare {
+  max-width:1100px; margin:30px auto 50px; padding:0 16px;
+}
+.compare h2 { color:#104879; text-align:center; margin-bottom:16px; }
+.table-wrap { display:grid; gap:6px; }
+.t-row { display:grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap:6px; }
+.t-head { font-weight:700; color:#104879; }
+.t-cell { background:#fff; border:1px solid #e6e6e6; border-radius:8px; padding:10px; }
+
+.fine { color:#666; font-size:12px; text-align:center; margin-top:10px; }
+
+.plan-modal {
+  position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.4); z-index:1000;
+}
+.plan-modal[hidden]{ display:none; }
+.plan-modal__inner {
+  background:#fff; max-width:520px; width:92%; border-radius:12px; padding:18px; position:relative;
+}
+.plan-modal__close {
+  position:absolute; top:8px; right:10px; border:none; background:transparent; font-size:24px; cursor:pointer;
+}
+.modal-features { margin:10px 0 16px; padding-left:18px; color:#333; }
+.modal-actions { display:flex; gap:.5rem; }
+.muted { color:#666; font-size:14px; }
+.btn { cursor:pointer; }
+.btn-outline { background:#fff; border:1px solid #ccc; }
