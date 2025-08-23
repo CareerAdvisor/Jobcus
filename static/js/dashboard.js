@@ -198,6 +198,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial paint
   renderFromStorage();
   maybeShowRegisterNudge();
+
+  // Copy recommendations to clipboard
+  document.getElementById("copy-recs-btn")?.addEventListener("click", async () => {
+    try {
+      const data = JSON.parse(localStorage.getItem("resumeAnalysis") || "{}");
+      const list = Array.isArray(data.suggestions) ? data.suggestions : [];
+      const text = list.length ? ("• " + list.join("\n• ")) : "No recommendations available yet.";
+      await navigator.clipboard.writeText(text);
+      alert("Recommendations copied to clipboard.");
+    } catch (e) {
+      console.error(e);
+      alert("Couldn't copy recommendations.");
+    }
+  });
   
   // ===== Dropzone / picker =====
   function openPicker(){ fileInput?.click(); }
