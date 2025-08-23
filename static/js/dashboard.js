@@ -386,39 +386,6 @@ document.addEventListener("DOMContentLoaded", () => {
     paintPanel(btn.dataset.view, data);
   });
 
-  // ===== Optimize action =====
-  optimizeBtn?.addEventListener("click", async () => {
-    loadingEl.style.display = "block";      // only after click
-    outputEl.style.display  = "none";
-    downloadsEl && (downloadsEl.style.display = "none");
-
-    const b64 = localStorage.getItem("resumeBase64");
-    if (!b64) {
-      loadingEl.style.display = "none";
-      alert("Missing your original resume file. Upload and analyze again first.");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/optimize-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pdf: b64 })
-      });
-      const js = await res.json();
-      if (!res.ok || js.error) throw new Error(js.error || res.statusText);
-
-      loadingEl.style.display = "none";
-      outputEl.textContent = js.optimized || "";
-      outputEl.style.display = "block";
-      downloadsEl && (downloadsEl.style.display = "flex");
-    } catch (err) {
-      console.error(err);
-      loadingEl.style.display = "none";
-      alert("Failed to optimize resume. Try again.");
-    }
-  });
-
   // Initial paint
   renderFromStorage();
 });
