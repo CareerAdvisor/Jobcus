@@ -59,3 +59,25 @@
   .plan__head{grid-template-columns:1fr;align-items:start}
   .plan__tagline{text-align:left;max-width:none}
 }
+
+/* === Compatibility layer for older pricing.html markup === */
+
+/* Old header pieces */
+.plan__name{ margin:0; font-size:20px; font-weight:800; color:#0f355e; }
+.plan__price{ display:flex; align-items:baseline; gap:6px; margin:6px 0; }
+.plan__price .price__amt{ font-size:34px; font-weight:800; color:#104879; }
+.plan__price .price__per{ font-size:14px; color:#6b7280; }
+.plan__tag{ margin:0; color:#64748b; font-size:14px; }
+
+/* Old “ribbon” badge name */
+.ribbon{
+  position:absolute; top:-14px; right:16px;
+  background:#ffda77; color:#0f355e; font-weight:700; font-size:12px;
+  padding:6px 10px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+
+/* Make sure cards behave like equal-height grid items */
+.plans{ display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:18px; }
+.plan{ display:flex; flex-direction:column; }
+.plan__foot{ margin-top:auto; }
+
