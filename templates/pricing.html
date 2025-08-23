@@ -7,79 +7,85 @@
 {% endblock %}
 
 {% block content %}
-<section class="pricing-hero">
-  <h1>Pick the plan that fits your job hunt</h1>
-  <p>Start free. Upgrade anytime.</p>
-</section>
+<section class="pricing">
+  <h1 class="pricing__title">Choose your plan</h1>
+  <p class="pricing__sub">Switch anytime. No hidden fees.</p>
 
-<section class="pricing-grid">
-  <!-- Free -->
-  <article class="plan-card" data-plan="free">
-    <header class="plan-head">
-      <h3>Free</h3>
-      <div class="price">
-        <span class="amount">$0</span><span class="period">/mo</span>
-      </div>
-      <p class="tagline">Great for a quick check</p>
-    </header>
-    <ul class="features">
-      <li>3 resume analyses / month</li>
-      <li>Scorecard + formatting + readability</li>
-      <li>Basic ATS keyword suggestions</li>
-      <li>2 cover letters / month</li>
-      <li>Store latest result on this device</li>
-    </ul>
-    <footer class="plan-cta">
-      <button class="btn btn-primary select-plan" data-plan="free">Continue Free</button>
-    </footer>
-  </article>
+  <div class="plans">
+    <!-- Free -->
+    <article class="plan-card" data-plan="free">
+      <header class="plan-card__head">
+        <h2 class="plan-card__name">Free</h2>
+        <div class="plan-card__price">
+          <span class="price__amount">$0</span><span class="price__per">/mo</span>
+        </div>
+        <p class="plan-card__tagline">Great for a quick check</p>
+      </header>
 
-  <!-- Standard -->
-  <article class="plan-card highlight" data-plan="standard">
-    <div class="badge">Most Popular</div>
-    <header class="plan-head">
-      <h3>Standard</h3>
-      <div class="price">
-        <span class="amount">$9</span><span class="period">/mo</span>
-      </div>
-      <p class="tagline">Serious applications, smarter tools</p>
-    </header>
-    <ul class="features">
-      <li>50 resume analyses / month</li>
-      <li>AI Optimize + “Rebuild with AI”</li>
-      <li>Deep ATS keywords & relevance</li>
-      <li>10 cover letters / month</li>
-      <li>Download optimized PDF/DOCX/TXT</li>
-      <li>Save history across devices</li>
-      <li>Email support</li>
-    </ul>
-    <footer class="plan-cta">
-      <button class="btn btn-primary select-plan" data-plan="standard">Get Standard</button>
-    </footer>
-  </article>
+      <ul class="plan-card__features">
+        <li><strong>3</strong> resume analyses / month</li>
+        <li><strong>2</strong> cover letters / month</li>
+        <li>Scorecard + formatting + readability</li>
+        <li>Basic ATS keyword suggestions</li>
+        <li>Store latest result on this device</li>
+      </ul>
 
-  <!-- Premium -->
-  <article class="plan-card" data-plan="premium">
-    <header class="plan-head">
-      <h3>Premium</h3>
-      <div class="price">
-        <span class="amount">$19</span><span class="period">/mo</span>
-      </div>
-      <p class="tagline">For power users & heavy applicants</p>
-    </header>
-    <ul class="features">
-      <li>Unlimited* resume analyses (fair use)</li>
-      <li>Everything in Standard</li>
-      <li>Priority scoring & relevance tuning</li>
-      <li>Unlimited cover letters</li>
-      <li>Multi-resume versions & template pack</li>
-      <li>Job match insights & tracker</li>
-      <li>Priority support</li>
-    </ul>
-    <footer class="plan-cta">
-      <button class="btn btn-primary select-plan" data-plan="premium">Get Premium</button>
-    </footer>
-  </article>
+      <footer class="plan-card__foot">
+        <a class="btn btn-outline w-full" href="/subscribe?plan=free">Continue Free</a>
+      </footer>
+    </article>
+
+    <!-- Standard (Most Popular) -->
+    <article class="plan-card plan-card--popular" data-plan="standard" aria-label="Standard plan, most popular">
+      <div class="ribbon" aria-hidden="true">Most Popular</div>
+      <header class="plan-card__head">
+        <h2 class="plan-card__name">Standard</h2>
+        <div class="plan-card__price">
+          <span class="price__amount">$9</span><span class="price__per">/mo</span>
+        </div>
+        <p class="plan-card__tagline">Serious applications, smarter tools</p>
+      </header>
+
+      <ul class="plan-card__features">
+        <li><strong>50</strong> resume analyses / month</li>
+        <li><strong>10</strong> cover letters / month</li>
+        <li>AI Optimize + <em>Rebuild with AI</em></li>
+        <li>Deep ATS keywords &amp; relevance</li>
+        <li>Download optimized PDF / DOCX / TXT</li>
+        <li>Save history across devices</li>
+        <li>Email support</li>
+      </ul>
+
+      <footer class="plan-card__foot">
+        <a class="btn btn-primary w-full" href="/subscribe?plan=standard">Get Standard</a>
+      </footer>
+    </article>
+
+    <!-- Premium -->
+    <article class="plan-card" data-plan="premium">
+      <header class="plan-card__head">
+        <h2 class="plan-card__name">Premium</h2>
+        <div class="plan-card__price">
+          <span class="price__amount">$19</span><span class="price__per">/mo</span>
+        </div>
+        <p class="plan-card__tagline">For power users &amp; heavy applicants</p>
+      </header>
+
+      <ul class="plan-card__features">
+        <li><strong>Unlimited*</strong> resume analyses (fair use)</li>
+        <li><strong>Unlimited</strong> cover letters</li>
+        <li>Everything in Standard</li>
+        <li>Multi-resume versions &amp; template pack</li>
+        <li>Priority support</li>
+      </ul>
+
+      <footer class="plan-card__foot">
+        <a class="btn btn-primary w-full" href="/subscribe?plan=premium">Get Premium</a>
+      </footer>
+    </article>
+  </div>
+
+  <p class="pricing__fine">* “Unlimited” is subject to fair use to prevent abuse.</p>
 </section>
 
 <section class="compare">
