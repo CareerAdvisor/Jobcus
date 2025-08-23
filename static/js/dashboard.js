@@ -7,6 +7,39 @@
   };
 })();
 
+// ⬇️ INSERT THIS WHOLE FUNCTION HERE
+async function initRoleDatalist() {
+  const input = document.getElementById("dashRoleSelect");
+  const dl    = document.getElementById("roleList");
+  if (!input || !dl) return;
+
+  try {
+    const res = await fetch("/static/data/roles.json", { credentials: "same-origin" });
+    const roles = await res.json();
+
+    const seen = new Set();
+    roles
+      .filter(r => r && typeof r === "string")
+      .map(r => r.trim())
+      .filter(r => r && !seen.has(r) && seen.add(r))
+      .sort((a,b) => a.localeCompare(b))
+      .forEach(role => {
+        const opt = document.createElement("option");
+        opt.value = role;
+        dl.appendChild(opt);
+      });
+  } catch (e) {
+    console.warn("Could not load roles.json; using fallback.", e);
+    ["Business Analyst","Azure Architect","Animator","IT Support Specialist","Systems Administrator",
+     "Network Engineer","Product Manager","Software Engineer","Project Manager","UI/UX Designer",
+     "QA Engineer","Data Analyst","Data Scientist","DevOps Engineer"].forEach(role => {
+      const opt = document.createElement("option");
+      opt.value = role;
+      dl.appendChild(opt);
+    });
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // ----- Greeting -----
   const greetEl = document.getElementById("dashboardGreeting");
@@ -166,8 +199,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderFromStorage();
   maybeShowRegisterNudge();
   
-  }
-
   // ===== Dropzone / picker =====
   function openPicker(){ fileInput?.click(); }
   dropzone?.addEventListener("click", openPicker);
