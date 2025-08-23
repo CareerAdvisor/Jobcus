@@ -1,66 +1,159 @@
-<!-- pricing.html -->
 {% extends "base.html" %}
 
 {% block title %}Pricing – Jobcus{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pricing.css') }}">
+{% endblock %}
+
 {% block content %}
-<section class="pricing-hero" style="text-align:center; padding:4rem 1rem; background:#f9fafb;">
-  <h1>Find the Plan That's Right for You</h1>
-  <p>Whether you're a job seeker or an enterprise, Jobcus has a plan to accelerate your career.</p>
+<section class="pricing-hero">
+  <h1>Pick the plan that fits your job hunt</h1>
+  <p>Start free. Upgrade anytime.</p>
 </section>
 
-<section class="pricing-table" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:2rem; padding:2rem;">
-
-  <!-- Free Tier -->
-  <div class="plan-card">
-    <h2>Free</h2>
-    <p class="price">$0 / month</p>
-    <ul>
-      <li>AI Resume Builder & Analyzer</li>
-      <li>Basic Resume Score & Insights</li>
-      <li>Job Search (up to 10 jobs/mo)</li>
-      <li>Community FAQ & Resources</li>
+<section class="pricing-grid">
+  <!-- Free -->
+  <article class="plan-card" data-plan="free">
+    <header class="plan-head">
+      <h3>Free</h3>
+      <div class="price">
+        <span class="amount">$0</span><span class="period">/mo</span>
+      </div>
+      <p class="tagline">Great for a quick check</p>
+    </header>
+    <ul class="features">
+      <li>3 resume analyses / month</li>
+      <li>Scorecard + formatting + readability</li>
+      <li>Basic ATS keyword suggestions</li>
+      <li>2 cover letters / month</li>
+      <li>Store latest result on this device</li>
     </ul>
-    <a href="/account?plan=free" class="btn">Get Started</a>
-  </div>
+    <footer class="plan-cta">
+      <button class="btn btn-primary select-plan" data-plan="free">Continue Free</button>
+    </footer>
+  </article>
 
-  <!-- Pro Tier -->
-  <div class="plan-card featured">
-    <h2>Pro</h2>
-    <p class="price">$19 / month</p>
-    <ul>
-      <li>Unlimited Resume Analyses</li>
-      <li>Advanced Keyword & ATS Optimization</li>
-      <li>Interactive Career Path Recommendations</li>
-      <li>Job Market Analytics & Salary Trends</li>
+  <!-- Standard -->
+  <article class="plan-card highlight" data-plan="standard">
+    <div class="badge">Most Popular</div>
+    <header class="plan-head">
+      <h3>Standard</h3>
+      <div class="price">
+        <span class="amount">$9</span><span class="period">/mo</span>
+      </div>
+      <p class="tagline">Serious applications, smarter tools</p>
+    </header>
+    <ul class="features">
+      <li>50 resume analyses / month</li>
+      <li>AI Optimize + “Rebuild with AI”</li>
+      <li>Deep ATS keywords & relevance</li>
+      <li>10 cover letters / month</li>
+      <li>Download optimized PDF/DOCX/TXT</li>
+      <li>Save history across devices</li>
+      <li>Email support</li>
     </ul>
-    <a href="/account?plan=pro" class="btn btn-primary">Start Pro</a>
-  </div>
+    <footer class="plan-cta">
+      <button class="btn btn-primary select-plan" data-plan="standard">Get Standard</button>
+    </footer>
+  </article>
 
-  <!-- Business Tier -->
-  <div class="plan-card">
-    <h2>Business</h2>
-    <p class="price">$49 / month</p>
-    <ul>
-      <li>Team Management Dashboard</li>
-      <li>Bulk Resume Analysis & Reporting</li>
-      <li>Employer Branding & Outreach Tools</li>
-      <li>Dedicated Customer Support</li>
+  <!-- Premium -->
+  <article class="plan-card" data-plan="premium">
+    <header class="plan-head">
+      <h3>Premium</h3>
+      <div class="price">
+        <span class="amount">$19</span><span class="period">/mo</span>
+      </div>
+      <p class="tagline">For power users & heavy applicants</p>
+    </header>
+    <ul class="features">
+      <li>Unlimited* resume analyses (fair use)</li>
+      <li>Everything in Standard</li>
+      <li>Priority scoring & relevance tuning</li>
+      <li>Unlimited cover letters</li>
+      <li>Multi-resume versions & template pack</li>
+      <li>Job match insights & tracker</li>
+      <li>Priority support</li>
     </ul>
-    <a href="/account?plan=business" class="btn">Contact Sales</a>
-  </div>
-
+    <footer class="plan-cta">
+      <button class="btn btn-primary select-plan" data-plan="premium">Get Premium</button>
+    </footer>
+  </article>
 </section>
 
-<section class="premium-features" style="padding:2rem 1rem; background:#fff;">
-  <h2>Premium Pages & Features to Come</h2>
-  <ul>
-    <li><strong>Interview Simulator</strong> – AI-driven mock interviews with real-time feedback.</li>
-    <li><strong>Resume Repository</strong> – Store, version, and manage past resumes securely.</li>
-    <li><strong>1:1 Career Coaching</strong> – Book sessions with expert advisors.</li>
-    <li><strong>Course Library</strong> – Curated skill-up courses & certifications.</li>
-    <li><strong>API Access</strong> – Integrate Jobcus insights into your own app.</li>
-    <li><strong>Enterprise Insights</strong> – Deep analytics for HR teams & recruiters.</li>
-  </ul>
+<section class="compare">
+  <h2>Compare features</h2>
+  <div class="table-wrap" role="table" aria-label="Feature comparison">
+    <div class="t-row t-head" role="row">
+      <div class="t-cell"></div>
+      <div class="t-cell">Free</div>
+      <div class="t-cell">Standard</div>
+      <div class="t-cell">Premium</div>
+    </div>
+
+    <div class="t-row" role="row">
+      <div class="t-cell">Resume analyses</div>
+      <div class="t-cell">3 / mo</div>
+      <div class="t-cell">50 / mo</div>
+      <div class="t-cell">Unlimited*</div>
+    </div>
+    <div class="t-row" role="row">
+      <div class="t-cell">Scorecard (format/sections/readability)</div>
+      <div class="t-cell">✓</div>
+      <div class="t-cell">✓</div>
+      <div class="t-cell">✓</div>
+    </div>
+    <div class="t-row" role="row">
+      <div class="t-cell">ATS keyword deep dive</div>
+      <div class="t-cell">Basic</div>
+      <div class="t-cell">Advanced</div>
+      <div class="t-cell">Advanced + priority</div>
+    </div>
+    <div class="t-row" role="row">
+      <div class="t-cell">AI Optimize & Rebuild with AI</div>
+      <div class="t-cell">—</div>
+      <div class="t-cell">✓</div>
+      <div class="t-cell">✓</div>
+    </div>
+    <div class="t-row" role="row">
+      <div class="t-cell">Cover letters</div>
+      <div class="t-cell">2 / mo</div>
+      <div class="t-cell">10 / mo</div>
+      <div class="t-cell">Unlimited</div>
+    </div>
+    <div class="t-row" role="row">
+      <div class="t-cell">Download optimized files</div>
+      <div class="t-cell">—</div>
+      <div class="t-cell">PDF/DOCX/TXT</div>
+      <div class="t-cell">PDF/DOCX/TXT</div>
+    </div>
+    <div class="t-row" role="row">
+      <div class="t-cell">Support</div>
+      <div class="t-cell">Community</div>
+      <div class="t-cell">Email</div>
+      <div class="t-cell">Priority</div>
+    </div>
+  </div>
+  <p class="fine">* “Unlimited” is subject to fair-use to keep the service fast for everyone.</p>
 </section>
+
+<!-- Modal: shows unlocked features before continuing -->
+<div id="planModal" class="plan-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="planModalTitle" aria-modal="true">
+  <div class="plan-modal__inner">
+    <button class="plan-modal__close" id="planModalClose" aria-label="Close">×</button>
+    <h3 id="planModalTitle">You’re choosing <span id="modalPlanName">—</span></h3>
+    <p class="muted">Here’s what you’ll unlock:</p>
+    <ul id="planModalFeatures" class="modal-features"></ul>
+
+    <div class="modal-actions">
+      <button id="planContinueBtn" class="btn btn-primary">Continue</button>
+      <button id="planCancelBtn" class="btn btn-outline">Cancel</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script defer src="{{ url_for('static', filename='js/pricing.js') }}"></script>
 {% endblock %}
