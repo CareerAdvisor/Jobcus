@@ -131,25 +131,14 @@
   <!-- Recommendation CTA -->
   <section class="opt-cta">
     <p class="opt-explain">
-      Use the recommendations above to update your resume, or let us rebuild it for you.
+      Use the recommendations above to update your resume, or utilise our special resume builder feature to create a new one.
     </p>
   
     <div class="actions" style="display:flex;gap:.75rem;flex-wrap:wrap;">
-      <button id="copy-recs-btn" class="btn btn-outline">Copy recommendations</button>
       <a id="rebuild-ai-btn" class="btn btn-primary" href="/resume-builder">Rebuild with AI</a>
     </div>
   
-    <small class="help">“Rebuild with AI” opens the Resume Builder. We’ll reuse your latest analysis where possible.</small>
-  </section>
-
-    {% if current_user.is_authenticated %}
-      <div id="optimized-downloads" class="download-row" style="display:none;">
-        <button onclick="downloadOptimizedResume('pdf')" class="btn btn-outline">⬇️ Download PDF</button>
-        <button onclick="downloadOptimizedResume('txt')" class="btn btn-outline">⬇️ Download TXT</button>
-      </div>
-    {% else %}
-      <p class="download-hint">To download your optimized resume, <a href="/account">sign up or log in</a>.</p>
-    {% endif %}
+    <small class="help">“Rebuild with AI” opens the Resume Builder page.</small>
   </section>
 </section>
 {% endblock %}
