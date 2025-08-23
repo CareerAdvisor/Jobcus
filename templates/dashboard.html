@@ -125,16 +125,22 @@
       <button class="opt-btn" data-view="recs">Recommendations</button>
     </aside>
 
-
     <div class="opt-panel" id="optPanel"></div>
   </section>
 
-  <!-- Optimize CTA -->
+  <!-- Recommendation CTA -->
   <section class="opt-cta">
-    <p class="opt-explain">Want us to apply these fixes automatically?</p>
-    <button id="optimize-btn" class="btn btn-primary">Optimize my resume</button>
-    <div id="optimized-loading" class="loading" style="display:none;">🤖 Optimizing your resume, please wait…</div>
-    <pre id="optimized-output" class="opt-output" style="display:none;"></pre>
+    <p class="opt-explain">
+      Use the recommendations above to update your resume, or let us rebuild it for you.
+    </p>
+  
+    <div class="actions" style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <button id="copy-recs-btn" class="btn btn-outline">Copy recommendations</button>
+      <a id="rebuild-ai-btn" class="btn btn-primary" href="/resume-builder">Rebuild with AI</a>
+    </div>
+  
+    <small class="help">“Rebuild with AI” opens the Resume Builder. We’ll reuse your latest analysis where possible.</small>
+  </section>
 
     {% if current_user.is_authenticated %}
       <div id="optimized-downloads" class="download-row" style="display:none;">
