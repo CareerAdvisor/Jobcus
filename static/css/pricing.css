@@ -245,3 +245,64 @@
 @media (max-width: 420px){
   .plan__head{ min-height:112px; padding:20px 14px; }
 }
+
+/* ===== Compare: keep ALL 5 columns on one row ===== */
+.compare { 
+  max-width: 1100px; 
+  margin: 28px auto 8px; 
+  padding: 0 12px; 
+}
+
+.compare .table-wrap{
+  display: grid;
+  gap: 8px;
+  overflow-x: auto;               /* allow horizontal scroll on small viewports */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 1st col = feature label, then 4 plan columns (Free, Weekly, Standard, Premium) */
+.compare .t-row{
+  display: grid;
+  grid-template-columns: 220px repeat(4, 150px);  /* << fixed widths to prevent wrap */
+  align-items: center;
+  gap: 8px;
+  min-width: 820px;               /* ensures all 5 columns fit; table-wrap will scroll if needed */
+}
+
+.compare .t-cell{
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 8px 10px;              /* tighter cells */
+  font-size: 14px;                /* smaller text = narrower cells */
+  white-space: nowrap;            /* keep each cell on one line */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compare .t-row.t-head .t-cell{
+  font-weight: 700;
+  color: #104879;
+  background: #f8fafc;
+}
+
+/* Optional: make the feature (first column) a bit bolder */
+.compare .t-row .t-cell:first-child{
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Slightly tighter on medium screens */
+@media (max-width: 1000px){
+  .compare .t-row{
+    grid-template-columns: 200px repeat(4, 135px);
+    min-width: 740px;
+  }
+}
+
+/* On very narrow screens, keep scroll instead of stacking */
+@media (max-width: 760px){
+  .compare { padding: 0 8px; }
+  .compare .t-row{ grid-template-columns: 180px repeat(4, 120px); min-width: 660px; }
+  .compare .t-cell{ font-size: 13px; padding: 7px 8px; }
+}
