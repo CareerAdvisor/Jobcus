@@ -269,31 +269,4 @@ window.addEventListener("DOMContentLoaded", () => {
   resetEl && (resetEl.textContent = q.reset);
 } 
 
-  function gateChatStart() {
-  const params = new URLSearchParams(location.search);
-  const allowed = params.get('start') === '1';
-  const form = document.getElementById('chat-form');
-  const chatbox = document.getElementById('chatbox');
-
-  if (!allowed && form && chatbox) {
-    form.hidden = true;
-
-    const gate = document.createElement('div');
-    gate.className = 'chat-start-gate';
-    gate.innerHTML = `
-      <div style="max-width:760px;margin:16px auto;padding:16px;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
-        <h3 style="margin:0 0 8px;color:#104879">Ready to start?</h3>
-        <p style="margin:0 0 12px;color:#475569">Review your credits above, then begin a conversation.</p>
-        <button id="startChatBtn" class="btn btn-primary">Start chatting</button>
-      </div>`;
-    chatbox.prepend(gate);
-
-    gate.querySelector('#startChatBtn').addEventListener('click', () => {
-      form.hidden = false;
-      gate.remove();
-    });
-  }
-}
-window.addEventListener('DOMContentLoaded', gateChatStart);
-
 });
