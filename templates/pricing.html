@@ -7,7 +7,7 @@
 
 {% block content %}
 <section class="pricing-wrap">
-  <!-- Page hero: title + subheader INSIDE one bar -->
+  <!-- Hero -->
   <header class="pricing-head">
     <h1>Simple pricing for job seekers</h1>
     <p>Start free. Upgrade when you need the AI chat &amp; advanced tools.</p>
@@ -29,9 +29,11 @@
 
       <ul class="plan__list">
         <li><strong>3</strong> resume analyses / month (basic score + tips)</li>
-        <li><strong>2</strong> cover letters / month</li>
+        <li><strong>2</strong> AI cover letters / month</li>
         <li>AI Resume Builder (basic templates)</li>
-        <li>Skill Gap snapshot (1 basic assessment)</li>
+        <li>Skill-Gap snapshot (1 basic analysis)</li>
+        <li>Job Insights (basic charts)</li>
+        <li>Interview Coach (limited practice)</li>
         <li>AI Chat trial: <strong>15 messages</strong> total</li>
         <li>Local device history</li>
       </ul>
@@ -59,6 +61,9 @@
         <li><strong>10</strong> resume analyses / week</li>
         <li><strong>5</strong> AI cover letters / week</li>
         <li>“Rebuild with AI” for resumes</li>
+        <li>Skill-Gap (standard)</li>
+        <li>Job Insights (full access)</li>
+        <li>Interview Coach sessions</li>
         <li>Email support</li>
       </ul>
 
@@ -85,7 +90,10 @@
         <li>AI Chat credits: <strong>800 messages</strong> / month</li>
         <li><strong>50</strong> resume analyses / month (deep ATS + JD match)</li>
         <li><strong>20</strong> AI cover letters / month</li>
+        <li>AI Optimize + Rebuild with AI</li>
         <li>Interview Coach sessions</li>
+        <li>Skill-Gap (pro)</li>
+        <li>Job Insights (full access)</li>
         <li>Download optimized PDF / DOCX / TXT</li>
         <li>Save history across devices</li>
         <li>Email support</li>
@@ -113,8 +121,8 @@
         <li>AI Chat credits: <strong>12,000 messages</strong> / year (~1,000 / mo)</li>
         <li><strong>Unlimited*</strong> resume analyses (fair use)</li>
         <li><strong>Unlimited</strong> AI cover letters (fair use)</li>
-        <li>All Standard features + multi-resume versions &amp; template pack</li>
-        <li>Priority support &amp; early access to new AI tools</li>
+        <li>All Standard features + multi-resume versions & template pack</li>
+        <li>Priority support & early access to new AI tools</li>
       </ul>
 
       <footer class="plan__foot">
@@ -130,51 +138,92 @@
       <div class="t-row t-head" role="row">
         <div class="t-cell"></div>
         <div class="t-cell">Free</div>
+        <div class="t-cell">Weekly</div>
         <div class="t-cell">Standard</div>
         <div class="t-cell">Premium</div>
       </div>
+
+      <div class="t-row" role="row">
+        <div class="t-cell">AI Chat credits</div>
+        <div class="t-cell">15 msgs (trial)</div>
+        <div class="t-cell">200 / week</div>
+        <div class="t-cell">800 / month</div>
+        <div class="t-cell">12,000 / year</div>
+      </div>
+
       <div class="t-row" role="row">
         <div class="t-cell">Resume analyses</div>
         <div class="t-cell">3 / mo</div>
+        <div class="t-cell">10 / week</div>
         <div class="t-cell">50 / mo</div>
         <div class="t-cell">Unlimited*</div>
       </div>
-      <div class="t-row" role="row">
-        <div class="t-cell">Scorecard (format/sections/readability)</div>
-        <div class="t-cell">✓</div>
-        <div class="t-cell">✓</div>
-        <div class="t-cell">✓</div>
-      </div>
-      <div class="t-row" role="row">
-        <div class="t-cell">ATS keyword deep dive</div>
-        <div class="t-cell">Basic</div>
-        <div class="t-cell">Advanced</div>
-        <div class="t-cell">Advanced + priority</div>
-      </div>
-      <div class="t-row" role="row">
-        <div class="t-cell">AI Optimize &amp; Rebuild with AI</div>
-        <div class="t-cell">—</div>
-        <div class="t-cell">✓</div>
-        <div class="t-cell">✓</div>
-      </div>
+
       <div class="t-row" role="row">
         <div class="t-cell">Cover letters</div>
         <div class="t-cell">2 / mo</div>
+        <div class="t-cell">5 / week</div>
         <div class="t-cell">20 / mo</div>
-        <div class="t-cell">Unlimited</div>
+        <div class="t-cell">Unlimited*</div>
       </div>
+
+      <div class="t-row" role="row">
+        <div class="t-cell">AI Optimize & Rebuild with AI</div>
+        <div class="t-cell">—</div>
+        <div class="t-cell">✓</div>
+        <div class="t-cell">✓</div>
+        <div class="t-cell">✓</div>
+      </div>
+
+      <div class="t-row" role="row">
+        <div class="t-cell">Interview Coach</div>
+        <div class="t-cell">Limited</div>
+        <div class="t-cell">✓</div>
+        <div class="t-cell">✓</div>
+        <div class="t-cell">✓</div>
+      </div>
+
+      <div class="t-row" role="row">
+        <div class="t-cell">Skill-Gap analysis</div>
+        <div class="t-cell">Basic (1)</div>
+        <div class="t-cell">Standard</div>
+        <div class="t-cell">Pro</div>
+        <div class="t-cell">Pro</div>
+      </div>
+
+      <div class="t-row" role="row">
+        <div class="t-cell">Job Insights</div>
+        <div class="t-cell">Basic charts</div>
+        <div class="t-cell">Full access</div>
+        <div class="t-cell">Full access</div>
+        <div class="t-cell">Full access</div>
+      </div>
+
       <div class="t-row" role="row">
         <div class="t-cell">Download optimized files</div>
         <div class="t-cell">—</div>
         <div class="t-cell">PDF/DOCX/TXT</div>
         <div class="t-cell">PDF/DOCX/TXT</div>
+        <div class="t-cell">PDF/DOCX/TXT</div>
       </div>
+
       <div class="t-row" role="row">
         <div class="t-cell">Support</div>
         <div class="t-cell">—</div>
         <div class="t-cell">Email</div>
+        <div class="t-cell">Email</div>
         <div class="t-cell">Priority</div>
       </div>
     </div>
+    <p class="fine">
+      * “Unlimited” refers to fair-use limits to keep the service responsive for everyone.
+      See <a href="/chat">AI Chat</a> for credit details and usage notes.
+    </p>
+  </section>
+
+  <!-- Optional: Employer CTA kept separate from job-seeker plans -->
+  <p class="pricing-fine">
+    Hiring? Visit the <a href="/employers">Employers</a> page for AI job-post generation and inquiry options.
+  </p>
 </section>
 {% endblock %}
