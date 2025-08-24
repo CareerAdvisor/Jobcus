@@ -3833,3 +3833,19 @@ button {
   font-size: 12px;
   text-align: center;
 }
+
+.credits-panel {
+  margin: 18px auto 0;
+  max-width: 900px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.credits-row {
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.credits-label { color:#64748b; font-size: 12px; }
+.credits-hint  { display:block; color:#64748b; }
+.credits-details summary { cursor: pointer; font-weight: 600; margin-top: 6px; }
