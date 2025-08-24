@@ -15,21 +15,25 @@
   position:relative;display:grid;grid-template-columns:1fr auto;align-items:end;
   gap:12px 16px;padding:16px 16px 8px;border-bottom:1px solid #eef2f7;margin-bottom:10px
 }
-.plan__left{display:flex;align-items:baseline;gap:12px;min-width:0}
-.plan__title{margin:0;font-size:20px;font-weight:800;color:#0f355e;white-space:nowrap}
-.price{display:inline-flex;align-items:baseline;gap:6px;color:#0f355e;line-height:1}
-.price .currency{font-size:22px;font-weight:700;transform:translateY(-1px)}
-.price .amount{font-size:clamp(36px,5vw,46px);font-weight:800;letter-spacing:-.02em}
-.price .amount .cents{font-size:.55em}
-.price .period{font-size:14px;color:#6b7280;margin-left:2px}
-.plan__tagline{margin:0;color:#64748b;font-size:14px;text-align:right;max-width:18ch}
+.plan__left{ display:flex; align-items:baseline; gap:12px; }
+.plan__title{ margin:0; font-size:20px; font-weight:800; color:#0f355e; }
+.price{ display:inline-flex; align-items:baseline; gap:6px; color:#0f355e; line-height:1; }
+.price .currency{ font-size:22px; font-weight:700; transform:translateY(-1px); }
+.price .amount{ font-size:clamp(36px,5vw,46px); font-weight:800; letter-spacing:-.02em; }
+.price .amount .cents{ font-size:.55em; }
+.price .period{ font-size:14px; color:#6b7280; margin-left:2px; }
+.plan__tagline{ margin:0; color:#64748b; font-size:14px; text-align:center; max-width:none; }
 
-/* Badge */
+/* Badge & popular spacing */
+.plan--popular .plan__head{ padding-top:24px; }
 .plan__badge{
-  position:absolute;top:-14px;left:50%;transform:translateX(-50%);
-  background:#ffda77;color:#0f355e;font-weight:700;font-size:12px;padding:6px 10px;border-radius:999px;
-  box-shadow:0 2px 8px rgba(0,0,0,.06)
+  position:absolute; top:-14px; left:50%; transform:translateX(-50%);
+  background:#ffda77; color:#0f355e; font-weight:700; font-size:12px;
+  padding:6px 10px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,.06);
 }
+
+/* Compare block keeps your existing table styles; just ensure spacing */
+.compare { max-width:1100px; margin:28px auto 8px; padding:0 16px; }
 
 /* Features */
 .plan__list{list-style:none;margin:12px 0 16px;padding:0;display:grid;gap:8px}
@@ -81,30 +85,34 @@
 .plan{ display:flex; flex-direction:column; }
 .plan__foot{ margin-top:auto; }
 
-/* --- HERO: stack title + subheader inside one bar --- */
+/* ===== HERO BAR: title + subheader inside same container ===== */
 .pricing-head{
-  display:flex;                /* stack the two lines */
+  display:flex;
   flex-direction:column;
-  align-items:center;          /* center horizontally */
-  justify-content:center;      /* center vertically */
-  gap:6px;                     /* space between lines */
-  padding:18px 20px;           /* inner space */
-  min-height:110px;            /* increase height of the bar */
-  background:#fff;             /* visible container */
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:22px 20px;
+  min-height:120px;           /* taller bar so subtitle never overflows */
+  background:#fff;
   border:1px solid #e5e7eb;
   border-radius:12px;
   box-shadow:0 2px 10px rgba(16,72,121,.06);
 }
 
-/* --- PLAN CARD HEADERS: always stack, not side-by-side --- */
-.plan__head{
-  /* override the earlier grid header */
-  display:flex !important;
+/* ===== HERO BAR: title + subheader inside same container ===== */
+.pricing-head{
+  display:flex;
   flex-direction:column;
-  align-items:center;        /* use flex-start if you prefer left-aligned */
-  gap:8px;
-  padding:16px 16px 10px;
-  border-bottom:1px solid #eef2f7;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:22px 20px;
+  min-height:120px;           /* taller bar so subtitle never overflows */
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  box-shadow:0 2px 10px rgba(16,72,121,.06);
 }
 
 /* title + price row stays together */
