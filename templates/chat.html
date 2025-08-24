@@ -97,6 +97,34 @@
     <div id="job-results" class="job-results"></div>
   </div>
 
+  <section id="credits-info" class="credits-panel" aria-labelledby="credits-title">
+  <h2 id="credits-title">AI Chat credits & fair-use</h2>
+
+  <div class="credits-row">
+    <div>
+      <div class="credits-label">Your plan</div>
+      <strong id="credits-plan">Free</strong>
+    </div>
+    <div>
+      <div class="credits-label">Messages left</div>
+      <strong id="credits-left">—</strong>
+      <small id="credits-reset" class="credits-hint">Resets monthly</small>
+    </div>
+  </div>
+
+  <details class="credits-details">
+    <summary>How credits work</summary>
+    <ul>
+      <li><strong>Free:</strong> 15 total messages (trial)</li>
+      <li><strong>Weekly Pass:</strong> 200 messages / week</li>
+      <li><strong>Standard:</strong> 800 messages / month</li>
+      <li><strong>Premium:</strong> 12,000 messages / year (~1,000 / mo)</li>
+    </ul>
+    <p>A “message” is each prompt you send to Jobcus. When you run out, chat may pause until your next reset or upgrade.</p>
+    <p><em>“Unlimited”</em> features (e.g., resume analyses) follow fair-use limits to keep the service fast for everyone.</p>
+  </details>
+</section>
+  
   <form id="chat-form">
     <div class="input-container" id="inputContainer">
       <textarea
@@ -136,34 +164,6 @@
     alt="Scroll Down"
     onclick="scrollToBottom()"
   />
-  
-  <section id="credits-info" class="credits-panel" aria-labelledby="credits-title">
-  <h2 id="credits-title">AI Chat credits & fair-use</h2>
-
-  <div class="credits-row">
-    <div>
-      <div class="credits-label">Your plan</div>
-      <strong id="credits-plan">Free</strong>
-    </div>
-    <div>
-      <div class="credits-label">Messages left</div>
-      <strong id="credits-left">—</strong>
-      <small id="credits-reset" class="credits-hint">Resets monthly</small>
-    </div>
-  </div>
-
-  <details class="credits-details">
-    <summary>How credits work</summary>
-    <ul>
-      <li><strong>Free:</strong> 15 total messages (trial)</li>
-      <li><strong>Weekly Pass:</strong> 200 messages / week</li>
-      <li><strong>Standard:</strong> 800 messages / month</li>
-      <li><strong>Premium:</strong> 12,000 messages / year (~1,000 / mo)</li>
-    </ul>
-    <p>A “message” is each prompt you send to Jobcus. When you run out, chat may pause until your next reset or upgrade.</p>
-    <p><em>“Unlimited”</em> features (e.g., resume analyses) follow fair-use limits to keep the service fast for everyone.</p>
-  </details>
-</section>
 
 </main>
 {% endblock %}
