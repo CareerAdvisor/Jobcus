@@ -331,3 +331,28 @@
   .compare .t-cell{ font-size: 13px; padding: 7px 8px; }
 }
 
+/* Tablet: 2 columns */
+@media (max-width: 1024px){
+  .plans{
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+}
+
+/* Phone: 1 column (vertical cards) */
+@media (max-width: 768px){
+  .plans{
+    grid-template-columns: 1fr;     /* stack vertically */
+    gap: 14px;
+  }
+  .plan{
+    max-width: 560px;               /* keep a nice width */
+    margin-inline: auto;            /* center the card */
+  }
+  .plan__head{
+    align-items: center;
+    text-align: center;
+  }
+}
+
+
