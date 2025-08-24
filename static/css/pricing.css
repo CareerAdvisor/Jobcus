@@ -191,3 +191,57 @@
   background: #ffda77; color: #0f355e; font-weight: 700; font-size: 12px;
   padding: 6px 10px; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
+
+/* --- PLAN HEADER BAR: center title + price + tagline inside --- */
+.plan__head{
+  display:flex !important;           /* override any older grid rule */
+  flex-direction:column;
+  align-items:center;                 /* horizontal centering */
+  justify-content:center;             /* vertical centering */
+  gap:8px;
+  text-align:center;
+
+  /* make it look like a header bar */
+  padding:24px 16px;
+  min-height:128px;                   /* ensures room for all text */
+  background:#fff;
+  border:1px solid #e9eef5;
+  border-radius:12px;
+  box-shadow:0 2px 10px rgba(16,72,121,.06);
+  margin:0 0 12px;                    /* space below the bar */
+  /* remove any previous divider line */
+  border-bottom:none;
+}
+
+/* title + price sit on one row, centered */
+.plan__left{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  justify-content:center;
+  gap:12px;
+  min-width:0;
+}
+
+/* price typography (keep your existing numbers) */
+.price{ display:inline-flex; align-items:baseline; gap:6px; color:#0f355e; line-height:1; }
+.price .currency{ font-size:22px; font-weight:700; transform:translateY(-1px); }
+.price .amount{ font-size:clamp(36px,5vw,46px); font-weight:800; letter-spacing:-.02em; }
+.price .amount .cents{ font-size:.55em; }
+.price .period{ font-size:14px; color:#6b7280; margin-left:2px; }
+
+/* tagline sits under the row and stays centered */
+.plan__tagline{ margin:0; color:#64748b; font-size:14px; }
+
+/* keep the “Most Popular” chip floating above the bar */
+.plan--popular .plan__head{ padding-top:28px; }
+.plan__badge{
+  position:absolute; top:-14px; left:50%; transform:translateX(-50%);
+  background:#ffda77; color:#0f355e; font-weight:700; font-size:12px;
+  padding:6px 10px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+
+/* (optional) On very small screens you can reduce the min height a bit */
+@media (max-width: 420px){
+  .plan__head{ min-height:112px; padding:20px 14px; }
+}
