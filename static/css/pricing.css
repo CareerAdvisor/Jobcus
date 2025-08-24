@@ -1,139 +1,193 @@
+/* =========================================================
+   Jobcus — Pricing Page
+   ========================================================= */
+
 /* ===== Structure ===== */
-.pricing-wrap{max-width:1100px;margin:0 auto;padding:28px 16px}
-.pricing-head{text-align:center;margin-bottom:22px}
-.pricing-head h1{color:#104879;font-size:clamp(28px,3.2vw,40px);margin:0 0 6px;letter-spacing:-.02em;font-weight:800}
-.pricing-head p{color:#64748b;margin:0;font-size:clamp(14px,1.6vw,18px)}
-
-.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px;margin-top:14px}
-
-/* ===== Card ===== */
-.plan{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;display:flex;flex-direction:column;position:relative;box-shadow:0 2px 10px rgba(16,72,121,.06)}
-.plan--popular{border-color:#ffe29a;box-shadow:0 8px 24px rgba(16,72,121,.08)}
-
-/* ===== PLAN CARD HEADER: stack title, price and tagline ===== */
-.plan__head{
-  display:flex !important;    /* override any grid version */
-  flex-direction:column;
-  align-items:center;
-  gap:8px;
-  padding:18px 16px 12px;
-  border-bottom:1px solid #eef2f7;
+.pricing-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 16px;
+}
+.pricing-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 22px 20px;
+  min-height: 120px;                /* keep subtitle inside the bar */
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(16,72,121,.06);
+  margin-bottom: 22px;
+}
+.pricing-head h1 {
+  color: #104879;
+  font-size: clamp(28px, 3.2vw, 40px);
+  margin: 0;
+  letter-spacing: -.02em;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+}
+.pricing-head p {
+  color: #64748b;
+  margin: 0;
+  font-size: clamp(14px, 1.6vw, 18px);
+  line-height: 1.4;
+  text-align: center;
 }
 
-.plan__left{ display:flex; align-items:baseline; gap:12px; }
-.plan__title{ margin:0; font-size:20px; font-weight:800; color:#0f355e; }
-.price{ display:inline-flex; align-items:baseline; gap:6px; color:#0f355e; line-height:1; }
-.price .currency{ font-size:22px; font-weight:700; transform:translateY(-1px); }
-.price .amount{ font-size:clamp(36px,5vw,46px); font-weight:800; letter-spacing:-.02em; }
-.price .amount .cents{ font-size:.55em; }
-.price .period{ font-size:14px; color:#6b7280; margin-left:2px; }
-.plan__tagline{ margin:0; color:#64748b; font-size:14px; text-align:center; max-width:none; }
-
-/* Badge & popular spacing */
-.plan--popular .plan__head{ padding-top:24px; }
-.plan__badge{
-  position:absolute; top:-14px; left:50%; transform:translateX(-50%);
-  background:#ffda77; color:#0f355e; font-weight:700; font-size:12px;
-  padding:6px 10px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,.06);
+.plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 18px;
+  margin-top: 14px;
 }
 
-/* Features */
-.plan__list{list-style:none;margin:12px 0 16px;padding:0;display:grid;gap:8px}
-.plan__list li{position:relative;padding-left:24px;color:#1f2937;line-height:1.35}
-.plan__list li::before{
-  content:"";width:14px;height:14px;border-radius:50%;background:#16a34a;position:absolute;left:0;top:2px;
-  -webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>') no-repeat center/contain;
-          mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>') no-repeat center/contain;
+/* ===== Plan Card ===== */
+.plan {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 10px rgba(16,72,121,.06);
 }
-.plan__foot{margin-top:auto}
-
-/* Buttons */
-.btn{display:block;text-align:center;padding:10px 14px;border-radius:10px;font-weight:700;text-decoration:none;cursor:pointer}
-.btn-primary{background:#104879;color:#fff}
-.btn-outline{background:#fff;color:#104879;border:2px solid #104879}
-.btn:hover{opacity:.95}
-.w-full{width:100%}
-
-/* Fine print */
-.pricing-fine{margin-top:14px;text-align:center;color:#6b7280;font-size:12px}
-
-/* Selected state (optional visual) */
-.plan.is-current{outline:2px solid #104879;outline-offset:2px}
-
-/* Responsive */
-@media (max-width:640px){
-  .plan__head{grid-template-columns:1fr;align-items:start}
-  .plan__tagline{text-align:left;max-width:none}
+.plan--popular {
+  border-color: #ffe29a;
+  box-shadow: 0 8px 24px rgba(16,72,121,.08);
 }
 
-/* === Compatibility layer for older pricing.html markup === */
+/* ===== Plan Header (stacked) ===== */
+.plan__head {
+  display: flex !important;         /* beat any legacy grid rules */
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 16px 12px;
+  border-bottom: 1px solid #eef2f7;
+  text-align: center;
+}
+.plan--popular .plan__head { padding-top: 24px; }
 
-/* Old header pieces */
-.plan__name{ margin:0; font-size:20px; font-weight:800; color:#0f355e; }
-.plan__price{ display:flex; align-items:baseline; gap:6px; margin:6px 0; }
-.plan__price .price__amt{ font-size:34px; font-weight:800; color:#104879; }
-.plan__price .price__per{ font-size:14px; color:#6b7280; }
-.plan__tag{ margin:0; color:#64748b; font-size:14px; }
+.plan__left { display: flex; align-items: baseline; gap: 12px; }
+.plan__title { margin: 0; font-size: 20px; font-weight: 800; color: #0f355e; }
 
-/* Old “ribbon” badge name */
-.ribbon{
-  position:absolute; top:-14px; right:16px;
-  background:#ffda77; color:#0f355e; font-weight:700; font-size:12px;
-  padding:6px 10px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,.06);
+.price { display: inline-flex; align-items: baseline; gap: 6px; color: #0f355e; line-height: 1; }
+.price .currency { font-size: 22px; font-weight: 700; transform: translateY(-1px); }
+.price .amount   { font-size: clamp(36px, 5vw, 46px); font-weight: 800; letter-spacing: -0.02em; }
+.price .amount .cents { font-size: .55em; }
+.price .period   { font-size: 14px; color: #6b7280; margin-left: 2px; }
+
+.plan__tagline { margin: 0; color: #64748b; font-size: 14px; }
+
+.plan__badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffda77;
+  color: #0f355e;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
 
-/* Make sure cards behave like equal-height grid items */
-.plans{ display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:18px; }
-.plan{ display:flex; flex-direction:column; }
-.plan__foot{ margin-top:auto; }
-
-/* ===== HERO BAR: title + subheader inside same container ===== */
-.pricing-head{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  padding:22px 20px;
-  min-height:120px;           /* taller bar so subtitle never overflows */
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  box-shadow:0 2px 10px rgba(16,72,121,.06);
+/* ===== Features List ===== */
+.plan__list {
+  list-style: none;
+  margin: 12px 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.plan__list li {
+  position: relative;
+  padding-left: 24px;
+  color: #1f2937;
+  line-height: 1.35;
+}
+.plan__list li::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #16a34a;
+  position: absolute;
+  left: 0;
+  top: 2px;
+  -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>') no-repeat center/contain;
+          mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="white" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>') no-repeat center/contain;
 }
 
-/* title + price row stays together */
-.plan__left{
-  display:flex;
-  align-items:baseline;
-  gap:12px;
+.plan__foot { margin-top: auto; }
+
+/* ===== Buttons ===== */
+.btn {
+  display: block;
+  text-align: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn-primary { background: #104879; color: #fff; }
+.btn-outline { background: #fff; color: #104879; border: 2px solid #104879; }
+.btn:hover   { opacity: .95; }
+.w-full      { width: 100%; }
+
+/* ===== Compare Table ===== */
+.compare { max-width: 1100px; margin: 28px auto 8px; padding: 0 16px; }
+.compare h2 { color: #104879; text-align: center; margin: 0 0 16px; }
+.table-wrap { display: grid; gap: 6px; }
+.t-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 6px;
+}
+.t-cell {
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  padding: 10px;
+}
+.t-head .t-cell { font-weight: 700; color: #104879; }
+.fine { color: #666; font-size: 12px; text-align: center; margin-top: 10px; }
+
+/* ===== Fine Print ===== */
+.pricing-fine {
+  margin-top: 14px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 12px;
 }
 
-/* subheader/tagline sits under the title/price row */
-.plan__tagline{
-  margin:0;
-  color:#64748b;
-  font-size:14px;
-  text-align:center;         /* change to left if you left-align the header */
-  max-width:none;            /* don’t constrain width */
+/* ===== Selected state (optional) ===== */
+.plan.is-current { outline: 2px solid #104879; outline-offset: 2px; }
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .t-row { grid-template-columns: 1.2fr 1fr 1fr 1fr; }
 }
 
-/* if you use the centered “Most Popular” badge, keep space for it */
-.plan--popular .plan__head{ padding-top:22px; }
-.plan__badge{ top:-14px; }   /* keep your existing badge placement */
+/* ===== Compatibility with older pricing markup ===== */
+/* If any older template uses these names, keep them looking right. */
+.plan__name  { margin: 0; font-size: 20px; font-weight: 800; color: #0f355e; }
+.plan__price { display: flex; align-items: baseline; gap: 6px; margin: 6px 0; }
+.plan__price .price__amt { font-size: 34px; font-weight: 800; color: #104879; }
+.plan__price .price__per { font-size: 14px; color: #6b7280; }
+.plan__tag   { margin: 0; color: #64748b; font-size: 14px; }
 
-.pricing-head h1{
-  margin:0;
-  line-height:1.15;
+/* Old “ribbon” alias */
+.ribbon {
+  position: absolute; top: -14px; right: 16px;
+  background: #ffda77; color: #0f355e; font-weight: 700; font-size: 12px;
+  padding: 6px 10px; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
-
-.pricing-head p{
-  margin:0;
-  line-height:1.4;
-  max-width:900px;             /* keep the subhead from stretching too wide */
-  text-align:center;
-}
-
-
-/* Compare block keeps your existing table styles; just ensure spacing */
-.compare { max-width:1100px; margin:28px auto 8px; padding:0 16px; }
