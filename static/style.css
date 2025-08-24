@@ -3825,3 +3825,11 @@ button {
 #resume-builder input::placeholder,
 #resume-builder textarea::placeholder{ font-size: .85rem; }
 
+.fairuse-note{
+  max-width: 900px;
+  margin: 12px auto 0;
+  padding: 8px 12px;
+  color: #6b7280;          /* slate-500 */
+  font-size: 12px;
+  text-align: center;
+}
