@@ -240,4 +240,29 @@ window.addEventListener("DOMContentLoaded", () => {
       chatboxEl.scrollTop = chatboxEl.scrollHeight;
     }).observe(chatboxEl, { childList: true, subtree: true });
   }
+
+  // ---- Credits panel (simple client-side view) ----
+  (function initCreditsPanel(){
+    const planEl  = document.getElementById("credits-plan");
+    const leftEl  = document.getElementById("credits-left");
+    const resetEl = document.getElementById("credits-reset");
+    if (!planEl && !leftEl && !resetEl) return; // chat page may not show the panel
+  
+    const PLAN = (localStorage.getItem("userPlan") || "free"); // free | weekly | standard | premium
+    const QUOTAS = {
+      free:     { label: "Free",     reset: "Trial",           max: 15    },
+      weekly:   { label: "Weekly",   reset: "Resets weekly",   max: 200   },
+      standard: { label: "Standard", reset: "Resets monthly",  max: 800   },
+      premium:  { label: "Premium",  reset: "Resets yearly",   max: 12000 }
+    };
+  
+    const q    = QUOTAS[PLAN] || QUOTAS.free;
+    const used = Number(localStorage.getItem("chatUsed") || 0);
+    const left = Math.max(q.max - used, 0);
+  
+    planEl  && (planEl.textContent  = q.label);
+    leftEl  && (leftEl.textContent  = `${left} of ${q.max}`);
+    resetEl && (resetEl.textContent = q.reset);
+  })();
+    
 });
