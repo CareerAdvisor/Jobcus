@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Pricing – Jobcus{% endblock %}
 
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pricing.css') }}">
+{% endblock %}
+
 {% block content %}
 <section class="pricing-wrap">
   <!-- Page hero: title + subheader INSIDE one bar -->
