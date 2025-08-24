@@ -10,11 +10,16 @@
 .plan{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;display:flex;flex-direction:column;position:relative;box-shadow:0 2px 10px rgba(16,72,121,.06)}
 .plan--popular{border-color:#ffe29a;box-shadow:0 8px 24px rgba(16,72,121,.08)}
 
-/* Header (aligned) */
+/* ===== PLAN CARD HEADER: stack title, price and tagline ===== */
 .plan__head{
-  position:relative;display:grid;grid-template-columns:1fr auto;align-items:end;
-  gap:12px 16px;padding:16px 16px 8px;border-bottom:1px solid #eef2f7;margin-bottom:10px
+  display:flex !important;    /* override any grid version */
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  padding:18px 16px 12px;
+  border-bottom:1px solid #eef2f7;
 }
+
 .plan__left{ display:flex; align-items:baseline; gap:12px; }
 .plan__title{ margin:0; font-size:20px; font-weight:800; color:#0f355e; }
 .price{ display:inline-flex; align-items:baseline; gap:6px; color:#0f355e; line-height:1; }
@@ -31,9 +36,6 @@
   background:#ffda77; color:#0f355e; font-weight:700; font-size:12px;
   padding:6px 10px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,.06);
 }
-
-/* Compare block keeps your existing table styles; just ensure spacing */
-.compare { max-width:1100px; margin:28px auto 8px; padding:0 16px; }
 
 /* Features */
 .plan__list{list-style:none;margin:12px 0 16px;padding:0;display:grid;gap:8px}
@@ -100,21 +102,6 @@
   box-shadow:0 2px 10px rgba(16,72,121,.06);
 }
 
-/* ===== HERO BAR: title + subheader inside same container ===== */
-.pricing-head{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  padding:22px 20px;
-  min-height:120px;           /* taller bar so subtitle never overflows */
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  box-shadow:0 2px 10px rgba(16,72,121,.06);
-}
-
 /* title + price row stays together */
 .plan__left{
   display:flex;
@@ -146,3 +133,7 @@
   max-width:900px;             /* keep the subhead from stretching too wide */
   text-align:center;
 }
+
+
+/* Compare block keeps your existing table styles; just ensure spacing */
+.compare { max-width:1100px; margin:28px auto 8px; padding:0 16px; }
