@@ -3834,18 +3834,33 @@ button {
   text-align: center;
 }
 
-.credits-panel {
-  margin: 18px auto 0;
-  max-width: 900px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 14px 16px;
+/* height of the sticky input bar at the bottom */
+:root { --chatbar-h: 110px; } /* tweak if your bar is taller/shorter */
+
+/* make room at page bottom so last section isn't hidden under the bar */
+.chat-page #mainContainer { padding-bottom: var(--chatbar-h); }
+
+/* credits block styling and stacking above the bar */
+.credits-panel{
+  max-width: 880px;
+  width: min(92%, 880px);
+  margin: 18px auto 24px;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:16px;
+  box-shadow:0 2px 10px rgba(16,72,121,.06);
+  position: relative;
+  z-index: 2; /* sits over background and won’t appear “under” the bar */
 }
-.credits-row {
-  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-  margin-bottom: 8px;
+.credits-panel h2{ margin:0 0 10px; color:#104879; font-size:20px; }
+.credits-row{
+  display:flex; justify-content:space-between; gap:16px;
+  padding:8px 0 4px; border-bottom:1px solid #f1f5f9;
 }
-.credits-label { color:#64748b; font-size: 12px; }
-.credits-hint  { display:block; color:#64748b; }
-.credits-details summary { cursor: pointer; font-weight: 600; margin-top: 6px; }
+.credits-label{ color:#64748b; font-size:12px; }
+.credits-hint{ display:block; color:#94a3b8; font-size:12px; margin-top:2px; }
+.credits-details summary{ cursor:pointer; margin-top:10px; color:#104879; }
+
+/* keep the floating scroll-down icon above the bar too */
+.scroll-down-icon { bottom: calc(var(--chatbar-h) + 12px); }
