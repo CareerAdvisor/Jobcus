@@ -7,6 +7,19 @@
   };
 })();
 
+// Remember intended plan when clicking a subscribe link
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll('.plan a[href*="/subscribe"]').forEach(a => {
+    a.addEventListener('click', () => {
+      try {
+        const url = new URL(a.href, window.location.origin);
+        const plan = url.searchParams.get('plan') || '';
+        localStorage.setItem('intendedPlan', plan);
+      } catch (_) { /* ignore */ }
+    });
+  });
+});
+
 const PLAN_ROUTES = {
   free() {
     localStorage.setItem("userPlan", "free");
