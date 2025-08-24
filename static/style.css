@@ -3864,3 +3864,46 @@ button {
 
 /* keep the floating scroll-down icon above the bar too */
 .scroll-down-icon { bottom: calc(var(--chatbar-h) + 12px); }
+
+/* Chat layout: content scrolls; input stays visible */
+.chat-wrapper{
+  display:flex;
+  flex-direction:column;
+  min-height:calc(100vh - var(--header-h, 64px));
+}
+
+.chatbox{
+  flex:1;
+  overflow:auto;
+  padding:16px;
+  /* room so bottom input never overlaps content */
+  padding-bottom:140px;
+}
+
+/* sticky input bar */
+.input-container{
+  position:sticky;  /* if you’re using fixed, keep it fixed but add bottom padding to .chatbox */
+  bottom:0;
+  z-index:10;
+  background:#fff;
+  box-shadow:0 -6px 20px rgba(0,0,0,.06);
+}
+
+/* Credits panel styling */
+.credits-panel{
+  max-width:760px;
+  margin:16px auto;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:16px;
+}
+.credits-row{
+  display:flex;
+  gap:18px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin:8px 0 6px;
+}
+.credits-label{ color:#64748b; font-size:12px; }
+.credits-details{ margin-top:8px; }
