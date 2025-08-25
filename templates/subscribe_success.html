@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Plan updated – Jobcus{% endblock %}
+
+{% block content %}
+<section class="pricing-wrap" style="max-width:720px;">
+  <header class="pricing-head">
+    <h1>You're all set 🎉</h1>
+    <p>Your plan is now <strong>{{ plan_human }}</strong>.</p>
+  </header>
+
+  <p style="text-align:center;">
+    <a class="btn btn-primary" href="{{ url_for('chat') }}">Go to Chat</a>
+    <a class="btn btn-outline" href="{{ url_for('dashboard') }}" style="margin-left:8px;">Back to Dashboard</a>
+  </p>
+</section>
+
+<script>
+  // Keep front-end UI (credits panel) in sync:
+  (function(){
+    try {
+      localStorage.setItem('userPlan', {{ plan_json|tojson|safe }});
+      // Reset message counter when a plan changes.
+      localStorage.setItem('chatUsed', '0');
+    } catch (e) {}
+  })();
+</script>
+{% endblock %}
