@@ -3824,3 +3824,44 @@ button {
 #resume-builder label                 { font-size: .9rem;  }
 #resume-builder input::placeholder,
 #resume-builder textarea::placeholder{ font-size: .85rem; }
+
+/* Desktop: make the Features submenu drop *down* under the button */
+@media (min-width: 768px){
+  .desktop-nav .dropdown{ position: relative; }
+
+  .desktop-nav .dropdown-content{
+    position: absolute;
+    top: calc(100% + 8px);   /* ⬇️ place below the trigger */
+    left: 0;
+    right: auto;
+
+    /* reset anything that might make it rise upward */
+    bottom: auto !important;
+    transform: none !important;
+
+    display: none;
+    min-width: 220px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 10px 20px rgba(0,0,0,.08);
+    padding: 8px 0;
+    z-index: 1101;            /* above the fixed header */
+  }
+
+  /* show on hover/focus for desktop */
+  .desktop-nav .dropdown:hover .dropdown-content,
+  .desktop-nav .dropdown:focus-within .dropdown-content{
+    display: block;
+  }
+
+  /* submenu links */
+  .desktop-nav .dropdown-content a{
+    padding: 10px 16px;
+    color: #104879;
+    white-space: nowrap;
+  }
+  .desktop-nav .dropdown-content a:hover{
+    background: #f0f6ff;
+  }
+}
