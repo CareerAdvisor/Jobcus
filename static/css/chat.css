@@ -11,9 +11,6 @@
 /* height of the sticky input bar at the bottom */
 :root { --chatbar-h: 110px; } /* tweak if your bar is taller/shorter */
 
-/* make room at page bottom so last section isn't hidden under the bar */
-.chat-page #mainContainer { padding-bottom: var(--chatbar-h); }
-
 /* credits block styling and stacking above the bar */
 .credits-panel{
   max-width: 880px;
@@ -32,7 +29,7 @@
   display:flex; justify-content:space-between; gap:16px;
   padding:8px 0 4px; border-bottom:1px solid #f1f5f9;
 }
-.credits-label{ color:#64748b; font-size:12px; }
+
 .credits-hint{ display:block; color:#94a3b8; font-size:12px; margin-top:2px; }
 .credits-details summary{ cursor:pointer; margin-top:10px; color:#104879; }
 
@@ -79,8 +76,6 @@
   flex-wrap:wrap;
   margin:8px 0 6px;
 }
-.credits-label{ color:#64748b; font-size:12px; }
-.credits-details{ margin-top:8px; }
 
   /* Header menu button (small icon next to pencil) */
 .header-menu-icon{
@@ -174,7 +169,7 @@
 /* Bring logo a bit closer to the left icons in header (safe tweaks) */
 .site-header .brand, .site-header .logo, header .site-logo { margin-left: 8px !important; }
 
-/* ===== Chat layout ===== */
+/* ==.welcome-banner === Chat layout ===== */
 .welcome-banner { padding:24px 16px; background:#fff; text-align:center; }
 .welcome-title { font-size:1.25rem; font-weight:700; color:#104879; margin:0 0 12px; }
 .suggestion-chips { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; }
