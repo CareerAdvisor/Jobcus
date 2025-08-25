@@ -16,7 +16,18 @@
     title="Start a new chat"
     onclick="clearChat()"
   />
+
+  <!-- Chat Menu toggle (only exists on chat page) -->
+  <button id="chatMenuBtn"
+          class="header-menu-icon"
+          aria-haspopup="dialog"
+          aria-expanded="false"
+          aria-controls="chatMenu"
+          title="Chat menu">
+    <img src="{{ url_for('static', filename='icons/menu.svg') }}" alt="Menu">
+  </button>
 {% endblock %}
+
 
 {% set show_footer = false %}
 
@@ -100,7 +111,53 @@
     </div>
     <div id="job-results" class="job-results"></div>
   </div>
-  
+
+  <!-- Off-canvas Chat Menu -->
+<aside id="chatMenu" class="chat-menu" role="dialog" aria-modal="true" aria-labelledby="chatMenuTitle" hidden>
+  <header class="chat-menu__header">
+    <h2 id="chatMenuTitle">Chat menu</h2>
+    <button id="chatMenuClose" class="chat-menu__close" aria-label="Close menu">×</button>
+  </header>
+
+  <div class="chat-menu__body">
+    <!-- Compact credits panel (reuses your refreshCreditsPanel code) -->
+    <section class="credits-panel" aria-live="polite">
+      <h3 class="credits-panel__title">AI Chat credits</h3>
+      <div class="credits-row">
+        <div>
+          <span class="credits-label">Plan</span>
+          <strong id="credits-plan">—</strong>
+        </div>
+        <div>
+          <span class="credits-label">Messages left</span>
+          <strong id="credits-left">—</strong>
+          <small id="credits-reset" class="credits-hint"></small>
+        </div>
+      </div>
+
+      <details class="credits-details">
+        <summary>How credits work</summary>
+        <ul>
+          <li><b>Free:</b> 15 total messages (trial)</li>
+          <li><b>Weekly:</b> 200 / week</li>
+          <li><b>Standard:</b> 800 / month</li>
+          <li><b>Premium:</b> 12,000 / year (~1,000 / mo)</li>
+        </ul>
+        <p class="credits-note">A “message” counts each prompt you send.</p>
+      </details>
+    </section>
+
+    <nav class="chat-menu__links">
+      <a href="/pricing">View pricing</a>
+      <a href="/dashboard">Back to dashboard</a>
+      <button type="button" onclick="clearChat()">Clear conversation</button>
+    </nav>
+  </div>
+</aside>
+
+<!-- Dim background when menu is open -->
+<div id="chatMenuOverlay" class="chat-menu__overlay" hidden></div>
+
   <form id="chat-form">
     <div class="input-container" id="inputContainer">
       <textarea
