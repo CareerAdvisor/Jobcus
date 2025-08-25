@@ -269,4 +269,33 @@ window.addEventListener("DOMContentLoaded", () => {
   resetEl && (resetEl.textContent = q.reset);
 } 
 
+  // Off-canvas Chat Menu
+(function initChatMenu(){
+  const btn     = document.getElementById("chatMenuBtn");
+  const menu    = document.getElementById("chatMenu");
+  const close   = document.getElementById("chatMenuClose");
+  const overlay = document.getElementById("chatMenuOverlay");
+  if (!btn || !menu || !overlay) return;
+
+  function openMenu(){
+    menu.hidden = false; overlay.hidden = false;
+    // next tick so transition runs
+    requestAnimationFrame(()=> menu.classList.add("is-open"));
+    btn.setAttribute("aria-expanded","true");
+    if (typeof refreshCreditsPanel === "function") refreshCreditsPanel();
+  }
+  function closeMenu(){
+    menu.classList.remove("is-open");
+    btn.setAttribute("aria-expanded","false");
+    setTimeout(()=>{ menu.hidden = true; overlay.hidden = true; }, 200);
+  }
+
+  btn.addEventListener("click", openMenu);
+  close?.addEventListener("click", closeMenu);
+  overlay.addEventListener("click", closeMenu);
+  document.addEventListener("keydown", (e)=> {
+    if (e.key === "Escape" && !menu.hidden) closeMenu();
+  });
+})();
+
 });
