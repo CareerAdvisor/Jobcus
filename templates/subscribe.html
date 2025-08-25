@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Subscribe – Jobcus{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pricing.css') }}">
+  <style>
+    .sub-wrap{ max-width:720px; margin:0 auto; padding:32px 16px; }
+    .sub-card{ background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:18px; box-shadow:0 6px 22px rgba(16,72,121,.06); }
+    .sub-head{ display:flex; align-items:center; justify-content:space-between; }
+    .sub-title{ margin:0; color:#0f355e; }
+    .sub-meta{ color:#64748b; }
+    .sub-actions{ display:flex; gap:10px; margin-top:16px; }
+    .btn-ghost{ background:#fff; color:#104879; border:1px solid #e5e7eb; }
+  </style>
+{% endblock %}
+
+{% block content %}
+<section class="sub-wrap">
+  <h1 class="sub-title">Confirm your plan</h1>
+
+  <div class="sub-card">
+    <header class="sub-head">
+      <div>
+        <h2 class="sub-title">{{ plan_data.title }}</h2>
+        <p class="sub-meta">{{ plan_data.tagline }}</p>
+      </div>
+      <div class="price">
+        <span class="currency">$</span><span class="amount">{{ plan_data.amount|safe }}</span>
+        <span class="period">{{ plan_data.period }}</span>
+      </div>
+    </header>
+
+    <ul class="plan__list" style="margin-top:12px;">
+      {% for item in plan_data.features %}
+        <li>{{ item|safe }}</li>
+      {% endfor %}
+    </ul>
+
+    <form method="post" class="sub-actions">
+      <input type="hidden" name="plan" value="{{ plan_data.code }}">
+      <button class="btn btn-primary" type="submit">Confirm {{ plan_data.title }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('pricing') }}">Back to pricing</a>
+    </form>
+  </div>
+</section>
+{% endblock %}
