@@ -14,28 +14,32 @@ function insertSuggestion(text) {
 }
 
 // === Left Chat Menu (sidebar) ===
-const chatMenuToggle = document.getElementById("chatMenuToggle");
-const chatMenu       = document.getElementById("chatMenu");
-const chatOverlay    = document.getElementById("chatOverlay");
-const chatMenuClose  = document.getElementById("chatMenuClose");
+document.addEventListener('DOMContentLoaded', () => {
+  const chatMenuToggle = document.getElementById('chatMenuToggle');
+  const chatMenu       = document.getElementById('chatSidebar');
+  const chatOverlay    = document.getElementById('chatOverlay');
+  const chatCloseBtn   = document.getElementById('chatSidebarClose');
 
-function openChatMenu() {
-  if (!chatMenu) return;
-  chatMenu.classList.add("is-open");
-  chatMenu.setAttribute("aria-hidden", "false");
-  if (chatOverlay) chatOverlay.hidden = false;
-  document.documentElement.style.overflow = "hidden";
-}
-function closeChatMenu() {
-  if (!chatMenu) return;
-  chatMenu.classList.remove("is-open");
-  chatMenu.setAttribute("aria-hidden", "true");
-  if (chatOverlay) chatOverlay.hidden = true;
-  document.documentElement.style.overflow = "";
-}
-chatMenuToggle?.addEventListener("click", openChatMenu);
-chatMenuClose?.addEventListener("click", closeChatMenu);
-chatOverlay?.addEventListener("click", closeChatMenu);
+  function openChatMenu(){
+    if (!chatMenu) return;
+    chatMenu.classList.add('is-open');
+    chatMenu.setAttribute('aria-hidden','false');
+    if (chatOverlay) chatOverlay.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+  }
+  function closeChatMenu(){
+    if (!chatMenu) return;
+    chatMenu.classList.remove('is-open');
+    chatMenu.setAttribute('aria-hidden','true');
+    if (chatOverlay) chatOverlay.hidden = true;
+    document.documentElement.style.overflow = '';
+  }
+
+  chatMenuToggle?.addEventListener('click', openChatMenu);
+  chatOverlay?.addEventListener('click', closeChatMenu);
+  chatCloseBtn?.addEventListener('click', closeChatMenu);
+  document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeChatMenu(); });
+});
 
 // “New chat” & “Clear conversation” inside the sidebar
 document.getElementById("newChatBtn")?.addEventListener("click", () => {
