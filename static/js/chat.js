@@ -13,21 +13,63 @@ function insertSuggestion(text) {
   input.focus();
 }
 
-// === Toggle Mobile Menu ===
-const hamburger   = document.getElementById("hamburger");
-const mobileMenu  = document.getElementById("mobileMenu");
-const menuOverlay = document.getElementById("menuOverlay");
+// === Left Chat Menu (sidebar) ===
+const chatMenuToggle = document.getElementById("chatMenuToggle");
+const chatMenu       = document.getElementById("chatMenu");
+const chatOverlay    = document.getElementById("chatOverlay");
+const chatMenuClose  = document.getElementById("chatMenuClose");
 
-if (hamburger && mobileMenu && menuOverlay) {
-  hamburger.addEventListener("click", () => {
-    mobileMenu.classList.toggle("active");
-    menuOverlay.classList.toggle("active");
-  });
-  menuOverlay.addEventListener("click", () => {
-    mobileMenu.classList.remove("active");
-    menuOverlay.classList.remove("active");
-  });
+function openChatMenu() {
+  if (!chatMenu) return;
+  chatMenu.classList.add("is-open");
+  chatMenu.setAttribute("aria-hidden", "false");
+  if (chatOverlay) chatOverlay.hidden = false;
+  document.documentElement.style.overflow = "hidden";
 }
+function closeChatMenu() {
+  if (!chatMenu) return;
+  chatMenu.classList.remove("is-open");
+  chatMenu.setAttribute("aria-hidden", "true");
+  if (chatOverlay) chatOverlay.hidden = true;
+  document.documentElement.style.overflow = "";
+}
+chatMenuToggle?.addEventListener("click", openChatMenu);
+chatMenuClose?.addEventListener("click", closeChatMenu);
+chatOverlay?.addEventListener("click", closeChatMenu);
+
+// “New chat” & “Clear conversation” inside the sidebar
+document.getElementById("newChatBtn")?.addEventListener("click", () => {
+  clearChat();
+  closeChatMenu();
+});
+document.getElementById("clearChatBtn")?.addEventListener("click", () => {
+  clearChat();
+  closeChatMenu();
+});
+
+// Credits panel in the menu (simple client-side view)
+function refreshCreditsPanel() {
+  const planEl  = document.getElementById("credits-plan");
+  const leftEl  = document.getElementById("credits-left");
+  const resetEl = document.getElementById("credits-reset");
+  if (!planEl && !leftEl && !resetEl) return;
+
+  const PLAN = (localStorage.getItem("userPlan") || "free");
+  const QUOTAS = {
+    free:     { label: "Free",     reset: "Trial",           max: 15 },
+    weekly:   { label: "Weekly",   reset: "Resets weekly",   max: 200 },
+    standard: { label: "Standard", reset: "Resets monthly",  max: 800 },
+    premium:  { label: "Premium",  reset: "Resets yearly",   max: 12000 }
+  };
+  const q    = QUOTAS[PLAN] || QUOTAS.free;
+  const used = Number(localStorage.getItem("chatUsed") || 0);
+  const left = Math.max(q.max - used, 0);
+
+  planEl  && (planEl.textContent  = q.label);
+  leftEl  && (leftEl.textContent  = `${left} of ${q.max}`);
+  resetEl && (resetEl.textContent = q.reset);
+}
+refreshCreditsPanel();
 
 // === Share Page ===
 function sharePage() {
