@@ -231,6 +231,11 @@
   padding:14px;
   z-index:20;
   overflow:auto;
+  
+  /* slide-in behavior */
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform .25s ease, visibility .25s ease;
 }
 .sidebar-header{ display:flex; gap:8px; margin-bottom:10px; }
 .sb-menu{ display:grid; gap:8px; margin:10px 0 14px; }
