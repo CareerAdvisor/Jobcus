@@ -88,19 +88,6 @@
 }
 .header-menu-icon img{ width:22px; height:22px; display:block; }
 
-/* Off-canvas drawer */
-.chat-menu{
-  position:fixed; top:0; right:0; height:100vh; width:min(380px,92vw);
-  background:#fff; border-left:1px solid #e5e7eb; box-shadow:-8px 0 24px rgba(0,0,0,.08);
-  transform:translateX(100%); transition:transform .2s ease;
-  z-index:1002; display:flex; flex-direction:column;
-}
-.chat-menu.is-open{ transform:translateX(0); }
-.chat-menu__overlay{
-  position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:1001;
-}
-.chat-menu__overlay[hidden], .chat-menu[hidden]{ display:none; }
-
 .chat-menu__header{
   display:flex; align-items:center; justify-content:space-between;
   padding:12px 14px; border-bottom:1px solid #eef2f7;
@@ -128,3 +115,102 @@
   padding:10px 12px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; color:#0f355e;
 }
 .chat-menu__links button{ cursor:pointer; }
+
+/* ===== Left slide-in chat menu ===== */
+.chat-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 320px;
+  max-width: 88vw;
+  height: 100dvh;
+  background: #fff;
+  border-right: 1px solid #e6eef6;
+  box-shadow: 2px 0 18px rgba(16,72,121,.08);
+  transform: translateX(-100%);
+  transition: transform .25s ease;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 12px;
+}
+.chat-menu.is-open { transform: translateX(0); }
+
+.chat-menu__overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.25);
+  z-index: 999;
+}
+.chat-menu__overlay[hidden] { display:none; }
+
+.chat-menu__top {
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eef2f7;
+  font-weight:700; color:#0f355e;
+}
+.chat-menu__close {
+  border:none; background:transparent; font-size:22px; cursor:pointer; color:#234e7d;
+}
+
+.chat-menu__nav { display:grid; gap:8px; padding: 12px; }
+.menu-btn {
+  display:flex; align-items:center; gap:8px;
+  width:100%; padding:10px 12px; border:1px solid #e6eef6; border-radius:10px;
+  background:#fff; color:#0f355e; font-weight:600; cursor:pointer; text-decoration:none;
+}
+.menu-btn:hover { background:#f6fbff; }
+.menu-btn.destructive { color:#9b1c1c; border-color:#f3d1d1; }
+
+/* Credits card inside the menu */
+.credits-card { margin: 8px 12px 0; border:1px solid #e6eef6; border-radius:12px; padding:12px; }
+.credits-card__head { font-weight:700; color:#0f355e; margin-bottom:8px; }
+.credits-card__row { display:flex; justify-content:space-between; gap:10px; }
+.credits-label { color:#64748b; font-size:12px; }
+.credits-hint { color:#6b7280; }
+.credits-details { margin-top:8px; }
+.credits-details summary { cursor:pointer; color:#0f355e; margin-bottom:6px; }
+
+/* Bring logo a bit closer to the left icons in header (safe tweaks) */
+.site-header .brand, .site-header .logo, header .site-logo { margin-left: 8px !important; }
+
+/* ===== Chat layout ===== */
+.welcome-banner { padding:24px 16px; background:#fff; text-align:center; }
+.welcome-title { font-size:1.25rem; font-weight:700; color:#104879; margin:0 0 12px; }
+.suggestion-chips { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; }
+.suggestion-chips button {
+  padding:10px 20px; border:none; border-radius:20px; background:#104879; color:#fff;
+  font-size:1rem; font-weight:500; white-space:nowrap; cursor:pointer;
+}
+
+/* ===== Fixed full-width input bar ===== */
+#chat-form {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  padding: 10px 12px;
+  background: linear-gradient(to top, rgba(248,250,252,1), rgba(248,250,252,0.75), rgba(248,250,252,0));
+  z-index: 998;
+}
+.chat-page #mainContainer { padding-bottom: 96px; } /* room for the bar */
+
+.input-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background:#fff; border:1px solid #e6e6e6; border-radius:12px;
+  display:flex; align-items:center; gap:10px; padding: 10px 12px;
+  box-shadow: 0 6px 24px rgba(16,72,121,.1);
+}
+.input-container textarea {
+  flex:1; border:none; resize:none; outline:none;
+  font-size:1rem; max-height:30dvh;
+}
+.input-container .icon-group { display:flex; align-items:center; gap:12px; }
+.input-container img { cursor:pointer; }
+
+/* Keep page scroll minimal — the chat content scrolls when it overflows */
+.chatbox { padding: 0 16px 16px; }
+
+/* Small screens */
+@media (max-width: 640px){
+  .input-container { max-width: 100%; border-radius: 10px; }
+}
