@@ -211,3 +211,20 @@
   /* Slightly round the input on small screens */
   .input-container{ max-width: 100%; border-radius: 10px; }
 }
+
+.history-panel{ margin-top:12px; }
+.history-title{ margin:0 0 8px; font-size:14px; color:#0f355e; }
+.history-list{ list-style:none; padding:0; margin:0; }
+.history-item{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px;
+  margin-bottom:8px; background:#fff; cursor:pointer;
+}
+.history-item-title{
+  flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  color:#0f355e; font-weight:600;
+}
+.history-item .delete{
+  border:0; background:transparent; color:#9b1c1c; font-size:16px; cursor:pointer;
+}
+
