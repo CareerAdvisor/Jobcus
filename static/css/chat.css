@@ -303,7 +303,7 @@
 @media (max-width: 768px){
   :root{ --sb-w: 0px; }
   .chat-sidebar{ transform:translateX(-100%); visibility:hidden; }
-  .chat-main{ margin-left:0; width:100%; }
+  .chat-main{ flex: 1; margin-left:0; width:100%; }
   .input-dock{ left:0; }
 }
 
