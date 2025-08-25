@@ -210,19 +210,19 @@ window.addEventListener("DOMContentLoaded", () => {
       input.value = "";
       autoResize(input);
 
-      // 4) Placeholder for AI response
+     // 4) Placeholder for AI response
       const aiBlock = document.createElement("div");
       aiBlock.className = "chat-entry ai-answer";
       chatboxEl.appendChild(aiBlock);
       scrollToAI(aiBlock);
-
-      // ✅ UPDATE CREDITS *right after* queuing the message, before the fetch:
+    
+      // === count one message + update credits UI ===
       const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
       localStorage.setItem("chatUsed", usedNow);
       if (typeof refreshCreditsPanel === "function") refreshCreditsPanel();
-
+    
       // 5) Fetch AI reply
-      const res  = await fetch("/ask", {
+      const res = await fetch("/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
