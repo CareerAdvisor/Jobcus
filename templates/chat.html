@@ -1,162 +1,89 @@
-<!-- templates/chat.html -->
 {% extends "base.html" %}
-
 {% block title %}Chat with Jobcus{% endblock %}
 {% block body_class %}chat-page{% endblock %}
 
-{% block extra_css %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
-{% endblock %}
-
+{# Left “sidebar” toggle icon in the header #}
 {% block header_icon %}
   <img
-    src="{{ url_for('static', filename='icons/pencilchat.svg') }}"
-    class="header-pencil-icon"
-    alt="New Chat"
-    title="Start a new chat"
-    onclick="clearChat()"
+    id="chatMenuToggle"
+    src="{{ url_for('static', filename='icons/sidebar.svg') }}"
+    class="header-menu-icon"
+    alt="Open chat menu"
+    title="Menu"
   />
-
-  <!-- Chat Menu toggle (only exists on chat page) -->
-  <button id="chatMenuBtn"
-          class="header-menu-icon"
-          aria-haspopup="dialog"
-          aria-expanded="false"
-          aria-controls="chatMenu"
-          title="Chat menu">
-    <img src="{{ url_for('static', filename='icons/sidebar.svg') }}" alt="Menu">
-  </button>
 {% endblock %}
-
 
 {% set show_footer = false %}
 
 {% block content %}
 <main id="mainContainer">
-  <div class="chat-wrapper">
-    <div class="chatbox" id="chatbox">
-      <!-- Welcome banner + suggestions -->
-      <div id="welcomeBanner" style="
-           padding:24px 16px;
-           background:#fff;
-           text-align:center;
-         ">
-        {% if current_user.is_authenticated and current_user.first_name %}
-          <p style="
-             font-size:1.5rem;
-             font-weight:600;
-             margin:0 0 16px;
-             color:#104879;
-           ">
-            👋 Welcome {{ current_user.first_name }}! How can I help you today?
-          </p>
-        {% else %}
-          <p style="
-             font-size:1.5rem;
-             font-weight:600;
-             margin:0 0 16px;
-             color:#104879;
-           ">
-            👋 Welcome! How can I help you today?
-          </p>
-        {% endif %}
 
-        <div class="suggestion-chips" style="
-             display:flex;
-             flex-wrap:wrap;
-             justify-content:center;
-             gap:12px;
-           ">
-          <button type="button" onclick="insertSuggestion('How do I improve my resume?')" style="
-             padding:10px 20px;
-             border:none;
-             border-radius:20px;
-             background:#104879;
-             color:#fff;
-             font-size:1rem;
-             font-weight:500;
-             white-space:nowrap;
-             cursor:pointer;
-           ">
-            Improve my resume
-          </button>
-          <button type="button" onclick="insertSuggestion('Interview tips for a UX role')" style="
-             padding:10px 20px;
-             border:none;
-             border-radius:20px;
-             background:#104879;
-             color:#fff;
-             font-size:1rem;
-             font-weight:500;
-             white-space:nowrap;
-             cursor:pointer;
-           ">
-            Interview tips
-          </button>
-          <button type="button" onclick="insertSuggestion('Show me job market insights for London')" style="
-             padding:10px 20px;
-             border:none;
-             border-radius:20px;
-             background:#104879;
-             color:#fff;
-             font-size:1rem;
-             font-weight:500;
-             white-space:nowrap;
-             cursor:pointer;
-           ">
-            Job insights
-          </button>
-        </div>
-      </div>
-    </div>
-    <div id="job-results" class="job-results"></div>
-  </div>
+  {# —— Left slide-in chat menu —— #}
+  <aside id="chatMenu" class="chat-menu" aria-label="Chat menu" aria-hidden="true">
+    <header class="chat-menu__top">
+      <strong>Chat menu</strong>
+      <button id="chatMenuClose" class="chat-menu__close" aria-label="Close">×</button>
+    </header>
 
-  <!-- Off-canvas Chat Menu -->
-<aside id="chatMenu" class="chat-menu" role="dialog" aria-modal="true" aria-labelledby="chatMenuTitle" hidden>
-  <header class="chat-menu__header">
-    <h2 id="chatMenuTitle">Chat menu</h2>
-    <button id="chatMenuClose" class="chat-menu__close" aria-label="Close menu">×</button>
-  </header>
+    <nav class="chat-menu__nav">
+      <button id="newChatBtn" class="menu-btn">
+        <img src="{{ url_for('static', filename='icons/pencilchat.svg') }}" alt="" />
+        New chat
+      </button>
+      <a class="menu-btn" href="/pricing">View pricing</a>
+      <a class="menu-btn" href="/dashboard">Back to dashboard</a>
+      <button id="clearChatBtn" class="menu-btn destructive">Clear conversation</button>
+    </nav>
 
-  <div class="chat-menu__body">
-    <!-- Compact credits panel (reuses your refreshCreditsPanel code) -->
-    <section class="credits-panel" aria-live="polite">
-      <h3 class="credits-panel__title">AI Chat credits</h3>
-      <div class="credits-row">
+    <section class="credits-card">
+      <div class="credits-card__head">AI Chat credits</div>
+      <div class="credits-card__row">
         <div>
-          <span class="credits-label">Plan</span>
-          <strong id="credits-plan">—</strong>
+          <div class="credits-label">Plan</div>
+          <strong id="credits-plan">Free</strong>
         </div>
         <div>
-          <span class="credits-label">Messages left</span>
+          <div class="credits-label">Messages left</div>
           <strong id="credits-left">—</strong>
-          <small id="credits-reset" class="credits-hint"></small>
+          <small id="credits-reset" class="credits-hint">Resets monthly</small>
         </div>
       </div>
 
       <details class="credits-details">
         <summary>How credits work</summary>
         <ul>
-          <li><b>Free:</b> 15 total messages (trial)</li>
-          <li><b>Weekly:</b> 200 / week</li>
-          <li><b>Standard:</b> 800 / month</li>
-          <li><b>Premium:</b> 12,000 / year (~1,000 / mo)</li>
+          <li><strong>Free:</strong> 15 total messages (trial)</li>
+          <li><strong>Weekly:</strong> 200 / week</li>
+          <li><strong>Standard:</strong> 800 / month</li>
+          <li><strong>Premium:</strong> 12,000 / year (~1,000 / mo)</li>
         </ul>
-        <p class="credits-note">A “message” counts each prompt you send.</p>
+        <p>A “message” is each prompt you send. When you run out, chat pauses until your next reset or upgrade.</p>
       </details>
     </section>
+  </aside>
+  <div id="chatOverlay" class="chat-menu__overlay" hidden></div>
+  {# ———————————————— #}
 
-    <nav class="chat-menu__links">
-      <a href="/pricing">View pricing</a>
-      <a href="/dashboard">Back to dashboard</a>
-      <button type="button" onclick="clearChat()">Clear conversation</button>
-    </nav>
+  <div class="chat-wrapper">
+    <div class="chatbox" id="chatbox">
+      <!-- Welcome banner + suggestions (unchanged) -->
+      <div id="welcomeBanner" class="welcome-banner">
+        {% if current_user.is_authenticated and current_user.first_name %}
+          <p class="welcome-title">👋 Welcome {{ current_user.first_name }}! How can I help you today?</p>
+        {% else %}
+          <p class="welcome-title">👋 Welcome! How can I help you today?</p>
+        {% endif %}
+        <div class="suggestion-chips">
+          <button type="button" onclick="insertSuggestion('How do I improve my resume?')">Improve my resume</button>
+          <button type="button" onclick="insertSuggestion('Interview tips for a UX role')">Interview tips</button>
+          <button type="button" onclick="insertSuggestion('Show me job market insights for London')">Job insights</button>
+        </div>
+      </div>
+    </div>
+    <div id="job-results" class="job-results"></div>
   </div>
-</aside>
 
-<!-- Dim background when menu is open -->
-<div id="chatMenuOverlay" class="chat-menu__overlay" hidden></div>
+  {# NOTE: the old inline <section id="credits-info"> was removed — it now lives in the left menu #}
 
   <form id="chat-form">
     <div class="input-container" id="inputContainer">
@@ -166,43 +93,20 @@
         placeholder="Ask your career question..."
         oninput="autoResize(this)"
       ></textarea>
-      <div class="icon-group" style="align-items: right;">
-        <label for="file-upload">
-          <img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach">
-        </label>
-        <input
-          id="file-upload"
-          type="file"
-          style="display: none;"
-          onchange="handleAttach()"
-        >
-        <img
-          src="{{ url_for('static', filename='icons/mic.svg') }}"
-          alt="Mic"
-          onclick="handleMic()"
-        >
-        <img
-          id="sendButton"
-          src="{{ url_for('static', filename='icons/send.svg') }}"
-          alt="Send"
-        >
+      <div class="icon-group">
+        <label for="file-upload"><img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach"></label>
+        <input id="file-upload" type="file" hidden onchange="handleAttach()">
+        <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Mic" onclick="handleMic()">
+        <img id="sendButton" src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send">
       </div>
     </div>
   </form>
 
-  <img
-    id="scrollDown"
-    class="scroll-down-icon"
-    src="{{ url_for('static', filename='icons/scrolldown.svg') }}"
-    alt="Scroll Down"
-    onclick="scrollToBottom()"
-  />
-
+  <img id="scrollDown" class="scroll-down-icon" src="{{ url_for('static', filename='icons/scrolldown.svg') }}" alt="Scroll Down" onclick="scrollToBottom()" />
 </main>
 {% endblock %}
 
 {% block scripts %}
-  <!-- in the <head> or right before chat.js -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% endblock %}
