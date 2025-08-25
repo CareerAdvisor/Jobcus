@@ -228,3 +228,35 @@
   border:0; background:transparent; color:#9b1c1c; font-size:16px; cursor:pointer;
 }
 
+/* Keep bullets fully inside the credits box */
+.credits-panel ul,
+.credits-card ul,
+.credits-details ul{
+  list-style: none;       /* remove native bullets that hang outside */
+  margin: 0;
+  padding-left: 0;
+}
+
+.credits-panel li,
+.credits-card li,
+.credits-details li{
+  position: relative;
+  padding-left: 1.1rem;   /* space for our custom dot */
+  line-height: 1.5;
+}
+
+/* Custom dot, safely inside the box */
+.credits-panel li::before,
+.credits-card li::before,
+.credits-details li::before{
+  content: "";
+  position: absolute;
+  left: 0.4rem;           /* inside the border radius */
+  top: 0.9em;             /* vertically centered-ish */
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0f355e;    /* brand-ish blue; tweak if needed */
+  opacity: 0.9;
+}
