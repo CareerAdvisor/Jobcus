@@ -250,7 +250,7 @@
 
 /* RIGHT: main chat column */
 .chat-main{
-  margin-left:var(--sb-w);
+  margin-left:0;
   width:calc(100% - var(--sb-w));
   display:flex; flex-direction:column; min-height:100vh;
 }
@@ -274,7 +274,7 @@
 /* Bottom docked input (full device width minus sidebar) */
 .input-dock{
   position:fixed;
-  left:var(--sb-w);
+  left:0;
   right:0;
   bottom:0;
   height:var(--dock-h);
@@ -301,3 +301,22 @@
   .chat-main{ margin-left:0; width:100%; }
   .input-dock{ left:0; }
 }
+
+
+/* === Left slide-in sidebar (overlay style) === */
+.chat-sidebar{
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform .25s ease, visibility .25s ease;
+}
+.chat-sidebar.is-open{
+  transform: translateX(0);
+  visibility: visible;
+}
+.chat-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.25);
+  z-index: 15;
+}
+.chat-overlay[hidden]{ display:none; }
