@@ -4,6 +4,10 @@
 {% block title %}Chat with Jobcus{% endblock %}
 {% block body_class %}chat-page{% endblock %}
 
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+{% endblock %}
+
 {% block header_icon %}
   <img
     src="{{ url_for('static', filename='icons/pencilchat.svg') }}"
