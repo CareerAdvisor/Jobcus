@@ -1,242 +1,67 @@
+/* ===========================
+   Chat – consolidated styles
+   =========================== */
 
-.fairuse-note{
-  max-width: 900px;
-  margin: 12px auto 0;
-  padding: 8px 12px;
-  color: #6b7280;          /* slate-500 */
-  font-size: 12px;
-  text-align: center;
-}
-
-/* height of the sticky input bar at the bottom */
-:root { --chatbar-h: 110px; } /* tweak if your bar is taller/shorter */
-
-/* credits block styling and stacking above the bar */
-.credits-panel{
-  max-width: 880px;
-  width: min(92%, 880px);
-  margin: 18px auto 24px;
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  padding:16px;
-  box-shadow:0 2px 10px rgba(16,72,121,.06);
-  position: relative;
-  z-index: 2; /* sits over background and won’t appear “under” the bar */
-}
-.credits-panel h2{ margin:0 0 10px; color:#104879; font-size:20px; }
-.credits-row{
-  display:flex; justify-content:space-between; gap:16px;
-  padding:8px 0 4px; border-bottom:1px solid #f1f5f9;
-}
-
-.credits-hint{ display:block; color:#94a3b8; font-size:12px; margin-top:2px; }
-.credits-details summary{ cursor:pointer; margin-top:10px; color:#104879; }
-
-/* keep the floating scroll-down icon above the bar too */
-.scroll-down-icon { bottom: calc(var(--chatbar-h) + 12px); }
-
-/* Chat layout: content scrolls; input stays visible */
-.chat-wrapper{
-  display:flex;
-  flex-direction:column;
-  min-height:calc(100vh - var(--header-h, 64px));
-}
-
-.chatbox{
-  flex:1;
-  overflow:auto;
-  padding:16px;
-  /* room so bottom input never overlaps content */
-  padding-bottom:140px;
-}
-
-/* sticky input bar */
-.input-container{
-  position:sticky;  /* if you’re using fixed, keep it fixed but add bottom padding to .chatbox */
-  bottom:0;
-  z-index:10;
-  background:#fff;
-  box-shadow:0 -6px 20px rgba(0,0,0,.06);
-}
-
-/* Credits panel styling */
-.credits-panel{
-  max-width:760px;
-  margin:16px auto;
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  padding:16px;
-}
-.credits-row{
-  display:flex;
-  gap:18px;
-  justify-content:center;
-  flex-wrap:wrap;
-  margin:8px 0 6px;
-}
-
-  /* Header menu button (small icon next to pencil) */
-.header-menu-icon{
-  border:none; background:transparent; padding:6px; margin-left:6px; cursor:pointer;
-}
-.header-menu-icon img{ width:22px; height:22px; display:block; }
-
-.chat-menu__header{
-  display:flex; align-items:center; justify-content:space-between;
-  padding:12px 14px; border-bottom:1px solid #eef2f7;
-}
-.chat-menu__header h2{ margin:0; font-size:16px; color:#0f355e; }
-.chat-menu__close{ border:none; background:#fff; font-size:22px; line-height:1; padding:4px 8px; cursor:pointer; }
-
-.chat-menu__body{ padding:12px 14px; overflow:auto; }
-
-/* Compact credits panel inside menu */
-.credits-panel{
-  border:1px solid #e5e7eb; border-radius:12px; padding:12px; background:#fff; margin-bottom:12px;
-}
-.credits-panel__title{ margin:0 0 8px; font-size:14px; color:#0f355e; }
-.credits-row{ display:flex; gap:16px; flex-wrap:wrap; align-items:center; }
-.credits-label{ display:block; color:#64748b; font-size:12px; }
-.credits-hint{ color:#64748b; margin-left:6px; }
-.credits-details summary{ cursor:pointer; margin-top:6px; }
-.credits-note{ color:#475569; font-size:13px; }
-
-/* Links/actions */
-.chat-menu__links{ display:grid; gap:8px; margin-top:8px; }
-.chat-menu__links a, .chat-menu__links button{
-  display:block; width:100%; text-align:left;
-  padding:10px 12px; border-radius:10px; border:1px solid #e5e7eb; background:#fff; color:#0f355e;
-}
-.chat-menu__links button{ cursor:pointer; }
-
-/* ===== Left slide-in chat menu ===== */
-.chat-menu {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 320px;
-  max-width: 88vw;
-  height: 100dvh;
-  background: #fff;
-  border-right: 1px solid #e6eef6;
-  box-shadow: 2px 0 18px rgba(16,72,121,.08);
-  transform: translateX(-100%);
-  transition: transform .25s ease;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 12px;
-}
-.chat-menu.is-open { transform: translateX(0); }
-
-.chat-menu__overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.25);
-  z-index: 999;
-}
-.chat-menu__overlay[hidden] { display:none; }
-
-.chat-menu__top {
-  display:flex; align-items:center; justify-content:space-between;
-  padding: 12px 14px;
-  border-bottom: 1px solid #eef2f7;
-  font-weight:700; color:#0f355e;
-}
-.chat-menu__close {
-  border:none; background:transparent; font-size:22px; cursor:pointer; color:#234e7d;
-}
-
-.chat-menu__nav { display:grid; gap:8px; padding: 12px; }
-.menu-btn {
-  display:flex; align-items:center; gap:8px;
-  width:100%; padding:10px 12px; border:1px solid #e6eef6; border-radius:10px;
-  background:#fff; color:#0f355e; font-weight:600; cursor:pointer; text-decoration:none;
-}
-.menu-btn:hover { background:#f6fbff; }
-.menu-btn.destructive { color:#9b1c1c; border-color:#f3d1d1; }
-
-/* Credits card inside the menu */
-.credits-card { margin: 8px 12px 0; border:1px solid #e6eef6; border-radius:12px; padding:12px; }
-.credits-card__head { font-weight:700; color:#0f355e; margin-bottom:8px; }
-.credits-card__row { display:flex; justify-content:space-between; gap:10px; }
-.credits-label { color:#64748b; font-size:12px; }
-.credits-hint { color:#6b7280; }
-.credits-details { margin-top:8px; }
-.credits-details summary { cursor:pointer; color:#0f355e; margin-bottom:6px; }
-
-/* Bring logo a bit closer to the left icons in header (safe tweaks) */
-.site-header .brand, .site-header .logo, header .site-logo { margin-left: 8px !important; }
-
-/* ==.welcome-banner === Chat layout ===== */
-.welcome-banner { padding:24px 16px; background:#fff; text-align:center; }
-.welcome-title { font-size:1.25rem; font-weight:700; color:#104879; margin:0 0 12px; }
-.suggestion-chips { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; }
-.suggestion-chips button {
-  padding:10px 20px; border:none; border-radius:20px; background:#104879; color:#fff;
-  font-size:1rem; font-weight:500; white-space:nowrap; cursor:pointer;
-}
-
-/* ===== Fixed full-width input bar ===== */
-#chat-form {
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  padding: 10px 12px;
-  background: linear-gradient(to top, rgba(248,250,252,1), rgba(248,250,252,0.75), rgba(248,250,252,0));
-  z-index: 998;
-}
-.chat-page #mainContainer { padding-bottom: 96px; } /* room for the bar */
-
-.input-container {
-  max-width: 1000px;
-  margin: 0 auto;
-  background:#fff; border:1px solid #e6e6e6; border-radius:12px;
-  display:flex; align-items:center; gap:10px; padding: 10px 12px;
-  box-shadow: 0 6px 24px rgba(16,72,121,.1);
-}
-.input-container textarea {
-  flex:1; border:none; resize:none; outline:none;
-  font-size:1rem; max-height:30dvh;
-}
-.input-container .icon-group { display:flex; align-items:center; gap:12px; }
-.input-container img { cursor:pointer; }
-
-/* Keep page scroll minimal — the chat content scrolls when it overflows */
-.chatbox { padding: 0 16px 16px; }
-
-/* Small screens */
-@media (max-width: 640px){
-  .input-container { max-width: 100%; border-radius: 10px; }
-}
-
+/* --- Variables --- */
 :root{
-  --sb-w: 280px;      /* sidebar width */
-  --dock-h: 72px;     /* input dock height */
+  --sb-w: 280px;                /* sidebar width */
+  --dock-h: 72px;               /* input dock height */
+  --header-h: 60px;             /* fixed header height */
+  --page-pad: 16px;             /* side padding on main content */
 }
 
-/* Two-pane layout */
+/* --- Bigger, tappable left menu icon beside the logo --- */
+.header-menu-icon{
+  height: 32px;
+  width: 32px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+/* --- Overall chat layout --- */
 .chat-shell{
-  display:flex;
-  min-height:100vh;
+  display: flex;
+  min-height: 100vh;
+  padding-top: var(--header-h);       /* avoid going under the fixed header */
 }
 
-/* LEFT: sidebar */
+/* ===========================
+   Left Drawer (Sidebar)
+   - Desktop: overlay
+   - Mobile: pushes content
+   =========================== */
 .chat-sidebar{
-  position:fixed;
-  inset:0 auto 0 0;             /* left:0; top/bottom:0 */
-  width:var(--sb-w);
-  background:#fff;
-  border-right:1px solid #e5e7eb;
-  padding:14px;
-  z-index:20;
-  overflow:auto;
-  
+  position: fixed;
+  inset: 0 auto 0 0;                    /* left:0; top/bottom:0 */
+  width: var(--sb-w);
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+  padding: 14px;
+  overflow: auto;
+
   /* slide-in behavior */
   transform: translateX(-100%);
   visibility: hidden;
   transition: transform .25s ease, visibility .25s ease;
+
+  /* must sit above sticky header */
+  z-index: 1201;
 }
+.chat-sidebar.is-open{
+  transform: translateX(0);
+  visibility: visible;
+}
+
+/* Overlay (desktop overlay mode) */
+.chat-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.25);
+  z-index: 1200;                         /* just under the drawer */
+}
+.chat-overlay[hidden]{ display: none; }
+
+/* Sidebar inner bits */
 .sidebar-header{ display:flex; gap:8px; margin-bottom:10px; }
 .sb-menu{ display:grid; gap:8px; margin:10px 0 14px; }
 .sb-btn{
@@ -247,81 +72,142 @@
 .sb-btn:hover{ background:#eef2f7; }
 .sb-primary{ background:#104879; color:#fff; border-color:#104879; }
 
-.credits-panel{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
-.credits-panel h2{ margin:0 0 8px; font-size:14px; color:#0f355e; }
-.credits-row{ display:flex; justify-content:space-between; gap:12px; }
-.credits-label{ font-size:12px; color:#64748b; }
-.credits-details summary{ cursor:pointer; margin-top:8px; }
-
-/* RIGHT: main chat column */
+/* ===========================
+   Main Chat Column
+   =========================== */
 .chat-main{
-  margin-left:0;
-  width:calc(100% - var(--sb-w));
-  display:flex; flex-direction:column; min-height:100vh;
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--header-h));
+  padding: 0 var(--page-pad);
 }
 
-/* Scroll area for messages */
+/* Chat stream area: full device width with nice max on large screens */
 .chatbox{
-  flex:1;
-  overflow:auto;
-  padding:16px;
-  padding-bottom:calc(var(--dock-h) + 12px);   /* keep content above the dock */
-  background:#f7fbfd;
+  flex: 1;
+  overflow: auto;
+  background: #f7fbfd;
+  padding: 16px;
+  padding-bottom: calc(var(--dock-h) + 12px);
+  max-width: 1200px;
+  margin: 0 auto;                          /* center on large screens */
 }
 
-/* Welcome styles (optional tidy) */
-.welcome{ background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; text-align:center; }
+/* Welcome block + chips (optional polish) */
+.welcome{
+  background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+  padding:16px; text-align:center;
+}
 .welcome-title{ color:#104879; font-weight:700; margin:0 0 12px; }
 .suggestion-chips{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
 .chip{ background:#104879; color:#fff; border:0; border-radius:999px; padding:8px 14px; cursor:pointer; }
 .chip:hover{ opacity:.95; }
 
-/* Bottom docked input (full device width minus sidebar) */
-.input-dock{
-  position:fixed;
-  left:0;
-  right:0;
-  bottom:0;
-  height:var(--dock-h);
-  display:flex; align-items:center;
-  padding:8px 16px;
-  background:linear-gradient(180deg, transparent, rgba(0,0,0,.04));
-  z-index:25;
+/* ===========================
+   Bottom Input Dock
+   =========================== */
+.input-dock,
+#chat-form{ /* support either selector */
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--dock-h);
+  display: flex; align-items: center;
+  padding: 8px 16px;
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,.04));
+  z-index: 1100;                            /* above page content, under drawer */
 }
+
 .input-container{
-  width:100%;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
   background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-  padding:10px 12px; display:flex; align-items:center; gap:10px;
+  padding:10px 12px;
+  display:flex; align-items:center; gap:10px;
   box-shadow:0 4px 18px rgba(0,0,0,.06);
 }
+
 #userInput{
-  flex:1; resize:none; border:0; outline:none; font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  flex:1; resize:none; border:0; outline:none;
+  font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  max-height: 30dvh;
 }
+.icon-group{ display:flex; align-items:center; gap:12px; }
 .icon-group img{ height:22px; cursor:pointer; }
 
-/* Mobile: sidebar collapses; input spans full width */
-@media (max-width: 768px){
-  :root{ --sb-w: 0px; }
-  .chat-sidebar{ transform:translateX(-100%); visibility:hidden; }
-  .chat-main{ flex: 1; margin-left:0; width:100%; }
-  .input-dock{ left:0; }
-}
-
-
-/* === Left slide-in sidebar (overlay style) === */
-.chat-sidebar{
-  transform: translateX(-100%);
-  visibility: hidden;
-  transition: transform .25s ease, visibility .25s ease;
-}
-.chat-sidebar.is-open{
-  transform: translateX(0);
-  visibility: visible;
-}
-.chat-overlay{
+/* Scroll-down icon stays above the dock */
+.scroll-down-icon{
   position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.25);
-  z-index: 15;
+  right: 20px;
+  bottom: calc(var(--dock-h) + 12px);
+  width: 32px; height: 20px;
+  display: none;
+  opacity: .8;
+  z-index: 1100;
 }
-.chat-overlay[hidden]{ display:none; }
+
+/* ===========================
+   Credits panel (if used in stream)
+   =========================== */
+.credits-panel{
+  max-width: 880px;
+  width: min(92%, 880px);
+  margin: 18px auto 24px;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:16px;
+  box-shadow:0 2px 10px rgba(16,72,121,.06);
+  position: relative;
+  z-index: 2;
+}
+.credits-panel h2{ margin:0 0 10px; color:#104879; font-size:20px; }
+.credits-row{
+  display:flex; justify-content:space-between; gap:16px;
+  padding:8px 0 4px; border-bottom:1px solid #f1f5f9;
+}
+.credits-label{ display:block; color:#64748b; font-size:12px; }
+.credits-hint{ display:block; color:#94a3b8; font-size:12px; margin-top:2px; }
+.credits-details summary{ cursor:pointer; margin-top:10px; color:#104879; }
+
+/* ===========================
+   Page-specific cleanups
+   =========================== */
+/* Hide any “back” controls and the floating chat button on the chat page */
+.chat-page .back-btn{ display: none !important; }
+.chat-page .chat-float-button{ display: none !important; }
+
+/* ===========================
+   Responsive behavior
+   =========================== */
+
+/* Desktop (overlay mode): content does not move */
+@media (min-width: 769px){
+  .chat-main{ transform: none; }
+  .input-dock, #chat-form{ left: 0; }
+  /* Show the overlay when drawer opens (overlay is controlled by JS) */
+}
+
+/* Mobile: when the drawer opens, push main content to the right */
+@media (max-width: 768px){
+  /* Don’t show the dark overlay in push mode */
+  .chat-overlay{ display: none !important; }
+
+  .chat-main{
+    transition: transform .25s ease;
+  }
+  .chat-sidebar.is-open ~ .chat-main{
+    transform: translateX(var(--sb-w));
+  }
+  .chat-sidebar.is-open ~ .chat-main .input-dock,
+  .chat-sidebar.is-open ~ .chat-main #chat-form{
+    left: var(--sb-w);
+  }
+
+  /* Slightly round the input on small screens */
+  .input-container{ max-width: 100%; border-radius: 10px; }
+}
