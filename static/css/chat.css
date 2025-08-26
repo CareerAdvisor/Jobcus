@@ -97,7 +97,7 @@
 
 /* Welcome block + chips (optional polish) */
 .welcome{
-  background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+  background:#f7fbfd; border:none; border-radius:12px;
   padding:16px; text-align:center;
 }
 .welcome-title{ color:#104879; font-weight:700; margin:0 0 12px; }
