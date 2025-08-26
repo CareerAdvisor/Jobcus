@@ -3864,11 +3864,13 @@ button {
   background: #f0f6ff;
 }
 
-/* IMPORTANT: don't show the mobile menu on desktop hover */
-@media (min-width: 768px){
-  /* If this exists in your CSS, it causes the upward popover:
-     .site-header:hover #mobileMenu { ... }  */
-  .site-header:hover #mobileMenu { display: none !important; }
-  #mobileMenu,
-  .mobile-nav { display: none !important; }
+  /* Keep mobile popover behavior ONLY on small screens */
+@media (max-width: 767px){
+  .site-header:hover #mobileMenu{
+    display: flex;
+    position: absolute;
+    top: 60px;
+    right: 10px;
+  }
 }
+
