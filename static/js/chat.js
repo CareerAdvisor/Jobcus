@@ -173,45 +173,56 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ───── Clear conversation: archive → history, then reset current
-  window.clearChat = function(){
-    const current = getCurrent();
-    if (current.length){
-      const entry = {
-        id: Date.now().toString(36),
-        title: firstUserTitle(current),
-        created: new Date().toISOString(),
-        messages: current
-      };
-      const hist = getHistory();
-      hist.unshift(entry);          // most recent first
-      setHistory(hist);
-    }
-    setCurrent([]);                 // reset current
-    renderChat([]);                 // show suggestions/welcome
-    renderHistory();                // refresh sidebar history
-  };
-
-  // ───── Save one message (call this wherever you add messages)
+  // ───── Save one message (use in send flow & when AI replies)
   window.saveMessage = function(role, content){
     const msgs = getCurrent();
     msgs.push({ role, content });
     setCurrent(msgs);
   };
 
-  // ───── Credits panel updater (kept from your code)
+  // ───── Clear conversation (de-dupe safe): archive → history, then reset current
+  let clearInProgress = false;
+  window.clearChat = function(){
+    if (clearInProgress) return;
+    clearInProgress = true;
+    try {
+      const current = getCurrent();
+      if (current.length){
+        const hist = getHistory();
+
+        // signature of current convo to prevent duplicate pushing
+        const sig = JSON.stringify(current);
+        const lastSig = hist.length ? JSON.stringify(hist[0].messages || []) : null;
+
+        if (sig !== lastSig){
+          hist.unshift({
+            id: Date.now().toString(36),
+            title: firstUserTitle(current),
+            created: new Date().toISOString(),
+            messages: current
+          });
+          setHistory(hist);
+        }
+      }
+      setCurrent([]);      // reset current
+      renderChat([]);      // show suggestions/welcome
+      renderHistory();     // refresh sidebar
+    } finally {
+      setTimeout(() => { clearInProgress = false; }, 50);
+    }
+  };
+
+  // ───── Credits panel updater (uses data-plan from server if present)
   function refreshCreditsPanel() {
     const planEl  = document.getElementById("credits-plan");
     const leftEl  = document.getElementById("credits-left");
     const resetEl = document.getElementById("credits-reset");
     if (!planEl && !leftEl && !resetEl) return;
-  
-    const serverPlan = planEl?.dataset.plan;              // ← from Jinja
+
+    const serverPlan = planEl?.dataset.plan; // from Jinja
     const PLAN = (serverPlan || localStorage.getItem("userPlan") || "free");
-  
-    // keep localStorage in sync if server provided a value
     if (serverPlan) localStorage.setItem("userPlan", serverPlan);
-  
+
     const QUOTAS = {
       free:     { label: "Free",     reset: "Trial",           max: 15 },
       weekly:   { label: "Weekly",   reset: "Resets weekly",   max: 200 },
@@ -221,12 +232,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const q    = QUOTAS[PLAN] || QUOTAS.free;
     const used = Number(localStorage.getItem("chatUsed") || 0);
     const left = Math.max(q.max - used, 0);
-  
+
     planEl  && (planEl.textContent  = q.label);
     leftEl  && (leftEl.textContent  = `${left} of ${q.max}`);
     resetEl && (resetEl.textContent = q.reset);
   }
-
 
   // ───── Left drawer (sidebar) toggle
   const chatMenuToggle = document.getElementById("chatMenuToggle");
@@ -253,12 +263,12 @@ document.addEventListener("DOMContentLoaded", () => {
   chatCloseBtn?.addEventListener("click", closeChatMenu);
   document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeChatMenu(); });
 
-  // ───── Wire “New chat” & “Clear conversation” buttons (support either ids or inline onclick)
+  // ───── Wire “New chat” & “Clear conversation” buttons (IDs; avoid inline onclick duplication)
   document.getElementById("newChatBtn")?.addEventListener("click", () => { clearChat(); closeChatMenu(); });
   document.getElementById("clearChatBtn")?.addEventListener("click", () => { clearChat(); closeChatMenu(); });
 
-  // ───── Initial render
-  renderChat(getCurrent());
+  // ───── Initial render on page load
+  renderChat(getCurrent());   // if empty -> welcome
   renderHistory();
   refreshCreditsPanel();
   maybeShowScrollIcon();
@@ -272,7 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       removeWelcome();
 
-      // Add user message to UI + storage
+      // 1) UI: show user message
       const userMsg = document.createElement("div");
       userMsg.className = "chat-entry user";
       userMsg.innerHTML = `
@@ -281,31 +291,35 @@ document.addEventListener("DOMContentLoaded", () => {
         </h2>
       `;
       chatbox.appendChild(userMsg);
+
+      // 2) Persist user message
       saveMessage("user", message);
 
+      // 3) Clear input & keep sizing tidy
       input.value = "";
       autoResize(input);
 
-      // Placeholder AI block
+      // 4) Placeholder for AI reply
       const aiBlock = document.createElement("div");
       aiBlock.className = "chat-entry ai-answer";
       chatbox.appendChild(aiBlock);
       scrollToAI(aiBlock);
 
-      // count a message for credits
+      // 5) Count a message for credits
       const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
       localStorage.setItem("chatUsed", usedNow);
       refreshCreditsPanel();
 
-      // Fetch AI
+      // 6) Fetch AI
       let finalReply = "";
+      let data = null;
       try {
         const res = await fetch("/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message }),
         });
-        const data = await res.json();
+        data = await res.json();
         finalReply = data.reply || "";
       } catch (err) {
         console.error("AI error:", err);
@@ -326,7 +340,7 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       const targetDiv = document.getElementById(copyId);
 
-      // Typewriter effect
+      // 7) Typewriter effect → then render markdown and persist assistant message
       let i = 0, buffer = "";
       (function typeWriter() {
         if (i < finalReply.length) {
@@ -340,23 +354,21 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             targetDiv.textContent = buffer;
           }
-          // Save assistant message after it completes
+          // Persist assistant message after finished
           saveMessage("assistant", finalReply);
+
+          // Optional: job suggestions if API flags it
+          if (data && data.suggestJobs) {
+            fetchJobs(message, aiBlock);
+          }
+
           scrollToAI(aiBlock);
           maybeShowScrollIcon();
         }
       })();
-
-      // Optionally fetch jobs if API returns suggestJobs
-      // (uncomment if your /ask returns { suggestJobs: true })
-      /*
-      if (data && data.suggestJobs) {
-        await fetchJobs(message, aiBlock);
-      }
-      */
     });
 
-    // Wire the paper-plane icon
+    // paper-plane icon
     const sendBtn = document.getElementById("sendButton");
     sendBtn?.addEventListener("click", () => form.dispatchEvent(new Event("submit")));
 
@@ -368,7 +380,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ──────────────────────────────────────────────────────────────
-// Optional job suggestions (kept from your previous code)
+// Optional job suggestions (unchanged)
 // ──────────────────────────────────────────────────────────────
 async function fetchJobs(query, aiBlock) {
   try {
