@@ -3825,43 +3825,50 @@ button {
 #resume-builder input::placeholder,
 #resume-builder textarea::placeholder{ font-size: .85rem; }
 
-/* Desktop: make the Features submenu drop *down* under the button */
+/* --- Desktop "Features" dropdown: always open downward --- */
+.site-header,
+.desktop-nav { overflow: visible; }     /* prevent clipping */
+
+.desktop-nav .dropdown { position: relative; }   /* anchor for submenu */
+
+.desktop-nav .dropdown-content{
+  position: absolute;
+  top: calc(100% + 10px);  /* 👈 drop BELOW the "Features" button */
+  left: 0;
+  right: auto;
+  bottom: auto;            /* ensure not anchored to bottom */
+  transform: none;
+  display: none;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0,0,0,.08);
+  z-index: 2001;           /* above header */
+  padding: 8px 0;
+}
+
+.desktop-nav .dropdown:hover .dropdown-content,
+.desktop-nav .dropdown:focus-within .dropdown-content{
+  display: flex;           /* your submenu is a vertical flex stack */
+  flex-direction: column;
+}
+
+/* Submenu links */
+.desktop-nav .dropdown-content a{
+  padding: 12px 16px;
+  color: #104879;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.desktop-nav .dropdown-content a:hover{
+  background: #f0f6ff;
+}
+
+/* IMPORTANT: don't show the mobile menu on desktop hover */
 @media (min-width: 768px){
-  .desktop-nav .dropdown{ position: relative; }
-
-  .desktop-nav .dropdown-content{
-    position: absolute;
-    top: calc(100% + 8px);   /* ⬇️ place below the trigger */
-    left: 0;
-    right: auto;
-
-    /* reset anything that might make it rise upward */
-    bottom: auto !important;
-    transform: none !important;
-
-    display: none;
-    min-width: 220px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    box-shadow: 0 10px 20px rgba(0,0,0,.08);
-    padding: 8px 0;
-    z-index: 1101;            /* above the fixed header */
-  }
-
-  /* show on hover/focus for desktop */
-  .desktop-nav .dropdown:hover .dropdown-content,
-  .desktop-nav .dropdown:focus-within .dropdown-content{
-    display: block;
-  }
-
-  /* submenu links */
-  .desktop-nav .dropdown-content a{
-    padding: 10px 16px;
-    color: #104879;
-    white-space: nowrap;
-  }
-  .desktop-nav .dropdown-content a:hover{
-    background: #f0f6ff;
-  }
+  /* If this exists in your CSS, it causes the upward popover:
+     .site-header:hover #mobileMenu { ... }  */
+  .site-header:hover #mobileMenu { display: none !important; }
+  #mobileMenu,
+  .mobile-nav { display: none !important; }
 }
