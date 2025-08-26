@@ -26,16 +26,14 @@
     <div class="sidebar-header">
       <button id="chatSidebarClose" class="sb-btn" type="button" aria-label="Close menu">✕ Close</button>
       <!-- New chat lives in the sidebar now -->
-      <button class="sb-btn sb-primary" type="button" onclick="clearChat()">
-        📝 New chat
-      </button>
+      <button id="newChatBtn" class="sb-btn sb-primary" type="button">📝 New chat</button>
     </div>
 
     <!-- Quick links -->
     <nav class="sb-menu">
       <a class="sb-btn" href="/pricing">View pricing</a>
       <a class="sb-btn" href="/dashboard">Back to dashboard</a>
-      <button class="sb-btn" type="button" onclick="clearChat()">Clear conversation</button>
+      <button id="clearChatBtn" class="sb-btn" type="button">Clear conversation</button>
     </nav>
 
     <!-- Credits panel (moved out of the chat stream) -->
