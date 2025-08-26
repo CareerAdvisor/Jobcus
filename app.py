@@ -296,10 +296,6 @@ def job_insights():
 def employers():
     return render_template("employers.html")
 
-@app.route("/pricing")
-def pricing():
-    return render_template("pricing.html")
-
 @app.route("/faq")
 def faq():
     return render_template("faq.html")
@@ -311,6 +307,106 @@ def privacy_policy():
 @app.route('/terms-of-service')
 def terms_of_service():
     return render_template('terms-of-service.html')
+
+@app.route("/pricing")
+def pricing():
+    return render_template("pricing.html")
+
+def _plans():
+    return {
+        "free": {
+            "code":"free", "title":"Free", "amount":"0", "period":"/mo",
+            "tagline":"Great for a quick check",
+            "features":[
+                "<strong>3</strong> resume analyses / month (basic score + tips)",
+                "<strong>2</strong> AI cover letters / month",
+                "AI Resume Builder (basic templates)",
+                "Skill-Gap snapshot (1 basic analysis)",
+                "Job Insights (basic charts)",
+                "Interview Coach (limited practice)",
+                "AI Chat trial: <strong>15 messages</strong> total",
+                "Local device history",
+            ],
+        },
+        "weekly": {
+            "code":"weekly", "title":"Weekly Pass", "amount":"9<span class='cents'>.99</span>", "period":"/week",
+            "tagline":"For urgent applications",
+            "features":[
+                "AI Chat credits: <strong>200 messages</strong> / week",
+                "<strong>10</strong> resume analyses / week",
+                "<strong>5</strong> AI cover letters / week",
+                "“Rebuild with AI” for resumes",
+                "Skill-Gap (standard)",
+                "Job Insights (full access)",
+                "Interview Coach sessions",
+                "Email support",
+            ],
+        },
+        "standard": {
+            "code":"standard", "title":"Standard", "amount":"24<span class='cents'>.99</span>", "period":"/mo",
+            "tagline":"Serious applications, smarter tools",
+            "features":[
+                "AI Chat credits: <strong>800 messages</strong> / month",
+                "<strong>50</strong> resume analyses / month (deep ATS + JD match)",
+                "<strong>20</strong> AI cover letters / month",
+                "AI Optimize + Rebuild with AI",
+                "Interview Coach sessions",
+                "Skill-Gap (pro)",
+                "Job Insights (full access)",
+                "Download optimized PDF / DOCX / TXT",
+                "Save history across devices",
+                "Email support",
+            ],
+        },
+        "premium": {
+            "code":"premium", "title":"Premium", "amount":"199", "period":"/yr",
+            "tagline":"Best value for ongoing career growth",
+            "features":[
+                "AI Chat credits: <strong>12,000 messages</strong> / year (~1,000 / mo)",
+                "<strong>Unlimited*</strong> resume analyses (fair use)",
+                "<strong>Unlimited</strong> AI cover letters (fair use)",
+                "All Standard features + multi-resume versions & template pack",
+                "Priority support & early access to new AI tools",
+            ],
+        },
+    }
+
+@app.route("/subscribe", methods=["GET", "POST"])
+@login_required
+def subscribe():
+    plans = _plans()
+    plan_code = (request.args.get("plan") or request.form.get("plan") or "").lower()
+    if plan_code not in plans:
+        # default to pricing if unknown plan
+        return redirect(url_for("pricing"))
+
+    plan_data = plans[plan_code]
+
+    if request.method == "POST":
+        # TODO: integrate payment provider here for paid plans
+        # Example: update the user's plan in your DB
+        try:
+            current_user.plan = plan_code
+            # db.session.commit()
+        except Exception:
+            # db.session.rollback()
+            flash("Could not update plan. Please try again.", "error")
+            return redirect(url_for("subscribe", plan=plan_code))
+
+        # Success page – also syncs localStorage via inline script
+        return render_template(
+            "subscribe_success.html",
+            plan_human=plan_data["title"],
+            plan_json=plan_code,
+        )
+
+    # GET → show confirmation page
+    return render_template("subscribe.html", plan_data=plan_data)
+
+# Optional: simple alias used elsewhere like “View pricing”
+@app.route("/upgrade")
+def upgrade():
+    return redirect(url_for("pricing"))
 
 @app.route('/cover-letter')
 def cover_letter():
