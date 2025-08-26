@@ -260,3 +260,30 @@
   background: #0f355e;    /* brand-ish blue; tweak if needed */
   opacity: 0.9;
 }
+
+/* === Remove the white card + border from the welcome/chips === */
+#welcomeBanner,
+.chatbox .welcome,          /* your current class */
+.welcome-banner {           /* legacy class just in case */
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  /* optional: if you want less “block” feel */
+  padding: 0 !important;
+}
+
+/* Keep the headline/chips spacing tidy */
+#welcomeBanner .welcome-title { margin: 0 0 12px !important; }
+#welcomeBanner .suggestion-chips { margin-top: 6px !important; }
+
+/* === Make the chat stream background match the page (no pale card) === */
+.chat-page .chatbox {
+  background: transparent !important;   /* kill #f7fbfd from earlier rules */
+}
+
+/* If your page background should be the light grey-green you mentioned: */
+body,
+.chat-main {
+  background-color: #f9fbf9;  /* or your exact #f9fbf8 */
+}
+
