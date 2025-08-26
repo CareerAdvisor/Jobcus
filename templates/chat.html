@@ -37,10 +37,35 @@
     </nav>
 
     <!-- Credits panel (moved out of the chat stream) -->
-    <strong id="credits-plan"
-            data-plan="{{ (current_user.plan if current_user.is_authenticated else '') or '' }}">
-      {{ (current_user.plan|capitalize) if current_user.is_authenticated and current_user.plan else 'Free' }}
-    </strong>
+    <section class="credits-panel" aria-labelledby="credits-title">
+      <h2 id="credits-title">AI Chat credits &amp; fair-use</h2>
+    
+      <div class="credits-row">
+        <div>
+          <div class="credits-label">Your plan</div>
+          <strong id="credits-plan"
+                  data-plan="{{ (current_user.plan if current_user.is_authenticated else '') or '' }}">
+            {{ (current_user.plan|capitalize) if current_user.is_authenticated and current_user.plan else 'Free' }}
+          </strong>
+        </div>
+        <div>
+          <div class="credits-label">Messages left</div>
+          <strong id="credits-left">—</strong>
+          <small id="credits-reset" class="credits-hint">Resets monthly</small>
+        </div>
+      </div>
+    
+      <details class="credits-details">
+        <summary>How credits work</summary>
+        <ul class="credits-list">
+          <li><strong>Free:</strong> 15 total messages (trial)</li>
+          <li><strong>Weekly:</strong> 200 / week</li>
+          <li><strong>Standard:</strong> 800 / month</li>
+          <li><strong>Premium:</strong> 12,000 / year (~1,000 / mo)</li>
+        </ul>
+        <p class="credits-note">A “message” is each prompt you send. When you run out, chat pauses until the next reset or upgrade.</p>
+      </details>
+    </section>
     
     <!-- ✅ History goes here, inside the drawer -->
     <section class="history-panel">
