@@ -205,22 +205,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const leftEl  = document.getElementById("credits-left");
     const resetEl = document.getElementById("credits-reset");
     if (!planEl && !leftEl && !resetEl) return;
-
-    const PLAN = (localStorage.getItem("userPlan") || "free");
+  
+    const serverPlan = planEl?.dataset.plan;              // ← from Jinja
+    const PLAN = (serverPlan || localStorage.getItem("userPlan") || "free");
+  
+    // keep localStorage in sync if server provided a value
+    if (serverPlan) localStorage.setItem("userPlan", serverPlan);
+  
     const QUOTAS = {
-      free:     { label: "Free",     reset: "Trial",           max: 15    },
-      weekly:   { label: "Weekly",   reset: "Resets weekly",   max: 200   },
-      standard: { label: "Standard", reset: "Resets monthly",  max: 800   },
+      free:     { label: "Free",     reset: "Trial",           max: 15 },
+      weekly:   { label: "Weekly",   reset: "Resets weekly",   max: 200 },
+      standard: { label: "Standard", reset: "Resets monthly",  max: 800 },
       premium:  { label: "Premium",  reset: "Resets yearly",   max: 12000 }
     };
     const q    = QUOTAS[PLAN] || QUOTAS.free;
     const used = Number(localStorage.getItem("chatUsed") || 0);
     const left = Math.max(q.max - used, 0);
-
+  
     planEl  && (planEl.textContent  = q.label);
     leftEl  && (leftEl.textContent  = `${left} of ${q.max}`);
     resetEl && (resetEl.textContent = q.reset);
   }
+
 
   // ───── Left drawer (sidebar) toggle
   const chatMenuToggle = document.getElementById("chatMenuToggle");
