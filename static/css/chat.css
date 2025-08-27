@@ -291,37 +291,41 @@ body,
    Chat stream — consistent column
    =========================== */
 
-/* Base column width token */
+/* Base column width token (desktop/tablet) */
 :root{
-  --chat-col-desktop: 760px;   /* stream column on ≥768px */
+  --chat-col-desktop: 760px;
 }
 
-/* Center the whole stream column and make both roles the same width */
+/* Global overflow guards (helps iOS) */
+html, body,
+.chat-shell, .chat-main, .chatbox {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Desktop/tablet: single centered column for BOTH roles */
 @media (min-width: 768px){
   .chatbox{
     padding-left: 16px;
     padding-right: 16px;
   }
 
-  /* each entry uses the same centered column */
   .chatbox .chat-entry{
     max-width: var(--chat-col-desktop);
     width: 100%;
     margin-left: auto !important;
     margin-right: auto !important;
-    float: none !important;             /* kill any legacy float */
+    float: none !important;
     box-sizing: border-box;
-    text-align: left;                   /* content stays left-aligned */
+    text-align: left;
   }
 
-  /* assistant + user occupy same width (100% of the column) */
   .chatbox .chat-entry.ai-answer,
   .chatbox .chat-entry.user{
     width: 100% !important;
     max-width: 100% !important;
   }
 
-  /* inner content spans the bubble */
   .chatbox .chat-entry.ai-answer .markdown,
   .chatbox .chat-entry.ai-answer > *,
   .chatbox .chat-entry.user > *{
@@ -331,52 +335,61 @@ body,
 }
 
 /* ===========================
-   Mobile — same left edge for user & assistant
-   (uses full chatbox inner width; no “right-leaning” look)
+   Mobile — same left edge & width for user/assistant
+   (no right-leaning, no overflow)
    =========================== */
 @media (max-width: 640px){
-  /* predictable side padding on the stream */
+  /* predictable stream padding */
   .chatbox{
     padding-left: 16px;
     padding-right: 16px;
     display: block;
+    overflow-x: hidden;                 /* belt & suspenders */
   }
 
-  /* BOTH roles use the same mobile column width */
+  /* BOTH roles use 100% of the chatbox inner width (no vw) */
   .chatbox .chat-entry{
-    width: calc(100vw - 32px) !important;      /* 16px left + 16px right */
-    max-width: calc(100vw - 32px) !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     float: none !important;
     text-align: left !important;
     box-sizing: border-box;
+    clear: both;
   }
 
-  /* inner content fills that column */
+  /* Inner content fills the bubble and wraps safely */
   .chatbox .chat-entry > *,
   .chatbox .chat-entry.ai-answer .markdown{
     width: 100% !important;
     max-width: 100% !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Lists/images/code never push wider than screen */
+  .markdown ul, .markdown ol{ padding-left: 1.25rem; margin-left: 0; }
+  .markdown img, .markdown table{ max-width: 100%; height: auto; }
+  .markdown pre{
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 }
 
 /* ===========================
    Input dock — narrower on tablets/desktop
    =========================== */
-/* ~15% narrower on tablet/desktop */
 @media (min-width: 768px){
   .input-dock .input-container,
   #chat-form .input-container,
   .input-container{
-    width: 85% !important;                /* reduced from 90% */
+    width: 85% !important;               /* your preferred narrower width */
     max-width: min(85vw, 1000px);
     margin-left: auto;
     margin-right: auto;
   }
 }
-
-/* a bit more reduction on large desktops */
 @media (min-width: 1280px){
   .input-dock .input-container,
   #chat-form .input-container,
@@ -386,5 +399,5 @@ body,
   }
 }
 
-/* Safety: ensure nothing pushes entries to the right */
+/* Safety: nothing should push entries right */
 .chatbox .chat-entry{ float: none; }
