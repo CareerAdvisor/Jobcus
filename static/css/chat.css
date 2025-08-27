@@ -335,49 +335,6 @@ html, body,
 }
 
 /* ===========================
-   Mobile — same left edge & width for user/assistant
-   (no right-leaning, no overflow)
-   =========================== */
-@media (max-width: 640px){
-  /* predictable stream padding */
-  .chatbox{
-    padding-left: 8px;
-    padding-right: 8px;
-    display: block;
-    overflow-x: hidden;                 /* belt & suspenders */
-  }
-
-  /* BOTH roles use 100% of the chatbox inner width (no vw) */
-  .chatbox .chat-entry{
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    float: none !important;
-    text-align: left !important;
-    box-sizing: border-box;
-    clear: both;
-  }
-
-  /* Inner content fills the bubble and wraps safely */
-  .chatbox .chat-entry > *,
-  .chatbox .chat-entry.ai-answer .markdown{
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-
-  /* Lists/images/code never push wider than screen */
-  .markdown ul, .markdown ol{ padding-left: 1.25rem; margin-left: 0; }
-  .markdown img, .markdown table{ max-width: 100%; height: auto; }
-  .markdown pre{
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-}
-
-/* ===========================
    Input dock — narrower on tablets/desktop
    =========================== */
 @media (min-width: 768px){
@@ -402,27 +359,6 @@ html, body,
 /* Safety: nothing should push entries right */
 .chatbox .chat-entry{ float: none; }
 
-/* ===========================
-   Chat stream — desktop stays the same
-   =========================== */
-:root{ --chat-col-desktop: 760px; }
-
-@media (min-width: 768px){
-  .chatbox{ padding-left:16px; padding-right:16px; }
-  .chatbox .chat-entry{
-    max-width: var(--chat-col-desktop);
-    width: 100%;
-    margin-left:auto !important;
-    margin-right:auto !important;
-    float:none !important;
-    box-sizing:border-box;
-    text-align:left;
-  }
-  .chatbox .chat-entry.ai-answer,
-  .chatbox .chat-entry.user{ width:100% !important; max-width:100% !important; }
-  .chatbox .chat-entry.ai-answer .markdown,
-  .chatbox .chat-entry.user > *{ width:100%; max-width:100%; }
-}
 
 /* ===========================
    MOBILE — make the text column wider
@@ -431,8 +367,8 @@ html, body,
 @media (max-width: 640px){
   /* ↓ tighter gutters so content is wider */
   .chatbox{
-    padding-left: 10px;           /* was 16px */
-    padding-right: 10px;          /* was 16px */
+    padding-left: 2px;           /* was 16px */
+    padding-right: 2px;          /* was 16px */
     overflow-x: hidden;
   }
 
