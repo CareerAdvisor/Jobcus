@@ -331,21 +331,33 @@ body,
 }
 
 /* ===========================
-   Mobile — AI reply 80% of screen, centered
+   Mobile — same left edge for user & assistant
+   (uses full chatbox inner width; no “right-leaning” look)
    =========================== */
 @media (max-width: 640px){
-  .chatbox .chat-entry.ai-answer{
-    width: 80vw !important;
-    max-width: 80vw !important;
-    margin: 0 auto !important;     /* centers the block */
-    float: none !important;
-    box-sizing: border-box;
-    text-align: left;
+  /* predictable side padding on the stream */
+  .chatbox{
+    padding-left: 16px;
+    padding-right: 16px;
+    display: block;
   }
-  .chatbox .chat-entry.ai-answer .markdown,
-  .chatbox .chat-entry.ai-answer > *{
-    width: 100%;
-    max-width: 100%;
+
+  /* BOTH roles use the same mobile column width */
+  .chatbox .chat-entry{
+    width: calc(100vw - 32px) !important;      /* 16px left + 16px right */
+    max-width: calc(100vw - 32px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    float: none !important;
+    text-align: left !important;
+    box-sizing: border-box;
+  }
+
+  /* inner content fills that column */
+  .chatbox .chat-entry > *,
+  .chatbox .chat-entry.ai-answer .markdown{
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 
