@@ -287,19 +287,20 @@ body,
   background-color: #f9fbf9;  /* or your exact #f9fbf8 */
 }
 
-/* Mobile: make AI responses 80% of the screen width */
+/* Mobile: AI reply bubble = 80% width and centered */
 @media (max-width: 640px){
   .chatbox .chat-entry.ai-answer{
-    width: 80vw !important;      /* 80% of viewport */
-    max-width: 100%;
+    width: 80vw !important;
+    max-width: 80vw !important;
+    margin: 0 auto !important;   /* ⬅ centers it */
+    float: none !important;       /* just in case any float is set */
     box-sizing: border-box;
-    margin-left: 0;               /* align AI on the left */
-    margin-right: auto;
   }
 
-  /* keep inner markdown/content from shrinking */
+  /* ensure inner content fills the bubble */
   .chatbox .chat-entry.ai-answer .markdown,
   .chatbox .chat-entry.ai-answer > *{
+    width: 100%;
     max-width: 100%;
   }
 }
@@ -307,8 +308,9 @@ body,
 @media (max-width: 640px){
   .chatbox .chat-entry.user{
     width: 80vw !important;
-    box-sizing: border-box;
-    margin-left: auto;            /* align user on the right */
-    margin-right: 0;
+    max-width: 80vw !important;
+    margin: 0 auto !important;
+    float: none !important;
   }
 }
+
