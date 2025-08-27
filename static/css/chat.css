@@ -7,7 +7,7 @@
   --sb-w: 280px;                /* sidebar width */
   --dock-h: 72px;               /* input dock height */
   --header-h: 60px;             /* fixed header height */
-  --page-pad: 16px;             /* side padding on main content */
+  --page-pad: 16px;             /* side padding on main content (desktop/tablet) */
 }
 
 /* --- Bigger, tappable left menu icon beside the logo --- */
@@ -32,32 +32,25 @@
    =========================== */
 .chat-sidebar{
   position: fixed;
-  inset: 0 auto 0 0;                    /* left:0; top/bottom:0 */
+  inset: 0 auto 0 0;
   width: var(--sb-w);
   background: #fff;
   border-right: 1px solid #e5e7eb;
   padding: 14px;
   overflow: auto;
-
-  /* slide-in behavior */
   transform: translateX(-100%);
   visibility: hidden;
   transition: transform .25s ease, visibility .25s ease;
-
-  /* must sit above sticky header */
-  z-index: 1201;
+  z-index: 1201; /* above header */
 }
-.chat-sidebar.is-open{
-  transform: translateX(0);
-  visibility: visible;
-}
+.chat-sidebar.is-open{ transform: translateX(0); visibility: visible; }
 
 /* Overlay (desktop overlay mode) */
 .chat-overlay{
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.25);
-  z-index: 1200;                         /* just under the drawer */
+  z-index: 1200;
 }
 .chat-overlay[hidden]{ display: none; }
 
@@ -84,7 +77,7 @@
   padding: 0 var(--page-pad);
 }
 
-/* Chat stream area: full device width with nice max on large screens */
+/* Chat stream area */
 .chatbox{
   flex: 1;
   overflow: auto;
@@ -92,14 +85,11 @@
   padding: 16px;
   padding-bottom: calc(var(--dock-h) + 12px);
   max-width: 1200px;
-  margin: 0 auto;                          /* center on large screens */
+  margin: 0 auto; /* center on large screens */
 }
 
-/* Welcome block + chips (optional polish) */
-.welcome{
-  background:#f7fbfd; border:none; border-radius:12px;
-  padding:16px; text-align:center;
-}
+/* Welcome + chips */
+.welcome{ background:#f7fbfd; border:none; border-radius:12px; padding:16px; text-align:center; }
 .welcome-title{ color:#104879; font-weight:700; margin:0 0 12px; }
 .suggestion-chips{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
 .chip{ background:#104879; color:#fff; border:0; border-radius:999px; padding:8px 14px; cursor:pointer; }
@@ -109,16 +99,14 @@
    Bottom Input Dock
    =========================== */
 .input-dock,
-#chat-form{ /* support either selector */
+#chat-form{
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 0; right: 0; bottom: 0;
   height: var(--dock-h);
   display: flex; align-items: center;
   padding: 8px 16px;
   background: linear-gradient(180deg, transparent, rgba(0,0,0,.04));
-  z-index: 1100;                            /* above page content, under drawer */
+  z-index: 1100;
 }
 
 .input-container{
@@ -131,87 +119,62 @@
   box-shadow:0 4px 18px rgba(0,0,0,.06);
 }
 
-#userInput{
-  flex:1; resize:none; border:0; outline:none;
-  font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  max-height: 30dvh;
-}
+#userInput{ flex:1; resize:none; border:0; outline:none; font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; max-height:30dvh; }
 .icon-group{ display:flex; align-items:center; gap:12px; }
 .icon-group img{ height:22px; cursor:pointer; }
 
-/* Scroll-down icon stays above the dock */
+/* Scroll-down icon */
 .scroll-down-icon{
   position: fixed;
   right: 20px;
   bottom: calc(var(--dock-h) + 12px);
   width: 32px; height: 20px;
-  display: none;
-  opacity: .8;
-  z-index: 1100;
+  display: none; opacity: .8; z-index: 1100;
 }
 
 /* ===========================
-   Credits panel (if used in stream)
+   Credits panel (optional)
    =========================== */
 .credits-panel{
-  max-width: 880px;
-  width: min(92%, 880px);
+  max-width: 880px; width: min(92%, 880px);
   margin: 18px auto 24px;
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  padding:16px;
-  box-shadow:0 2px 10px rgba(16,72,121,.06);
-  position: relative;
-  z-index: 2;
+  background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+  padding:16px; box-shadow:0 2px 10px rgba(16,72,121,.06);
+  position: relative; z-index: 2;
 }
 .credits-panel h2{ margin:0 0 10px; color:#104879; font-size:20px; }
-.credits-row{
-  display:flex; justify-content:space-between; gap:16px;
-  padding:8px 0 4px; border-bottom:1px solid #f1f5f9;
-}
+.credits-row{ display:flex; justify-content:space-between; gap:16px; padding:8px 0 4px; border-bottom:1px solid #f1f5f9; }
 .credits-label{ display:block; color:#64748b; font-size:12px; }
 .credits-hint{ display:block; color:#94a3b8; font-size:12px; margin-top:2px; }
 .credits-details summary{ cursor:pointer; margin-top:10px; color:#104879; }
+.credits-panel ul,.credits-card ul,.credits-details ul{ list-style:none; margin:0; padding-left:0; }
+.credits-panel li,.credits-card li,.credits-details li{ position:relative; padding-left:1.1rem; line-height:1.5; }
+.credits-panel li::before,.credits-card li::before,.credits-details li::before{
+  content:""; position:absolute; left:.4rem; top:.9em; transform:translateY(-50%);
+  width:6px; height:6px; border-radius:50%; background:#0f355e; opacity:.9;
+}
 
-/* ===========================
-   Page-specific cleanups
-   =========================== */
-/* Hide any “back” controls and the floating chat button on the chat page */
-.chat-page .back-btn{ display: none !important; }
-.chat-page .chat-float-button{ display: none !important; }
+/* Page cleanups */
+.chat-page .back-btn{ display:none !important; }
+.chat-page .chat-float-button{ display:none !important; }
 
-/* ===========================
-   Responsive behavior
-   =========================== */
-
-/* Desktop (overlay mode): content does not move */
+/* Desktop overlay mode */
 @media (min-width: 769px){
   .chat-main{ transform: none; }
   .input-dock, #chat-form{ left: 0; }
-  /* Show the overlay when drawer opens (overlay is controlled by JS) */
 }
 
-/* Mobile: when the drawer opens, push main content to the right */
+/* Mobile: push mode */
 @media (max-width: 768px){
-  /* Don’t show the dark overlay in push mode */
   .chat-overlay{ display: none !important; }
-
-  .chat-main{
-    transition: transform .25s ease;
-  }
-  .chat-sidebar.is-open ~ .chat-main{
-    transform: translateX(var(--sb-w));
-  }
+  .chat-main{ transition: transform .25s ease; }
+  .chat-sidebar.is-open ~ .chat-main{ transform: translateX(var(--sb-w)); }
   .chat-sidebar.is-open ~ .chat-main .input-dock,
-  .chat-sidebar.is-open ~ .chat-main #chat-form{
-    left: var(--sb-w);
-  }
-
-  /* Slightly round the input on small screens */
+  .chat-sidebar.is-open ~ .chat-main #chat-form{ left: var(--sb-w); }
   .input-container{ max-width: 100%; border-radius: 10px; }
 }
 
+/* History list */
 .history-panel{ margin-top:12px; }
 .history-title{ margin:0 0 8px; font-size:14px; color:#0f355e; }
 .history-list{ list-style:none; padding:0; margin:0; }
@@ -220,96 +183,32 @@
   padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px;
   margin-bottom:8px; background:#fff; cursor:pointer;
 }
-.history-item-title{
-  flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  color:#0f355e; font-weight:600;
-}
-.history-item .delete{
-  border:0; background:transparent; color:#9b1c1c; font-size:16px; cursor:pointer;
-}
+.history-item-title{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f355e; font-weight:600; }
+.history-item .delete{ border:0; background:transparent; color:#9b1c1c; font-size:16px; cursor:pointer; }
 
-/* Keep bullets fully inside the credits box */
-.credits-panel ul,
-.credits-card ul,
-.credits-details ul{
-  list-style: none;       /* remove native bullets that hang outside */
-  margin: 0;
-  padding-left: 0;
-}
-
-.credits-panel li,
-.credits-card li,
-.credits-details li{
-  position: relative;
-  padding-left: 1.1rem;   /* space for our custom dot */
-  line-height: 1.5;
-}
-
-/* Custom dot, safely inside the box */
-.credits-panel li::before,
-.credits-card li::before,
-.credits-details li::before{
-  content: "";
-  position: absolute;
-  left: 0.4rem;           /* inside the border radius */
-  top: 0.9em;             /* vertically centered-ish */
-  transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #0f355e;    /* brand-ish blue; tweak if needed */
-  opacity: 0.9;
-}
-
-/* === Remove the white card + border from the welcome/chips === */
-#welcomeBanner,
-.chatbox .welcome,          /* your current class */
-.welcome-banner {           /* legacy class just in case */
+/* === Remove white card from welcome === */
+#welcomeBanner, .chatbox .welcome, .welcome-banner{
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
-  /* optional: if you want less “block” feel */
   padding: 0 !important;
 }
+#welcomeBanner .welcome-title{ margin:0 0 12px !important; }
+#welcomeBanner .suggestion-chips{ margin-top:6px !important; }
 
-/* Keep the headline/chips spacing tidy */
-#welcomeBanner .welcome-title { margin: 0 0 12px !important; }
-#welcomeBanner .suggestion-chips { margin-top: 6px !important; }
-
-/* === Make the chat stream background match the page (no pale card) === */
-.chat-page .chatbox {
-  background: transparent !important;   /* kill #f7fbfd from earlier rules */
-}
-
-/* If your page background should be the light grey-green you mentioned: */
-body,
-.chat-main {
-  background-color: #f9fbf9;  /* or your exact #f9fbf8 */
-}
+/* Match page bg */
+.chat-page .chatbox{ background: transparent !important; }
+body, .chat-main{ background-color:#f9fbf9; }
 
 /* ===========================
-   Chat stream — consistent column
+   Chat stream — consistent desktop/tablet column
    =========================== */
+:root{ --chat-col-desktop: 760px; }
 
-/* Base column width token (desktop/tablet) */
-:root{
-  --chat-col-desktop: 760px;
-}
+html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden; }
 
-/* Global overflow guards (helps iOS) */
-html, body,
-.chat-shell, .chat-main, .chatbox {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* Desktop/tablet: single centered column for BOTH roles */
 @media (min-width: 768px){
-  .chatbox{
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
+  .chatbox{ padding-left: 16px; padding-right: 16px; }
   .chatbox .chat-entry{
     max-width: var(--chat-col-desktop);
     width: 100%;
@@ -319,60 +218,52 @@ html, body,
     box-sizing: border-box;
     text-align: left;
   }
-
   .chatbox .chat-entry.ai-answer,
-  .chatbox .chat-entry.user{
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
+  .chatbox .chat-entry.user{ width:100% !important; max-width:100% !important; }
   .chatbox .chat-entry.ai-answer .markdown,
   .chatbox .chat-entry.ai-answer > *,
-  .chatbox .chat-entry.user > *{
-    width: 100%;
-    max-width: 100%;
-  }
+  .chatbox .chat-entry.user > *{ width:100%; max-width:100%; }
 }
 
-/* ===========================
-   Input dock — narrower on tablets/desktop
-   =========================== */
+/* Input dock narrower on tablet/desktop */
 @media (min-width: 768px){
-  .input-dock .input-container,
-  #chat-form .input-container,
-  .input-container{
-    width: 85% !important;               /* your preferred narrower width */
-    max-width: min(85vw, 1000px);
-    margin-left: auto;
-    margin-right: auto;
+  .input-dock .input-container, #chat-form .input-container, .input-container{
+    width: 85% !important; max-width: min(85vw, 1000px);
+    margin-left: auto; margin-right: auto;
   }
 }
 @media (min-width: 1280px){
-  .input-dock .input-container,
-  #chat-form .input-container,
-  .input-container{
-    width: 80% !important;
-    max-width: min(80vw, 980px);
+  .input-dock .input-container, #chat-form .input-container, .input-container{
+    width: 80% !important; max-width: min(80vw, 980px);
   }
 }
 
-/* Safety: nothing should push entries right */
-.chatbox .chat-entry{ float: none; }
-
+/* Safety */
+.chatbox .chat-entry{ float:none; }
 
 /* ===========================
-   MOBILE — make the text column wider
-   (reduce side padding; keep entries 100% width)
+   MOBILE — 2px side gutters, full-width entries
    =========================== */
 @media (max-width: 640px){
-  /* ↓ tighter gutters so content is wider */
+  /* shrink page gutters on the chat page */
+  :root{ --page-pad: 2px; }                  /* ← 2px gutters, like ChatGPT */
+
+  .chat-page main, .chat-main{
+    padding-left: var(--page-pad) !important;
+    padding-right: var(--page-pad) !important;
+    overflow: visible;                        /* avoid clipping on iOS */
+  }
+
+  /* let the chatbox span the full inner width */
   .chatbox{
-    padding-left: 2px;           /* was 16px */
-    padding-right: 2px;          /* was 16px */
+    max-width: none !important;
+    margin: 0 !important;
+    padding-left: 0 !important;               /* gutters handled by .chat-main */
+    padding-right: 0 !important;
     overflow-x: hidden;
   }
 
-  /* both roles share the same full-width column */
+  /* both roles = 100% of that width */
   .chatbox .chat-entry{
     width: 100% !important;
     max-width: 100% !important;
@@ -383,28 +274,18 @@ html, body,
     clear: both;
   }
 
-  /* make sure inner content really fills / wraps */
+  /* inner content fills and wraps */
   .chatbox .chat-entry > *,
   .chatbox .chat-entry.ai-answer .markdown{
     width: 100% !important;
     max-width: 100% !important;
     overflow-wrap: anywhere;
     word-break: break-word;
-    margin-left: 0;
-    margin-right: 0;
+    margin-left: 0; margin-right: 0;
   }
 
-  /* lists/images/code never cause horizontal scroll */
+  /* lists/images/code never overflow */
   .markdown ul, .markdown ol{ padding-left: 1rem; margin-left: 0; }
   .markdown img, .markdown table{ max-width: 100%; height: auto; }
-  .markdown pre{
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
+  .markdown pre{ white-space: pre-wrap; word-break: break-word; }
 }
-
-/* guard rails (helps iOS) */
-html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden; }
-.chatbox .chat-entry{ float:none; }        /* safety */
-
-
