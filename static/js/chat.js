@@ -67,6 +67,48 @@ document.addEventListener("DOMContentLoaded", () => {
   const form    = document.getElementById("chat-form");
   const input   = document.getElementById("userInput");
 
+  // --- Smoothly reveal a newly added entry at the TOP of the viewport
+  function revealNewEntryAtTop(entry){
+    requestAnimationFrame(() => {
+      entry.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'smooth' });
+    });
+  }
+  
+  // Build a user entry matching your renderChat() markup
+  function makeUserEntry(text){
+    const div = document.createElement("div");
+    div.className = "chat-entry user";
+    div.innerHTML = `
+      <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 .5rem;color:#104879;">
+        ${escapeHtml(text)}
+      </h2>`;
+    return div;
+  }
+  
+  // Build an assistant entry (same structure your renderer uses)
+  function makeAssistantEntry(content){
+    const div = document.createElement("div");
+    div.className = "chat-entry ai-answer";
+    const id = `ai-${Math.random().toString(36).slice(2)}`;
+    div.innerHTML = `
+      <div id="${id}" class="markdown"></div>
+      <div class="response-footer">
+        <span class="copy-wrapper">
+          <img src="/static/icons/copy.svg" class="copy-icon"
+               title="Copy" onclick="copyToClipboard('${id}')">
+          <span class="copy-text">Copy</span>
+        </span>
+      </div>
+      <hr class="response-separator" />`;
+    const target = div.querySelector(`#${id}`);
+    if (window.marked && typeof window.marked.parse === "function") {
+      target.innerHTML = window.marked.parse(content);
+    } else {
+      target.textContent = content;
+    }
+    return div;
+  }
+
   // ───── Storage helpers
   const getCurrent = () => JSON.parse(localStorage.getItem(STORAGE.current) || "[]");
   const setCurrent = (arr) => localStorage.setItem(STORAGE.current, JSON.stringify(arr));
