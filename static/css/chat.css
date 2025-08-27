@@ -287,3 +287,28 @@ body,
   background-color: #f9fbf9;  /* or your exact #f9fbf8 */
 }
 
+/* Mobile: make AI responses 80% of the screen width */
+@media (max-width: 640px){
+  .chatbox .chat-entry.ai-answer{
+    width: 80vw !important;      /* 80% of viewport */
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-left: 0;               /* align AI on the left */
+    margin-right: auto;
+  }
+
+  /* keep inner markdown/content from shrinking */
+  .chatbox .chat-entry.ai-answer .markdown,
+  .chatbox .chat-entry.ai-answer > *{
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px){
+  .chatbox .chat-entry.user{
+    width: 80vw !important;
+    box-sizing: border-box;
+    margin-left: auto;            /* align user on the right */
+    margin-right: 0;
+  }
+}
