@@ -306,8 +306,8 @@ html, body,
 /* Desktop/tablet: single centered column for BOTH roles */
 @media (min-width: 768px){
   .chatbox{
-    padding-left: 10px;
-    padding-right: 10px;
+    padding-left: 3px;
+    padding-right: 3px;
   }
 
   .chatbox .chat-entry{
@@ -341,8 +341,8 @@ html, body,
 @media (max-width: 640px){
   /* predictable stream padding */
   .chatbox{
-    padding-left: 3px;
-    padding-right: 3px;
+    padding-left: 1px;
+    padding-right: 1px;
     display: block;
     overflow-x: hidden;                 /* belt & suspenders */
   }
