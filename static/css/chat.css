@@ -246,7 +246,7 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
    =========================== */
 @media (max-width: 640px){
   /* shrink page gutters on the chat page */
-  :root{ --page-pad: 2px; }                  /* ← 2px gutters, like ChatGPT */
+  :root{ --page-pad: 8px; }                  /* ← 8px gutters */
 
   .chat-page main, .chat-main{
     padding-left: var(--page-pad) !important;
