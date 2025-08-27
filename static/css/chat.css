@@ -402,3 +402,73 @@ html, body,
 /* Safety: nothing should push entries right */
 .chatbox .chat-entry{ float: none; }
 
+/* ===========================
+   Chat stream — desktop stays the same
+   =========================== */
+:root{ --chat-col-desktop: 760px; }
+
+@media (min-width: 768px){
+  .chatbox{ padding-left:16px; padding-right:16px; }
+  .chatbox .chat-entry{
+    max-width: var(--chat-col-desktop);
+    width: 100%;
+    margin-left:auto !important;
+    margin-right:auto !important;
+    float:none !important;
+    box-sizing:border-box;
+    text-align:left;
+  }
+  .chatbox .chat-entry.ai-answer,
+  .chatbox .chat-entry.user{ width:100% !important; max-width:100% !important; }
+  .chatbox .chat-entry.ai-answer .markdown,
+  .chatbox .chat-entry.user > *{ width:100%; max-width:100%; }
+}
+
+/* ===========================
+   MOBILE — make the text column wider
+   (reduce side padding; keep entries 100% width)
+   =========================== */
+@media (max-width: 640px){
+  /* ↓ tighter gutters so content is wider */
+  .chatbox{
+    padding-left: 10px;           /* was 16px */
+    padding-right: 10px;          /* was 16px */
+    overflow-x: hidden;
+  }
+
+  /* both roles share the same full-width column */
+  .chatbox .chat-entry{
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    float: none !important;
+    text-align: left !important;
+    box-sizing: border-box;
+    clear: both;
+  }
+
+  /* make sure inner content really fills / wraps */
+  .chatbox .chat-entry > *,
+  .chatbox .chat-entry.ai-answer .markdown{
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* lists/images/code never cause horizontal scroll */
+  .markdown ul, .markdown ol{ padding-left: 1rem; margin-left: 0; }
+  .markdown img, .markdown table{ max-width: 100%; height: auto; }
+  .markdown pre{
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+
+/* guard rails (helps iOS) */
+html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden; }
+.chatbox .chat-entry{ float:none; }        /* safety */
+
+
