@@ -306,8 +306,8 @@ html, body,
 /* Desktop/tablet: single centered column for BOTH roles */
 @media (min-width: 768px){
   .chatbox{
-    padding-left: 3px;
-    padding-right: 3px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .chatbox .chat-entry{
@@ -341,8 +341,8 @@ html, body,
 @media (max-width: 640px){
   /* predictable stream padding */
   .chatbox{
-    padding-left: 1px;
-    padding-right: 1px;
+    padding-left: 8px;
+    padding-right: 8px;
     display: block;
     overflow-x: hidden;                 /* belt & suspenders */
   }
@@ -384,8 +384,8 @@ html, body,
   .input-dock .input-container,
   #chat-form .input-container,
   .input-container{
-    width: 90% !important;               /* your preferred narrower width */
-    max-width: min(90vw, 1000px);
+    width: 85% !important;               /* your preferred narrower width */
+    max-width: min(85vw, 1000px);
     margin-left: auto;
     margin-right: auto;
   }
@@ -394,10 +394,11 @@ html, body,
   .input-dock .input-container,
   #chat-form .input-container,
   .input-container{
-    width: 90% !important;
-    max-width: min(90vw, 980px);
+    width: 80% !important;
+    max-width: min(80vw, 980px);
   }
 }
 
 /* Safety: nothing should push entries right */
 .chatbox .chat-entry{ float: none; }
+
