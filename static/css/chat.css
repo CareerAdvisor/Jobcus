@@ -341,8 +341,8 @@ html, body,
 @media (max-width: 640px){
   /* predictable stream padding */
   .chatbox{
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 8px;
+    padding-right: 8px;
     display: block;
     overflow-x: hidden;                 /* belt & suspenders */
   }
