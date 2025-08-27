@@ -305,3 +305,154 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
     word-break: break-word;
   }
 }
+
+/* ===========================
+   ChatGPT-style typography for AI replies
+   (safe to append at end of chat.css)
+   =========================== */
+
+/* Make sure iOS doesn't zoom text weirdly */
+html { -webkit-text-size-adjust: 100%; }
+
+/* User's prompt as a rounded bubble (like ChatGPT) */
+.chatbox .chat-entry.user h2{
+  display:inline-block;
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  background:#e9eef5;
+  color:#0f355e;
+  border-radius: 22px;
+  line-height:1.25;
+  font-weight:700;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+/* Main markdown wrapper inside AI answers */
+.chatbox .chat-entry.ai-answer .markdown{
+  /* readable body type */
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color:#1f2937;
+  width: 100%;
+  max-width: 100%;
+  overflow-wrap: anywhere;           /* prevents edge cut-offs */
+  word-break: normal;
+}
+
+/* Comfortable vertical rhythm */
+.chatbox .chat-entry.ai-answer .markdown > * + *{
+  margin-top: .8rem;                 /* paragraphs, lists, etc. */
+}
+
+/* Headings (ChatGPT-ish) */
+.chatbox .chat-entry.ai-answer .markdown h1,
+.chatbox .chat-entry.ai-answer .markdown h2,
+.chatbox .chat-entry.ai-answer .markdown h3{
+  color:#104879;
+  line-height:1.25;
+  font-weight:800;
+  margin: 1rem 0 .35rem;
+}
+.chatbox .chat-entry.ai-answer .markdown h1{ font-size:1.6rem; }
+.chatbox .chat-entry.ai-answer .markdown h2{ font-size:1.35rem; }
+.chatbox .chat-entry.ai-answer .markdown h3{ font-size:1.15rem; }
+
+/* Soft section divider above H2 (not for the very first element) */
+.chatbox .chat-entry.ai-answer .markdown h2:not(:first-child){
+  padding-top: .75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Lists – tidy bullets, never clipped numbers */
+.chatbox .chat-entry.ai-answer .markdown ul,
+.chatbox .chat-entry.ai-answer .markdown ol{
+  margin: .4rem 0 .6rem;
+  padding-left: 1.25rem;             /* keeps markers inside the column */
+  list-style-position: outside;      /* fixes iOS number clipping */
+}
+.chatbox .chat-entry.ai-answer .markdown li{ margin: .4rem 0; }
+.chatbox .chat-entry.ai-answer .markdown li > ul,
+.chatbox .chat-entry.ai-answer .markdown li > ol{ margin-top:.35rem; }
+
+/* Links, emphasis */
+.chatbox .chat-entry.ai-answer .markdown a{ color:#104879; text-decoration: underline; }
+.chatbox .chat-entry.ai-answer .markdown strong{ font-weight:800; }
+
+/* Blockquotes */
+.chatbox .chat-entry.ai-answer .markdown blockquote{
+  margin: .6rem 0;
+  padding: .6rem .9rem;
+  border-left: 4px solid #c7def5;
+  background:#f4f9ff;
+  border-radius: 6px;
+  color:#0f2946;
+}
+
+/* Code & pre */
+.chatbox .chat-entry.ai-answer .markdown code{
+  background:#f3f4f6;
+  padding: .15rem .35rem;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .93em;
+}
+.chatbox .chat-entry.ai-answer .markdown pre{
+  background:#f3f4f6;
+  padding: .8rem 1rem;
+  border-radius: 10px;
+  overflow-x: auto;
+  line-height:1.5;
+}
+
+/* Horizontal rule */
+.chatbox .chat-entry.ai-answer .markdown hr{
+  border:0;
+  border-top:1px solid #e5e7eb;
+  margin: 1rem 0;
+}
+
+/* Tables */
+.chatbox .chat-entry.ai-answer .markdown table{
+  width:100%;
+  border-collapse: collapse;
+  margin: .6rem 0;
+  font-size:.97rem;
+}
+.chatbox .chat-entry.ai-answer .markdown th,
+.chatbox .chat-entry.ai-answer .markdown td{
+  border:1px solid #e5e7eb;
+  padding:.5rem .6rem;
+  text-align:left;
+}
+.chatbox .chat-entry.ai-answer .markdown th{
+  background:#f8fafc;
+  font-weight:700;
+}
+
+/* “Copy” row spacing */
+.chatbox .chat-entry.ai-answer .response-footer{
+  margin-top:.6rem;
+}
+
+/* ————— Mobile polish ————— */
+@media (max-width: 640px){
+  /* widen the text column by shrinking the gutters */
+  .chatbox{
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+  }
+
+  .chatbox .chat-entry.ai-answer .markdown{
+    font-size: 1.04rem;              /* slightly larger for legibility */
+  }
+
+  /* extra safety so bullets/numbers never hang off-screen */
+  .chatbox .chat-entry.ai-answer .markdown ul,
+  .chatbox .chat-entry.ai-answer .markdown ol{
+    padding-left: 1.15rem;
+  }
+}
+
+.chatbox .chat-entry.ai-answer .markdown ul li::marker { color:#0f355e; }
+.chatbox .chat-entry.ai-answer .markdown ol li::marker { color:#0f355e; font-weight:700; }
