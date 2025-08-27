@@ -242,11 +242,11 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
 .chatbox .chat-entry{ float:none; }
 
 /* ===========================
-   MOBILE — 2px side gutters, full-width entries
+   MOBILE — 10px side gutters, full-width entries
    =========================== */
 @media (max-width: 640px){
   /* shrink page gutters on the chat page */
-  :root{ --page-pad: 8px; }                  /* ← 8px gutters */
+  :root{ --page-pad: 10px; }                  /* ← 10px gutters */
 
   .chat-page main, .chat-main{
     padding-left: var(--page-pad) !important;
