@@ -287,12 +287,53 @@ body,
   background-color: #f9fbf9;  /* or your exact #f9fbf8 */
 }
 
+/* ===========================
+   Tablet & Desktop tweaks
+   =========================== */
+
+/* 1) Make the bottom input a bit narrower on wider screens (~10% smaller) */
+@media (min-width: 768px){
+  /* cover either selector (#chat-form or .input-dock) */
+  .input-dock .input-container,
+  #chat-form .input-container,
+  .input-container{
+    width: 90% !important;                /* ↓ from 100% */
+    max-width: min(90vw, 1080px);         /* keep it comfortably sized */
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* 2) Make AI responses a touch wider on wider screens (~+3%) and keep centered */
+:root{
+  /* if you want to change the base later, just tweak this one value */
+  --ai-desktop-width: 60%;
+}
+
+@media (min-width: 768px){
+  .chatbox .chat-entry.ai-answer{
+    width: calc(var(--ai-desktop-width) + 3%) !important;  /* +3% bump */
+    max-width: 980px;                                       /* soft cap so lines don't get too long */
+    margin-left: auto !important;
+    margin-right: auto !important;
+    float: none !important;
+    box-sizing: border-box;
+  }
+  /* make inner content fill the bubble width */
+  .chatbox .chat-entry.ai-answer .markdown,
+  .chatbox .chat-entry.ai-answer > *{
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
 /* Mobile: AI reply bubble = 80% width and centered */
 @media (max-width: 640px){
   .chatbox .chat-entry.ai-answer{
     width: 80vw !important;
     max-width: 80vw !important;
     margin: 0 auto !important;   /* ⬅ centers it */
+     
     float: none !important;       /* just in case any float is set */
     box-sizing: border-box;
   }
@@ -304,6 +345,16 @@ body,
     max-width: 100%;
   }
 }
+
+@media (max-width: 640px){
+  .chatbox .chat-entry.user{
+    width: 80vw !important;
+    max-width: 80vw !important;
+    margin: 0 auto !important;
+    float: none !important;
+  }
+}
+
 
 @media (max-width: 640px){
   .chatbox .chat-entry.user{
