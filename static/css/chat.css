@@ -295,7 +295,7 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
   .chatbox .markdown ul,
   .chatbox .markdown ol{
     list-style-position: inside !important;   /* <- key change */
-    padding-left: 0.9rem !important;          /* small, consistent indent */
+    padding-left: 10px !important;          /* small, consistent indent */
     margin-left: 0 !important;
   }
 
