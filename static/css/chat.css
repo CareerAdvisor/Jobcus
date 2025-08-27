@@ -8,6 +8,7 @@
   --dock-h: 72px;               /* input dock height */
   --header-h: 60px;             /* fixed header height */
   --page-pad: 16px;             /* side padding on main content (desktop/tablet) */
+  --chat-col-desktop: 760px;    /* chat column width on ≥768px */
 }
 
 /* --- Bigger, tappable left menu icon beside the logo --- */
@@ -88,12 +89,21 @@
   margin: 0 auto; /* center on large screens */
 }
 
-/* Welcome + chips */
-.welcome{ background:#f7fbfd; border:none; border-radius:12px; padding:16px; text-align:center; }
+/* Welcome + chips (card removed per your request) */
+#welcomeBanner, .chatbox .welcome, .welcome-banner{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
 .welcome-title{ color:#104879; font-weight:700; margin:0 0 12px; }
 .suggestion-chips{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
 .chip{ background:#104879; color:#fff; border:0; border-radius:999px; padding:8px 14px; cursor:pointer; }
 .chip:hover{ opacity:.95; }
+
+/* Match page bg */
+.chat-page .chatbox{ background: transparent !important; }
+body, .chat-main{ background-color:#f9fbf9; }
 
 /* ===========================
    Bottom Input Dock
@@ -186,25 +196,9 @@
 .history-item-title{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f355e; font-weight:600; }
 .history-item .delete{ border:0; background:transparent; color:#9b1c1c; font-size:16px; cursor:pointer; }
 
-/* === Remove white card from welcome === */
-#welcomeBanner, .chatbox .welcome, .welcome-banner{
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-#welcomeBanner .welcome-title{ margin:0 0 12px !important; }
-#welcomeBanner .suggestion-chips{ margin-top:6px !important; }
-
-/* Match page bg */
-.chat-page .chatbox{ background: transparent !important; }
-body, .chat-main{ background-color:#f9fbf9; }
-
 /* ===========================
    Chat stream — consistent desktop/tablet column
    =========================== */
-:root{ --chat-col-desktop: 760px; }
-
 html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden; }
 
 @media (min-width: 768px){
@@ -242,11 +236,11 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
 .chatbox .chat-entry{ float:none; }
 
 /* ===========================
-   MOBILE — 8px side gutters, full-width entries
+   MOBILE — small gutters, full-width entries
    =========================== */
 @media (max-width: 640px){
   /* shrink page gutters on the chat page */
-  :root{ --page-pad: 8px; }                  /* ← 8px gutters */
+  :root{ --page-pad: 8px; }                  /* ← 8px gutters like ChatGPT */
 
   .chat-page main, .chat-main{
     padding-left: var(--page-pad) !important;
@@ -284,31 +278,13 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
     margin-left: 0; margin-right: 0;
   }
 
-  /* lists/images/code never overflow */
-  .markdown ul, .markdown ol{ padding-left: 1rem; margin-left: 0; }
+  /* images/tables/code never overflow */
   .markdown img, .markdown table{ max-width: 100%; height: auto; }
   .markdown pre{ white-space: pre-wrap; word-break: break-word; }
 }
 
-/* Mobile: keep list markers inside so they don't get clipped */
-@media (max-width: 640px){
-  .chatbox .markdown ul,
-  .chatbox .markdown ol{
-    list-style-position: inside !important;   /* <- key change */
-    padding-left: 8px !important;          /* small, consistent indent */
-    margin-left: 0 !important;
-  }
-
-  /* Make sure long content wraps inside list items */
-  .chatbox .markdown li{
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-}
-
 /* ===========================
-   Typography for AI replies
-   (safe to append at end of chat.css)
+   Typography for AI replies (ChatGPT-like)
    =========================== */
 
 /* Make sure iOS doesn't zoom text weirdly */
@@ -330,19 +306,20 @@ html { -webkit-text-size-adjust: 100%; }
 
 /* Main markdown wrapper inside AI answers */
 .chatbox .chat-entry.ai-answer .markdown{
-  /* readable body type */
   font-size: 1.02rem;
   line-height: 1.65;
   color:#1f2937;
   width: 100%;
   max-width: 100%;
-  overflow-wrap: anywhere;           /* prevents edge cut-offs */
+  overflow-wrap: anywhere;
   word-break: normal;
+  /* list gutter token used below */
+  --li-indent: 1.25rem;
 }
 
 /* Comfortable vertical rhythm */
 .chatbox .chat-entry.ai-answer .markdown > * + *{
-  margin-top: .8rem;                 /* paragraphs, lists, etc. */
+  margin-top: .8rem;
 }
 
 /* Headings (ChatGPT-ish) */
@@ -364,16 +341,38 @@ html { -webkit-text-size-adjust: 100%; }
   border-top: 1px solid #e5e7eb;
 }
 
-/* Lists – tidy bullets, never clipped numbers */
+/* ── Lists: tidy bullets, consistent indent, Android fix ───────── */
 .chatbox .chat-entry.ai-answer .markdown ul,
 .chatbox .chat-entry.ai-answer .markdown ol{
   margin: .4rem 0 .6rem;
-  padding-left: 1.25rem;             /* keeps markers inside the column */
-  list-style-position: outside;      /* fixes iOS number clipping */
+  padding-left: var(--li-indent);              /* space for marker/number */
+  list-style-position: outside;                /* hanging indent like ChatGPT */
 }
-.chatbox .chat-entry.ai-answer .markdown li{ margin: .4rem 0; }
+
+.chatbox .chat-entry.ai-answer .markdown li{
+  margin: .35rem 0;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Android/WebKit sometimes wraps <li><p>…</p></li> on a new line.
+   Make the inner <p> inline so the marker + text share the same line. */
+.chatbox .chat-entry.ai-answer .markdown li > p{
+  margin: 0;
+  display: inline;
+}
+
+/* Nested lists align neatly under the text of the parent */
 .chatbox .chat-entry.ai-answer .markdown li > ul,
-.chatbox .chat-entry.ai-answer .markdown li > ol{ margin-top:.35rem; }
+.chatbox .chat-entry.ai-answer .markdown li > ol{
+  margin-top:.35rem;
+  padding-left: var(--li-indent);
+}
+
+/* List marker color/weight */
+.chatbox .chat-entry.ai-answer .markdown ul li::marker { color:#0f355e; }
+.chatbox .chat-entry.ai-answer .markdown ol li::marker { color:#0f355e; font-weight:700; }
 
 /* Links, emphasis */
 .chatbox .chat-entry.ai-answer .markdown a{ color:#104879; text-decoration: underline; }
@@ -435,24 +434,14 @@ html { -webkit-text-size-adjust: 100%; }
   margin-top:.6rem;
 }
 
-/* ————— Mobile polish ————— */
+/* ——— Mobile type polish ——— */
 @media (max-width: 640px){
-  /* widen the text column by shrinking the gutters */
-  .chatbox{
-    padding-left: 2px !important;
-    padding-right: 2px !important;
-  }
-
   .chatbox .chat-entry.ai-answer .markdown{
     font-size: 1.04rem;              /* slightly larger for legibility */
   }
-
-  /* extra safety so bullets/numbers never hang off-screen */
+  /* tiny extra left padding keeps markers safe even with 8px gutters */
   .chatbox .chat-entry.ai-answer .markdown ul,
   .chatbox .chat-entry.ai-answer .markdown ol{
-    padding-left: 1.15rem;
+    padding-left: calc(var(--li-indent) + 2px);
   }
 }
-
-.chatbox .chat-entry.ai-answer .markdown ul li::marker { color:#0f355e; }
-.chatbox .chat-entry.ai-answer .markdown ol li::marker { color:#0f355e; font-weight:700; }
