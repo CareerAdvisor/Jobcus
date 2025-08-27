@@ -284,13 +284,13 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
 }
 
 /* ===========================
-   Typography for AI replies (ChatGPT-like)
+   Typography for AI replies 
    =========================== */
 
 /* Make sure iOS doesn't zoom text weirdly */
 html { -webkit-text-size-adjust: 100%; }
 
-/* User's prompt as a rounded bubble (like ChatGPT) */
+/* User's prompt as a rounded bubble */
 .chatbox .chat-entry.user h2{
   display:inline-block;
   margin: 0 0 10px;
@@ -322,7 +322,7 @@ html { -webkit-text-size-adjust: 100%; }
   margin-top: .8rem;
 }
 
-/* Headings (ChatGPT-ish) */
+/* Headings */
 .chatbox .chat-entry.ai-answer .markdown h1,
 .chatbox .chat-entry.ai-answer .markdown h2,
 .chatbox .chat-entry.ai-answer .markdown h3{
@@ -444,4 +444,26 @@ html { -webkit-text-size-adjust: 100%; }
   .chatbox .chat-entry.ai-answer .markdown ol{
     padding-left: calc(var(--li-indent) + 2px);
   }
+}
+
+/* Stop new messages from hiding under the dock / header */
+.chatbox{
+  scroll-behavior: smooth;
+  /* where to stop when we scroll an item into view */
+  scroll-padding-top:  calc(var(--header-h, 60px) + 10px);
+  scroll-padding-bottom: max(
+    calc(var(--dock-h, 72px) + 12px),
+    calc(env(safe-area-inset-bottom, 0px) + var(--dock-h, 72px))
+  );
+  /* extra bottom padding so content never sits under the dock */
+  padding-bottom: max(
+    calc(var(--dock-h, 72px) + 20px),
+    calc(env(safe-area-inset-bottom, 0px) + var(--dock-h, 72px) + 20px)
+  );
+}
+
+/* When we scroll a specific entry, keep it clear of header & dock */
+.chatbox .chat-entry{
+  scroll-margin-top:  calc(var(--header-h, 60px) + 10px);
+  scroll-margin-bottom: calc(var(--dock-h, 72px) + 16px);
 }
