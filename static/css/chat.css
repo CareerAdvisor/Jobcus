@@ -288,80 +288,91 @@ body,
 }
 
 /* ===========================
-   Tablet & Desktop tweaks
+   Chat stream — consistent column
    =========================== */
 
-/* 1) Make the bottom input a bit narrower on wider screens (~10% smaller) */
+/* Base column width token */
+:root{
+  --chat-col-desktop: 760px;   /* stream column on ≥768px */
+}
+
+/* Center the whole stream column and make both roles the same width */
 @media (min-width: 768px){
-  /* cover either selector (#chat-form or .input-dock) */
+  .chatbox{
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* each entry uses the same centered column */
+  .chatbox .chat-entry{
+    max-width: var(--chat-col-desktop);
+    width: 100%;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    float: none !important;             /* kill any legacy float */
+    box-sizing: border-box;
+    text-align: left;                   /* content stays left-aligned */
+  }
+
+  /* assistant + user occupy same width (100% of the column) */
+  .chatbox .chat-entry.ai-answer,
+  .chatbox .chat-entry.user{
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* inner content spans the bubble */
+  .chatbox .chat-entry.ai-answer .markdown,
+  .chatbox .chat-entry.ai-answer > *,
+  .chatbox .chat-entry.user > *{
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* ===========================
+   Mobile — AI reply 80% of screen, centered
+   =========================== */
+@media (max-width: 640px){
+  .chatbox .chat-entry.ai-answer{
+    width: 80vw !important;
+    max-width: 80vw !important;
+    margin: 0 auto !important;     /* centers the block */
+    float: none !important;
+    box-sizing: border-box;
+    text-align: left;
+  }
+  .chatbox .chat-entry.ai-answer .markdown,
+  .chatbox .chat-entry.ai-answer > *{
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* ===========================
+   Input dock — narrower on tablets/desktop
+   =========================== */
+/* ~15% narrower on tablet/desktop */
+@media (min-width: 768px){
   .input-dock .input-container,
   #chat-form .input-container,
   .input-container{
-    width: 90% !important;                /* ↓ from 100% */
-    max-width: min(90vw, 1080px);         /* keep it comfortably sized */
+    width: 85% !important;                /* reduced from 90% */
+    max-width: min(85vw, 1000px);
     margin-left: auto;
     margin-right: auto;
   }
 }
 
-/* 2) Make AI responses a touch wider on wider screens (~+3%) and keep centered */
-:root{
-  /* if you want to change the base later, just tweak this one value */
-  --ai-desktop-width: 60%;
-}
-
-@media (min-width: 768px){
-  .chatbox .chat-entry.ai-answer{
-    width: calc(var(--ai-desktop-width) + 3%) !important;  /* +3% bump */
-    max-width: 980px;                                       /* soft cap so lines don't get too long */
-    margin-left: auto !important;
-    margin-right: auto !important;
-    float: none !important;
-    box-sizing: border-box;
-  }
-  /* make inner content fill the bubble width */
-  .chatbox .chat-entry.ai-answer .markdown,
-  .chatbox .chat-entry.ai-answer > *{
-    width: 100%;
-    max-width: 100%;
+/* a bit more reduction on large desktops */
+@media (min-width: 1280px){
+  .input-dock .input-container,
+  #chat-form .input-container,
+  .input-container{
+    width: 80% !important;
+    max-width: min(80vw, 980px);
   }
 }
 
-/* Mobile: AI reply bubble = 80% width and centered */
-@media (max-width: 640px){
-  .chatbox .chat-entry.ai-answer{
-    width: 80vw !important;
-    max-width: 80vw !important;
-    margin: 0 auto !important;   /* ⬅ centers it */
-     
-    float: none !important;       /* just in case any float is set */
-    box-sizing: border-box;
-  }
-
-  /* ensure inner content fills the bubble */
-  .chatbox .chat-entry.ai-answer .markdown,
-  .chatbox .chat-entry.ai-answer > *{
-    width: 100%;
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 640px){
-  .chatbox .chat-entry.user{
-    width: 80vw !important;
-    max-width: 80vw !important;
-    margin: 0 auto !important;
-    float: none !important;
-  }
-}
-
-
-@media (max-width: 640px){
-  .chatbox .chat-entry.user{
-    width: 80vw !important;
-    max-width: 80vw !important;
-    margin: 0 auto !important;
-    float: none !important;
-  }
-}
-
+/* Safety: ensure nothing pushes entries to the right */
+.chatbox .chat-entry{ float: none; }
