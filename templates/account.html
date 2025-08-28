@@ -35,18 +35,16 @@
     <form id="accountForm" class="auth-form" autocomplete="on">
       <input type="hidden" name="mode" id="mode" value="{{ mode }}" />
 
-      {# Turnstile widget — visible only if a site key was passed from Flask #}
-      {% if turnstile_site_key %}
-      <div class="form-group">
-        <div
-          class="cf-turnstile"
-          data-sitekey="{{ turnstile_site_key }}"
-          data-callback="onTurnstileToken"
-          data-expired-callback="onTsExpired"
-          data-error-callback="onTsError"
-          data-size="flexible">
-        </div>
-      </div>
+        <!-- Turnstile widget (checkbox style) -->
+  <div id="cfWidget"
+       class="cf-turnstile"
+       data-sitekey="{{ turnstile_site_key }}"
+       data-appearance="interaction-only"     <!-- don’t auto-run on load -->
+       data-refresh-expired="auto"            <!-- refresh if token expires -->
+       data-callback="onTurnstileToken"       <!-- called on success -->
+       data-error-callback="onTurnstileError" <!-- called on error -->
+       data-timeout-callback="onTurnstileTimeout">
+  </div>
       {% endif %}
     
       <div class="form-group" id="nameGroup">
@@ -121,6 +119,28 @@
         </button>
       </div>
     </form>
+<!-- Turnstile loader -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<script>
+  // Token is set only after user clicks the checkbox and Turnstile verifies.
+  window.turnstileToken = null;
+
+  function onTurnstileToken(token){
+    window.turnstileToken = token;
+    document.getElementById('submitButton').disabled = false;
+  }
+  function onTurnstileError(){
+    window.turnstileToken = null;
+    document.getElementById('submitButton').disabled = true;
+  }
+  function onTurnstileTimeout(){
+    // If it times out, reset and keep the button disabled
+    window.turnstileToken = null;
+    document.getElementById('submitButton').disabled = true;
+    try { turnstile.reset('#cfWidget'); } catch(e){}
+  }
+    
   </div>
 </section>
 {% endblock %}
