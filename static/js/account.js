@@ -80,9 +80,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.onTurnstileToken = function(token){
-    window.turnstileToken = token;
-    syncSubmitEnabled();
-  };
+  console.log('[Turnstile] token:', token);
+  window.turnstileToken = token;
+  const btn = document.getElementById('submitButton');
+  if (btn) btn.disabled = false;
+};
   window.onTurnstileError = function(){
     window.turnstileToken = null;
     syncSubmitEnabled();
