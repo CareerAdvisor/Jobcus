@@ -18,7 +18,7 @@
     <!-- Core CSS + AOS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/pricing.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 
     {# Page-scoped CSS hook (e.g., account.css) #}
     {% block extra_css %}{% endblock %}
@@ -134,49 +134,6 @@
     <script>
       AOS.init();
     </script>
-
-    <!-- Cookie banner -->
-    <div id="consentBanner" class="cc-banner" hidden aria-live="polite">
-      <div class="cc-body">
-        <h3 class="cc-title">We use cookies</h3>
-        <p class="cc-text">
-          We use necessary cookies to run the site, and optional analytics/marketing
-          cookies to improve your experience. <a href="/privacy-policy">Learn more</a>.
-        </p>
-        <div class="cc-actions">
-          <button id="ccReject" class="cc-btn ghost">Reject non-essential</button>
-          <button id="ccCustomize" class="cc-btn">Customize</button>
-          <button id="ccAccept" class="cc-btn primary">Accept all</button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Dim + preferences panel (modal) -->
-    <div id="ccDim" class="cc-dim" hidden></div>
-    
-    <div id="ccPanel" class="cc-panel" hidden role="dialog" aria-modal="true" aria-labelledby="ccPanelTitle">
-      <div class="cc-window" role="document">
-        <h3 id="ccPanelTitle" class="cc-title">Cookie preferences</h3>
-        <p class="cc-sub">Choose what to allow. Necessary cookies are always on.</p>
-    
-        <label class="cc-switch">
-          <input id="ccAnalytics" type="checkbox">
-          <span class="cc-switch-title">Analytics</span>
-          <small>Helps us understand usage so we can improve the app.</small>
-        </label>
-    
-        <label class="cc-switch">
-          <input id="ccMarketing" type="checkbox">
-          <span class="cc-switch-title">Marketing</span>
-          <small>Used for ads and personalization.</small>
-        </label>
-    
-        <div class="cc-actions right">
-          <button type="button" class="cc-btn ghost" id="ccCancel">Cancel</button>
-          <button type="button" class="cc-btn primary" id="ccSave">Save</button>
-        </div>
-      </div>
-    </div>
 
     <!-- Base JS -->
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
