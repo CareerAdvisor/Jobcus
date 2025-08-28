@@ -445,7 +445,6 @@ def confirm_page():
 def account():
     if request.method == "GET":
         mode = request.args.get("mode", "signup")
-        # expose site key for rendering the Turnstile widget (optional)
         return render_template(
             "account.html",
             mode=mode,
