@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const togglePrompt = document.getElementById('togglePrompt');
   const flashBox     = document.getElementById('flashMessages');
 
-  // ─── 2) Flash helper (writes into #flashMessages) ───
+  // ─── 2) Flash helper ───
   function flash(message, level='error'){
     if (!flashBox) { alert(message); return; }
     flashBox.innerHTML = `<div class="flash-item ${level}">${message}</div>`;
@@ -50,62 +50,44 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ─── 4) Toggle mode without reloading the page ───
+  // When toggling login/signup, don’t disable the button anymore
   toggleLink?.addEventListener('click', (e) => {
     e.preventDefault();
     modeInput.value = (modeInput.value === 'login' ? 'signup' : 'login');
     updateView();
-    // Reset CAPTCHA when switching modes (optional)
     try { turnstile.reset('#cfWidget'); } catch(e){}
     window.turnstileToken = null;
-    if (submitBtn) submitBtn.disabled = true;
   });
 
   // Initialize the view
   updateView();
 
-  // ─── 5) Cloudflare Turnstile integration ───
-  // Make sure your template includes:
-  // <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  // <div class="cf-turnstile" id="cfWidget"
-  //      data-sitekey="{{ turnstile_site_key }}"
-  //      data-callback="onTurnstileToken"
-  //      data-error-callback="onTurnstileError"
-  //      data-timeout-callback="onTurnstileTimeout"
-  //      data-theme="light" data-size="flexible"></div>
+  // ─── 5) Cloudflare Turnstile (auto/invisible) ───
+  // Requires in your template:
+  //   <div id="cfWidget" class="cf-turnstile"
+  //        data-sitekey="{{ turnstile_site_key }}"
+  //        data-callback="onTurnstileToken"
+  //        data-error-callback="onTurnstileError"
+  //        data-timeout-callback="onTurnstileTimeout"
+  //        data-theme="auto"
+  //        data-appearance="execute"></div>
+  // And loader:
+  //   <script data-cfasync="false" src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
   window.turnstileToken = null;
+  let waitingForToken = false;  // tracks if a submit is pending while we fetch a token
 
-  function syncSubmitEnabled(){
-    if (submitBtn) submitBtn.disabled = !window.turnstileToken;
+  function collectFormValues() {
+    return {
+      mode: (modeInput?.value || 'signup').toLowerCase(),
+      email: document.getElementById('email')?.value.trim() || '',
+      password: document.getElementById('password')?.value || '',
+      name: document.getElementById('name')?.value.trim() || ''
+    };
   }
 
-  window.onTurnstileToken = function(token){
-  console.log('[Turnstile] token:', token);
-  window.turnstileToken = token;
-  const btn = document.getElementById('submitButton');
-  if (btn) btn.disabled = false;
-};
-  window.onTurnstileError = function(){
-    window.turnstileToken = null;
-    syncSubmitEnabled();
-  };
-  window.onTurnstileTimeout = function(){
-    window.turnstileToken = null;
-    syncSubmitEnabled();
-    try { turnstile.reset('#cfWidget'); } catch(e){}
-  };
-
-  // Start disabled until user passes CAPTCHA
-  syncSubmitEnabled();
-
-  // ─── 6) Submit handler ───
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const mode     = (modeInput?.value || 'signup').toLowerCase();
-    const email    = document.getElementById('email')?.value.trim() || '';
-    const password = document.getElementById('password')?.value || '';
-    const name     = document.getElementById('name')?.value.trim() || '';
+  async function actuallySubmit() {
+    const { mode, email, password, name } = collectFormValues();
 
     if (!email || !password) {
       flash('Email and password are required.');
@@ -115,22 +97,18 @@ document.addEventListener('DOMContentLoaded', () => {
       flash('Please enter your full name.');
       return;
     }
-
-    // Require a real Turnstile pass
     if (!window.turnstileToken) {
-      flash('Please complete the CAPTCHA to continue.');
+      // Shouldn’t happen here, but guard just in case
+      flash('Please try again (security check).');
       return;
     }
 
     const payload = {
-      mode,
-      email,
-      password,
-      name,
+      mode, email, password, name,
       cf_turnstile_response: window.turnstileToken
     };
 
-    // Prevent double-submits
+    // Prevent double-submits during the request only
     if (submitBtn) submitBtn.disabled = true;
 
     let data = {};
@@ -149,13 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
       flash('Network error. Please try again.');
       return;
     } finally {
-      // Always reset Turnstile for a fresh token
+      // Always reset token for next action
       try { turnstile.reset('#cfWidget'); } catch(e){}
       window.turnstileToken = null;
-      syncSubmitEnabled(); // remains disabled until user clicks again
+      if (submitBtn) submitBtn.disabled = false;
     }
 
-    // Success path (server returns {success:true, redirect:"/..."})
     if (ok && data?.success && data?.redirect) {
       // Clear any local cache that could cause state confusion
       localStorage.removeItem('resumeAnalysis');
@@ -165,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Known flows
     if (data?.code === 'user_exists') {
       // Switch to login mode and pre-fill the email
       modeInput.value = 'login';
@@ -182,5 +158,64 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Generic failure
     flash(data?.message || 'Request failed. Please try again.');
+  }
+
+  // Turnstile callbacks
+  window.onTurnstileToken = function(token){
+    // Called after execute() or any background challenge
+    window.turnstileToken = token;
+    if (waitingForToken) {
+      waitingForToken = false;
+      actuallySubmit(); // continue the submit flow automatically
+    }
+  };
+  window.onTurnstileError = function(){
+    waitingForToken = false;
+    window.turnstileToken = null;
+    flash('Security check failed. Please try again.');
+  };
+  window.onTurnstileTimeout = function(){
+    waitingForToken = false;
+    window.turnstileToken = null;
+    try { turnstile.reset('#cfWidget'); } catch(e){}
+    flash('Security check timed out. Please try again.');
+  };
+
+  // ─── 6) Submit handler ───
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const { mode, email, password, name } = collectFormValues();
+
+    if (!email || !password) {
+      flash('Email and password are required.');
+      return;
+    }
+    if (mode === 'signup' && !name) {
+      flash('Please enter your full name.');
+      return;
+    }
+
+    // If we already have a token, go right away.
+    if (window.turnstileToken) {
+      actuallySubmit();
+      return;
+    }
+
+    // No token yet — run Turnstile invisibly and continue in onTurnstileToken.
+    waitingForToken = true;
+    try {
+      // requires data-appearance="execute"
+      if (window.turnstile?.execute) {
+        turnstile.execute('#cfWidget');
+      } else {
+        waitingForToken = false;
+        flash('Security script not loaded yet. Please wait a second and try again.');
+      }
+    } catch (err) {
+      console.error('Turnstile execute error:', err);
+      waitingForToken = false;
+      flash('Security check failed to start. Please try again.');
+    }
   });
 });
