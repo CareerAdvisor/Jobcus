@@ -18,7 +18,7 @@ document.querySelectorAll('.dropbtn').forEach(btn => {
   btn.addEventListener('click', e => {
     e.stopPropagation();
     const menu = btn.nextElementSibling; // .dropdown-content
-    menu.classList.toggle('show');
+    menu?.classList.toggle('show');
   });
 });
 
@@ -32,7 +32,7 @@ document.addEventListener('click', (e) => {
   if (
     mobileMenu?.classList.contains('show') &&
     !mobileMenu.contains(e.target) &&
-    !hamburger.contains(e.target)
+    !hamburger?.contains(e.target)
   ) {
     mobileMenu.classList.remove('show');
   }
@@ -43,7 +43,7 @@ document.addEventListener('click', (e) => {
     if (
       drop.classList.contains('show') &&
       !drop.contains(e.target) &&
-      !btn.contains(e.target)
+      !btn?.contains(e.target)
     ) {
       drop.classList.remove('show');
     }
@@ -55,8 +55,120 @@ document.addEventListener('click', (e) => {
   if (
     userDropdown?.classList.contains('show') &&
     !userDropdown.contains(e.target) &&
-    !userIcon.contains(e.target)
+    !userIcon?.contains(e.target)
   ) {
     userDropdown.classList.remove('show');
   }
 });
+
+
+// ──────────────────────────────────────────────────────────────
+// 6) Cookie Consent (banner + conditional analytics loading)
+// ──────────────────────────────────────────────────────────────
+
+const CONSENT_COOKIE = "jobcus_consent";
+const CONSENT_TTL_DAYS = 180;
+
+function setCookie(name, value, days){
+  const d = new Date();
+  d.setTime(d.getTime() + days*24*60*60*1000);
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${d.toUTCString()}; path=/; SameSite=Lax; Secure`;
+}
+function getCookie(name){
+  return document.cookie.split('; ').find(r => r.startsWith(name+'='))?.split('=')[1] || null;
+}
+function readConsent(){
+  try { return JSON.parse(decodeURIComponent(getCookie(CONSENT_COOKIE) || "")) || null; }
+  catch { return null; }
+}
+function writeConsent(obj){
+  setCookie(CONSENT_COOKIE, JSON.stringify({ ...obj, ts: Date.now() }), CONSENT_TTL_DAYS);
+}
+function show(el){ if (el) el.hidden = false; }
+function hide(el){ if (el) el.hidden = true; }
+
+/** Apply consent: set Consent Mode defaults and load scripts only if granted */
+function applyConsent(consent){
+  // GA4 Consent Mode (defaults: denied)
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    analytics_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied'
+  });
+
+  if (consent?.analytics) {
+    gtag('consent', 'update', { analytics_storage: 'granted' });
+
+    // Load GA4 only after consent
+    (function(){
+      var s=document.createElement('script');
+      s.async=1;
+      s.src='https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX'; // TODO: replace with your GA4 ID
+      document.head.appendChild(s);
+    }());
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXX', {
+      anonymize_ip: true,
+      allow_google_signals: false
+    });
+  }
+
+  if (consent?.marketing) {
+    gtag('consent', 'update', {
+      ad_storage: 'granted',
+      ad_user_data: 'granted',
+      ad_personalization: 'granted'
+    });
+    // Load other marketing/remarketing tags here (after consent)
+  }
+}
+
+// IIFE: wire up the banner when present
+(function(){
+  const banner = document.getElementById('consentBanner');
+  if (!banner) return; // page has no banner markup
+
+  const panel  = document.getElementById('ccPanel');
+  const btnAccept = document.getElementById('ccAccept');
+  const btnReject = document.getElementById('ccReject');
+  const btnCustomize = document.getElementById('ccCustomize');
+  const btnSave = document.getElementById('ccSave');
+  const cbAnalytics = document.getElementById('ccAnalytics');
+  const cbMarketing = document.getElementById('ccMarketing');
+
+  const saved = readConsent();
+  const dnt = (navigator.doNotTrack == "1" || window.doNotTrack == "1");
+
+  if (saved){
+    applyConsent(saved);
+  } else {
+    show(banner);
+    if (dnt){
+      if (cbAnalytics) cbAnalytics.checked = false;
+      if (cbMarketing) cbMarketing.checked = false;
+    }
+  }
+
+  btnAccept?.addEventListener('click', () => {
+    const consent = { necessary: true, analytics: true, marketing: true, version: 1 };
+    writeConsent(consent); hide(banner); applyConsent(consent);
+  });
+  btnReject?.addEventListener('click', () => {
+    const consent = { necessary: true, analytics: false, marketing: false, version: 1 };
+    writeConsent(consent); hide(banner); applyConsent(consent);
+  });
+  btnCustomize?.addEventListener('click', () => { show(panel); });
+  btnSave?.addEventListener('click', () => {
+    const consent = {
+      necessary: true,
+      analytics: !!cbAnalytics?.checked,
+      marketing: !!cbMarketing?.checked,
+      version: 1
+    };
+    writeConsent(consent); hide(banner); applyConsent(consent);
+  });
+})();
