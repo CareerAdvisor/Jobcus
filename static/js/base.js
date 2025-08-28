@@ -84,8 +84,43 @@ function readConsent(){
 function writeConsent(obj){
   setCookie(CONSENT_COOKIE, JSON.stringify({ ...obj, ts: Date.now() }), CONSENT_TTL_DAYS);
 }
-function show(el){ if (el) el.hidden = false; }
-function hide(el){ if (el) el.hidden = true; }
+
+  function show(el){
+    el.hidden = false;
+    // allow layout to settle, then animate in
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+  }
+  function hide(el){
+    el.classList.remove('is-visible');
+    // wait for CSS transition to finish, then truly hide
+    setTimeout(() => { el.hidden = true; }, 300);
+  }
+
+  // Open/close the preferences panel with dim
+  (function(){
+    const panel = document.getElementById('ccPanel');
+    const dim   = document.getElementById('ccDim');
+    const btnCustomize = document.getElementById('ccCustomize');
+    const btnCancel    = document.getElementById('ccCancel');
+    const btnSave      = document.getElementById('ccSave');
+
+    function openPanel(){
+      show(panel); dim.hidden = false;
+      requestAnimationFrame(() => dim.classList.add('is-visible'));
+    }
+    function closePanel(){
+      hide(panel);
+      dim.classList.remove('is-visible');
+      setTimeout(() => { dim.hidden = true; }, 300);
+    }
+
+    btnCustomize?.addEventListener('click', openPanel);
+    btnCancel?.addEventListener('click', closePanel);
+    dim?.addEventListener('click', closePanel);
+
+    // If your existing consent script already wires btnSave, just close the panel after save
+    btnSave?.addEventListener('click', () => { /* your save runs elsewhere */ closePanel(); });
+  })();
 
 /** Apply consent: set Consent Mode defaults and load scripts only if granted */
 function applyConsent(consent){
