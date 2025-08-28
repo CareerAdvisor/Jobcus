@@ -3874,3 +3874,27 @@ button {
   }
 }
 
+/* Cookie banner */
+.cc-banner{
+  position: fixed; left: 0; right: 0; bottom: 0;
+  z-index: 20000;
+  background: #0b1220; color: #fff;
+  padding: 12px; box-shadow: 0 -8px 24px rgba(0,0,0,.2);
+  font: 14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+}
+.cc-inner{ display:flex; gap:12px; align-items:center; justify-content:space-between; max-width: 1100px; margin: 0 auto; }
+.cc-copy a{ color:#8ec1ff; text-decoration: underline; }
+.cc-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+.cc-btn{ padding:8px 12px; border-radius:8px; border:1px solid transparent; cursor:pointer; }
+.cc-primary{ background:#104879; color:#fff; }
+.cc-secondary{ background:#1f2937; color:#fff; }
+.cc-outline{ background:transparent; color:#fff; border-color:#9aa4b2; }
+.cc-panel{
+  max-width: 1100px; margin: 10px auto 0; padding: 10px;
+  background:#101826; border-radius:10px; border:1px solid #253047;
+}
+.cc-row{ display:flex; align-items:center; gap:10px; color:#e5e7eb; margin:6px 0; }
+@media (max-width: 640px){
+  .cc-inner{ flex-direction:column; align-items:stretch; }
+  .cc-actions{ justify-content:flex-end; }
+}
