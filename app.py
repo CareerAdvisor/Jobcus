@@ -446,7 +446,11 @@ def account():
     if request.method == "GET":
         mode = request.args.get("mode", "signup")
         # expose site key for rendering the Turnstile widget (optional)
-        return render_template("account.html", mode=mode, turnstile_site_key=app.config.get("TURNSTILE_SITE_KEY"))
+        return render_template(
+            "account.html",
+            mode=mode,
+            turnstile_site_key=app.config.get("TURNSTILE_SITE_KEY", "")
+        )
 
     # ⬇️ NEW: verify Turnstile for POSTs (works for form or JSON submissions)
     ok, details = verify_turnstile(request)
