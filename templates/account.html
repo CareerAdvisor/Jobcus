@@ -85,14 +85,15 @@
       <div class="form-group">
       <!-- Turnstile (visible checkbox) -->
       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-      <div class="cf-turnstile"
-           id="cfWidget"
+      <div id="cfWidget"
+           class="cf-turnstile"
            data-sitekey="{{ turnstile_site_key }}"
            data-callback="onTurnstileToken"
            data-error-callback="onTurnstileError"
            data-timeout-callback="onTurnstileTimeout"
-           data-theme="light"
-           data-size="flexible"></div>
+           data-theme="auto"
+           data-size="normal"
+           data-appearance="always"></div>
         <noscript>
           <p style="color:#b42318;margin-top:8px;">
             JavaScript is required to complete the CAPTCHA.
@@ -139,7 +140,7 @@
 {% endblock %}
 
 {% block scripts %}
-  {# Turnstile script must be present on this page #}
+  <!-- Turnstile loader (external, async) -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="{{ url_for('static', filename='js/account.js') }}"></script>
 {% endblock %}
