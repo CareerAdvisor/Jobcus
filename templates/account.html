@@ -91,7 +91,7 @@
         {% endif %}
       </div>
 
-      <!-- Cloudflare Turnstile (checkbox) -->
+      <!-- Cloudflare Turnstile (invisible/execute) -->
       <div class="form-group">
         <div
           id="cfWidget"
@@ -101,15 +101,14 @@
           data-error-callback="onTurnstileError"
           data-timeout-callback="onTurnstileTimeout"
           data-theme="auto"
-          data-size="normal"
-          data-appearance="always">
+          data-appearance="execute">
         </div>
         <noscript>
           <p style="color:#b42318;margin-top:8px;">JavaScript is required to complete the CAPTCHA.</p>
         </noscript>
       </div>
 
-      <button type="submit" class="btn-primary" id="submitButton" disabled>
+      <button type="submit" class="btn-primary" id="submitButton">
         {% if is_login %}Sign In{% else %}Sign Up{% endif %}
       </button>
 
@@ -148,7 +147,9 @@
 {% endblock %}
 
 {% block scripts %}
-  {# Load Turnstile ONCE, here (don’t also include it inside the form) #}
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script data-cfasync="false"
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          async defer></script>
   <script src="{{ url_for('static', filename='js/account.js') }}"></script>
 {% endblock %}
+
