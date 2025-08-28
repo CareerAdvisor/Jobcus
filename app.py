@@ -410,6 +410,10 @@ def cover_letter():
         sender={}, recipient={}, draft=""
     )
 
+@app.route("/_test_cookie_tpl")
+def _test_cookie_tpl():
+    return render_template("cookie.html")
+
 # ----------------------------
 # Email confirmation
 # ----------------------------
