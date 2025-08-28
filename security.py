@@ -1,6 +1,10 @@
 # security.py
-import os, requests
+import os, requests, logging
 from flask import Request
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 TURNSTILE_SECRET = os.environ.get("TURNSTILE_SECRET")  # None in dev = skip check
@@ -21,6 +25,7 @@ def verify_turnstile(req: Request) -> tuple[bool, dict]:
     Token is accepted from form, JSON, or a custom header.
     """
     if not TURNSTILE_SECRET:
+        logger.warning("TURNSTILE_SECRET not configured. Skipping Turnstile check (dev mode).")
         return True, {"skipped": "TURNSTILE_SECRET not configured (dev mode)"}
 
     token = (
@@ -30,6 +35,7 @@ def verify_turnstile(req: Request) -> tuple[bool, dict]:
     )
 
     if not token:
+        logger.error("Turnstile token missing in request")
         return False, {"error": "missing token"}
 
     data = {
@@ -39,8 +45,14 @@ def verify_turnstile(req: Request) -> tuple[bool, dict]:
     }
 
     try:
+        logger.info("Verifying Turnstile token for IP %s", data["remoteip"])
         r = requests.post(TURNSTILE_VERIFY_URL, data=data, timeout=6)
         j = r.json()
+        if j.get("success"):
+            logger.info("Turnstile verification successful")
+        else:
+            logger.warning("Turnstile verification failed: %s", j)
         return bool(j.get("success")), j
     except Exception as e:
+        logger.exception("Error while verifying Turnstile")
         return False, {"error": str(e)}
