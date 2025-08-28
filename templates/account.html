@@ -4,7 +4,6 @@
 {% block title %}Jobcus – Sign In / Sign Up{% endblock %}
 {% block body_class %}account-page{% endblock %}
 
-{# Load page-specific styles (scoped to .account-page) #}
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
 {% endblock %}
@@ -12,8 +11,6 @@
 {% block content %}
 <section class="auth-wrapper">
   <div class="auth-card auth-card--blue">
-
-    {# — Heading & subtitle; initial state based on `mode` from Flask — #}
     <h2 class="auth-title">
       {% if mode == 'login' %}
         Sign In to<br>Jobcus
@@ -29,7 +26,6 @@
       {% endif %}
     </p>
 
-    {# — Flash messages container — #}
     <div id="flashMessages" class="flash-message">
       {% for msg in get_flashed_messages() %}
         <div class="flash-item">{{ msg }}</div>
@@ -39,7 +35,6 @@
     <form id="accountForm" class="auth-form" autocomplete="on">
       <input type="hidden" name="mode" id="mode" value="{{ mode }}" />
 
-      {# — Full Name only shown by JS when mode==='signup' — #}
       <div class="form-group" id="nameGroup">
         <label for="name">Full Name</label>
         <input
@@ -47,6 +42,7 @@
           id="name"
           name="name"
           placeholder="Your full name"
+          autocomplete="name"
         />
       </div>
 
@@ -58,6 +54,10 @@
           name="email"
           placeholder="you@example.com"
           required
+          autocomplete="email"
+          autocapitalize="none"
+          spellcheck="false"
+          inputmode="email"
         />
       </div>
 
@@ -69,6 +69,7 @@
           name="password"
           placeholder="Enter your password"
           required
+          autocomplete="{% if mode=='login' %}current-password{% else %}new-password{% endif %}"
         />
       </div>
 
