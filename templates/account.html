@@ -77,16 +77,21 @@
            data-timeout-callback="onTurnstileTimeout">
       </div>
 
-      <button type="submit" class="btn-primary" id="submitButton" disabled>
-        {{ 'Sign In' if mode == 'login' else 'Sign Up' }}
+      <button type="submit" class="btn-primary" id="submitButton">
+        {% if mode=='login' %}Sign In{% else %}Sign Up{% endif %}
       </button>
 
       <p class="toggle-text">
         <span id="togglePrompt">
-          {{ "Don’t have an account?" if mode=='login' else "Already have an account?" }}
+          {% if mode=='login' %}
+            Don’t have an account?
+          {% else %}
+            Already have an account?
+          {% endif %}
         </span>
         <a href="#" id="toggleMode" class="toggle-link">
-          {{ "Sign Up" if mode=='login' else "Sign In" }}
+          {% if mode=='login' %}Sign Up{% else %}Sign In{% endif %}
+
         </a>
       </p>
 
