@@ -118,6 +118,17 @@
         </a>
       </p>
 
+      <!-- Turnstile (visible checkbox) -->
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+      <div class="cf-turnstile"
+           id="cfWidget"
+           data-sitekey="{{ turnstile_site_key }}"
+           data-callback="onTurnstileToken"
+           data-error-callback="onTurnstileError"
+           data-timeout-callback="onTurnstileTimeout"
+           data-theme="light"
+           data-size="flexible"></div>
+
       <div class="or-divider"><span>OR</span></div>
 
       <div class="social-buttons">
