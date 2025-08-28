@@ -36,15 +36,15 @@
       <input type="hidden" name="mode" id="mode" value="{{ mode }}" />
 
         <!-- Turnstile widget (checkbox style) -->
-  <div id="cfWidget"
-       class="cf-turnstile"
-       data-sitekey="{{ turnstile_site_key }}"
-       data-appearance="interaction-only"     <!-- don’t auto-run on load -->
-       data-refresh-expired="auto"            <!-- refresh if token expires -->
-       data-callback="onTurnstileToken"       <!-- called on success -->
-       data-error-callback="onTurnstileError" <!-- called on error -->
-       data-timeout-callback="onTurnstileTimeout">
-  </div>
+        <div id="cfWidget"
+             class="cf-turnstile"
+             data-sitekey="{{ turnstile_site_key }}"
+             data-appearance="interaction-only"     <!-- don’t auto-run on load -->
+             data-refresh-expired="auto"            <!-- refresh if token expires -->
+             data-callback="onTurnstileToken"       <!-- called on success -->
+             data-error-callback="onTurnstileError" <!-- called on error -->
+             data-timeout-callback="onTurnstileTimeout">
+        </div>
       {% endif %}
     
       <div class="form-group" id="nameGroup">
@@ -140,7 +140,7 @@
     document.getElementById('submitButton').disabled = true;
     try { turnstile.reset('#cfWidget'); } catch(e){}
   }
-    
+</script>
   </div>
 </section>
 {% endblock %}
