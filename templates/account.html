@@ -4,43 +4,45 @@
 {% block title %}Jobcus – Sign In / Sign Up{% endblock %}
 {% block body_class %}account-page{% endblock %}
 
-{# Page-specific CSS #}
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
 {% endblock %}
 
 {% block content %}
+{% set is_login = (mode == 'login') %}
 <section class="auth-wrapper">
   <div class="auth-card auth-card--blue">
 
-    {# Headline switches by mode #}
     <h2 class="auth-title">
-      {% if mode == 'login' %}
-        Sign In to<br>Jobcus
+      {% if is_login %}
+        {{ 'Sign In to<br>Jobcus'|safe }}
       {% else %}
-        Sign Up to<br>Jobcus
+        {{ 'Sign Up to<br>Jobcus'|safe }}
       {% endif %}
     </h2>
     <p class="auth-subtitle">
-      {% if mode == 'login' %}
+      {% if is_login %}
         Good to see you again! Welcome back.
       {% else %}
         Create a free account to get started.
       {% endif %}
     </p>
 
-    {# Flash messages container (filled by JS or Flask) #}
     <div id="flashMessages" class="flash-message">
-      {% for msg in get_flashed_messages() %}
-        <div class="flash-item">{{ msg }}</div>
-      {% endfor %}
+      {% with msgs = get_flashed_messages() %}
+        {% if msgs %}
+          {% for msg in msgs %}
+            <div class="flash-item">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
     </div>
 
-    <form id="accountForm" class="auth-form" autocomplete="on">
-      <input type="hidden" name="mode" id="mode" value="{{ mode }}" />
+    <form id="accountForm" class="auth-form" autocomplete="on" novalidate>
+      <input type="hidden" name="mode" id="mode" value="{{ 'login' if is_login else 'signup' }}">
 
-      {# Full Name — JS hides this on login #}
-      <div class="form-group" id="nameGroup">
+      <!-- Full Name (only show when signing up) -->
+      <div class="form-group" id="nameGroup" {% if is_login %}style="display:none"{% endif %}>
         <label for="name">Full Name</label>
         <input
           type="text"
@@ -68,53 +70,59 @@
 
       <div class="form-group">
         <label for="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          placeholder="Enter your password"
-          required
-          autocomplete="{{ 'current-password' if mode=='login' else 'new-password' }}"
-        />
+        {% if is_login %}
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter your password"
+            required
+            autocomplete="current-password"
+          />
+        {% else %}
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Create a password"
+            required
+            autocomplete="new-password"
+          />
+        {% endif %}
       </div>
 
-      {# ── Cloudflare Turnstile (visible checkbox) ──
-         - Keep this inside the form
-         - account.js listens for onTurnstileToken / error / timeout
-      #}
+      <!-- Cloudflare Turnstile (checkbox) -->
       <div class="form-group">
-      <!-- Turnstile (visible checkbox) -->
-      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-      <div id="cfWidget"
-           class="cf-turnstile"
-           data-sitekey="{{ turnstile_site_key }}"
-           data-callback="onTurnstileToken"
-           data-error-callback="onTurnstileError"
-           data-timeout-callback="onTurnstileTimeout"
-           data-theme="auto"
-           data-size="normal"
-           data-appearance="always"></div>
+        <div
+          id="cfWidget"
+          class="cf-turnstile"
+          data-sitekey="{{ turnstile_site_key }}"
+          data-callback="onTurnstileToken"
+          data-error-callback="onTurnstileError"
+          data-timeout-callback="onTurnstileTimeout"
+          data-theme="auto"
+          data-size="normal"
+          data-appearance="always">
+        </div>
         <noscript>
-          <p style="color:#b42318;margin-top:8px;">
-            JavaScript is required to complete the CAPTCHA.
-          </p>
+          <p style="color:#b42318;margin-top:8px;">JavaScript is required to complete the CAPTCHA.</p>
         </noscript>
       </div>
 
       <button type="submit" class="btn-primary" id="submitButton" disabled>
-        {% if mode=='login' %}Sign In{% else %}Sign Up{% endif %}
+        {% if is_login %}Sign In{% else %}Sign Up{% endif %}
       </button>
 
       <p class="toggle-text">
         <span id="togglePrompt">
-          {% if mode=='login' %}
+          {% if is_login %}
             Don’t have an account?
           {% else %}
             Already have an account?
           {% endif %}
         </span>
         <a href="#" id="toggleMode" class="toggle-link">
-          {% if mode=='login' %}Sign Up{% else %}Sign In{% endif %}
+          {% if is_login %}Sign Up{% else %}Sign In{% endif %}
         </a>
       </p>
 
@@ -140,7 +148,7 @@
 {% endblock %}
 
 {% block scripts %}
-  <!-- Turnstile loader (external, async) -->
+  {# Load Turnstile ONCE, here (don’t also include it inside the form) #}
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="{{ url_for('static', filename='js/account.js') }}"></script>
 {% endblock %}
