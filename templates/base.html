@@ -127,18 +127,6 @@
     </a>
   {% endif %}
 
-  {% if not for_pdf %}
-    <!-- AOS -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
-      AOS.init();
-    </script>
-
-    <!-- Base JS -->
-    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
-    {% block scripts %}{% endblock %}
-  {% endif %}
-
     <!-- Consent Banner -->
 <div id="consentBanner" class="cc-banner" hidden>
   <div class="cc-inner">
@@ -172,6 +160,18 @@
     </div>
   </div>
 </div>
+
+  {% if not for_pdf %}
+    <!-- AOS -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+      AOS.init();
+    </script>
+
+    <!-- Base JS -->
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    {% block scripts %}{% endblock %}
+  {% endif %}
 
 </body>
 </html>
