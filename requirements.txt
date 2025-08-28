@@ -12,3 +12,4 @@ Authlib
 weasyprint
 docxtpl
 gotrue
+stripe
