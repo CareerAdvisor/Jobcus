@@ -83,17 +83,16 @@
          - account.js listens for onTurnstileToken / error / timeout
       #}
       <div class="form-group">
-        <div
-          class="cf-turnstile"
-          id="cfWidget"
-          data-sitekey="{{ turnstile_site_key }}"
-          data-callback="onTurnstileToken"
-          data-error-callback="onTurnstileError"
-          data-timeout-callback="onTurnstileTimeout"
-          data-appearance="always"
-          data-size="flexible"
-          data-theme="light">
-        </div>
+      <!-- Turnstile (visible checkbox) -->
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+      <div class="cf-turnstile"
+           id="cfWidget"
+           data-sitekey="{{ turnstile_site_key }}"
+           data-callback="onTurnstileToken"
+           data-error-callback="onTurnstileError"
+           data-timeout-callback="onTurnstileTimeout"
+           data-theme="light"
+           data-size="flexible"></div>
         <noscript>
           <p style="color:#b42318;margin-top:8px;">
             JavaScript is required to complete the CAPTCHA.
@@ -117,17 +116,6 @@
           {% if mode=='login' %}Sign Up{% else %}Sign In{% endif %}
         </a>
       </p>
-
-      <!-- Turnstile (visible checkbox) -->
-      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-      <div class="cf-turnstile"
-           id="cfWidget"
-           data-sitekey="{{ turnstile_site_key }}"
-           data-callback="onTurnstileToken"
-           data-error-callback="onTurnstileError"
-           data-timeout-callback="onTurnstileTimeout"
-           data-theme="light"
-           data-size="flexible"></div>
 
       <div class="or-divider"><span>OR</span></div>
 
