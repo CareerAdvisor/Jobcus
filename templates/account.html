@@ -1,353 +1,146 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{% block title %}Jobcus{% endblock %}</title>
+{# templates/account.html #}
+{% extends "base.html" %}
 
-  {# Only load network assets when NOT generating a PDF #}
-  {% if not for_pdf %}
-    <!-- Favicon & fonts -->
-    <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+{% block title %}Jobcus – Sign In / Sign Up{% endblock %}
+{% block body_class %}account-page{% endblock %}
 
-    <!-- iOS home screen icons -->
-    <link rel="apple-touch-icon" sizes="120x120" href="{{ url_for('static', filename='icons/apple-touch-icon-120x120.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/apple-touch-icon-180x180.png') }}">
+{# Page-specific CSS #}
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+{% endblock %}
 
-    <!-- Core CSS + AOS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+{% block content %}
+<section class="auth-wrapper">
+  <div class="auth-card auth-card--blue">
 
-    {# Page-scoped CSS hook (e.g., account.css) #}
-    {% block extra_css %}{% endblock %}
+    {# Headline switches by mode #}
+    <h2 class="auth-title">
+      {% if mode == 'login' %}
+        Sign In to<br>Jobcus
+      {% else %}
+        Sign Up to<br>Jobcus
+      {% endif %}
+    </h2>
+    <p class="auth-subtitle">
+      {% if mode == 'login' %}
+        Good to see you again! Welcome back.
+      {% else %}
+        Create a free account to get started.
+      {% endif %}
+    </p>
 
-    <!-- Cookie banner styles (inline to guarantee presence on all pages) -->
-    <style>
-      /* Bottom-sheet cookie banner */
-      .cc-banner[hidden]{ display:none !important; }
-      .cc-banner{
-        position: fixed;
-        left: 50%;
-        bottom: 18px;
-        transform: translateX(-50%);
-        width: min(92vw, 760px);
-        background: #0b2542;            /* brandy navy */
-        color: #fff;
-        border-radius: 12px;
-        border: 1px solid rgba(255,255,255,.12);
-        box-shadow: 0 12px 40px rgba(0,0,0,.25);
-        padding: 14px 14px 12px;
-        z-index: 4000;
-        opacity: 0;
-        translate: 0 18px;
-        transition: opacity .35s ease, translate .35s ease;
-        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      }
-      .cc-banner.is-open{ opacity:1; translate: 0 0; }
+    {# Flash messages container (filled by JS or Flask) #}
+    <div id="flashMessages" class="flash-message">
+      {% for msg in get_flashed_messages() %}
+        <div class="flash-item">{{ msg }}</div>
+      {% endfor %}
+    </div>
 
-      .cc-row{ display:flex; gap:14px; align-items:flex-start; }
-      .cc-text{ flex:1; font-size:.95rem; line-height:1.45; }
-      .cc-text a{ color:#a9d3ff; text-decoration: underline; }
-      .cc-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+    <form id="accountForm" class="auth-form" autocomplete="on">
+      <input type="hidden" name="mode" id="mode" value="{{ mode }}" />
 
-      .cc-btn{
-        appearance:none; border:1px solid rgba(255,255,255,.2);
-        background:#19385f; color:#fff; padding:10px 12px;
-        border-radius:10px; font-weight:600; cursor:pointer;
-      }
-      .cc-btn:hover{ background:#1f4474; }
-      .cc-btn.primary{ background:#2c7be5; border-color:#2c7be5; }
-      .cc-btn.primary:hover{ background:#2468bf; }
-
-      /* Preferences panel (drawer-ish card) */
-      .cc-panel[hidden]{ display:none !important; }
-      .cc-panel{
-        position: fixed;
-        left: 50%;
-        bottom: 18px;
-        transform: translateX(-50%);
-        width: min(92vw, 760px);
-        background: #ffffff;
-        color: #0b2542;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 12px 40px rgba(0,0,0,.22);
-        padding: 16px;
-        z-index: 4001;
-        opacity: 0;
-        translate: 0 18px;
-        transition: opacity .35s ease, translate .35s ease;
-        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      }
-      .cc-panel.is-open{ opacity:1; translate: 0 0; }
-
-      .cc-panel h3{ margin:0 0 8px; font-size:1.05rem; color:#0b2542; }
-      .cc-line{ font-size:.93rem; display:flex; align-items:center; gap:10px; padding:8px 0; }
-      .cc-line input{ width:18px; height:18px; }
-      .cc-panel .cc-actions{ justify-content:flex-end; margin-top:10px; }
-      .cc-note{ font-size:.85rem; color:#475569; margin-top:4px; }
-
-      @media (max-width: 480px){
-        .cc-row{ flex-direction: column; align-items: stretch; }
-        .cc-actions{ justify-content: stretch; }
-        .cc-btn{ flex:1; text-align: center; }
-      }
-    </style>
-  {% endif %}
-</head>
-
-<body class="{% block body_class %}{% endblock %}" data-authed="{{ '1' if current_user.is_authenticated else '0' }}">
-  <div class="page-container">
-
-    {% if not for_pdf %}
-    <header class="site-header">
-      <div class="header-left">
-        {% block header_icon %}{% endblock %}
+      {# Full Name — JS hides this on login #}
+      <div class="form-group" id="nameGroup">
+        <label for="name">Full Name</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="Your full name"
+          autocomplete="name"
+        />
       </div>
 
-      <div class="header-logo">
-        <a href="/">
-          <img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" />
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="you@example.com"
+          required
+          autocomplete="email"
+          autocapitalize="none"
+          spellcheck="false"
+          inputmode="email"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Enter your password"
+          required
+          autocomplete="{{ 'current-password' if mode=='login' else 'new-password' }}"
+        />
+      </div>
+
+      {# ── Cloudflare Turnstile (visible checkbox) ──
+         - Keep this inside the form
+         - account.js listens for onTurnstileToken / error / timeout
+      #}
+      <div class="form-group">
+        <div
+          class="cf-turnstile"
+          id="cfWidget"
+          data-sitekey="{{ turnstile_site_key }}"
+          data-callback="onTurnstileToken"
+          data-error-callback="onTurnstileError"
+          data-timeout-callback="onTurnstileTimeout"
+          data-appearance="always"
+          data-size="flexible"
+          data-theme="light">
+        </div>
+        <noscript>
+          <p style="color:#b42318;margin-top:8px;">
+            JavaScript is required to complete the CAPTCHA.
+          </p>
+        </noscript>
+      </div>
+
+      <button type="submit" class="btn-primary" id="submitButton" disabled>
+        {% if mode=='login' %}Sign In{% else %}Sign Up{% endif %}
+      </button>
+
+      <p class="toggle-text">
+        <span id="togglePrompt">
+          {% if mode=='login' %}
+            Don’t have an account?
+          {% else %}
+            Already have an account?
+          {% endif %}
+        </span>
+        <a href="#" id="toggleMode" class="toggle-link">
+          {% if mode=='login' %}Sign Up{% else %}Sign In{% endif %}
         </a>
+      </p>
+
+      <div class="or-divider"><span>OR</span></div>
+
+      <div class="social-buttons">
+        <button type="button" class="social-btn fb" aria-label="Continue with Facebook">
+          <img src="{{ url_for('static', filename='icons/facebook.svg') }}" alt="Facebook">
+        </button>
+        <button type="button" class="social-btn google" aria-label="Continue with Google">
+          <img src="{{ url_for('static', filename='icons/google.png') }}" alt="Google">
+        </button>
+        <button type="button" class="social-btn linkedin" aria-label="Continue with LinkedIn">
+          <img src="{{ url_for('static', filename='icons/linkedin.svg') }}" alt="LinkedIn">
+        </button>
+        <button type="button" class="social-btn apple" aria-label="Continue with Apple">
+          <img src="{{ url_for('static', filename='icons/apple.svg') }}" alt="Apple">
+        </button>
       </div>
-
-      <div class="header-right">
-
-        <!-- ① Desktop navigation (visible only on ≥768px) -->
-        <nav class="desktop-nav">
-          <a href="/resume-analyzer">Resume Analyzer</a>
-          <a href="/resume-builder">Resume Builder</a>
-          <a href="/interview-coach">Interview Coach</a>
-          <a href="/cover-letter">Cover Letter</a>
-          <div class="dropdown">
-            <button class="dropbtn">Features ▾</button>
-            <div class="dropdown-content">
-              <a href="/chat">Jobcus AI</a>
-              <a href="/skill-gap">Skill Gap Analysis</a>
-              <a href="/job-insights">Job Insights</a>
-            </div>
-          </div>
-          <a href="/employers">Partner with Us</a>
-        </nav>
-
-        <!-- ② User icon + dropdown -->
-        <div class="user-menu">
-          <img
-            id="userIcon"
-            src="{{ url_for('static', filename='icons/user.svg') }}"
-            alt="User menu"
-            class="user-icon"
-            onclick="toggleUserMenu()"
-          />
-          <div id="userDropdown" class="user-dropdown">
-            {% if current_user.is_authenticated %}
-              <a href="/dashboard">👤 Profile</a>
-              <a href="/logout">🚪 Log out</a>
-            {% else %}
-              <a href="/account">🔑 Sign up / Log in</a>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- ③ Hamburger for mobile only (<768px) -->
-        <div class="hamburger" onclick="toggleMobileMenu()">
-          <div></div><div></div><div></div>
-        </div>
-      </div>
-
-      <!-- mobile navigation (visible only <768px) -->
-      <nav class="mobile-nav" id="mobileMenu">
-        <a href="/resume-analyzer">Resume Analyzer</a>
-        <a href="/resume-builder">Resume Builder</a>
-        <a href="/interview-coach">Interview Coach</a>
-        <a href="/cover-letter">Cover Letter</a>
-        <div class="dropdown">
-          <button class="dropbtn">Features ▾</button>
-          <div class="dropdown-content">
-            <a href="/chat">Jobcus AI</a>
-            <a href="/skill-gap">Skill Gap Analysis</a>
-            <a href="/job-insights">Job Insights</a>
-          </div>
-        </div>
-        <a href="/employers">Partner with Us</a>
-      </nav>
-    </header>
-    {% endif %}
-
-    <main>
-      {% block content %}{% endblock %}
-    </main>
-
-    {% if not for_pdf and (show_footer | default(true)) %}
-      <footer class="footer-note-static">
-        &copy; 2025 Jobcus – Your AI Career Advisor
-        </br>
-        <a href="/privacy-policy" class="footer-link">Privacy Policy</a>
-        &nbsp;|&nbsp;
-        <a href="/terms-of-service" class="footer-link">Terms of Service</a>
-        &nbsp;|&nbsp;
-        <a href="/faq" class="footer-link">FAQs</a>
-      </footer>
-    {% endif %}
+    </form>
   </div>
+</section>
+{% endblock %}
 
-  {# Chat bubble (hidden on chat-page and always hidden for PDF) #}
-  {% if not for_pdf and body_class != 'chat-page' %}
-    <a href="/chat" class="chat-float-button" title="Chat with Jobcus">
-      <img src="{{ url_for('static', filename='icons/pencilchat.svg') }}" alt="Chat Icon" />
-    </a>
-  {% endif %}
-
-  {% if not for_pdf %}
-    <!-- Cookie Consent Banner (HTML) -->
-    <div class="cc-banner" id="consentBanner" role="dialog" aria-live="polite" aria-label="Cookie consent" hidden>
-      <div class="cc-row">
-        <div class="cc-text">
-          We use cookies to improve your experience, analyze traffic, and for optional personalization.
-          See our <a href="/privacy-policy">Privacy Policy</a>.
-        </div>
-        <div class="cc-actions">
-          <button id="ccCustomize" class="cc-btn" type="button">Customize</button>
-          <button id="ccReject" class="cc-btn" type="button">Reject non-essential</button>
-          <button id="ccAccept" class="cc-btn primary" type="button">Accept all</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Cookie Preferences Panel -->
-    <div class="cc-panel" id="ccPanel" role="dialog" aria-label="Cookie preferences" hidden>
-      <h3>Cookie Preferences</h3>
-      <div class="cc-line">
-        <input type="checkbox" id="ccNecessary" checked disabled />
-        <label for="ccNecessary"><strong>Necessary</strong> – required for basic site functionality.</label>
-      </div>
-      <div class="cc-line">
-        <input type="checkbox" id="ccAnalytics" />
-        <label for="ccAnalytics"><strong>Analytics</strong> – helps us understand usage.</label>
-      </div>
-      <div class="cc-line">
-        <input type="checkbox" id="ccMarketing" />
-        <label for="ccMarketing"><strong>Marketing</strong> – ads & personalization.</label>
-      </div>
-      <p class="cc-note">You can change your preferences anytime from the footer links or by clearing cookies.</p>
-      <div class="cc-actions">
-        <button id="ccSave" class="cc-btn primary" type="button">Save preferences</button>
-      </div>
-    </div>
-
-    <!-- AOS -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script> AOS.init(); </script>
-
-    <!-- Base JS -->
-    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
-
-    <!-- Cookie Consent Logic -->
-    <script>
-      /* ---------- Consent persistence ---------- */
-      const CONSENT_COOKIE = "jobcus_consent";
-      const CONSENT_TTL_DAYS = 180;
-
-      function setCookie(name, value, days){
-        const d = new Date(); d.setTime(d.getTime() + days*24*60*60*1000);
-        document.cookie = `${name}=${encodeURIComponent(value)}; expires=${d.toUTCString()}; path=/; SameSite=Lax; Secure`;
-      }
-      function getCookie(name){
-        return document.cookie.split('; ').find(r => r.startsWith(name+'='))?.split('=')[1] || null;
-      }
-      function readConsent(){
-        try { return JSON.parse(decodeURIComponent(getCookie(CONSENT_COOKIE) || "")) || null; }
-        catch { return null; }
-      }
-      function writeConsent(obj){
-        setCookie(CONSENT_COOKIE, JSON.stringify({ ...obj, ts: Date.now() }), CONSENT_TTL_DAYS);
-      }
-      function show(el){ if (!el) return; el.hidden = false; requestAnimationFrame(()=> el.classList.add('is-open')); }
-      function hide(el){ if (!el) return; el.classList.remove('is-open'); setTimeout(()=>{ el.hidden = true; }, 200); }
-
-      /* ---------- Consent → load scripts ---------- */
-      function applyConsent(consent){
-        // Default denied (Consent Mode v2 compatible)
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){ dataLayer.push(arguments); }
-
-        gtag('consent', 'default', {
-          ad_storage: 'denied',
-          analytics_storage: 'denied',
-          ad_user_data: 'denied',
-          ad_personalization: 'denied'
-        });
-
-        if (consent?.analytics) {
-          gtag('consent', 'update', { analytics_storage: 'granted' });
-
-          // Load GA4 only after analytics consent
-          (function(){
-            var s=document.createElement('script');
-            s.async=1; s.src='https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX';  /* ← your GA4 ID */
-            document.head.appendChild(s);
-          }());
-          gtag('js', new Date());
-          gtag('config', 'G-XXXXXXX', {
-            anonymize_ip: true,
-            allow_google_signals: false
-          });
-        }
-
-        if (consent?.marketing) {
-          gtag('consent', 'update', {
-            ad_storage: 'granted',
-            ad_user_data: 'granted',
-            ad_personalization: 'granted'
-          });
-          // Load your ad/remarketing tags here (only after consent)
-        }
-      }
-
-      /* ---------- Banner wiring ---------- */
-      (function(){
-        const banner = document.getElementById('consentBanner');
-        const panel  = document.getElementById('ccPanel');
-        const btnAccept = document.getElementById('ccAccept');
-        const btnReject = document.getElementById('ccReject');
-        const btnCustomize = document.getElementById('ccCustomize');
-        const btnSave = document.getElementById('ccSave');
-        const cbAnalytics = document.getElementById('ccAnalytics');
-        const cbMarketing = document.getElementById('ccMarketing');
-
-        const saved = readConsent();
-        const dnt = (navigator.doNotTrack == "1" || window.doNotTrack == "1");
-
-        if (saved){
-          applyConsent(saved);
-        } else {
-          show(banner);
-          if (dnt){
-            cbAnalytics.checked = false;
-            cbMarketing.checked = false;
-          }
-        }
-
-        btnAccept?.addEventListener('click', () => {
-          const consent = { necessary: true, analytics: true, marketing: true, version: 1 };
-          writeConsent(consent); hide(banner); hide(panel); applyConsent(consent);
-        });
-        btnReject?.addEventListener('click', () => {
-          const consent = { necessary: true, analytics: false, marketing: false, version: 1 };
-          writeConsent(consent); hide(banner); hide(panel); applyConsent(consent);
-        });
-        btnCustomize?.addEventListener('click', () => { hide(banner); show(panel); });
-        btnSave?.addEventListener('click', () => {
-          const consent = { necessary: true, analytics: cbAnalytics.checked, marketing: cbMarketing.checked, version: 1 };
-          writeConsent(consent); hide(panel); applyConsent(consent);
-        });
-      })();
-    </script>
-
-    {% block scripts %}{% endblock %}
-  {% endif %}
-
-</body>
-</html>
+{% block scripts %}
+  {# Turnstile script must be present on this page #}
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script src="{{ url_for('static', filename='js/account.js') }}"></script>
+{% endblock %}
