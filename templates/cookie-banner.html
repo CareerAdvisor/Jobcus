@@ -1,4 +1,8 @@
-{# Cookie banner + preferences panel #}
+{# Cookie + preferences panel #}
+
+<!-- Cookie Consent CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cookie.css') }}">
+
 <div id="consentBanner" class="cc-banner" hidden>
   <h4>We use cookies</h4>
   <p>We use essential cookies to make our site work. We’d also like to use analytics and marketing cookies to improve your experience.</p>
@@ -35,3 +39,6 @@
     <button id="ccSave" class="cc-btn primary">Save choices</button>
   </div>
 </div>
+
+<!-- Cookie Consent JS -->
+<script src="{{ url_for('static', filename='js/cookie.js') }}"></script>
