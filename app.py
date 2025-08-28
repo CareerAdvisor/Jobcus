@@ -18,11 +18,9 @@ from dotenv import load_dotenv
 
 # Local modules
 from extensions import login_manager, init_supabase, init_openai
-from blueprints.resumes import resumes_bp
-from typing import Optional
-
-# ⬇️ NEW: Turnstile server-side verifier
-from security import verify_turnstile
+from blueprints.resumes import resumes_bp  # <-- your blueprint with all resume endpoints
+import logging
+from typing import Optional  # if you're on Python <3.10
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -36,10 +34,6 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",
 )
 
-# ⬇️ NEW: expose Turnstile keys if you want to render the widget server-side
-app.config["TURNSTILE_SITE_KEY"] = os.getenv("TURNSTILE_SITE_KEY")
-app.config["TURNSTILE_SECRET"]   = os.getenv("TURNSTILE_SECRET")
-
 CORS(app)
 logging.basicConfig(level=logging.INFO)
 
@@ -47,7 +41,7 @@ logging.basicConfig(level=logging.INFO)
 app.config["SUPABASE"] = init_supabase()
 app.config["OPENAI_CLIENT"] = init_openai()
 
-# Short aliases
+# Short aliases if you want to use them in this file
 supabase = app.config["SUPABASE"]
 client   = app.config["OPENAI_CLIENT"]
 
@@ -94,12 +88,15 @@ def load_user(user_id: "Optional[str]"):
             .limit(1)
             .execute()
         )
+
         data = getattr(resp, "data", None) if resp is not None else None
         if not data:
             return None
+
         row = data[0] if isinstance(data, list) else data
         if not row:
             return None
+
         return User(
             auth_id=row.get("auth_id"),
             email=row.get("email"),
@@ -136,7 +133,7 @@ def get_user_resume_text(user_id: str) -> Optional[str]:
     except Exception:
         current_app.logger.exception("get_user_resume_text error")
         return None
-
+        
 def fetch_remotive_jobs(query: str):
     try:
         r = requests.get(REMOTIVE_API_URL, params={"search": query})
@@ -380,57 +377,71 @@ def subscribe():
     plans = _plans()
     plan_code = (request.args.get("plan") or request.form.get("plan") or "").lower()
     if plan_code not in plans:
+        # default to pricing if unknown plan
         return redirect(url_for("pricing"))
 
     plan_data = plans[plan_code]
 
     if request.method == "POST":
+        # TODO: integrate payment provider here for paid plans
+        # Example: update the user's plan in your DB
         try:
             current_user.plan = plan_code
+            # db.session.commit()
         except Exception:
+            # db.session.rollback()
             flash("Could not update plan. Please try again.", "error")
             return redirect(url_for("subscribe", plan=plan_code))
+
+        # Success page – also syncs localStorage via inline script
         return render_template(
             "subscribe_success.html",
             plan_human=plan_data["title"],
             plan_json=plan_code,
         )
 
+    # GET → show confirmation page
     return render_template("subscribe.html", plan_data=plan_data)
 
+# Optional: simple alias used elsewhere like “View pricing”
 @app.route("/upgrade")
 def upgrade():
     return redirect(url_for("pricing"))
 
 @app.route('/cover-letter')
 def cover_letter():
+    # Always provide defaults so the template can't blow up
     return render_template(
         "cover-letter.html",
-        letter_only=False,
+        letter_only=False,   # make explicit
         sender={}, recipient={}, draft=""
     )
-
-@app.route("/_test_cookie_tpl")
-def _test_cookie_tpl():
-    return render_template("cookie.html")
-
+        
 # ----------------------------
 # Email confirmation
 # ----------------------------
 @app.get("/check-email")
 def check_email():
-    email = session.get("pending_email")
+    email = session.get("pending_email")  # set this during signup
     return render_template("check-email.html", email=email)
 
 @app.route("/resend-confirmation", methods=["GET"])
 def resend_confirmation():
+    """
+    Resend email confirmation for a user.
+    Looks for ?email=... first; falls back to session['pending_email'].
+    Redirects back to /check-email with a flash message.
+    """
     email = (request.args.get("email") or session.get("pending_email") or "").strip().lower()
     if not email:
         flash("We couldn’t find an email address to resend to.", "error")
         return redirect(url_for("check_email"))
 
     try:
+        # Supabase Python SDK v2: resend a signup confirmation
+        # If your SDK signature differs, adjust the call accordingly.
         supabase.auth.resend({"type": "signup", "email": email})
+
         flash("Confirmation email resent. Please check your inbox.", "success")
     except Exception:
         current_app.logger.exception("Resend confirmation failed")
@@ -449,17 +460,7 @@ def confirm_page():
 def account():
     if request.method == "GET":
         mode = request.args.get("mode", "signup")
-        return render_template(
-            "account.html",
-            mode=mode,
-            turnstile_site_key=app.config.get("TURNSTILE_SITE_KEY", "")
-        )
-
-    # ⬇️ NEW: verify Turnstile for POSTs (works for form or JSON submissions)
-    ok, details = verify_turnstile(request)
-    if not ok:
-        # JSON response to match your existing fetch() usage
-        return jsonify(success=False, code="captcha_failed", message="Robot verification failed. Please try again."), 400
+        return render_template("account.html", mode=mode)
 
     data = request.get_json(force=True)
     mode = (data.get("mode") or "").lower()
@@ -487,6 +488,7 @@ def account():
             except Exception:
                 pass
 
+            # ⬇️ NEW: remember email for the /check-email page
             if not ud.get("email_confirmed_at"):
                 session["pending_email"] = email
                 return jsonify(success=True, redirect=url_for("check_email")), 200
@@ -526,6 +528,7 @@ def account():
         except AuthApiError as e:
             msg = str(e).lower()
             if "email not confirmed" in msg or "not confirmed" in msg:
+                # Optionally remember email here too
                 session["pending_email"] = email
                 return jsonify(
                     success=False,
@@ -740,10 +743,11 @@ def get_interview_feedback():
         logging.exception("Interview feedback error")
         return jsonify(error="Error generating feedback"), 500
 
-# --- Register the resume blueprint last ---
+# --- Register the resume blueprint last (after app/config exists) ---
 app.register_blueprint(resumes_bp)
 
 # ---- Employer inquiry endpoints ----
+
 @app.post("/api/employer-inquiry")
 def employer_inquiry():
     try:
@@ -761,6 +765,7 @@ def employer_inquiry():
     except Exception as e:
         current_app.logger.exception("Employer inquiry error")
         return jsonify(success=False, error=str(e)), 500
+
 
 @app.post("/api/employer/submit")
 def submit_employer_form():
@@ -804,6 +809,7 @@ Required Qualifications, Preferred Skills, and How to Apply.
         )
         job_desc = resp.choices[0].message.content
 
+        # Optional: persist in DB
         try:
             supabase.table("job_posts").insert({
                 "job_title": job_title,
