@@ -59,13 +59,16 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     if (flash) flash.textContent = '';
 
+  // inside submit handler in account.js
   const payload = {
     mode:     modeInput.value,
     email:    document.getElementById('email').value.trim(),
     password: document.getElementById('password').value,
-    name:     document.getElementById('name')?.value.trim() || ''
+    name:     document.getElementById('name')?.value.trim() || '',
+    // ← add the Turnstile token (may be null if widget didn’t load yet)
+    cf_turnstile_response: window.turnstileToken || null
   };
-
+  
   let data = {};
   try {
     const res = await fetch('/account', {
