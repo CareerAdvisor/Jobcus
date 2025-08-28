@@ -1,4 +1,4 @@
-import os
+import os, stripe
 import traceback
 from io import BytesIO
 from collections import Counter
@@ -62,6 +62,16 @@ JOB_TITLES = [
     "Project Manager", "UX Designer", "Cybersecurity Analyst"
 ]
 KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
+
+# --- Stripe Payment ---
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  # your sk_live_...
+
+PRICE_TO_PLAN = {
+    os.getenv("STRIPE_PRICE_WEEKLY"):   "weekly",
+    os.getenv("STRIPE_PRICE_STANDARD"): "standard",
+    os.getenv("STRIPE_PRICE_PREMIUM"):  "premium",
+    # Don’t include “free” here (that’s handled without Stripe)
+}
 
 # --- User model ---
 class User(UserMixin):
@@ -263,6 +273,32 @@ def fetch_location_counts():
         pass
     return freq.most_common(5)
 
+#--- Stripe ---
+def _get_or_create_stripe_customer(user):
+    """Return a Stripe customer id for this user, creating if needed and storing in DB."""
+    supabase = current_app.config["SUPABASE"]
+
+    try:
+        r = supabase.table("users").select("stripe_customer_id").eq("auth_id", user.id).single().execute()
+        scid = (r.data or {}).get("stripe_customer_id")
+    except Exception:
+        scid = None
+
+    if scid:
+        return scid
+
+    cust = stripe.Customer.create(
+        email=user.email,
+        name=(user.fullname or None),
+        metadata={"auth_id": user.id}
+    )
+    try:
+        supabase.table("users").update({"stripe_customer_id": cust["id"]}).eq("auth_id", user.id).execute()
+    except Exception:
+        pass
+
+    return cust["id"]
+
 # -------- Basic pages --------
 @app.route("/")
 def index():
@@ -377,36 +413,140 @@ def subscribe():
     plans = _plans()
     plan_code = (request.args.get("plan") or request.form.get("plan") or "").lower()
     if plan_code not in plans:
-        # default to pricing if unknown plan
         return redirect(url_for("pricing"))
 
-    plan_data = plans[plan_code]
+    # FREE: do it locally (no Stripe)
+    if request.method == "POST" and plan_code == "free":
+        try:
+            supabase.table("users").update({
+                "plan": "free",
+                "plan_status": "active"
+            }).eq("auth_id", current_user.id).execute()
+        except Exception:
+            flash("Could not activate free plan.", "error")
+            return redirect(url_for("pricing"))
+        return render_template("subscribe_success.html",
+                               plan_human=plans["free"]["title"],
+                               plan_json="free")
 
     if request.method == "POST":
-        # TODO: integrate payment provider here for paid plans
-        # Example: update the user's plan in your DB
+        price_map = {
+            "weekly":   os.getenv("STRIPE_PRICE_WEEKLY"),
+            "standard": os.getenv("STRIPE_PRICE_STANDARD"),
+            "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
+        }
+        price_id = price_map.get(plan_code)
+        if not price_id:
+            flash("Invalid plan.", "error")
+            return redirect(url_for("pricing"))
+
         try:
-            current_user.plan = plan_code
-            # db.session.commit()
+            session = stripe.checkout.Session.create(
+                mode="subscription",
+                line_items=[{"price": price_id, "quantity": 1}],
+                success_url=url_for("subscribe_success_page", plan=plan_code, _external=True),
+                cancel_url=url_for("pricing", _external=True),
+                customer_email=current_user.email,  # or use 'customer' if you store it
+                allow_promotion_codes=True,
+                # Attach metadata so webhooks can find the user/plan later:
+                metadata={
+                    "user_id": current_user.id,
+                    "plan_code": plan_code
+                },
+                subscription_data={
+                    "metadata": {
+                        "user_id": current_user.id,
+                        "plan_code": plan_code
+                    }
+                }
+            )
+            return redirect(session.url, code=303)
         except Exception:
-            # db.session.rollback()
-            flash("Could not update plan. Please try again.", "error")
-            return redirect(url_for("subscribe", plan=plan_code))
+            current_app.logger.exception("Stripe Checkout create failed")
+            flash("Payment setup failed. Please try again.", "error")
+            return redirect(url_for("pricing"))
 
-        # Success page – also syncs localStorage via inline script
-        return render_template(
-            "subscribe_success.html",
-            plan_human=plan_data["title"],
-            plan_json=plan_code,
-        )
+    # GET request → render your subscribe page
+    return render_template("subscribe.html", plan_data=plans[plan_code])
 
-    # GET → show confirmation page
-    return render_template("subscribe.html", plan_data=plan_data)
+@app.get("/subscribe/success")
+@login_required
+def subscribe_success_page():
+    plan_code = (request.args.get("plan") or "").lower()
+    plans = _plans()
+    title = plans.get(plan_code, {}).get("title", plan_code.capitalize() or "Plan")
+    # The **actual** activation is done by the webhook. This page is just a nice UX.
+    return render_template("subscribe_success.html",
+                           plan_human=title,
+                           plan_json=plan_code)
 
-# Optional: simple alias used elsewhere like “View pricing”
-@app.route("/upgrade")
-def upgrade():
-    return redirect(url_for("pricing"))
+# --- checkout ---
+def _activate_user_plan_by_metadata(supabase, metadata, customer_id=None, subscription_id=None):
+    """Use metadata we set during Checkout to know who & what to update."""
+    if not metadata:
+        return
+    user_id   = metadata.get("user_id")
+    plan_code = metadata.get("plan_code")
+    if not user_id or not plan_code:
+        return
+    try:
+        supabase.table("users").update({
+            "plan": plan_code,
+            "plan_status": "active",
+            "stripe_customer_id": customer_id,
+            "stripe_subscription_id": subscription_id
+        }).eq("auth_id", user_id).execute()
+    except Exception:
+        current_app.logger.exception("Failed to update user plan from webhook")
+
+def _deactivate_user_plan_by_customer(supabase, customer_id):
+    try:
+        supabase.table("users").update({
+            "plan": "free",
+            "plan_status": "canceled"
+        }).eq("stripe_customer_id", customer_id).execute()
+    except Exception:
+        current_app.logger.exception("Failed to downgrade after cancel")
+
+@app.post("/stripe/webhook")
+def stripe_webhook():
+    supabase = current_app.config["SUPABASE"]
+    endpoint_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
+    payload = request.get_data(as_text=True)
+    sig_header = request.headers.get("Stripe-Signature")
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+    except ValueError:
+        return ("Bad payload", 400)
+    except stripe.error.SignatureVerificationError:
+        return ("Bad signature", 400)
+
+    etype = event["type"]
+    obj   = event["data"]["object"]
+
+    if etype == "checkout.session.completed":
+        metadata = obj.get("metadata", {}) or {}
+        customer_id = obj.get("customer")
+        subscription_id = obj.get("subscription")
+        _activate_user_plan_by_metadata(supabase, metadata, customer_id, subscription_id)
+
+    elif etype in ("customer.subscription.created", "customer.subscription.updated"):
+        metadata = obj.get("metadata", {}) or {}
+        customer_id = obj.get("customer")
+        subscription_id = obj.get("id")
+        _activate_user_plan_by_metadata(supabase, metadata, customer_id, subscription_id)
+
+    elif etype == "customer.subscription.deleted":
+        customer_id = obj.get("customer")
+        _deactivate_user_plan_by_customer(supabase, customer_id)
+
+    elif etype == "invoice.payment_failed":
+        # Optional: mark as past_due or notify the user
+        pass
+
+    return ("OK", 200)
+
 
 @app.route('/cover-letter')
 def cover_letter():
