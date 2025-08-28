@@ -57,25 +57,38 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── 6) Form submit via fetch(JSON) ───
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (flash) flash.textContent = '';
-
-  // inside submit handler in account.js
-  const payload = {
-    mode:     modeInput.value,
-    email:    document.getElementById('email').value.trim(),
-    password: document.getElementById('password').value,
-    name:     document.getElementById('name')?.value.trim() || '',
-    // ← add the Turnstile token (may be null if widget didn’t load yet)
-    cf_turnstile_response: window.turnstileToken || null
-  };
   
-  let data = {};
-  try {
-    const res = await fetch('/account', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    // hard gate: no token, no submit
+    if (!window.turnstileToken) {
+      flash('Please complete the CAPTCHA to continue.', 'error');
+      return;
+    }
+  
+    const payload = {
+      mode:     modeInput.value,
+      email:    document.getElementById('email').value.trim(),
+      password: document.getElementById('password').value,
+      name:     document.getElementById('name')?.value.trim() || '',
+      cf_turnstile_response: window.turnstileToken
+    };
+  
+    let data = {};
+    try {
+      const res = await fetch('/account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      data = await res.json();
+    } catch (err) {
+      flash('Network error. Please try again.', 'error');
+      return;
+    } finally {
+      // don’t reuse tokens
+      try { turnstile.reset('#cfWidget'); } catch(e){}
+      window.turnstileToken = null;
+      document.getElementById('submitButton').disabled = true;
+    }
 
     // Try to parse JSON even on error responses
     try { data = await res.json(); } catch { data = {}; }
