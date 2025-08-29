@@ -1,17 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Plan updated – Jobcus{% endblock %}
+{% block body_class %}account-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+{% endblock %}
 
 {% block content %}
-<section class="pricing-wrap" style="max-width:720px;">
-  <header class="pricing-head">
-    <h1>You're all set 🎉</h1>
-    <p>Your plan is now <strong>{{ plan_human }}</strong>.</p>
-  </header>
+<section class="auth-wrapper">
+  <div class="auth-card" style="text-align:center;">
+    <h2 class="auth-title">You're all set 🎉</h2>
+    <p class="auth-subtitle">Your plan is now <strong>{{ plan_human }}</strong>.</p>
 
-  <p style="text-align:center;">
-    <a class="btn btn-primary" href="{{ url_for('chat') }}">Go to Chat</a>
-    <a class="btn btn-outline" href="{{ url_for('dashboard') }}" style="margin-left:8px;">Back to Dashboard</a>
-  </p>
+    <div style="margin-top:18px;">
+      <a class="btn btn-primary" href="{{ url_for('chat') }}">Go to Chat</a>
+      <a class="btn btn-outline" href="{{ url_for('dashboard') }}" style="margin-left:8px;">Back to Dashboard</a>
+    </div>
+  </div>
 </section>
 
 <script>
@@ -19,7 +24,6 @@
   (function(){
     try {
       localStorage.setItem('userPlan', {{ plan_json|tojson|safe }});
-      // Reset message counter when a plan changes.
       localStorage.setItem('chatUsed', '0');
     } catch (e) {}
   })();
