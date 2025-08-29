@@ -65,6 +65,11 @@
 }
 .sb-btn:hover{ background:#eef2f7; }
 .sb-primary{ background:#104879; color:#fff; border-color:#104879; }
+.sb-primary:hover{
+  background:#eaf2fb;   /* light background */
+  color:#104879;        /* blue text so it remains visible */
+  border-color:#104879; /* keep blue border */
+}
 
 /* Ensure cards fit sidebar width */
 .chat-sidebar .credits-panel{ max-width:100%; width:100%; margin:0 0 14px; }
@@ -231,12 +236,12 @@ body, .chat-main{ background-color:#f9fbf9; }
 .history-title{ margin:0 0 8px; font-size:14px; color:#0f355e; }
 .history-list{ list-style:none; padding:0; margin:0; }
 .history-item{
-  display:flex; align-items:center; justify-content:space-between; gap:8px;
-  padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px;
-  margin-bottom:8px; background:#fff; cursor:pointer;
+  display:flex; align-items:center; justify-content:space-between; gap:6px;
+  padding:6px 10px; border:1px solid #e5e7eb; border-radius:10px;
+  margin-bottom:6px; background:#fff; cursor:pointer;
 }
-.history-item-title{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f355e; font-weight:600; }
-.history-item .delete{ border:0; background:transparent; color:#9b1c1c; font-size:16px; cursor:pointer; }
+.history-item-title{ flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#0f355e; font-weight:600; line-height:1.2; }
+.history-item .delete{ border:0; background:transparent; color:#9b1c1c; font-size:14px; cursor:pointer; line-height:1; }
 
 /* ===========================
    Chat stream — consistent desktop/tablet column
