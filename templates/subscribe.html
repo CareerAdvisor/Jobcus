@@ -38,7 +38,7 @@
 
     <form method="POST" action="/subscribe">
       <input type="hidden" name="plan" value="{{ plan_data.code }}">
-      <button class="btn btn-primary">Continue to secure checkout</button>
+      <button type="submit" class="btn btn-primary">Continue to secure checkout</button>
       <a class="btn btn-ghost" href="{{ url_for('pricing') }}">Back to pricing</a>
     </form>
   </div>
