@@ -44,7 +44,7 @@
   "Care Assistant",
   "Support Worker",
   "Animator",
-  "3D Artist"
+  "3D Artist",
   "Prison Officer",
   "Project Support Officer",
   "Auditor",
@@ -55,3 +55,4 @@
   "Human Resource Officer",
   /* …add as many as you want */
 ]
+
