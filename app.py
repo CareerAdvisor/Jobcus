@@ -793,12 +793,22 @@ def account():
             ud = user.model_dump() if hasattr(user, "model_dump") else user
             auth_id = ud["id"]
 
+            # Create DB user row
             try:
                 supabase.table("users").insert({
                     "auth_id": auth_id, "email": email, "fullname": name
                 }).execute()
             except Exception:
                 pass
+
+            # ✅ Auto-promote if email is in ADMIN_EMAILS
+            admin_emails = {e.strip().lower() for e in (os.getenv("ADMIN_EMAILS") or "").split(",") if e.strip()}
+            if email and email.lower() in admin_emails:
+                try:
+                    supabase.table("users").update({"role": "superadmin"}) \
+                        .eq("auth_id", auth_id).execute()
+                except Exception:
+                    current_app.logger.exception("auto-promote admin failed")
 
             # ⬇️ NEW: remember email for the /check-email page
             if not ud.get("email_confirmed_at"):
@@ -828,6 +838,15 @@ def account():
             ud = user.model_dump() if hasattr(user, "model_dump") else user
             auth_id = ud["id"]
 
+            # ✅ Auto-promote if email is in ADMIN_EMAILS
+            admin_emails = {e.strip().lower() for e in (os.getenv("ADMIN_EMAILS") or "").split(",") if e.strip()}
+            if email and email.lower() in admin_emails:
+                try:
+                    supabase.table("users").update({"role": "superadmin"}) \
+                        .eq("auth_id", auth_id).execute()
+                except Exception:
+                    current_app.logger.exception("auto-promote admin failed")
+                    
             try:
                 r = supabase.table("users").select("fullname").eq("auth_id", auth_id).single().execute()
                 fullname = (r.data or {}).get("fullname")
