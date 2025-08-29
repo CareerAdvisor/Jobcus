@@ -66,11 +66,11 @@ KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
 # --- Stripe Payment ---
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  # your sk_live_...
 
-PRICE_TO_PLAN = {
-    os.getenv("STRIPE_PRICE_WEEKLY"):   "weekly",
-    os.getenv("STRIPE_PRICE_STANDARD"): "standard",
-    os.getenv("STRIPE_PRICE_PREMIUM"):  "premium",
-    # Don’t include “free” here (that’s handled without Stripe)
+# Map plan code -> Stripe Price ID (envs you already set)
+PLAN_TO_PRICE = {
+    "weekly":   os.getenv("STRIPE_PRICE_WEEKLY"),
+    "standard": os.getenv("STRIPE_PRICE_STANDARD"),
+    "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
 }
 
 # --- User model ---
@@ -415,91 +415,77 @@ def subscribe():
     if plan_code not in plans:
         return redirect(url_for("pricing"))
 
-    # FREE: do it locally (no Stripe)
-    if request.method == "POST" and plan_code == "free":
-        try:
-            supabase.table("users").update({
-                "plan": "free",
-                "plan_status": "active"
-            }).eq("auth_id", current_user.id).execute()
-        except Exception:
-            flash("Could not activate free plan.", "error")
-            return redirect(url_for("pricing"))
-        return render_template("subscribe_success.html",
-                               plan_human=plans["free"]["title"],
-                               plan_json="free")
+    plan_data = plans[plan_code]
 
     if request.method == "POST":
-        price_map = {
-            "weekly":   os.getenv("STRIPE_PRICE_WEEKLY"),
-            "standard": os.getenv("STRIPE_PRICE_STANDARD"),
-            "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
-        }
-        price_id = price_map.get(plan_code)
-        if not price_id:
-            flash("Invalid plan.", "error")
-            return redirect(url_for("pricing"))
+        # FREE plan: no Stripe
+        if plan_code == "free":
+            try:
+                supabase = current_app.config["SUPABASE"]
+                supabase.table("users").update({
+                    "plan": "free",
+                    "plan_status": "active"
+                }).eq("auth_id", current_user.id).execute()
+            except Exception:
+                flash("Could not update plan. Please try again.", "error")
+                return redirect(url_for("subscribe", plan=plan_code))
 
-        try:
-            session = stripe.checkout.Session.create(
-                mode="subscription",
-                line_items=[{"price": price_id, "quantity": 1}],
-                success_url=url_for("subscribe_success_page", plan=plan_code, _external=True),
-                cancel_url=url_for("pricing", _external=True),
-                customer_email=current_user.email,  # or use 'customer' if you store it
-                allow_promotion_codes=True,
-                # Attach metadata so webhooks can find the user/plan later:
-                metadata={
-                    "user_id": current_user.id,
-                    "plan_code": plan_code
-                },
-                subscription_data={
-                    "metadata": {
-                        "user_id": current_user.id,
-                        "plan_code": plan_code
-                    }
-                }
+            return render_template(
+                "subscribe_success.html",
+                plan_human=plan_data["title"],
+                plan_json=plan_code,
             )
-            return redirect(session.url, code=303)
-        except Exception:
-            current_app.logger.exception("Stripe Checkout create failed")
-            flash("Payment setup failed. Please try again.", "error")
+
+        # Paid plans → Stripe Checkout
+        price_id = PLAN_TO_PRICE.get(plan_code)
+        if not price_id:
+            flash("Billing not configured for this plan.", "error")
             return redirect(url_for("pricing"))
 
-    # GET request → render your subscribe page
-    return render_template("subscribe.html", plan_data=plans[plan_code])
+        success_url = url_for("stripe_success", _external=True) + "?session_id={CHECKOUT_SESSION_ID}"
+        cancel_url  = url_for("pricing", _external=True) + "?cancelled=1"
 
-@app.get("/stripe/success")
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            line_items=[{"price": price_id, "quantity": 1}],
+            success_url=success_url,
+            cancel_url=cancel_url,
+            allow_promotion_codes=True,
+            metadata={
+                "user_id": current_user.id,
+                "plan_code": plan_code,
+            },
+            # If you already store Stripe customer IDs, you can attach here:
+            # customer=current_user.stripe_customer_id,
+        )
+
+        return redirect(session.url, code=303)
+
+    # GET → show confirm page with a POST button
+    return render_template("subscribe.html", plan_data=plan_data)
+
+@app.get("/subscribe/success")
+@login_required
 def stripe_success():
     session_id = request.args.get("session_id")
     if not session_id:
-        return redirect("/pricing")
+        return redirect(url_for("pricing"))
 
-    s = stripe.checkout.Session.retrieve(
-        session_id,
-        expand=["line_items.data.price", "subscription"]
-    )
-    items = s.get("line_items", {}).get("data", [])
-    price_id = items[0]["price"]["id"] if items else None
-    plan_code = PRICE_TO_PLAN.get(price_id)
+    cs = stripe.checkout.Session.retrieve(session_id, expand=["subscription"])
+    if cs.payment_status != "paid":
+        flash("Payment not completed yet. If this persists, contact support.", "error")
+        return redirect(url_for("pricing"))
 
-    is_paid = s.get("payment_status") == "paid"
-    is_active_sub = (
-        s.get("mode") == "subscription" and
-        s.get("subscription") and
-        s["subscription"]["status"] in ("active", "trialing")
-    )
+    supabase = current_app.config["SUPABASE"]
+    metadata = cs.metadata or {}
+    customer_id = cs.customer
+    subscription_id = cs.subscription.id if getattr(cs, "subscription", None) else None
 
-    if (is_paid or is_active_sub) and plan_code:
-        metadata = s.get("metadata", {}) or {}
-        customer_id = s.get("customer")
-        sub_id = s["subscription"]["id"] if s.get("subscription") else None
-        _activate_user_plan_by_metadata(current_app.config["SUPABASE"], metadata, customer_id, sub_id)
-        return render_template("subscribe_success.html",
-                               plan_human=plan_code.title(),
-                               plan_json=plan_code)
+    _activate_user_plan_by_metadata(supabase, metadata, customer_id, subscription_id)
 
-    return redirect("/pricing")
+    plan_code = metadata.get("plan_code", "")
+    plan_name = _plans().get(plan_code, {}).get("title", "Your plan")
+    return render_template("subscribe_success.html", plan_human=plan_name, plan_json=plan_code)
 
 # --- checkout ---
 def _activate_user_plan_by_metadata(supabase, metadata, customer_id=None, subscription_id=None):
