@@ -19,12 +19,12 @@
 
 {% set show_footer = false %}
 
-{# --- Plan/model helpers (works even if you didn’t pass vars explicitly) --- #}
+{# --- Plan/model helpers (robust defaults) --- #}
 {% set plan_code = (plan if plan is defined else ((current_user.plan if current_user.is_authenticated else '') or 'free')) %}
 {% set is_paid   = (is_paid if is_paid is defined else (plan_code != 'free')) %}
 {% set free_model    = (free_model if free_model is defined else 'gpt-4o-mini') %}
-{% set model_default = (model_default if model_default is defined else (is_paid and 'gpt-4o' or free_model)) %}
-{% set model_options = (model_options if model_options is defined else ['gpt-4o','gpt-4o-mini']) %}
+{% set model_default = (model_default if model_default is defined else (is_paid and 'gpt-4o-mini' or free_model)) %}
+{% set model_options = (model_options if model_options is defined else ['gpt-5-thinking','gpt-4.1','gpt-4o','gpt-4o-mini']) %}
 {% set show_upgrade  = (show_upgrade if show_upgrade is defined else (plan_code == 'free')) %}
 
 {% block content %}
@@ -35,11 +35,10 @@
       data-free-model="{{ free_model }}"
       data-allowed-models="{{ model_options|join(',') }}">
 
-  <!-- LEFT: fixed sidebar (menus + credits + new chat) -->
+  <!-- LEFT: fixed sidebar -->
   <aside id="chatSidebar" class="chat-sidebar" aria-label="Chat menu">
     <div class="sidebar-header">
       <button id="chatSidebarClose" class="sb-btn" type="button" aria-label="Close menu">✕ Close</button>
-      <!-- New chat lives in the sidebar now -->
       <button id="newChatBtn" class="sb-btn sb-primary" type="button">New chat</button>
     </div>
 
@@ -50,51 +49,52 @@
       <button id="clearChatBtn" class="sb-btn" type="button">Clear conversation</button>
     </nav>
 
-    <!-- Credits panel (kept) + plan block + model controls -->
-    <section class="credits-panel" aria-labelledby="credits-title">
-      <h2 id="credits-title">AI Chat credits &amp; fair-use</h2>
+    <!-- Credits card matching mock -->
+    <section class="credits-panel is-card" aria-labelledby="credits-title">
+      <h2 id="credits-title" class="credits-title">AI Chat credits &amp; fair-use</h2>
 
-      <div class="credits-row">
-        <div>
-          <div class="credits-label">Your plan</div>
-          <strong id="credits-plan" data-plan="{{ plan_code }}">{{ plan_code|capitalize }}</strong>
-
-          {% if plan_code == 'free' %}
-            <div class="badge-pill mt-6">Trial</div>
-          {% else %}
-            <div class="badge-pill mt-6">Active</div>
-          {% endif %}
-
-          {% if show_upgrade %}
-            <a class="btn-upgrade-inline" href="{{ url_for('pricing') }}">Upgrade</a>
-          {% endif %}
+      <div class="credits-topgrid">
+        <div class="credits-col">
+          <span class="credits-label">Your plan</span>
+          <div class="credits-planline">
+            <strong id="credits-plan" data-plan="{{ plan_code }}">{{ plan_code|capitalize }}</strong>
+            <span class="pill pill-muted">
+              {% if plan_code == 'free' %}Trial{% else %}Active{% endif %}
+            </span>
+          </div>
         </div>
-        <div>
-          <div class="credits-label">Messages left</div>
-          <strong id="credits-left">—</strong>
-          <small id="credits-reset" class="credits-hint">
-            {{ 'Resets weekly' if plan_code == 'weekly' else ('Resets monthly' if plan_code in ['free','standard'] else 'Fair use / yearly') }}
-          </small>
+
+        <div class="credits-col credits-right">
+          <span class="credits-label">Messages left</span>
+          <div class="credits-leftline">
+            <strong id="credits-left">—</strong>
+            <div class="credits-sub" id="credits-reset">
+              {% if plan_code == 'free' %}Trial{% elif plan_code == 'weekly' %}Resets weekly{% elif plan_code == 'standard' %}Resets monthly{% else %}Resets yearly{% endif %}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="model-area">
+      {% if show_upgrade %}
+        <a class="credits-upgrade" href="{{ url_for('pricing') }}">Upgrade</a>
+      {% endif %}
+
+      <hr class="credits-div" />
+
+      <div class="model-block">
+        <span class="credits-label">Model</span>
         {% if is_paid %}
-          <label for="modelSelect" class="model-label">Model</label>
           <select id="modelSelect" class="model-select">
             {% for m in model_options %}
               <option value="{{ m }}" {% if m == model_default %}selected{% endif %}>{{ m }}</option>
             {% endfor %}
           </select>
-          <div class="model-current">Using: <span id="modelBadge">{{ model_default }}</span></div>
         {% else %}
-          <label class="model-label">Model</label>
-          <div class="badge-pill" title="Upgrade to switch models">{{ free_model }}</div>
-          <div class="model-current">Using: <span id="modelBadge">{{ free_model }}</span></div>
+          <span class="pill model-pill" id="modelBadge">{{ free_model }}</span>
         {% endif %}
       </div>
 
-      <details class="credits-details">
+      <details class="credits-details" style="margin-top:10px;">
         <summary>How credits work</summary>
         <ul class="credits-list">
           <li><strong>Free:</strong> 15 total messages (trial)</li>
@@ -102,11 +102,10 @@
           <li><strong>Standard:</strong> 800 / month</li>
           <li><strong>Premium:</strong> 12,000 / year (~1,000 / mo)</li>
         </ul>
-        <p class="credits-note">A “message” is each prompt you send. When you run out, chat pauses until the next reset or upgrade.</p>
       </details>
     </section>
 
-    <!-- ✅ History goes here, inside the drawer -->
+    <!-- History -->
     <section class="history-panel">
       <h3 class="history-title">Conversation history</h3>
       <ul id="chatHistory" class="history-list"></ul>
@@ -116,13 +115,9 @@
 
   <!-- RIGHT: chat content pane -->
   <section class="chat-main">
-    <!-- Small model strip at the top of the chat pane -->
-    <div class="model-strip">
-      Model: <strong><span id="headerModel">{{ is_paid and model_default or free_model }}</span></strong>
-    </div>
+    <!-- (Removed the top “Model: …” strip to avoid duplication) -->
 
     <div class="chatbox" id="chatbox">
-      <!-- welcome banner stays in the chat stream -->
       <div id="welcomeBanner" class="welcome">
         {% if current_user.is_authenticated and current_user.first_name %}
           <p class="welcome-title">👋 Welcome {{ current_user.first_name }}! How can I help you today?</p>
