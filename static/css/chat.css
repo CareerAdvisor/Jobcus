@@ -67,6 +67,54 @@
 .sb-primary{ background:#104879; color:#fff; border-color:#104879; }
 
 /* ===========================
+   Plan & Model controls (NEW)
+   =========================== */
+
+.mt-6{ margin-top: 6px; }
+
+.badge-pill{
+  display:inline-block;
+  font-size:12px; line-height:1;
+  padding:4px 8px;
+  border-radius:999px;
+  border:1px solid #e5e7eb;
+  color:#0f355e; background:#fff;
+}
+
+.btn-upgrade-inline{
+  display:inline-block;
+  margin-top:8px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:#104879;
+  color:#fff;
+  text-decoration:none;
+}
+.btn-upgrade-inline:hover{ opacity:.92; }
+
+.model-area{ margin-top:14px; }
+.model-label{
+  display:block; font-size:12px; color:#64748b; margin-bottom:6px;
+}
+.model-select{
+  width:100%; padding:8px;
+  border:1px solid #e5e7eb; border-radius:10px;
+  background:#fff; color:#0f355e;
+}
+.model-current{ margin-top:10px; font-size:12px; color:#64748b; }
+
+/* Thin strip at top of chat to show active model */
+.model-strip{
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #fff;
+  border-bottom: 1px solid #eef2f7;
+  padding: 8px 12px;
+  color:#64748b;
+}
+
+/* ===========================
    Main Chat Column
    =========================== */
 .chat-main{
@@ -143,7 +191,7 @@ body, .chat-main{ background-color:#f9fbf9; }
 }
 
 /* ===========================
-   Credits panel (optional)
+   Credits panel (existing)
    =========================== */
 .credits-panel{
   max-width: 880px; width: min(92%, 880px);
@@ -377,6 +425,10 @@ html { -webkit-text-size-adjust: 100%; }
 /* Links, emphasis */
 .chatbox .chat-entry.ai-answer .markdown a{ color:#104879; text-decoration: underline; }
 .chatbox .chat-entry.ai-answer .markdown strong{ font-weight:800; }
+
+<!--
+  Note: If you minify CSS, remove this HTML comment block to avoid CSS parse issues.
+-->
 
 /* Blockquotes */
 .chatbox .chat-entry.ai-answer .markdown blockquote{
