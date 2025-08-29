@@ -76,6 +76,40 @@ PLAN_TO_PRICE = {
     "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
 }
 
+# --- Model selection helpers for Chat ---
+# You can change these via env vars later if you like.
+FREE_MODEL = os.getenv("OPENAI_FREE_MODEL", "gpt-4o-mini")
+PAID_MODEL_DEFAULT = os.getenv("OPENAI_PAID_MODEL_DEFAULT", "gpt-4.1")
+PAID_MODEL_OPTIONS = [
+    m.strip() for m in (
+        os.getenv("OPENAI_PAID_MODELS", "gpt-4.1,gpt-4o,gpt-4o-mini")
+    ).split(",") if m.strip()
+]
+
+def allowed_models_for_plan(plan: str) -> list[str]:
+    """Return which models the *UI* may show for the given plan."""
+    plan = (plan or "free").lower()
+    if plan in ("weekly", "standard", "premium"):
+        return PAID_MODEL_OPTIONS
+    return []  # free users can't switch
+
+def choose_model(requested: str | None, plan: str | None) -> str:
+    """
+    Final server-side decision.
+    - Free → always FREE_MODEL
+    - Paid → requested if allowed, else PAID_MODEL_DEFAULT (or first option)
+    """
+    plan = (plan or "free").lower()
+    if plan not in ("weekly", "standard", "premium"):
+        return FREE_MODEL
+
+    allowed = allowed_models_for_plan(plan)
+    req = (requested or "").strip()
+    if req and req in allowed:
+        return req
+    # fallback: configured default or first available
+    return PAID_MODEL_DEFAULT if PAID_MODEL_DEFAULT in allowed else (allowed[0] if allowed else FREE_MODEL)
+
 
 # --- User model (replace your existing one) ---
 class User(UserMixin):
@@ -329,18 +363,19 @@ def index():
     return render_template("index.html")
 
 @app.route("/chat")
-@login_required  # optional, but recommended since /ask is protected
+@login_required
 def chat():
-    plan = getattr(current_user, "plan", "free") or "free"
-    is_paid = plan != "free"
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    is_paid = plan in ("weekly", "standard", "premium")
+
     return render_template(
         "chat.html",
         plan=plan,
         is_paid=is_paid,
-        model_default=choose_model(None),
-        model_options=OPENAI_PAID_ALLOWED,
-        free_model=OPENAI_FREE_MODEL,
-        show_upgrade=(plan == "free"),
+        show_upgrade=not is_paid,
+        model_options=allowed_models_for_plan(plan) if is_paid else [],
+        model_default=choose_model(None, plan),
+        free_model=FREE_MODEL,
     )
 
 @app.get("/resume-analyzer")
@@ -809,35 +844,33 @@ def verify_token():
 @app.route("/ask", methods=["POST"])
 @login_required
 def ask():
-    # enforce chat limit per plan
-    allowed, info = check_and_increment(
-        current_user.id,
-        "chat_messages",
-        current_plan_limits(),
-    )
+    # ✅ enforce chat limit per plan (your existing check_and_increment...)
+    allowed, info = check_and_increment(current_user.id, "chat_messages", current_plan_limits())
     if not allowed:
         return jsonify({
             "reply": "⚠️ You've reached your chat limit for your plan. Please upgrade on the Pricing page.",
             "suggestJobs": False
         }), 403
 
-    body = request.get_json(force=True) or {}
-    user_msg = (body.get("message") or "").strip()
-    requested_model = (body.get("model") or "").strip() or None
+    data = request.get_json(force=True) or {}
+    user_msg = data.get("message", "")
+    requested_model = (data.get("model") or "").strip()
 
-    model = choose_model(requested_model)
+    # Final model selection (free is forced)
+    plan = getattr(current_user, "plan", "free")
+    model_to_use = choose_model(requested_model, plan)
 
     msgs = [
         {"role": "system", "content": "You are Jobcus, a helpful and intelligent AI career assistant."},
         {"role": "user",   "content": user_msg}
     ]
     try:
-        resp = client.chat.completions.create(model=model, messages=msgs)
+        resp = client.chat.completions.create(model=model_to_use, messages=msgs)
         ai_msg = resp.choices[0].message.content
         suggest = any(phrase in user_msg.lower() for phrase in ["find jobs","apply for","job search"])
-        return jsonify(reply=ai_msg, suggestJobs=suggest, modelUsed=model)
+        return jsonify(reply=ai_msg, suggestJobs=suggest, modelUsed=model_to_use)
     except Exception as e:
-        return jsonify(reply=f"⚠️ Server Error: {str(e)}", suggestJobs=False, modelUsed=model)
+        return jsonify(reply=f"⚠️ Server Error: {str(e)}", suggestJobs=False, modelUsed=model_to_use), 500
 
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
