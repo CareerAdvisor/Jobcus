@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}Check your email – Jobcus{% endblock %}
+{% block title %}Verify email – Jobcus{% endblock %}
 {% block body_class %}account-page{% endblock %}
 
 {% block extra_css %}
@@ -9,45 +8,50 @@
 
 {% block content %}
 <section class="auth-wrapper">
-  <div class="auth-card">
+  <div class="auth-card" style="text-align:center;">
+    <h2 class="auth-title">Verifying your email…</h2>
+    <p class="auth-subtitle">Please wait while we log you in.</p>
 
-    {# Flash messages #}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-message" style="margin-bottom:12px; text-align:center;">
-          {% for category, msg in messages %}
-            <div class="flash-item {{ category }}">{{ msg }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-
-    <h2 class="auth-title">Confirm your email</h2>
-    <p class="auth-subtitle">
-      {% if email %}
-        We sent a verification link to <strong>{{ email }}</strong>. Please click it to finish signing up.
-      {% else %}
-        We sent a verification link to your inbox. Please click it to finish signing up.
-      {% endif %}
-    </p>
-
-    <p class="toggle-text">
-      Didn’t get it in your inbox?
-      <br>
-      <strong>Tip:</strong> Check your <em>Spam/Junk</em> folder and (for Gmail) the <em>Promotions</em> or <em>Updates</em> tabs.
-    </p>
-
-    <p class="toggle-text">
-      Still nothing?
-      <a class="toggle-link" href="/resend-confirmation{% if email %}?email={{ email | urlencode }}{% endif %}">
-        Resend confirmation email
-      </a>
-    </p>
-
-    <p class="toggle-text">
-      Already confirmed?
-      <a class="toggle-link" href="/dashboard">Go to your dashboard</a>
-    </p>
+    <div id="confirmStatus" class="flash-message" style="margin-top:12px;"></div>
   </div>
 </section>
+
+<script>
+  (function () {
+    const statusBox = document.getElementById('confirmStatus');
+    function flash(msg, level='info'){
+      if (!statusBox) return;
+      statusBox.innerHTML = `<div class="flash-item ${level}">${msg}</div>`;
+    }
+
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get("access_token");
+
+    if (accessToken) {
+      flash("Validating your session…", "info");
+      fetch("/verify_token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_token: accessToken })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.ok) {
+            window.location.href = "/dashboard";
+          } else {
+            flash("Login failed. Please try manually.", "error");
+            setTimeout(() => { window.location.href = "/account"; }, 1200);
+          }
+        })
+        .catch(() => {
+          flash("Network error. Please try again.", "error");
+          setTimeout(() => { window.location.href = "/account"; }, 1200);
+        });
+    } else {
+      flash("Invalid confirmation link.", "error");
+      setTimeout(() => { window.location.href = "/account"; }, 1200);
+    }
+  })();
+</script>
 {% endblock %}
