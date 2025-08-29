@@ -365,7 +365,7 @@ def _plans():
             ],
         },
         "weekly": {
-            "code":"weekly", "title":"Weekly Pass", "amount":"9<span class='cents'>.99</span>", "period":"/week",
+            "code":"weekly", "title":"Weekly Pass", "amount":"7<span class='cents'>.99</span>", "period":"/week",
             "tagline":"For urgent applications",
             "features":[
                 "AI Chat credits: <strong>200 messages</strong> / week",
@@ -379,7 +379,7 @@ def _plans():
             ],
         },
         "standard": {
-            "code":"standard", "title":"Standard", "amount":"24<span class='cents'>.99</span>", "period":"/mo",
+            "code":"standard", "title":"Standard", "amount":"23<span class='cents'>.99</span>", "period":"/mo",
             "tagline":"Serious applications, smarter tools",
             "features":[
                 "AI Chat credits: <strong>800 messages</strong> / month",
@@ -395,7 +395,7 @@ def _plans():
             ],
         },
         "premium": {
-            "code":"premium", "title":"Premium", "amount":"199", "period":"/yr",
+            "code":"premium", "title":"Premium", "amount":"239.99", "period":"/yr",
             "tagline":"Best value for ongoing career growth",
             "features":[
                 "AI Chat credits: <strong>12,000 messages</strong> / year (~1,000 / mo)",
@@ -469,16 +469,37 @@ def subscribe():
     # GET request → render your subscribe page
     return render_template("subscribe.html", plan_data=plans[plan_code])
 
-@app.get("/subscribe/success")
-@login_required
-def subscribe_success_page():
-    plan_code = (request.args.get("plan") or "").lower()
-    plans = _plans()
-    title = plans.get(plan_code, {}).get("title", plan_code.capitalize() or "Plan")
-    # The **actual** activation is done by the webhook. This page is just a nice UX.
-    return render_template("subscribe_success.html",
-                           plan_human=title,
-                           plan_json=plan_code)
+@app.get("/stripe/success")
+def stripe_success():
+    session_id = request.args.get("session_id")
+    if not session_id:
+        return redirect("/pricing")
+
+    s = stripe.checkout.Session.retrieve(
+        session_id,
+        expand=["line_items.data.price", "subscription"]
+    )
+    items = s.get("line_items", {}).get("data", [])
+    price_id = items[0]["price"]["id"] if items else None
+    plan_code = PRICE_TO_PLAN.get(price_id)
+
+    is_paid = s.get("payment_status") == "paid"
+    is_active_sub = (
+        s.get("mode") == "subscription" and
+        s.get("subscription") and
+        s["subscription"]["status"] in ("active", "trialing")
+    )
+
+    if (is_paid or is_active_sub) and plan_code:
+        metadata = s.get("metadata", {}) or {}
+        customer_id = s.get("customer")
+        sub_id = s["subscription"]["id"] if s.get("subscription") else None
+        _activate_user_plan_by_metadata(current_app.config["SUPABASE"], metadata, customer_id, sub_id)
+        return render_template("subscribe_success.html",
+                               plan_human=plan_code.title(),
+                               plan_json=plan_code)
+
+    return redirect("/pricing")
 
 # --- checkout ---
 def _activate_user_plan_by_metadata(supabase, metadata, customer_id=None, subscription_id=None):
