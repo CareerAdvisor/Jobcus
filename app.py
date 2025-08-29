@@ -73,12 +73,32 @@ PLAN_TO_PRICE = {
     "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
 }
 
-# --- User model ---
+# --- User model (replace your existing one) ---
 class User(UserMixin):
-    def __init__(self, auth_id: str, email: str, fullname: str | None = None):
+    def __init__(
+        self,
+        auth_id: str,
+        email: str,
+        fullname: str | None = None,
+        role: str = "user",
+        plan: str = "free",
+        plan_status: str | None = None,
+    ):
         self.id = auth_id
         self.email = email
         self.fullname = fullname
+        self.role = (role or "user").lower()
+        self.plan = (plan or "free").lower()
+        self.plan_status = plan_status
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role in ("admin", "superadmin")
+
+    @property
+    def is_superadmin(self) -> bool:
+        return self.role == "superadmin"
+
 
 @login_manager.user_loader
 def load_user(user_id: "Optional[str]"):
@@ -93,16 +113,14 @@ def load_user(user_id: "Optional[str]"):
     try:
         resp = (
             supabase.table("users")
-            .select("auth_id,email,fullname")
+            .select("auth_id,email,fullname,role,plan,plan_status")
             .eq("auth_id", user_id)
             .limit(1)
             .execute()
         )
-
         data = getattr(resp, "data", None) if resp is not None else None
         if not data:
             return None
-
         row = data[0] if isinstance(data, list) else data
         if not row:
             return None
@@ -111,11 +129,13 @@ def load_user(user_id: "Optional[str]"):
             auth_id=row.get("auth_id"),
             email=row.get("email"),
             fullname=row.get("fullname"),
+            role=row.get("role") or "user",
+            plan=row.get("plan") or "free",
+            plan_status=row.get("plan_status"),
         )
     except Exception:
         logging.exception("load_user: failed to restore user")
         return None
-
 
 def get_user_resume_text(user_id: str) -> Optional[str]:
     """Fetch the latest stored resume text for a user from Supabase."""
