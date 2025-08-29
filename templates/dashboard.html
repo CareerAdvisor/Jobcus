@@ -7,7 +7,13 @@
 
 {% block content %}
 <section class="dash-shell">
-  <h1 id="dashboardGreeting" class="dash-title"></h1>
+  <h1 id="dashboardGreeting" class="dash-title">
+    {% if current_user.is_authenticated %}
+      Welcome back{% if current_user.first_name or current_user.fullname %}, {{ (current_user.first_name or (current_user.fullname.split(' ')[0] if current_user.fullname else '')) }}{% endif %}!
+    {% else %}
+      Welcome back!
+    {% endif %}
+  </h1>
   <p class="dash-subtitle">Track your career growth and insights powered by Jobcus AI.</p>
 
   <!-- NUDGE: appears after 3 free analyses for anonymous users -->
