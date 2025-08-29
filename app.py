@@ -329,8 +329,19 @@ def index():
     return render_template("index.html")
 
 @app.route("/chat")
+@login_required  # optional, but recommended since /ask is protected
 def chat():
-    return render_template("chat.html")
+    plan = getattr(current_user, "plan", "free") or "free"
+    is_paid = plan != "free"
+    return render_template(
+        "chat.html",
+        plan=plan,
+        is_paid=is_paid,
+        model_default=choose_model(None),
+        model_options=OPENAI_PAID_ALLOWED,
+        free_model=OPENAI_FREE_MODEL,
+        show_upgrade=(plan == "free"),
+    )
 
 @app.get("/resume-analyzer")
 def page_resume_analyzer():
@@ -798,7 +809,7 @@ def verify_token():
 @app.route("/ask", methods=["POST"])
 @login_required
 def ask():
-    # ✅ enforce chat limit per plan
+    # enforce chat limit per plan
     allowed, info = check_and_increment(
         current_user.id,
         "chat_messages",
@@ -810,19 +821,23 @@ def ask():
             "suggestJobs": False
         }), 403
 
-    # --- existing logic---
-    user_msg = request.json.get("message", "")
+    body = request.get_json(force=True) or {}
+    user_msg = (body.get("message") or "").strip()
+    requested_model = (body.get("model") or "").strip() or None
+
+    model = choose_model(requested_model)
+
     msgs = [
         {"role": "system", "content": "You are Jobcus, a helpful and intelligent AI career assistant."},
         {"role": "user",   "content": user_msg}
     ]
     try:
-        resp = client.chat.completions.create(model="gpt-4o", messages=msgs)
+        resp = client.chat.completions.create(model=model, messages=msgs)
         ai_msg = resp.choices[0].message.content
         suggest = any(phrase in user_msg.lower() for phrase in ["find jobs","apply for","job search"])
-        return jsonify(reply=ai_msg, suggestJobs=suggest)
+        return jsonify(reply=ai_msg, suggestJobs=suggest, modelUsed=model)
     except Exception as e:
-        return jsonify(reply=f"⚠️ Server Error: {str(e)}", suggestJobs=False)
+        return jsonify(reply=f"⚠️ Server Error: {str(e)}", suggestJobs=False, modelUsed=model)
 
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
