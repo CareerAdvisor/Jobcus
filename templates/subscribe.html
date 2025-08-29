@@ -5,48 +5,83 @@
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/pricing.css') }}">
+  <style>
+    /* Page-specific layout (keeps the rest of your site styles intact) */
+    .sub-container{ max-width:560px; margin:24px auto; padding:0 12px; }
+    .sub-card{
+      background:#fff; border:1px solid #e5e7eb; border-radius:14px;
+      padding:18px; box-shadow:0 6px 22px rgba(16,72,121,.06);
+    }
+
+    /* Left-aligned heading */
+    .auth-title{ text-align:left !important; margin:0 0 8px; color:#0f355e; }
+
+    /* Plan header */
+    .sub-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-top:4px; }
+    .sub-title{ margin:0; color:#0f355e; line-height:1.2; }
+    .sub-meta{ margin:.3rem 0 0; color:#64748b; }
+    .sub-price{ font-weight:700; font-size:22px; color:#0f355e; white-space:nowrap; }
+    .sub-price .period{ font-weight:400; font-size:14px; color:#64748b; margin-left:2px; }
+
+    /* Features list from pricing.css already styles ticks; just add spacing */
+    .plan__list{ margin-top:12px; }
+
+    /* Center ONLY the buttons */
+    .sub-actions{ display:flex; justify-content:center; gap:10px; margin-top:14px; }
+
+    /* Mobile polish */
+    @media (max-width:640px){
+      .sub-container{ max-width:94%; }
+      .sub-head{ flex-direction:column; align-items:flex-start; }
+      .sub-price{ margin-top:6px; }
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
 <section class="auth-wrapper">
-  <div class="auth-card" style="max-width:720px;">
-    {# Flash messages (optional) #}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flash-message" style="margin-bottom:12px; text-align:center;">
-          {% for category, msg in messages %}
-            <div class="flash-item {{ category }}">{{ msg }}</div>
-          {% endfor %}
+  <div class="sub-container">
+    <div class="sub-card">
+
+      {# Flash messages (optional) #}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-message" style="margin-bottom:12px;">
+            {% for category, msg in messages %}
+              <div class="flash-item {{ category }}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <h1 class="auth-title">Confirm your plan</h1>
+
+      <header class="sub-head">
+        <div>
+          <h2 class="sub-title">{{ plan_data.title }}</h2>
+          <p class="sub-meta">{{ plan_data.tagline }}</p>
         </div>
-      {% endif %}
-    {% endwith %}
+        <div class="sub-price">
+          <span class="currency">£</span><span class="amount">{{ plan_data.amount|safe }}</span>
+          <span class="period">{{ plan_data.period }}</span>
+        </div>
+      </header>
 
-    <h1 class="auth-title" style="text-align:center;">Confirm your plan</h1>
+      <ul class="plan__list">
+        {% for item in plan_data.features %}
+          <li>{{ item|safe }}</li>
+        {% endfor %}
+      </ul>
 
-    <header class="sub-head" style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
-      <div>
-        <h2 class="sub-title" style="margin:0;color:#0f355e;">{{ plan_data.title }}</h2>
-        <p class="auth-subtitle" style="margin:6px 0 0;color:#64748b;">{{ plan_data.tagline }}</p>
-      </div>
-      <div class="price" style="font-weight:700;font-size:22px;color:#0f355e;">
-        <span class="currency">£</span><span class="amount">{{ plan_data.amount|safe }}</span>
-        <span class="period" style="font-weight:400;font-size:14px;color:#64748b;">{{ plan_data.period }}</span>
-      </div>
-    </header>
+      <form method="POST" action="/subscribe" class="sub-actions">
+        <input type="hidden" name="plan" value="{{ plan_data.code }}">
+        <button type="submit" class="btn btn-primary">
+          {% if plan_data.code == 'free' %}Activate Free Plan{% else %}Continue to secure checkout{% endif %}
+        </button>
+        <a class="btn btn-outline" href="{{ url_for('pricing') }}">Back to pricing</a>
+      </form>
 
-    <ul class="plan__list" style="margin-top:14px;">
-      {% for item in plan_data.features %}
-        <li>{{ item|safe }}</li>
-      {% endfor %}
-    </ul>
-
-    <form method="POST" action="/subscribe" style="margin-top:10px; text-align:center;">
-      <input type="hidden" name="plan" value="{{ plan_data.code }}">
-      <button type="submit" class="btn btn-primary">
-        {% if plan_data.code == 'free' %}Activate Free Plan{% else %}Continue to secure checkout{% endif %}
-      </button>
-      <a class="btn btn-outline" href="{{ url_for('pricing') }}" style="margin-left:8px;">Back to pricing</a>
-    </form>
+    </div>
   </div>
 </section>
 {% endblock %}
