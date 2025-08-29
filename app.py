@@ -867,6 +867,11 @@ def logout():
     finally:
         return redirect(url_for("account"))
 
+@app.get("/admin")
+@require_superadmin
+def admin_home():
+    return "Hello, superadmin!"
+
 @app.route("/dashboard")
 @login_required
 def dashboard():
