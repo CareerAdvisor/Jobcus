@@ -5,6 +5,8 @@ from io import BytesIO
 from PyPDF2 import PdfReader
 from openai import RateLimitError
 import base64, re, json, logging, os, docx
+from flask_login import login_required, current_user
+from limits import check_and_increment, current_plan_limits
 
 resumes_bp = Blueprint("resumes", __name__)
 
@@ -1035,7 +1037,18 @@ def ai_suggest():
 
 # ---------- Cover Letter builder ----------
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
+@login_required
 def build_cover_letter():
+    allowed, info = check_and_increment(
+        current_user.id,
+        "cover_letters",
+        current_plan_limits(),
+    )
+    if not allowed:
+        return jsonify({
+            "error": "Limit reached",
+            "detail": f"You've used {info['used']} of {info['limit']} this {info['period_kind']}."
+        }), 403
     try:
         data = request.get_json(force=True) or {}
     except Exception:
@@ -1082,7 +1095,19 @@ def build_cover_letter():
 
 # ---------- 3) AI resume analysis ----------
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
+@login_required
 def resume_analysis():
+    # ✅ enforce plan limit first
+    allowed, info = check_and_increment(
+        current_user.id,
+        "resume_analyses",
+        current_plan_limits(),
+    )
+    if not allowed:
+        return jsonify({
+            "error": "Limit reached",
+            "detail": f"You've used {info['used']} of {info['limit']} this {info['period_kind']}."
+        }), 403
     """
     ATS scoring model (100 pts) + penalties, aligned to industry best practice.
     Preserves your existing response shape for the dashboard.
