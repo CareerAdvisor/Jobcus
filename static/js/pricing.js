@@ -41,8 +41,8 @@ function routePaid(plan) {
   localStorage.setItem("userPlan", plan);
   // depends on body data-authed provided by base.html
   const authed = document.body?.dataset?.authed === "1";
-  if (authed) window.location.href = `/checkout?plan=${encodeURIComponent(plan)}`;
-  else window.location.href = `/account?next=${encodeURIComponent("/checkout?plan=" + plan)}`;
+  if (authed) window.location.href = `/checkout?plan=£{encodeURIComponent(plan)}`;
+  else window.location.href = `/account?next=£{encodeURIComponent("/checkout?plan=" + plan)}`;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
