@@ -1,31 +1,52 @@
 {% extends "base.html" %}
-{% block title %}Plan updated – Jobcus{% endblock %}
+{% block title %}Subscribe – Jobcus{% endblock %}
 {% block body_class %}account-page{% endblock %}
 
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pricing.css') }}">
 {% endblock %}
 
 {% block content %}
 <section class="auth-wrapper">
-  <div class="auth-card" style="text-align:center;">
-    <h2 class="auth-title">You're all set 🎉</h2>
-    <p class="auth-subtitle">Your plan is now <strong>{{ plan_human }}</strong>.</p>
+  <div class="auth-card" style="max-width:720px;">
+    {# Flash messages (optional) #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-message" style="margin-bottom:12px; text-align:center;">
+          {% for category, msg in messages %}
+            <div class="flash-item {{ category }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
 
-    <div style="margin-top:18px;">
-      <a class="btn btn-primary" href="{{ url_for('chat') }}">Go to Chat</a>
-      <a class="btn btn-outline" href="{{ url_for('dashboard') }}" style="margin-left:8px;">Back to Dashboard</a>
-    </div>
+    <h1 class="auth-title" style="text-align:center;">Confirm your plan</h1>
+
+    <header class="sub-head" style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+      <div>
+        <h2 class="sub-title" style="margin:0;color:#0f355e;">{{ plan_data.title }}</h2>
+        <p class="auth-subtitle" style="margin:6px 0 0;color:#64748b;">{{ plan_data.tagline }}</p>
+      </div>
+      <div class="price" style="font-weight:700;font-size:22px;color:#0f355e;">
+        <span class="currency">£</span><span class="amount">{{ plan_data.amount|safe }}</span>
+        <span class="period" style="font-weight:400;font-size:14px;color:#64748b;">{{ plan_data.period }}</span>
+      </div>
+    </header>
+
+    <ul class="plan__list" style="margin-top:14px;">
+      {% for item in plan_data.features %}
+        <li>{{ item|safe }}</li>
+      {% endfor %}
+    </ul>
+
+    <form method="POST" action="/subscribe" style="margin-top:10px; text-align:center;">
+      <input type="hidden" name="plan" value="{{ plan_data.code }}">
+      <button type="submit" class="btn btn-primary">
+        {% if plan_data.code == 'free' %}Activate Free Plan{% else %}Continue to secure checkout{% endif %}
+      </button>
+      <a class="btn btn-outline" href="{{ url_for('pricing') }}" style="margin-left:8px;">Back to pricing</a>
+    </form>
   </div>
 </section>
-
-<script>
-  // Keep front-end UI (credits panel) in sync:
-  (function(){
-    try {
-      localStorage.setItem('userPlan', {{ plan_json|tojson|safe }});
-      localStorage.setItem('chatUsed', '0');
-    } catch (e) {}
-  })();
-</script>
 {% endblock %}
