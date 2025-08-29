@@ -66,53 +66,48 @@
 .sb-btn:hover{ background:#eef2f7; }
 .sb-primary{ background:#104879; color:#fff; border-color:#104879; }
 
+/* Ensure cards fit sidebar width */
+.chat-sidebar .credits-panel{ max-width:100%; width:100%; margin:0 0 14px; }
+
 /* ===========================
-   Plan & Model controls (NEW)
+   Credits card – match mock
    =========================== */
-
-.mt-6{ margin-top: 6px; }
-
-.badge-pill{
-  display:inline-block;
-  font-size:12px; line-height:1;
-  padding:4px 8px;
-  border-radius:999px;
+.credits-panel.is-card{
+  border-radius:14px;
+  padding:16px;
   border:1px solid #e5e7eb;
-  color:#0f355e; background:#fff;
+  box-shadow:0 2px 10px rgba(16,72,121,.06);
+  background:#fff;
 }
+.credits-title{ margin:0 0 8px; color:#104879; font-size:22px; font-weight:800; line-height:1.2; }
+.credits-topgrid{ display:flex; justify-content:space-between; gap:16px; margin-top:6px; }
+.credits-col{ min-width:0; }
+.credits-right{ text-align:right; }
+.credits-label{ display:block; color:#64748b; font-size:12px; margin-bottom:4px; }
+.credits-planline,.credits-leftline{ display:flex; align-items:center; gap:8px; }
+.credits-sub{ color:#94a3b8; font-size:12px; }
 
-.btn-upgrade-inline{
-  display:inline-block;
-  margin-top:8px;
-  padding:8px 10px;
-  border-radius:10px;
-  background:#104879;
-  color:#fff;
-  text-decoration:none;
+.pill{
+  display:inline-block; padding:6px 10px; border-radius:999px;
+  border:1px solid #e5e7eb; background:#fff; color:#0f355e;
+  font-weight:600; font-size:12px; line-height:1;
 }
-.btn-upgrade-inline:hover{ opacity:.92; }
+.pill-muted{ background:#f1f5f9; border-color:#e5e7eb; color:#64748b; }
 
-.model-area{ margin-top:14px; }
-.model-label{
-  display:block; font-size:12px; color:#64748b; margin-bottom:6px;
+.credits-upgrade{
+  display:inline-block; margin-top:10px; padding:10px 14px;
+  border-radius:12px; background:#104879; color:#fff; text-decoration:none; font-weight:700;
 }
+.credits-upgrade:hover{ opacity:.95; }
+.credits-div{ border:0; border-top:1px solid #eef2f7; margin:14px 0 10px; }
+
+/* Model pill/select */
+.model-block{ display:flex; align-items:center; gap:10px; }
 .model-select{
-  width:100%; padding:8px;
-  border:1px solid #e5e7eb; border-radius:10px;
-  background:#fff; color:#0f355e;
+  appearance:none; width:100%; max-width:220px; padding:8px 12px;
+  border:1px solid #e5e7eb; border-radius:999px; background:#fff; color:#0f355e; font-weight:600;
 }
-.model-current{ margin-top:10px; font-size:12px; color:#64748b; }
-
-/* Thin strip at top of chat to show active model */
-.model-strip{
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  background: #fff;
-  border-bottom: 1px solid #eef2f7;
-  padding: 8px 12px;
-  color:#64748b;
-}
+.model-pill{ font-size:13px; }
 
 /* ===========================
    Main Chat Column
@@ -137,7 +132,7 @@
   margin: 0 auto; /* center on large screens */
 }
 
-/* Welcome + chips (card removed per your request) */
+/* Welcome + chips */
 #welcomeBanner, .chatbox .welcome, .welcome-banner{
   background: transparent !important;
   border: 0 !important;
@@ -191,7 +186,7 @@ body, .chat-main{ background-color:#f9fbf9; }
 }
 
 /* ===========================
-   Credits panel (existing)
+   Credits panel (baseline styles kept for other pages)
    =========================== */
 .credits-panel{
   max-width: 880px; width: min(92%, 880px);
@@ -202,7 +197,6 @@ body, .chat-main{ background-color:#f9fbf9; }
 }
 .credits-panel h2{ margin:0 0 10px; color:#104879; font-size:20px; }
 .credits-row{ display:flex; justify-content:space-between; gap:16px; padding:8px 0 4px; border-bottom:1px solid #f1f5f9; }
-.credits-label{ display:block; color:#64748b; font-size:12px; }
 .credits-hint{ display:block; color:#94a3b8; font-size:12px; margin-top:2px; }
 .credits-details summary{ cursor:pointer; margin-top:10px; color:#104879; }
 .credits-panel ul,.credits-card ul,.credits-details ul{ list-style:none; margin:0; padding-left:0; }
@@ -287,25 +281,22 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
    MOBILE — small gutters, full-width entries
    =========================== */
 @media (max-width: 640px){
-  /* shrink page gutters on the chat page */
-  :root{ --page-pad: 8px; }                  /* ← 8px gutters like ChatGPT */
+  :root{ --page-pad: 8px; } /* 8px gutters */
 
   .chat-page main, .chat-main{
     padding-left: var(--page-pad) !important;
     padding-right: var(--page-pad) !important;
-    overflow: visible;                        /* avoid clipping on iOS */
+    overflow: visible;
   }
 
-  /* let the chatbox span the full inner width */
   .chatbox{
     max-width: none !important;
     margin: 0 !important;
-    padding-left: 0 !important;               /* gutters handled by .chat-main */
+    padding-left: 0 !important;
     padding-right: 0 !important;
     overflow-x: hidden;
   }
 
-  /* both roles = 100% of that width */
   .chatbox .chat-entry{
     width: 100% !important;
     max-width: 100% !important;
@@ -316,7 +307,6 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
     clear: both;
   }
 
-  /* inner content fills and wraps */
   .chatbox .chat-entry > *,
   .chatbox .chat-entry.ai-answer .markdown{
     width: 100% !important;
@@ -326,7 +316,6 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
     margin-left: 0; margin-right: 0;
   }
 
-  /* images/tables/code never overflow */
   .markdown img, .markdown table{ max-width: 100%; height: auto; }
   .markdown pre{ white-space: pre-wrap; word-break: break-word; }
 }
@@ -334,11 +323,8 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
 /* ===========================
    Typography for AI replies 
    =========================== */
-
-/* Make sure iOS doesn't zoom text weirdly */
 html { -webkit-text-size-adjust: 100%; }
 
-/* User's prompt as a rounded bubble */
 .chatbox .chat-entry.user h2{
   display:inline-block;
   margin: 0 0 10px;
@@ -352,7 +338,6 @@ html { -webkit-text-size-adjust: 100%; }
   word-break: break-word;
 }
 
-/* Main markdown wrapper inside AI answers */
 .chatbox .chat-entry.ai-answer .markdown{
   font-size: 1.02rem;
   line-height: 1.65;
@@ -361,16 +346,13 @@ html { -webkit-text-size-adjust: 100%; }
   max-width: 100%;
   overflow-wrap: anywhere;
   word-break: normal;
-  /* list gutter token used below */
   --li-indent: 1.25rem;
 }
 
-/* Comfortable vertical rhythm */
 .chatbox .chat-entry.ai-answer .markdown > * + *{
   margin-top: .8rem;
 }
 
-/* Headings */
 .chatbox .chat-entry.ai-answer .markdown h1,
 .chatbox .chat-entry.ai-answer .markdown h2,
 .chatbox .chat-entry.ai-answer .markdown h3{
@@ -383,52 +365,36 @@ html { -webkit-text-size-adjust: 100%; }
 .chatbox .chat-entry.ai-answer .markdown h2{ font-size:1.35rem; }
 .chatbox .chat-entry.ai-answer .markdown h3{ font-size:1.15rem; }
 
-/* Soft section divider above H2 (not for the very first element) */
 .chatbox .chat-entry.ai-answer .markdown h2:not(:first-child){
   padding-top: .75rem;
   border-top: 1px solid #e5e7eb;
 }
 
-/* ── Lists: tidy bullets, consistent indent, Android fix ───────── */
+/* Lists */
 .chatbox .chat-entry.ai-answer .markdown ul,
 .chatbox .chat-entry.ai-answer .markdown ol{
   margin: .4rem 0 .6rem;
-  padding-left: var(--li-indent);              /* space for marker/number */
-  list-style-position: outside;                /* hanging indent like ChatGPT */
+  padding-left: var(--li-indent);
+  list-style-position: outside;
 }
-
 .chatbox .chat-entry.ai-answer .markdown li{
   margin: .35rem 0;
   line-height: 1.6;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
-
-/* Android/WebKit sometimes wraps <li><p>…</p></li> on a new line.
-   Make the inner <p> inline so the marker + text share the same line. */
-.chatbox .chat-entry.ai-answer .markdown li > p{
-  margin: 0;
-  display: inline;
-}
-
-/* Nested lists align neatly under the text of the parent */
+.chatbox .chat-entry.ai-answer .markdown li > p{ margin:0; display:inline; }
 .chatbox .chat-entry.ai-answer .markdown li > ul,
 .chatbox .chat-entry.ai-answer .markdown li > ol{
   margin-top:.35rem;
   padding-left: var(--li-indent);
 }
-
-/* List marker color/weight */
 .chatbox .chat-entry.ai-answer .markdown ul li::marker { color:#0f355e; }
 .chatbox .chat-entry.ai-answer .markdown ol li::marker { color:#0f355e; font-weight:700; }
 
 /* Links, emphasis */
 .chatbox .chat-entry.ai-answer .markdown a{ color:#104879; text-decoration: underline; }
 .chatbox .chat-entry.ai-answer .markdown strong{ font-weight:800; }
-
-<!--
-  Note: If you minify CSS, remove this HTML comment block to avoid CSS parse issues.
--->
 
 /* Blockquotes */
 .chatbox .chat-entry.ai-answer .markdown blockquote{
@@ -486,35 +452,21 @@ html { -webkit-text-size-adjust: 100%; }
   margin-top:.6rem;
 }
 
-/* ——— Mobile type polish ——— */
-@media (max-width: 640px){
-  .chatbox .chat-entry.ai-answer .markdown{
-    font-size: 1.04rem;              /* slightly larger for legibility */
-  }
-  /* tiny extra left padding keeps markers safe even with 8px gutters */
-  .chatbox .chat-entry.ai-answer .markdown ul,
-  .chatbox .chat-entry.ai-answer .markdown ol{
-    padding-left: calc(var(--li-indent) + 2px);
-  }
-}
-
 /* Stop new messages from hiding under the dock / header */
 .chatbox{
   scroll-behavior: smooth;
-  /* where to stop when we scroll an item into view */
   scroll-padding-top:  calc(var(--header-h, 60px) + 10px);
   scroll-padding-bottom: max(
     calc(var(--dock-h, 72px) + 12px),
     calc(env(safe-area-inset-bottom, 0px) + var(--dock-h, 72px))
   );
-  /* extra bottom padding so content never sits under the dock */
   padding-bottom: max(
     calc(var(--dock-h, 72px) + 20px),
     calc(env(safe-area-inset-bottom, 0px) + var(--dock-h, 72px) + 20px)
   );
 }
 
-/* When we scroll a specific entry, keep it clear of header & dock */
+/* Keep entries clear of header & dock */
 .chatbox .chat-entry{
   scroll-margin-top:  calc(var(--header-h, 60px) + 10px);
   scroll-margin-bottom: calc(var(--dock-h, 72px) + 16px);
