@@ -455,7 +455,7 @@ def subscribe():
             return redirect(url_for("pricing"))
 
         return render_template(
-            "subscribe_success.html",
+            "subscribe-success.html",
             plan_human=plan_data["title"],
             plan_json="free",
         )
@@ -509,12 +509,12 @@ def stripe_success():
 
     plan_code = metadata.get("plan_code", "")
     plan_name = _plans().get(plan_code, {}).get("title", "Your plan")
-    return render_template("subscribe_success.html", plan_human=plan_name, plan_json=plan_code)
+    return render_template("subscribe-success.html", plan_human=plan_name, plan_json=plan_code)
 
 @app.get("/subscribe/free/success")
 @login_required
 def free_success():
-    return render_template("subscribe_success.html",
+    return render_template("subscribe-success.html",
                            plan_human=_plans()["free"]["title"],
                            plan_json="free")
 
