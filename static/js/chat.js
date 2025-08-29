@@ -55,7 +55,50 @@ function maybeShowScrollIcon() {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Model selection helpers (read from data-* on #chatShell)
+// ──────────────────────────────────────────────────────────────
+function initModelControls() {
+  const shell = document.getElementById("chatShell");
+  const modelSelect = document.getElementById("modelSelect");
+  const modelBadge  = document.getElementById("modelBadge");
+  const headerModel = document.getElementById("headerModel");
+
+  const isPaid = (shell?.dataset.isPaid === "1");
+  const defaultModel = shell?.dataset.defaultModel || "gpt-4o-mini";
+  const freeModel    = shell?.dataset.freeModel    || "gpt-4o-mini";
+  const allowedModels = (shell?.dataset.allowedModels || "")
+    .split(",").map(s => s.trim()).filter(Boolean);
+
+  function getSelectedModel(){
+    if (!isPaid) return freeModel || defaultModel;
+    const saved = localStorage.getItem("chatModel");
+    if (saved && allowedModels.includes(saved)) return saved;
+    if (modelSelect && allowedModels.includes(modelSelect.value)) return modelSelect.value;
+    return defaultModel;
+  }
+
+  function setSelectedModel(m){
+    if (modelSelect && allowedModels.includes(m)) modelSelect.value = m;
+    if (modelBadge)  modelBadge.textContent  = m;
+    if (headerModel) headerModel.textContent = m;
+    if (isPaid) localStorage.setItem("chatModel", m);
+  }
+
+  // Initialize UI
+  setSelectedModel(getSelectedModel());
+  if (isPaid && modelSelect) {
+    modelSelect.addEventListener("change", () => setSelectedModel(modelSelect.value));
+  }
+
+  // Expose to other modules in this file
+  return { getSelectedModel, setSelectedModel, isPaid, allowedModels };
+}
+
+// ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
+  // Init model UI/logic first
+  const modelCtl = initModelControls();
+
   // ───── Storage model
   const STORAGE = {
     current: "jobcus:chat:current",   // [{role:'user'|'assistant', content:'...'}]
@@ -67,13 +110,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const form    = document.getElementById("chat-form");
   const input   = document.getElementById("userInput");
 
-  // --- Smoothly reveal a newly added entry at the TOP of the viewport
-  function revealNewEntryAtTop(entry){
-    requestAnimationFrame(() => {
-      entry.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'smooth' });
-    });
-  }
-  
   // Build a user entry matching your renderChat() markup
   function makeUserEntry(text){
     const div = document.createElement("div");
@@ -84,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </h2>`;
     return div;
   }
-  
+
   // Build an assistant entry (same structure your renderer uses)
   function makeAssistantEntry(content){
     const div = document.createElement("div");
@@ -174,7 +210,6 @@ document.addEventListener("DOMContentLoaded", () => {
           target.textContent = msg.content;
         }
       } else {
-        // user message: show as a heading-like title
         div.innerHTML = `
           <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 .5rem;color:#104879;">
             ${escapeHtml(msg.content)}
@@ -215,14 +250,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ───── Save one message (use in send flow & when AI replies)
+  // ───── Save one message
   window.saveMessage = function(role, content){
     const msgs = getCurrent();
     msgs.push({ role, content });
     setCurrent(msgs);
   };
 
-  // ───── Clear conversation (de-dupe safe): archive → history, then reset current
+  // ───── Clear conversation (archive → history, then reset current)
   let clearInProgress = false;
   window.clearChat = function(){
     if (clearInProgress) return;
@@ -232,7 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (current.length){
         const hist = getHistory();
 
-        // signature of current convo to prevent duplicate pushing
+        // prevent duplicate pushes
         const sig = JSON.stringify(current);
         const lastSig = hist.length ? JSON.stringify(hist[0].messages || []) : null;
 
@@ -246,15 +281,15 @@ document.addEventListener("DOMContentLoaded", () => {
           setHistory(hist);
         }
       }
-      setCurrent([]);      // reset current
-      renderChat([]);      // show suggestions/welcome
-      renderHistory();     // refresh sidebar
+      setCurrent([]);
+      renderChat([]);
+      renderHistory();
     } finally {
       setTimeout(() => { clearInProgress = false; }, 50);
     }
   };
 
-  // ───── Credits panel updater (uses data-plan from server if present)
+  // ───── Credits panel updater
   function refreshCreditsPanel() {
     const planEl  = document.getElementById("credits-plan");
     const leftEl  = document.getElementById("credits-left");
@@ -300,12 +335,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (chatOverlay) chatOverlay.hidden = true;
     document.documentElement.style.overflow = "";
   }
+  window.closeChatMenu = closeChatMenu;
+
   chatMenuToggle?.addEventListener("click", openChatMenu);
   chatOverlay?.addEventListener("click", closeChatMenu);
   chatCloseBtn?.addEventListener("click", closeChatMenu);
   document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeChatMenu(); });
 
-  // ───── Wire “New chat” & “Clear conversation” buttons (IDs; avoid inline onclick duplication)
+  // Wire sidebar buttons
   document.getElementById("newChatBtn")?.addEventListener("click", () => { clearChat(); closeChatMenu(); });
   document.getElementById("clearChatBtn")?.addEventListener("click", () => { clearChat(); closeChatMenu(); });
 
@@ -352,17 +389,26 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("chatUsed", usedNow);
       refreshCreditsPanel();
 
-      // 6) Fetch AI
+      // 6) Fetch AI (send chosen model if any)
       let finalReply = "";
       let data = null;
       try {
+        const payload = { message, model: modelCtl.getSelectedModel() };
         const res = await fetch("/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message }),
+          body: JSON.stringify(payload),
         });
         data = await res.json();
         finalReply = data.reply || "";
+        // reflect server's actual model if it responds with one
+        if (data.modelUsed) {
+          modelCtl.setSelectedModel(data.modelUsed);
+        }
+        if (!res.ok && res.status === 403) {
+          // plan limit reached
+          finalReply = data.reply || "You've hit your plan's chat limit. See the Pricing page to upgrade.";
+        }
       } catch (err) {
         console.error("AI error:", err);
         finalReply = "Sorry, I ran into an issue. Please try again.";
@@ -451,8 +497,8 @@ function displayJobs(data, aiBlock) {
     jobCard.className = "job-card";
     jobCard.innerHTML = `
       <h3>${job.title}</h3>
-      <p><strong>${job.company}</strong><br>${job.location}</p>
-      <a href="${job.url}" target="_blank">View Job</a>
+      <p><strong>${job.company}</strong><br>${job.location || ""}</p>
+      <a href="${job.url}" target="_blank" rel="noopener noreferrer">View Job</a>
     `;
     jobsContainer.appendChild(jobCard);
   });
