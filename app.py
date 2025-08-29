@@ -552,7 +552,7 @@ def _plans():
             ],
         },
         "premium": {
-            "code":"premium", "title":"Premium", "amount":"239.99", "period":"/yr",
+            "code":"premium", "title":"Premium", "amount":"229", "period":"/yr",
             "tagline":"Best value for ongoing career growth",
             "features":[
                 "AI Chat credits: <strong>12,000 messages</strong> / year (~1,000 / mo)",
