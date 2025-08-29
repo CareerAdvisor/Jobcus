@@ -139,24 +139,7 @@ def load_user(user_id: "Optional[str]"):
         )
     except Exception:
         logging.exception("load_user: failed to restore user")
-        return None
-
-
-def is_staff():
-    return getattr(current_user, "is_admin", False)
-
-def is_superadmin():
-    return getattr(current_user, "is_superadmin", False)
-
-def require_superadmin(fn):
-    from functools import wraps
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_superadmin:
-            return ("Forbidden", 403)
-        return fn(*args, **kwargs)
-    return wrapper
-    
+        return None   
 
 def get_user_resume_text(user_id: str) -> Optional[str]:
     """Fetch the latest stored resume text for a user from Supabase."""
