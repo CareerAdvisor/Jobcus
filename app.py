@@ -22,6 +22,8 @@ from blueprints.resumes import resumes_bp  # <-- your blueprint with all resume 
 import logging
 from typing import Optional  # if you're on Python <3.10
 from datetime import datetime, timedelta
+from auth_utils import require_superadmin, is_staff, is_superadmin
+from limits import check_and_increment, current_plan_limits
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -908,7 +910,21 @@ def verify_token():
 # Chat & Jobs & Insights
 # ----------------------------
 @app.route("/ask", methods=["POST"])
+@login_required
 def ask():
+    # ✅ enforce chat limit per plan
+    allowed, info = check_and_increment(
+        current_user.id,
+        "chat_messages",
+        current_plan_limits(),
+    )
+    if not allowed:
+        return jsonify({
+            "reply": "⚠️ You've reached your chat limit for your plan. Please upgrade on the Pricing page.",
+            "suggestJobs": False
+        }), 403
+
+    # --- existing logic---
     user_msg = request.json.get("message", "")
     msgs = [
         {"role": "system", "content": "You are Jobcus, a helpful and intelligent AI career assistant."},
