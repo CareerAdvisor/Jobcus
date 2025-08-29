@@ -167,6 +167,19 @@
 
 .cc-panel .cc-actions { justify-content: flex-end; margin-top: 12px; }
 
+/* Avatar button (initials + name) */
+.avatar-btn{
+  display:flex; align-items:center; gap:.5rem;
+  background:transparent; border:0; cursor:pointer; padding:.25rem .5rem;
+}
+.avatar-circle{
+  width:34px; height:34px; border-radius:999px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-weight:700; letter-spacing:.3px;
+  background:#e8f0fb; color:#104879; border:1px solid #d6e3f7;
+}
+.avatar-name{ color:#0f355e; font-weight:600; }
+
 @media (max-width: 480px) {
   .cc-banner { left: 12px; right: 12px; bottom: 12px; }
   .cc-panel { width: calc(100% - 24px); left: 12px; right: 12px; transform: none; }
