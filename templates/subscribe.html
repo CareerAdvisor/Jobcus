@@ -51,6 +51,25 @@
       background:#f6fbff; border:2px solid #104879; color:#104879; font-weight:700;
     }
 
+    /* Push the card down below the fixed header and keep it centered */
+.confirm-wrap{
+  max-width:640px;
+  /* top margin = header height + extra breathing room */
+  margin: calc(var(--header-h, 60px) + 28px) auto 32px;
+  padding: 0 12px;
+}
+
+/* (Optional) If some pages don’t use .confirm-wrap, give all account pages a header offset */
+.account-page main{
+  padding-top: calc(var(--header-h, 60px) + 16px);
+}
+
+.confirm-wrap{
+  max-width:640px; padding: 0 12px; margin: 0 auto;
+  min-height: calc(100vh - var(--header-h, 60px) - 48px);
+  display:flex; align-items:center;
+}
+
     /* --- Mobile tweaks --- */
     @media (max-width:480px){
       .confirm-title{ font-size:28px; }
