@@ -417,26 +417,32 @@ def subscribe():
 
     plan_data = plans[plan_code]
 
+    # --- FREE: do it locally (no Stripe) ---
+    if request.method == "POST" and plan_code == "free":
+        try:
+            supabase = current_app.config["SUPABASE"]
+            supabase.table("users").update({
+                "plan": "free",
+                "plan_status": "active"
+            }).eq("auth_id", current_user.id).execute()
+        except Exception:
+            current_app.logger.exception("Could not activate free plan")
+            flash("Could not activate free plan. Please try again.", "error")
+            return redirect(url_for("pricing"))
+
+        return render_template(
+            "subscribe_success.html",
+            plan_human=plan_data["title"],
+            plan_json="free",
+        )
+
+    # --- PAID: redirect to Stripe ---
     if request.method == "POST":
-        # FREE plan: no Stripe
-        if plan_code == "free":
-            try:
-                supabase = current_app.config["SUPABASE"]
-                supabase.table("users").update({
-                    "plan": "free",
-                    "plan_status": "active"
-                }).eq("auth_id", current_user.id).execute()
-            except Exception:
-                flash("Could not update plan. Please try again.", "error")
-                return redirect(url_for("subscribe", plan=plan_code))
-
-            return render_template(
-                "subscribe_success.html",
-                plan_human=plan_data["title"],
-                plan_json=plan_code,
-            )
-
-        # Paid plans → Stripe Checkout
+        PLAN_TO_PRICE = {
+            "weekly":   os.getenv("STRIPE_PRICE_WEEKLY"),
+            "standard": os.getenv("STRIPE_PRICE_STANDARD"),
+            "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
+        }
         price_id = PLAN_TO_PRICE.get(plan_code)
         if not price_id:
             flash("Billing not configured for this plan.", "error")
@@ -451,17 +457,11 @@ def subscribe():
             success_url=success_url,
             cancel_url=cancel_url,
             allow_promotion_codes=True,
-            metadata={
-                "user_id": current_user.id,
-                "plan_code": plan_code,
-            },
-            # If you already store Stripe customer IDs, you can attach here:
-            # customer=current_user.stripe_customer_id,
+            metadata={"user_id": current_user.id, "plan_code": plan_code},
         )
-
         return redirect(session.url, code=303)
 
-    # GET → show confirm page with a POST button
+    # GET: confirm page
     return render_template("subscribe.html", plan_data=plan_data)
 
 @app.get("/subscribe/success")
@@ -486,6 +486,14 @@ def stripe_success():
     plan_code = metadata.get("plan_code", "")
     plan_name = _plans().get(plan_code, {}).get("title", "Your plan")
     return render_template("subscribe_success.html", plan_human=plan_name, plan_json=plan_code)
+
+@app.get("/subscribe/free/success")
+@login_required
+def free_success():
+    return render_template("subscribe_success.html",
+                           plan_human=_plans()["free"]["title"],
+                           plan_json="free")
+
 
 # --- checkout ---
 def _activate_user_plan_by_metadata(supabase, metadata, customer_id=None, subscription_id=None):
