@@ -21,6 +21,7 @@ from extensions import login_manager, init_supabase, init_openai
 from blueprints.resumes import resumes_bp  # <-- your blueprint with all resume endpoints
 import logging
 from typing import Optional  # if you're on Python <3.10
+from datetime import datetime, timedelta
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -72,6 +73,123 @@ PLAN_TO_PRICE = {
     "standard": os.getenv("STRIPE_PRICE_STANDARD"),
     "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
 }
+
+#---PLAN LIMITS ---
+
+PLAN_LIMITS = {
+    "free": {
+        "period_kind": "month",
+        "resume_analyses": 3,
+        "cover_letters": 2,
+        "chat_messages": 15,   # total per month for simplicity
+    },
+    "weekly": {
+        "period_kind": "week",
+        "resume_analyses": 10,
+        "cover_letters": 5,
+        "chat_messages": 200,
+    },
+    "standard": {
+        "period_kind": "month",
+        "resume_analyses": 50,
+        "cover_letters": 20,
+        "chat_messages": 800,
+    },
+    "premium": {
+        "period_kind": "month",
+        # Unlimited → use None
+        "resume_analyses": None,
+        "cover_letters": None,
+        "chat_messages": None,
+    },
+}
+
+def _period_key(period_kind: str) -> str:
+    """Return current period key."""
+    now = datetime.utcnow()
+    if period_kind == "week":
+        iso_year, iso_week, _ = now.isocalendar()  # Python 3.8+: returns (year, week, weekday)
+        return f"{iso_year}-W{iso_week:02d}"
+    # default month
+    return now.strftime("%Y-%m")
+
+def current_plan_limits() -> dict:
+    plan = getattr(current_user, "plan", "free") or "free"
+    return PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])
+
+#--- CHECK AND INCREMENT ---
+
+def check_and_increment(user_id: str, feature_key: str, plan_limits: dict):
+    """
+    Returns (allowed: bool, info: dict). Increments the counter if allowed.
+    - Admins/superadmins bypass.
+    - feature_key is one of: 'resume_analyses', 'cover_letters', 'chat_messages'
+    """
+    # 1) Admin bypass
+    if is_staff():
+        return True, {"bypass": True, "reason": "staff"}
+
+    # 2) Limits for this plan/feature
+    limit = plan_limits.get(feature_key, None)  # None => unlimited
+    period_kind = plan_limits.get("period_kind", "month")
+    period_key = _period_key(period_kind)
+
+    if limit is None:
+        return True, {"unlimited": True, "period_kind": period_kind, "period_key": period_key}
+
+    # 3) Fetch (or create) the usage row
+    supabase = current_app.config["SUPABASE"]
+
+    # Try to read current row
+    resp = supabase.table("usage_counters").select("*") \
+        .eq("user_id", user_id) \
+        .eq("period_kind", period_kind) \
+        .eq("period_key", period_key) \
+        .maybe_single().execute()
+
+    row = getattr(resp, "data", None)
+
+    if not row:
+        # create a fresh row
+        row = {
+            "user_id": user_id,
+            "period_kind": period_kind,
+            "period_key": period_key,
+            "resume_analyses": 0,
+            "cover_letters": 0,
+            "chat_messages": 0,
+        }
+        supabase.table("usage_counters").insert(row).execute()
+
+    current_count = int(row.get(feature_key, 0) or 0)
+
+    # 4) Check vs limit
+    if current_count >= limit:
+        return False, {
+            "reason": "limit_reached",
+            "feature": feature_key,
+            "limit": limit,
+            "used": current_count,
+            "period_kind": period_kind,
+            "period_key": period_key,
+        }
+
+    # 5) Increment
+    new_count = current_count + 1
+    supabase.table("usage_counters").update({feature_key: new_count}) \
+        .eq("user_id", user_id) \
+        .eq("period_kind", period_kind) \
+        .eq("period_key", period_key) \
+        .execute()
+
+    return True, {
+        "feature": feature_key,
+        "used": new_count,
+        "limit": limit,
+        "period_kind": period_kind,
+        "period_key": period_key,
+    }
+
 
 # --- User model (replace your existing one) ---
 class User(UserMixin):
@@ -136,6 +254,23 @@ def load_user(user_id: "Optional[str]"):
     except Exception:
         logging.exception("load_user: failed to restore user")
         return None
+
+
+def is_staff():
+    return getattr(current_user, "is_admin", False)
+
+def is_superadmin():
+    return getattr(current_user, "is_superadmin", False)
+
+def require_superadmin(fn):
+    from functools import wraps
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_superadmin:
+            return ("Forbidden", 403)
+        return fn(*args, **kwargs)
+    return wrapper
+    
 
 def get_user_resume_text(user_id: str) -> Optional[str]:
     """Fetch the latest stored resume text for a user from Supabase."""
@@ -815,6 +950,11 @@ def get_skills_data():
 def get_location_data():
     locs = fetch_location_counts()
     return jsonify(labels=[l[0] for l in locs], counts=[l[1] for l in locs])
+
+@app.route("/admin/settings")
+@require_superadmin
+def admin_settings():
+    return render_template("admin/settings.html")
 
 # ----------------------------
 # Skill Gap & Interview Coach
