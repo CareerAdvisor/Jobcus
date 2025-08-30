@@ -353,6 +353,16 @@ def fetch_location_counts():
         pass
     return freq.most_common(5)
 
+def log_login_event():
+    try:
+        supabase.table("login_events").insert({
+            "auth_id": getattr(current_user, "id", None) or getattr(current_user, "auth_id", None),
+            "ip_hash": ip_hash(client_ip()),
+            "user_agent": request.headers.get("User-Agent", "")[:512],
+        }).execute()
+    except Exception:
+        current_app
+
 #--- Stripe ---
 def _get_or_create_stripe_customer(user):
     """Return a Stripe customer id for this user, creating if needed and storing in DB."""
