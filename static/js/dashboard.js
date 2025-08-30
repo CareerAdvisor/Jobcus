@@ -272,17 +272,33 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      // you already have:
       data.lastAnalyzed = new Date().toLocaleString();
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
       localStorage.setItem("resumeBase64", b64);
       localStorage.setItem("resumeKind", f.type);
+      
+      // ✅ NEW: persist a normalized snapshot for cross-device sync
+      const resultObject = {
+        score: Number(data.score || 0),
+        breakdown: {
+          formatting:  data?.breakdown?.formatting ?? null,
+          sections:    data?.breakdown?.sections ?? null,
+          keywords:    data?.breakdown?.keywords ?? null,
+          readability: data?.breakdown?.readability ?? null,
+          length:      data?.breakdown?.length ?? null,
+          parseable:   data?.breakdown?.parseable ?? null
+        },
+        suggestions: Array.isArray(data?.suggestions) ? data.suggestions : [],
+        lastAnalyzed: data.lastAnalyzed
+      };
+      localStorage.setItem('resume_latest', JSON.stringify(resultObject));
+      if (window.syncState) window.syncState();  // pushes to /api/state if logged in
+
 
       // after saving to localStorage…
       const count = parseInt(localStorage.getItem("analysisCount") || "0", 10) + 1;
       localStorage.setItem("analysisCount", String(count));
-
-      localStorage.setItem('resume_latest', JSON.stringify(resultObject));
-      if (window.syncState) window.syncState();
 
       // reset controls & repaint
       fileInput.value = ""; showFileName(null);
