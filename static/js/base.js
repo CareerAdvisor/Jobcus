@@ -22,6 +22,38 @@ document.querySelectorAll('.dropbtn').forEach(btn => {
   });
 });
 
+// ---- state sync (runs on all pages) ----
+(function(){
+  // pull once on load
+  if (window.USER_AUTHENTICATED) {
+    fetch('/api/state').then(r=>r.json()).then(({data})=>{
+      if (data && typeof data === 'object') {
+        if (data.chatUsed != null) localStorage.setItem('chatUsed', String(data.chatUsed));
+        if (data.resume_latest) localStorage.setItem('resume_latest', JSON.stringify(data.resume_latest));
+      }
+    }).catch(()=>{});
+  }
+
+  // push periodically / on-demand
+  window.syncState = function(){
+    if (!window.USER_AUTHENTICATED) return;
+    const payload = {
+      chatUsed: Number(localStorage.getItem('chatUsed') || 0),
+      resume_latest: JSON.parse(localStorage.getItem('resume_latest') || 'null'),
+    };
+    fetch('/api/state', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({data:payload})
+    }).catch(()=>{});
+  };
+
+  // push on tab close as a best-effort
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') { try{ window.syncState(); }catch(e){} }
+  });
+})();
+
 // ───── 5) Global click handler ─────
 //    - Closes mobile menu if clicking outside
 //    - Closes any open Features or User dropdowns
