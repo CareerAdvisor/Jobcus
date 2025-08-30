@@ -75,7 +75,7 @@ PLAN_TO_PRICE = {
     "standard": os.getenv("STRIPE_PRICE_STANDARD"),
     "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
 }
-
+       
 # ---- Model selection helpers ----
 def _dedupe(seq):
     seen, out = set(), []
@@ -223,7 +223,84 @@ def get_user_resume_text(user_id: str) -> Optional[str]:
     except Exception:
         current_app.logger.exception("get_user_resume_text error")
         return None
-        
+
+def log_login_event():
+    try:
+        supabase.table("login_events").insert({
+            "auth_id": getattr(current_user, "id", None) or getattr(current_user, "auth_id", None),
+            "ip_hash": ip_hash(client_ip()),
+            "user_agent": request.headers.get("User-Agent", "")[:512],
+        }).execute()
+    except Exception:
+        current_app
+
+SECRET_IP_SALT = os.getenv("IP_HASH_SALT", "change-me")  # set in your env
+
+def ip_hash_from_request(req):
+    """
+    Returns a salted, HMAC-based SHA256 digest of the client's IP.
+    Works behind proxies (uses X-Forwarded-For if present).
+    Stores NO raw IP; GDPR-friendlier.
+    """
+    ip = (req.headers.get('X-Forwarded-For') or req.remote_addr or "").split(",")[0].strip()
+    if not ip:
+        return None
+    return hmac.new(SECRET_IP_SALT.encode(), ip.encode(), hashlib.sha256).hexdigest()
+
+def record_login_event(user):
+    """
+    Call this right after a successful login to record a (salted) IP fingerprint.
+    """
+    try:
+        supabase.table("login_events").insert({
+            "auth_id": getattr(user, "id", None),
+            "user_agent": (request.headers.get("User-Agent") or "")[:500],
+            "ip_hash": ip_hash_from_request(request)
+        }).execute()
+    except Exception:
+        current_app.logger.exception("failed to record login event")
+
+# app.py — simple heuristic to curb “many free accounts per IP”
+def too_many_free_accounts_from_ip(ip_hash, window_days=7, threshold=3):
+    """
+    Returns True if >= threshold distinct users have signed in from this ip_hash in the last N days.
+    Uses a Postgres function (see SQL below) called via Supabase RPC.
+    """
+    if not ip_hash:
+        return False
+    try:
+        q = supabase.rpc(
+            "count_distinct_auth_for_ip_window",
+            {"p_ip_hash": ip_hash, "p_days": window_days}
+        ).execute()
+        n = (q.data or [{}])[0].get("count", 0)
+        return int(n) >= int(threshold)
+    except Exception:
+        current_app.logger.exception("RPC count_distinct_auth_for_ip_window failed")
+        return False
+
+@app.before_request
+def guard_free_plan_abuse():
+    """
+    Runs on every request:
+    - If user is Free, and the endpoint is costly (chat/analysis),
+      check IP abuse and block with 429 if tripped.
+    """
+    if not current_user.is_authenticated:
+        return
+
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    if plan != "free":
+        return
+
+    # List endpoints to protect (adjust names to match your app)
+    protected = {"ask", "api_resume_analysis"}  # you can include "chat" if you want to block viewing the page
+    if request.endpoint in protected:
+        ih = ip_hash_from_request(request)
+        if too_many_free_accounts_from_ip(ih):
+            return ("Too many free accounts from your network. Please upgrade or contact support.", 429)
+
+# Jobs fetch
 def fetch_remotive_jobs(query: str):
     try:
         r = requests.get(REMOTIVE_API_URL, params={"search": query})
@@ -352,45 +429,6 @@ def fetch_location_counts():
     except:
         pass
     return freq.most_common(5)
-
-def log_login_event():
-    try:
-        supabase.table("login_events").insert({
-            "auth_id": getattr(current_user, "id", None) or getattr(current_user, "auth_id", None),
-            "ip_hash": ip_hash(client_ip()),
-            "user_agent": request.headers.get("User-Agent", "")[:512],
-        }).execute()
-    except Exception:
-        current_app
-
-# --- IP HASHING --
-IP_HASH_SALT = os.getenv("IP_HASH_SALT", "change-this-salt")
-
-def _client_ip():
-    # Render sits behind a proxy → use X-Forwarded-For first
-    xfwd = request.headers.get("X-Forwarded-For", "")
-    if xfwd:
-        return xfwd.split(",")[0].strip()
-    return request.remote_addr
-
-def _ip_hash(ip: str) -> str:
-    salt = os.getenv("IP_HASH_SALT", "")
-    h = hashlib.sha256()
-    h.update((salt + "::" + (ip or "")).encode("utf-8"))
-    return h.hexdigest()
-
-def log_login_event(auth_id: str):
-    try:
-        ua = request.headers.get("User-Agent", "")
-        ip = _client_ip()
-        ih = _ip_hash(ip)
-        supabase.table("login_events").insert({
-            "auth_id": auth_id,
-            "user_agent": ua,
-            "ip_hash": ih
-        }).execute()
-    except Exception:
-        current_app.logger.exception("login event insert failed")
 
 #--- Stripe ---
 def _get_or_create_stripe_customer(user):
