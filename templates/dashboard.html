@@ -5,14 +5,19 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 {% endblock %}
 
+{% set _first = None %}
+{% if current_user.is_authenticated %}
+  {% set _first = (
+      current_user.first_name
+      or (current_user.fullname.split(' ')[0] if current_user.fullname else None)
+      or (current_user.email.split('@')[0] if current_user.email else None)
+  ) %}
+{% endif %}
+
 {% block content %}
 <section class="dash-shell">
-  <h1 id="dashboardGreeting" class="dash-title">
-    {% if current_user.is_authenticated %}
-      Welcome back{% if current_user.first_name or current_user.fullname %}, {{ (current_user.first_name or (current_user.fullname.split(' ')[0] if current_user.fullname else '')) }}{% endif %}!
-    {% else %}
-      Welcome back!
-    {% endif %}
+  <h1 class="dash-title">
+    {% if _first %}Welcome back, {{ _first }}{% else %}Welcome back{% endif %}
   </h1>
   <p class="dash-subtitle">Track your career growth and insights powered by Jobcus AI.</p>
 
@@ -45,11 +50,9 @@
 
       <label class="field">
         <span class="field__label center">Or pick a target role to assess relevance</span>
-      
         <input id="dashRoleSelect" class="select"
                list="roleList"
                placeholder="Start typing a role (e.g., Business Analyst, Azure Architect, Animator)…" />
-      
         <datalist id="roleList"></datalist>
       </label>
 
@@ -88,7 +91,6 @@
             <div class="bar"><div class="bar__fill" id="bSections"></div></div>
           </div>
 
-          <!-- NEW: Keywords -->
           <div class="metric">
             <div class="metric__head"><span>Keywords</span><strong id="mKeywords">—%</strong></div>
             <div class="bar"><div class="bar__fill" id="bKeywords"></div></div>
@@ -121,7 +123,6 @@
     <p>You haven’t analyzed a resume yet. Use the upload panel above to get started.</p>
   </div>
 
-  <!-- OPTIMIZE -->
   <section class="opt-shell">
     <aside class="opt-nav" aria-label="Optimize menu">
       <button class="opt-btn is-active" data-view="fixes">Fixes needed</button>
@@ -134,16 +135,13 @@
     <div class="opt-panel" id="optPanel"></div>
   </section>
 
-  <!-- Recommendation CTA -->
   <section class="opt-cta">
     <p class="opt-explain">
       Use the recommendations above to update your resume, or utilise our ATS-optimised resume builder feature to create a new one.
     </p>
-  
     <div class="actions" style="display:flex;gap:.75rem;flex-wrap:wrap;">
       <a id="rebuild-ai-btn" class="btn btn-primary" href="/resume-builder">Rebuild with AI</a>
     </div>
-  
     <small class="help">“Rebuild with AI” opens the Resume Builder page.</small>
   </section>
 </section>
