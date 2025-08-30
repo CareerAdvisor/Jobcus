@@ -3,8 +3,6 @@ from flask import current_app
 from flask_login import current_user
 from auth_utils import require_superadmin, is_staff, is_superadmin
 
-FREE_MONTHLY_MSGS = 20  # example; adjust per plan
-
 # Plan limits you defined
 PLAN_LIMITS = {
     "free": {
@@ -111,6 +109,8 @@ def check_and_increment(user_id: str, feature_key: str, plan_limits: dict):
         "period_kind": period_kind,
         "period_key": period_key,
     }
+
+FREE_MONTHLY_MSGS = 20  # example; adjust per plan
 
 def month_key(dt=None):
     d = dt or date.today()
