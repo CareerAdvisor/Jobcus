@@ -24,6 +24,7 @@ from typing import Optional  # if you're on Python <3.10
 from datetime import datetime, timedelta, timezone
 from auth_utils import require_superadmin, is_staff, is_superadmin
 from limits import check_and_increment, current_plan_limits
+import hashlib, hmac, os
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -362,6 +363,21 @@ def log_login_event():
         }).execute()
     except Exception:
         current_app
+
+# --- IP HASHING --
+IP_HASH_SALT = os.getenv("IP_HASH_SALT", "change-this-salt")
+
+def client_ip():
+    # Render/most proxies set X-Forwarded-For; take the left-most
+    xff = request.headers.get("X-Forwarded-For", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.remote_addr or "0.0.0.0"
+
+def ip_hash(ip: str) -> str:
+    key = IP_HASH_SALT.encode("utf-8")
+    return hmac.new(key, (ip or "").encode("utf-8"), hashlib.sha256).hexdigest()
+
 
 #--- Stripe ---
 def _get_or_create_stripe_customer(user):
