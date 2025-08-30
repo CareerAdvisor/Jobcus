@@ -236,24 +236,37 @@ def log_login_event():
         current_app
 
 
+# --- Config/secrets ---
 SID_COOKIE = "sid"
-SID_TTL_SECONDS = 30 * 24 * 3600  # 30 days
-SECRET_IP_SALT = os.getenv("IP_HASH_SALT", "change-me")
+SID_TTL_SECONDS = 30 * 24 * 3600         # 30 days
+SECRET_IP_SALT = os.getenv("IP_HASH_SALT", "change-me")   # set a strong value in Render
 _session_signer = URLSafeSerializer(os.getenv("SECRET_KEY", "dev"), salt="user-session")
 
+# --- Fingerprints ---
 def ip_hash_from_request(req):
     ip = (req.headers.get("X-Forwarded-For") or req.remote_addr or "").split(",")[0].strip()
-    if not ip:
-        return None
+    if not ip: return None
     return hmac.new(SECRET_IP_SALT.encode(), ip.encode(), hashlib.sha256).hexdigest()
 
 def device_hash_from_request(req):
-    ua = (req.headers.get("User-Agent") or "")[:500]
-    acc = (req.headers.get("Accept") or "")[:180]
+    ua   = (req.headers.get("User-Agent") or "")[:500]
+    acc  = (req.headers.get("Accept") or "")[:180]
     lang = (req.headers.get("Accept-Language") or "")[:120]
-    raw = f"{ua}|{acc}|{lang}"
+    raw  = f"{ua}|{acc}|{lang}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
+# --- Login event (keeps your IP abuse signal) ---
+def record_login_event(user):
+    try:
+        supabase.table("login_events").insert({
+            "auth_id": getattr(user, "id", None),
+            "user_agent": (request.headers.get("User-Agent") or "")[:500],
+            "ip_hash": ip_hash_from_request(request)
+        }).execute()
+    except Exception:
+        current_app.logger.exception("failed to record login event")
+
+# --- Per-account session control (1 active session for Free) ---
 def _sign_session_id(session_id: str) -> str:
     return _session_signer.dumps({"sid": session_id, "ts": int(time.time())})
 
@@ -265,7 +278,6 @@ def _unsign_session_token(token: str) -> str | None:
         return None
 
 def start_user_session(user):
-    """Create a DB session row and return (session_id, response_set_cookie_fn)."""
     dev = device_hash_from_request(request)
     iph = ip_hash_from_request(request)
     ua  = (request.headers.get("User-Agent") or "")[:500]
@@ -273,41 +285,29 @@ def start_user_session(user):
     # Enforce single active session for FREE users
     plan = (getattr(user, "plan", "free") or "free").lower()
     if plan == "free":
-        # mark all other sessions inactive
         supabase.table("user_sessions").update({"is_active": False})\
             .eq("auth_id", user.id).eq("is_active", True).execute()
 
-    row = {
-        "auth_id": user.id,
-        "device_hash": dev,
-        "ip_hash": iph,
-        "user_agent": ua,
-        "is_active": True
-    }
+    row = {"auth_id": user.id, "device_hash": dev, "ip_hash": iph, "user_agent": ua, "is_active": True}
     ins = supabase.table("user_sessions").insert(row).execute()
     session_id = ins.data[0]["id"] if ins.data else None
     token = _sign_session_id(session_id)
 
     def _set_cookie(resp):
-        resp.set_cookie(
-            SID_COOKIE, token, max_age=SID_TTL_SECONDS,
-            httponly=True, samesite="Lax", secure=True, path="/"
-        )
+        resp.set_cookie(SID_COOKIE, token, max_age=SID_TTL_SECONDS,
+                        httponly=True, samesite="Lax", secure=True, path="/")
         return resp
-
     return session_id, _set_cookie
 
-def end_current_session():
+def end_current_session(redirect_endpoint="home"):
     token = request.cookies.get(SID_COOKIE)
     sid = _unsign_session_token(token) if token else None
     if sid:
         try:
-            supabase.table("user_sessions").update({"is_active": False})\
-                .eq("id", sid).execute()
+            supabase.table("user_sessions").update({"is_active": False}).eq("id", sid).execute()
         except Exception:
             current_app.logger.exception("failed to end session")
-    # drop cookie
-    resp = make_response(redirect(url_for("home")))
+    resp = make_response(redirect(url_for(redirect_endpoint)))
     resp.set_cookie(SID_COOKIE, "", expires=0, path="/")
     logout_user()
     return resp
@@ -319,9 +319,7 @@ def enforce_single_active_session():
     token = request.cookies.get(SID_COOKIE)
     sid = _unsign_session_token(token) if token else None
     if not sid:
-        # No bound session cookie → sign out (prevents reusing Flask-Login from another device)
-        return end_current_session()
-
+        return end_current_session()  # no bound session cookie → sign out
     try:
         q = supabase.table("user_sessions").select("*").eq("id", sid).limit(1).execute()
         row = q.data[0] if q.data else None
@@ -333,6 +331,29 @@ def enforce_single_active_session():
     except Exception:
         current_app.logger.exception("session check failed")
         return end_current_session()
+
+# --- IP abuse heuristic (KEEP this too) ---
+def too_many_free_accounts_from_ip(ip_hash, window_days=7, threshold=3):
+    if not ip_hash: return False
+    try:
+        q = supabase.rpc("count_distinct_auth_for_ip_window",
+                         {"p_ip_hash": ip_hash, "p_days": window_days}).execute()
+        n = (q.data or [{}])[0].get("count", 0)
+        return int(n) >= int(threshold)
+    except Exception:
+        current_app.logger.exception("RPC count_distinct_auth_for_ip_window failed")
+        return False
+
+@app.before_request
+def guard_free_plan_abuse():
+    if not current_user.is_authenticated:
+        return
+    if (getattr(current_user, "plan", "free") or "free").lower() != "free":
+        return
+    protected = {"ask", "api_resume_analysis"}  # endpoints that burn credits
+    if request.endpoint in protected:
+        if too_many_free_accounts_from_ip(ip_hash_from_request(request)):
+            return ("Too many free accounts from your network. Please upgrade or contact support.", 429)
 
 
 @user_logged_in.connect_via(app)
