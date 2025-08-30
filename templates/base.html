@@ -55,48 +55,47 @@
             <a href="/employers">Partner with Us</a>
           </nav>
 
-          {# ===== Header user menu ===== #}
-          {% set _email = current_user.email if current_user.is_authenticated else None %}
-          {% set _plan  = (current_user.plan or 'free')|lower if current_user.is_authenticated else 'free' %}
-          
-          {% set _fname = None %}
-          {% set _lname = None %}
+          {# --- Avatar + dropdown (header) --- #}
+          {% set _first = None %}
+          {% set _lasti = '' %}
           {% set _name  = None %}
+          {% set _email = None %}
           {% if current_user.is_authenticated %}
-            {% set _fname = current_user.first_name
-                or (current_user.fullname.split(' ')[0] if current_user.fullname else current_user.email.split('@')[0]) %}
-            {% set _lname = current_user.last_name
-                or (current_user.fullname.split(' ')[1] if current_user.fullname and ' ' in current_user.fullname else '') %}
-            {% set _name = _fname %}
+            {% set _email = current_user.email %}
+            {% set _first = (current_user.first_name
+                             or (current_user.fullname.split(' ')[0] if current_user.fullname else _email.split('@')[0])) %}
+            {% set _lasti = (current_user.last_name[:1] if current_user.last_name
+                             else (current_user.fullname.split(' ')[1][:1] if (current_user.fullname and current_user.fullname.split(' ')|length>1) else '')) %}
+            {% set _name  = _first ~ ((' ' ~ current_user.last_name) if current_user.last_name else '') %}
           {% endif %}
+          {% set _initials = ((_first[:1] ~ _lasti)|upper) if _first else '' %}
           
           <div class="user-menu">
-            <button id="userMenuBtn"
-                    class="avatar-btn"
-                    aria-label="{{ _name or 'Profile' }}"
-                    aria-haspopup="menu"
-                    aria-expanded="false">
+            <button id="userMenuBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false">
               {% if _name %}
-                <span class="avatar-circle">{{ (_fname[:1] ~ _lname[:1])|upper }}</span>
+                <span class="avatar-circle">{{ _initials }}</span>
                 <span class="avatar-name">{{ _name }}</span>
               {% else %}
-                <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="Profile" class="user-icon">
+                <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="Profile">
                 <span class="avatar-name">Profile</span>
               {% endif %}
             </button>
           
-            <div id="userDropdown" class="user-dropdown" role="menu">
+            <div id="userDropdown" class="user-dropdown">
               {% if current_user.is_authenticated %}
-                <div class="dropdown-label">{{ _name }}</div>
-                <div class="dropdown-email">{{ _email }}</div>
-                <hr class="dropdown-sep">
-                {% if _plan == 'free' %}
-                  <a class="dropdown-item" href="/pricing">⬆️ Upgrade plan</a>
-                {% endif %}
-                <a class="dropdown-item" href="/dashboard">👤 Profile</a>
-                <a class="dropdown-item" href="/logout">🚪 Log out</a>
+                <div class="ud-top">
+                  <span class="avatar-circle sm">{{ _initials }}</span>
+                  <span class="ud-name">{{ _name }}</span>
+                </div>
+          
+                <div class="ud-email">{{ _email }}</div>
+                <hr class="ud-sep">
+          
+                <a class="ud-item" href="{{ url_for('pricing') }}">⬆️ Upgrade plan</a>
+                <a class="ud-item" href="{{ url_for('dashboard') }}">👤 {{ _name }}</a>
+                <a class="ud-item" href="{{ url_for('logout') }}">📦 Log out</a>
               {% else %}
-                <a class="dropdown-item" href="/account">🔑 Sign up / Log in</a>
+                <a class="ud-item" href="{{ url_for('account') }}">🔑 Sign up / Log in</a>
               {% endif %}
             </div>
           </div>
