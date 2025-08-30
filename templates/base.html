@@ -66,29 +66,34 @@
           {% endif %}
           
           <div class="user-menu">
-            <button id="userMenuBtn" class="avatar-btn" type="button" onclick="toggleUserMenu()"
-                    aria-haspopup="menu" aria-expanded="false" aria-label="{{ _name or 'Profile' }}">
-              {% if _name %}
-                <span class="avatar-circle">
-                  {{ (_name[:1] ~ ((current_user.last_name or '').strip()[:1]))|upper }}
-                </span>
-                <span class="avatar-name">{{ _name }}</span>
-              {% else %}
-                <img src="{{ url_for('static', filename='icons/user.svg') }}" class="avatar-fallback" alt="Profile">
-                <span class="avatar-name">Profile</span>
-              {% endif %}
-            </button>
-          
-            <div id="userDropdown" class="user-dropdown" role="menu" aria-labelledby="userMenuBtn">
-              {% if current_user.is_authenticated %}
-                <a href="/dashboard" role="menuitem">👤 {{ _name }}</a>
-                <a href="/logout" role="menuitem">🚪 Log out</a>
-              {% else %}
-                <a href="/account" role="menuitem">🔑 Sign up / Log in</a>
-              {% endif %}
-            </div>
+          {# Avatar button (initials + name when logged in) #}
+          {% set _name = None %}
+          {% if current_user.is_authenticated %}
+            {% set _name = (current_user.first_name
+                            or (current_user.fullname.split(' ')[0] if current_user.fullname else None)
+                            or (current_user.email.split('@')[0])) %}
+          {% endif %}
+        
+          <button id="userMenuBtn" class="avatar-btn" type="button" aria-haspopup="true" aria-expanded="false">
+            {% if _name %}
+              <span class="avatar-circle">{{ (_name[:1] ~ ((current_user.last_name or '')[:1]))|upper }}</span>
+              <span class="avatar-name">{{ _name }}</span>
+            {% else %}
+              <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="Profile" class="user-icon">
+              <span class="avatar-name">Profile</span>
+            {% endif %}
+          </button>
+        
+          {# Dropdown stays as a separate element with the same id the JS uses #}
+          <div id="userDropdown" class="user-dropdown" role="menu">
+            {% if current_user.is_authenticated %}
+              <a href="/dashboard" role="menuitem">👤 {{ _name or 'Profile' }}</a>
+              <a href="/logout" role="menuitem">🚪 Log out</a>
+            {% else %}
+              <a href="/account" role="menuitem">🔑 Sign up / Log in</a>
+            {% endif %}
           </div>
-
+        </div>
 
           <!-- Hamburger (mobile) -->
           <div class="hamburger" onclick="toggleMobileMenu()">
