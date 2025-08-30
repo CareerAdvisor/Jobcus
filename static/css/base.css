@@ -180,6 +180,20 @@
 }
 .avatar-name{ color:#0f355e; font-weight:600; }
 
+.avatar-btn{display:flex;align-items:center;gap:.5rem;background:#fff;border:1px solid #e5e7eb;
+  border-radius:999px;padding:6px 10px;cursor:pointer}
+.avatar-btn:hover{background:#f8fafc}
+.avatar-circle{width:28px;height:28px;border-radius:50%;display:inline-grid;place-items:center;
+  background:#104879;color:#fff;font-weight:700}
+.avatar-fallback{width:24px;height:24px}
+.avatar-name{color:#0f355e;font-weight:600;max-width:10rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-dropdown{position:absolute;right:0;margin-top:6px;background:#fff;border:1px solid #e5e7eb;
+  border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.08);display:none;min-width:200px;z-index:1202}
+.user-dropdown a{display:block;padding:10px 12px;color:#0f355e;text-decoration:none}
+.user-dropdown a:hover{background:#f8fafc}
+.user-menu{position:relative}
+.user-menu.is-open .user-dropdown{display:block}
+
 @media (max-width: 480px) {
   .cc-banner { left: 12px; right: 12px; bottom: 12px; }
   .cc-panel { width: calc(100% - 24px); left: 12px; right: 12px; transform: none; }
