@@ -91,6 +91,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const analyzeBtn  = document.getElementById("dashAnalyzeBtn");
   const analyzingEl = document.getElementById("dashAnalyzing");
 
+  // ✅ Populate the datalist once
+  initRoleDatalist();
+
   // ----- Optimize controls -----
   const optNav      = document.querySelector(".opt-nav");
   const optPanel    = document.getElementById("optPanel");
