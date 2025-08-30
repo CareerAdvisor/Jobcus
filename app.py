@@ -21,9 +21,9 @@ from extensions import login_manager, init_supabase, init_openai
 from blueprints.resumes import resumes_bp  # <-- your blueprint with all resume endpoints
 import logging
 from typing import Optional  # if you're on Python <3.10
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from auth_utils import require_superadmin, is_staff, is_superadmin
-from limits import check_and_increment, current_plan_limits
+from limits import check_and_increment, current_plan_limits, plan_limit, month_key, get_usage_count, increment_usage
 from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
 
