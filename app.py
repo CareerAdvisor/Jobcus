@@ -25,6 +25,7 @@ from datetime import datetime, timedelta, timezone
 from auth_utils import require_superadmin, is_staff, is_superadmin
 from limits import check_and_increment, current_plan_limits
 from itsdangerous import URLSafeSerializer, BadSignature
+from supabase import create_client
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -48,6 +49,11 @@ app.config["OPENAI_CLIENT"] = init_openai()
 # Short aliases if you want to use them in this file
 supabase = app.config["SUPABASE"]
 client   = app.config["OPENAI_CLIENT"]
+
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_SERVICE_ROLE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+
+supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 # --- Flask-Login init ---
 login_manager.init_app(app)
@@ -822,16 +828,6 @@ def stripe_webhook():
         pass
 
     return ("OK", 200)
-
-
-@app.route('/cover-letter')
-def cover_letter():
-    # Always provide defaults so the template can't blow up
-    return render_template(
-        "cover-letter.html",
-        letter_only=False,   # make explicit
-        sender={}, recipient={}, draft=""
-    )
         
 # ----------------------------
 # Email confirmation
@@ -1032,6 +1028,21 @@ def verify_token():
         print("verify_token error:", e)
         return jsonify(ok=False, error="Token verification failed"), 400
 
+@app.post("/api/state")
+def api_state():
+    payload = request.get_json(force=True, silent=True) or {}
+    upsert = {
+        "auth_id": g.auth_id or payload.get("auth_id"),  # however you determine auth_id
+        "state": payload.get("state"),
+        "updated_at": datetime.utcnow().isoformat()
+    }
+    try:
+        supabase_admin.table("user_state").upsert(upsert, on_conflict="auth_id").execute()
+    except Exception as e:
+        app.logger.warning("state upsert failed (non-fatal): %s", e)
+        # DO NOT propagate an error for telemetry – it should never break the UI
+    return ("", 204)
+
 # ----------------------------
 # Chat & Jobs & Insights
 # ----------------------------
@@ -1110,6 +1121,19 @@ def get_location_data():
 @require_superadmin
 def admin_settings():
     return render_template("admin/settings.html")
+
+# ----------------------------
+# Cover Letter
+# ----------------------------
+
+@app.route('/cover-letter')
+def cover_letter():
+    # Always provide defaults so the template can't blow up
+    return render_template(
+        "cover-letter.html",
+        letter_only=False,   # make explicit
+        sender={}, recipient={}, draft=""
+    )
 
 # ----------------------------
 # Skill Gap & Interview Coach
