@@ -1,4 +1,4 @@
-import os, stripe
+import os, stripe, hashlib, hmac
 import traceback
 from io import BytesIO
 from collections import Counter
@@ -24,7 +24,6 @@ from typing import Optional  # if you're on Python <3.10
 from datetime import datetime, timedelta, timezone
 from auth_utils import require_superadmin, is_staff, is_superadmin
 from limits import check_and_increment, current_plan_limits
-import hashlib, hmac, os
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -367,17 +366,31 @@ def log_login_event():
 # --- IP HASHING --
 IP_HASH_SALT = os.getenv("IP_HASH_SALT", "change-this-salt")
 
-def client_ip():
-    # Render/most proxies set X-Forwarded-For; take the left-most
-    xff = request.headers.get("X-Forwarded-For", "")
-    if xff:
-        return xff.split(",")[0].strip()
-    return request.remote_addr or "0.0.0.0"
+def _client_ip():
+    # Render sits behind a proxy → use X-Forwarded-For first
+    xfwd = request.headers.get("X-Forwarded-For", "")
+    if xfwd:
+        return xfwd.split(",")[0].strip()
+    return request.remote_addr
 
-def ip_hash(ip: str) -> str:
-    key = IP_HASH_SALT.encode("utf-8")
-    return hmac.new(key, (ip or "").encode("utf-8"), hashlib.sha256).hexdigest()
+def _ip_hash(ip: str) -> str:
+    salt = os.getenv("IP_HASH_SALT", "")
+    h = hashlib.sha256()
+    h.update((salt + "::" + (ip or "")).encode("utf-8"))
+    return h.hexdigest()
 
+def log_login_event(auth_id: str):
+    try:
+        ua = request.headers.get("User-Agent", "")
+        ip = _client_ip()
+        ih = _ip_hash(ip)
+        supabase.table("login_events").insert({
+            "auth_id": auth_id,
+            "user_agent": ua,
+            "ip_hash": ih
+        }).execute()
+    except Exception:
+        current_app.logger.exception("login event insert failed")
 
 #--- Stripe ---
 def _get_or_create_stripe_customer(user):
@@ -425,26 +438,38 @@ def chat():
         model_default=allowed_models_for_plan(plan)[0],
     )
 
-@app.get("/api/state")
+@app.route("/api/state", methods=["GET", "POST"])
 @login_required
-def get_state():
+def api_state():
+    # robustly get the auth id
     auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
-    res = supabase.table("user_state").select("data").eq("auth_id", auth_id).limit(1).execute()
-    data = (res.data[0]["data"] if res.data else {}) if hasattr(res, "data") else {}
-    return jsonify(data=data or {})
+    if not auth_id:
+        return jsonify({"error": "no auth id"}), 400
 
-@app.post("/api/state")
-@login_required
-def set_state():
-    payload = request.get_json(force=True) or {}
+    if request.method == "GET":
+        try:
+            resp = supabase.table("user_state").select("data").eq("auth_id", auth_id).limit(1).execute()
+            row = resp.data[0] if getattr(resp, "data", None) else None
+            return jsonify({"data": (row["data"] if row else {})})
+        except Exception:
+            current_app.logger.exception("state fetch failed")
+            return jsonify({"data": {}}), 200
+
+    # POST
+    payload = request.get_json(silent=True) or {}
     data = payload.get("data", {})
-    auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
-    supabase.table("user_state").upsert({
-        "auth_id": auth_id,
-        "data": data,
-        "updated_at": datetime.now(timezone.utc).isoformat()
-    }).execute()
-    return jsonify(ok=True)
+    try:
+        upsert = {
+            "auth_id": auth_id,
+            "data": data,
+            "updated_at": datetime.now(timezone.utc).isoformat()  # okay to omit if column not present
+        }
+        # requires a unique constraint on user_state.auth_id
+        supabase.table("user_state").upsert(upsert, on_conflict="auth_id").execute()
+        return jsonify({"ok": True})
+    except Exception:
+        current_app.logger.exception("state upsert failed")
+        return jsonify({"ok": False}), 500
 
 @app.get("/resume-analyzer")
 def page_resume_analyzer():
