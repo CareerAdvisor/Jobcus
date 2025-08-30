@@ -194,6 +194,16 @@
 .user-menu{position:relative}
 .user-menu.is-open .user-dropdown{display:block}
 
+.avatar-btn{ display:flex; align-items:center; gap:8px; background:transparent; border:0; cursor:pointer; }
+.avatar-circle{
+  display:inline-grid; place-items:center; width:28px; height:28px;
+  border-radius:50%; background:#104879; color:#fff; font-weight:700; font-size:12px;
+}
+.avatar-name{ color:#0f355e; font-weight:600; }
+.user-dropdown{ position:absolute; right:0; top:100%; display:none; /* …your existing styles… */ }
+.user-dropdown.show{ display:block; }
+
+
 @media (max-width: 480px) {
   .cc-banner { left: 12px; right: 12px; bottom: 12px; }
   .cc-panel { width: calc(100% - 24px); left: 12px; right: 12px; transform: none; }
