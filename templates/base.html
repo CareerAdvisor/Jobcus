@@ -144,8 +144,13 @@
     <!-- AOS -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
+    <script>
+      window.USER_AUTHENTICATED = {{ 'true' if current_user.is_authenticated else 'false' }};
+      window.AUTH_ID = {{ ('"%s"' % current_user.id) if current_user.is_authenticated else 'null' }};
+    </script>
+
     <!-- Base JS -->
-    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
 
     {# Page-scoped scripts #}
     {% block scripts %}{% endblock %}
