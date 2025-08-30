@@ -382,10 +382,12 @@ document.addEventListener("DOMContentLoaded", () => {
       chatbox.appendChild(aiBlock);
       scrollToAI(aiBlock);
 
-      // 5) Count a message for credits
+      // 5) Count a message and sync
       const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
       localStorage.setItem("chatUsed", usedNow);
-      refreshCreditsPanel();
+      refreshCreditsPanel();                  // keep this to update the sidebar numbers
+      if (window.syncState) window.syncState();
+
 
       // 6) Fetch AI (send chosen model if any)
       let finalReply = "";
