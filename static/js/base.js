@@ -4,9 +4,18 @@
 AOS.init();
 
 // ───── 2) User menu toggle ─────
+// User menu toggle
 function toggleUserMenu() {
   document.getElementById('userDropdown')?.classList.toggle('show');
+  const btn = document.getElementById('userMenuBtn');
+  if (btn) btn.setAttribute('aria-expanded',
+    document.getElementById('userDropdown')?.classList.contains('show') ? 'true' : 'false'
+  );
 }
+document.getElementById('userMenuBtn')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleUserMenu();
+});
 
 // ───── 3) Mobile menu toggle ─────
 function toggleMobileMenu() {
@@ -81,15 +90,16 @@ document.addEventListener('click', (e) => {
     }
   });
 
-  // c) User dropdown
+  // c) User dropdown (UPDATED to use #userMenuBtn)
   const userDropdown = document.getElementById('userDropdown');
-  const userIcon     = document.getElementById('userIcon');
+  const userBtn      = document.getElementById('userMenuBtn');
   if (
     userDropdown?.classList.contains('show') &&
     !userDropdown.contains(e.target) &&
-    !userIcon?.contains(e.target)
+    !userBtn?.contains(e.target)
   ) {
     userDropdown.classList.remove('show');
+    userBtn?.setAttribute('aria-expanded', 'false');
   }
 });
 
