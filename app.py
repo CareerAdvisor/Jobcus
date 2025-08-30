@@ -1,4 +1,4 @@
-import os, stripe, hashlib, hmac
+import os, stripe, hashlib, hmac, time
 import traceback
 from io import BytesIO
 from collections import Counter
@@ -6,7 +6,7 @@ import re, json, base64, logging, requests
 
 from flask import (
     Flask, request, jsonify, render_template, redirect,
-    session, flash, url_for, current_app
+    session, flash, url_for, current_app, make_response
 )
 from flask_cors import CORS
 from flask_login import (
@@ -24,6 +24,7 @@ from typing import Optional  # if you're on Python <3.10
 from datetime import datetime, timedelta, timezone
 from auth_utils import require_superadmin, is_staff, is_superadmin
 from limits import check_and_increment, current_plan_limits
+from itsdangerous import URLSafeSerializer, BadSignature
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -234,71 +235,105 @@ def log_login_event():
     except Exception:
         current_app
 
-SECRET_IP_SALT = os.getenv("IP_HASH_SALT", "change-me")  # set in your env
+
+SID_COOKIE = "sid"
+SID_TTL_SECONDS = 30 * 24 * 3600  # 30 days
+SECRET_IP_SALT = os.getenv("IP_HASH_SALT", "change-me")
+_session_signer = URLSafeSerializer(os.getenv("SECRET_KEY", "dev"), salt="user-session")
 
 def ip_hash_from_request(req):
-    """
-    Returns a salted, HMAC-based SHA256 digest of the client's IP.
-    Works behind proxies (uses X-Forwarded-For if present).
-    Stores NO raw IP; GDPR-friendlier.
-    """
-    ip = (req.headers.get('X-Forwarded-For') or req.remote_addr or "").split(",")[0].strip()
+    ip = (req.headers.get("X-Forwarded-For") or req.remote_addr or "").split(",")[0].strip()
     if not ip:
         return None
     return hmac.new(SECRET_IP_SALT.encode(), ip.encode(), hashlib.sha256).hexdigest()
 
-def record_login_event(user):
-    """
-    Call this right after a successful login to record a (salted) IP fingerprint.
-    """
-    try:
-        supabase.table("login_events").insert({
-            "auth_id": getattr(user, "id", None),
-            "user_agent": (request.headers.get("User-Agent") or "")[:500],
-            "ip_hash": ip_hash_from_request(request)
-        }).execute()
-    except Exception:
-        current_app.logger.exception("failed to record login event")
+def device_hash_from_request(req):
+    ua = (req.headers.get("User-Agent") or "")[:500]
+    acc = (req.headers.get("Accept") or "")[:180]
+    lang = (req.headers.get("Accept-Language") or "")[:120]
+    raw = f"{ua}|{acc}|{lang}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
-# app.py — simple heuristic to curb “many free accounts per IP”
-def too_many_free_accounts_from_ip(ip_hash, window_days=7, threshold=3):
-    """
-    Returns True if >= threshold distinct users have signed in from this ip_hash in the last N days.
-    Uses a Postgres function (see SQL below) called via Supabase RPC.
-    """
-    if not ip_hash:
-        return False
+def _sign_session_id(session_id: str) -> str:
+    return _session_signer.dumps({"sid": session_id, "ts": int(time.time())})
+
+def _unsign_session_token(token: str) -> str | None:
     try:
-        q = supabase.rpc(
-            "count_distinct_auth_for_ip_window",
-            {"p_ip_hash": ip_hash, "p_days": window_days}
-        ).execute()
-        n = (q.data or [{}])[0].get("count", 0)
-        return int(n) >= int(threshold)
-    except Exception:
-        current_app.logger.exception("RPC count_distinct_auth_for_ip_window failed")
-        return False
+        data = _session_signer.loads(token)
+        return data.get("sid")
+    except BadSignature:
+        return None
+
+def start_user_session(user):
+    """Create a DB session row and return (session_id, response_set_cookie_fn)."""
+    dev = device_hash_from_request(request)
+    iph = ip_hash_from_request(request)
+    ua  = (request.headers.get("User-Agent") or "")[:500]
+
+    # Enforce single active session for FREE users
+    plan = (getattr(user, "plan", "free") or "free").lower()
+    if plan == "free":
+        # mark all other sessions inactive
+        supabase.table("user_sessions").update({"is_active": False})\
+            .eq("auth_id", user.id).eq("is_active", True).execute()
+
+    row = {
+        "auth_id": user.id,
+        "device_hash": dev,
+        "ip_hash": iph,
+        "user_agent": ua,
+        "is_active": True
+    }
+    ins = supabase.table("user_sessions").insert(row).execute()
+    session_id = ins.data[0]["id"] if ins.data else None
+    token = _sign_session_id(session_id)
+
+    def _set_cookie(resp):
+        resp.set_cookie(
+            SID_COOKIE, token, max_age=SID_TTL_SECONDS,
+            httponly=True, samesite="Lax", secure=True, path="/"
+        )
+        return resp
+
+    return session_id, _set_cookie
+
+def end_current_session():
+    token = request.cookies.get(SID_COOKIE)
+    sid = _unsign_session_token(token) if token else None
+    if sid:
+        try:
+            supabase.table("user_sessions").update({"is_active": False})\
+                .eq("id", sid).execute()
+        except Exception:
+            current_app.logger.exception("failed to end session")
+    # drop cookie
+    resp = make_response(redirect(url_for("home")))
+    resp.set_cookie(SID_COOKIE, "", expires=0, path="/")
+    logout_user()
+    return resp
 
 @app.before_request
-def guard_free_plan_abuse():
-    """
-    Runs on every request:
-    - If user is Free, and the endpoint is costly (chat/analysis),
-      check IP abuse and block with 429 if tripped.
-    """
+def enforce_single_active_session():
     if not current_user.is_authenticated:
         return
+    token = request.cookies.get(SID_COOKIE)
+    sid = _unsign_session_token(token) if token else None
+    if not sid:
+        # No bound session cookie → sign out (prevents reusing Flask-Login from another device)
+        return end_current_session()
 
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-    if plan != "free":
-        return
+    try:
+        q = supabase.table("user_sessions").select("*").eq("id", sid).limit(1).execute()
+        row = q.data[0] if q.data else None
+        if not row or (row["auth_id"] != str(current_user.id)) or (not row["is_active"]):
+            return end_current_session()
+        # touch last_seen
+        supabase.table("user_sessions").update({"last_seen": datetime.utcnow().isoformat()})\
+            .eq("id", sid).execute()
+    except Exception:
+        current_app.logger.exception("session check failed")
+        return end_current_session()
 
-    # List endpoints to protect (adjust names to match your app)
-    protected = {"ask", "api_resume_analysis"}  # you can include "chat" if you want to block viewing the page
-    if request.endpoint in protected:
-        ih = ip_hash_from_request(request)
-        if too_many_free_accounts_from_ip(ih):
-            return ("Too many free accounts from your network. Please upgrade or contact support.", 429)
 
 @user_logged_in.connect_via(app)
 def on_user_logged_in(sender, user):
@@ -1008,16 +1043,11 @@ def ask():
 @app.get("/api/credits")
 @login_required
 def api_credits():
-    # return: {plan, max, used, period_label}
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-    lim   = current_plan_limits(plan)   # your existing helper
-    used  = get_usage_so_far(current_user.id, "chat_messages", lim["period"])  # implement w/ Supabase
-    return jsonify({
-        "plan": plan,
-        "max": lim["max"],
-        "used": used,
-        "period_label": lim["label"]
-    })
+    plan = getattr(current_user, "plan", "free")
+    lims = current_plan_limits()  # your existing function
+    used = get_usage(current_user.id, "chat_messages")  # your counter in DB
+    left = max(lims.max_messages - used, 0)
+    return jsonify(plan=plan, used=used, max=lims.max_messages, left=left)
 
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
