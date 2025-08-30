@@ -72,12 +72,10 @@
           
           <div class="user-menu">
             <button id="userMenuBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false">
-              {% if _name %}
+              {% if current_user.is_authenticated %}
                 <span class="avatar-circle">{{ _initials }}</span>
-                <span class="avatar-name">{{ _name }}</span>
               {% else %}
-                <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="Profile">
-                <span class="avatar-name">Profile</span>
+                <img class="avatar-icon" src="{{ url_for('static', filename='icons/user.svg') }}" alt="Profile">
               {% endif %}
             </button>
           
