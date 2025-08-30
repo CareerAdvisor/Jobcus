@@ -962,6 +962,20 @@ def ask():
         current_app.logger.exception("OpenAI error")
         return jsonify(reply="⚠️ Server error talking to the AI. Please try again.", modelUsed=model), 500
 
+@app.get("/api/credits")
+@login_required
+def api_credits():
+    # return: {plan, max, used, period_label}
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    lim   = current_plan_limits(plan)   # your existing helper
+    used  = get_usage_so_far(current_user.id, "chat_messages", lim["period"])  # implement w/ Supabase
+    return jsonify({
+        "plan": plan,
+        "max": lim["max"],
+        "used": used,
+        "period_label": lim["label"]
+    })
+
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
     try:
