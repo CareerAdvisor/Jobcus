@@ -299,7 +299,7 @@ def start_user_session(user):
         return resp
     return session_id, _set_cookie
 
-def end_current_session(redirect_endpoint="home"):
+def end_current_session(redirect_endpoint="account"):
     token = request.cookies.get(SID_COOKIE)
     sid = _unsign_session_token(token) if token else None
     if sid:
@@ -316,10 +316,15 @@ def end_current_session(redirect_endpoint="home"):
 def enforce_single_active_session():
     if not current_user.is_authenticated:
         return
+
+    if request.endpoint in {None, "account", "logout", "static"}:
+        return
+        
     token = request.cookies.get(SID_COOKIE)
     sid = _unsign_session_token(token) if token else None
+    
     if not sid:
-        return end_current_session()  # no bound session cookie → sign out
+        return end_current_session("account")  # no bound session cookie → sign out
     try:
         q = supabase.table("user_sessions").select("*").eq("id", sid).limit(1).execute()
         row = q.data[0] if q.data else None
@@ -354,12 +359,6 @@ def guard_free_plan_abuse():
     if request.endpoint in protected:
         if too_many_free_accounts_from_ip(ip_hash_from_request(request)):
             return ("Too many free accounts from your network. Please upgrade or contact support.", 429)
-
-
-@user_logged_in.connect_via(app)
-def on_user_logged_in(sender, user):
-    # This fires right after login_user(user)
-    record_login_event(user)
 
 # Jobs fetch
 def fetch_remotive_jobs(query: str):
@@ -921,7 +920,12 @@ def account():
                 return jsonify(success=True, redirect=url_for("check_email")), 200
 
             login_user(User(auth_id=auth_id, email=email, fullname=name))
-            return jsonify(success=True, redirect=url_for("dashboard")), 200
+            
+            # NEW lines:
+            record_login_event(current_user)
+            _, set_cookie = start_user_session(current_user)
+            resp = jsonify(success=True, redirect=url_for("dashboard"))
+            return set_cookie(resp), 200
 
         except AuthApiError as e:
             msg = str(e).lower()
@@ -959,7 +963,13 @@ def account():
                 fullname = None
 
             login_user(User(auth_id=auth_id, email=email, fullname=fullname))
-            return jsonify(success=True, redirect=url_for("dashboard")), 200
+
+            # NEW lines:
+            record_login_event(current_user)
+            _, set_cookie = start_user_session(current_user)
+            resp = jsonify(success=True, redirect=url_for("dashboard"))
+            return set_cookie(resp), 200
+
 
         except AuthApiError as e:
             msg = str(e).lower()
@@ -982,16 +992,8 @@ def account():
 # Logout / Dashboard
 # ----------------------------
 @app.route("/logout")
-@login_required
 def logout():
-    try:
-        try:
-            supabase.auth.sign_out()
-        except Exception:
-            pass
-        logout_user()
-    finally:
-        return redirect(url_for("account"))
+    return end_current_session(redirect_endpoint="account")
 
 @app.get("/admin")
 @require_superadmin
