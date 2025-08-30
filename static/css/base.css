@@ -244,17 +244,17 @@
 
 /* keep the icon the same size as the initials pill */
 .avatar-btn > img {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   display: inline-block;   /* avoids baseline gap */
-  flex: 0 0 32px;          /* don't let flexbox stretch it */
+  flex: 0 0 24px;          /* don't let flexbox stretch it */
   object-fit: contain;
 }
 
 .user-dropdown .avatar-icon,
 .user-dropdown .avatar-circle.sm {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
 }
 
 @media (max-width: 480px) {
