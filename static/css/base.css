@@ -242,6 +242,21 @@
 
 .ud-email{ padding:4px 0 8px; }
 
+/* keep the icon the same size as the initials pill */
+.avatar-btn > img {
+  width: 32px;
+  height: 32px;
+  display: inline-block;   /* avoids baseline gap */
+  flex: 0 0 32px;          /* don't let flexbox stretch it */
+  object-fit: contain;
+}
+
+.user-dropdown .avatar-icon,
+.user-dropdown .avatar-circle.sm {
+  width: 28px;
+  height: 28px;
+}
+
 @media (max-width: 480px) {
   .cc-banner { left: 12px; right: 12px; bottom: 12px; }
   .cc-panel { width: calc(100% - 24px); left: 12px; right: 12px; transform: none; }
