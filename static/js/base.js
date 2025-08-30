@@ -110,6 +110,7 @@ document.addEventListener('click', (e) => {
     userDropdown.classList.remove('show');
     userBtn?.setAttribute('aria-expanded', 'false');
   }
+
 });
 
 
