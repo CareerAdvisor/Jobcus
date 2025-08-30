@@ -21,7 +21,7 @@ from extensions import login_manager, init_supabase, init_openai
 from blueprints.resumes import resumes_bp  # <-- your blueprint with all resume endpoints
 import logging
 from typing import Optional  # if you're on Python <3.10
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from auth_utils import require_superadmin, is_staff, is_superadmin
 from limits import check_and_increment, current_plan_limits
 
@@ -398,6 +398,27 @@ def chat():
         free_model=allowed_models_for_plan("free")[0],
         model_default=allowed_models_for_plan(plan)[0],
     )
+
+@app.get("/api/state")
+@login_required
+def get_state():
+    auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
+    res = supabase.table("user_state").select("data").eq("auth_id", auth_id).limit(1).execute()
+    data = (res.data[0]["data"] if res.data else {}) if hasattr(res, "data") else {}
+    return jsonify(data=data or {})
+
+@app.post("/api/state")
+@login_required
+def set_state():
+    payload = request.get_json(force=True) or {}
+    data = payload.get("data", {})
+    auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
+    supabase.table("user_state").upsert({
+        "auth_id": auth_id,
+        "data": data,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }).execute()
+    return jsonify(ok=True)
 
 @app.get("/resume-analyzer")
 def page_resume_analyzer():
