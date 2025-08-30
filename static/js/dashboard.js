@@ -49,6 +49,21 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("dashboardVisited", "true");
   }
 
+  // After you build your analysis result:
+  const resultObject = {
+    score: finalScore,
+    metrics: metricsPayload,
+    analyzed_at: new Date().toISOString()
+  };
+  
+  // Persist locally and sync to server:
+  localStorage.setItem('resume_latest', JSON.stringify(resultObject));
+  if (window.syncState) window.syncState();
+  
+  // then continue with your existing UI updates...
+  renderScoreCard(resultObject);
+
+
   // ----- Core elements -----
   const scoreCard  = document.getElementById("resume-score-card");
   const ring       = document.querySelector(".ring__progress");
