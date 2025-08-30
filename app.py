@@ -11,7 +11,7 @@ from flask import (
 from flask_cors import CORS
 from flask_login import (
     login_user, logout_user, current_user,
-    login_required, UserMixin
+    login_required, user_logged_in, UserMixin
 )
 from gotrue.errors import AuthApiError
 from dotenv import load_dotenv
@@ -299,6 +299,11 @@ def guard_free_plan_abuse():
         ih = ip_hash_from_request(request)
         if too_many_free_accounts_from_ip(ih):
             return ("Too many free accounts from your network. Please upgrade or contact support.", 429)
+
+@user_logged_in.connect_via(app)
+def on_user_logged_in(sender, user):
+    # This fires right after login_user(user)
+    record_login_event(user)
 
 # Jobs fetch
 def fetch_remotive_jobs(query: str):
