@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// static/js/base.js  (top of file)
+// static
 window.syncState = async (data = {}) => {
   try {
     await fetch('/api/state', {
