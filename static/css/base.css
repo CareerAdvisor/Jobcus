@@ -257,6 +257,19 @@
   height: 24px;
 }
 
+/* Header avatar button */
+.avatar-btn{ display:flex; align-items:center; gap:8px; border:0; background:transparent;
+  cursor:pointer; padding:6px; border-radius:10px; }
+.avatar-btn:hover{ background:#f1f5f9; }
+
+/* Initials pill */
+.avatar-circle{ width:32px; height:32px; border-radius:50%;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-weight:800; color:#fff; background:#104879; font-size:.85rem; letter-spacing:.5px; }
+
+/* Fallback svg size (logged out) */
+.avatar-icon{ width:24px; height:24px; display:block; }
+
 @media (max-width: 480px) {
   .cc-banner { left: 12px; right: 12px; bottom: 12px; }
   .cc-panel { width: calc(100% - 24px); left: 12px; right: 12px; transform: none; }
