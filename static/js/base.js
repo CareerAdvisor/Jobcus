@@ -3,18 +3,27 @@
 // ───── 1) Initialize AOS ─────
 AOS.init();
 
-// ───── 2) User menu toggle ─────
-// User menu toggle
-function toggleUserMenu() {
-  document.getElementById('userDropdown')?.classList.toggle('show');
-  const btn = document.getElementById('userMenuBtn');
-  if (btn) btn.setAttribute('aria-expanded',
-    document.getElementById('userDropdown')?.classList.contains('show') ? 'true' : 'false'
-  );
-}
-document.getElementById('userMenuBtn')?.addEventListener('click', (e) => {
-  e.stopPropagation();
-  toggleUserMenu();
+// ───── 2) User menu (avatar button) ─────
+document.addEventListener('DOMContentLoaded', () => {
+  const btn  = document.getElementById('userMenuBtn');
+  const drop = document.getElementById('userDropdown');
+  if (!btn || !drop) return;
+
+  // click to open/close
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    drop.classList.toggle('show');
+    const open = drop.classList.contains('show');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  // keyboard support
+  btn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      btn.click();
+    }
+  });
 });
 
 // ───── 3) Mobile menu toggle ─────
