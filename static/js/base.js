@@ -26,6 +26,30 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// static/js/base.js  (top of file)
+window.syncState = async (data = {}) => {
+  try {
+    await fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  } catch (e) {
+    // Telemetry must never break the UI
+    console.warn('state sync failed', e);
+  }
+};
+
+// (optional) a tiny usage example
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof window.USER_AUTHENTICATED !== 'undefined') {
+    window.syncState({
+      path: location.pathname,
+      authed: !!window.USER_AUTHENTICATED,
+    });
+  }
+});
+
 // ───── 3) Mobile menu toggle ─────
 function toggleMobileMenu() {
   document.getElementById('mobileMenu')?.classList.toggle('show');
