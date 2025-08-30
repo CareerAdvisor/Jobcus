@@ -55,45 +55,51 @@
             <a href="/employers">Partner with Us</a>
           </nav>
 
-          {# ---- Header user / avatar button ---- #}
-          {% set _name = None %}
+          {# ===== Header user menu ===== #}
+          {% set _email = current_user.email if current_user.is_authenticated else None %}
+          {% set _plan  = (current_user.plan or 'free')|lower if current_user.is_authenticated else 'free' %}
+          
+          {% set _fname = None %}
+          {% set _lname = None %}
+          {% set _name  = None %}
           {% if current_user.is_authenticated %}
-            {% set _name = (
-                current_user.first_name
-                or (current_user.fullname.split(' ')[0] if current_user.fullname else None)
-                or (current_user.email.split('@')[0] if current_user.email else None)
-            ) %}
+            {% set _fname = current_user.first_name
+                or (current_user.fullname.split(' ')[0] if current_user.fullname else current_user.email.split('@')[0]) %}
+            {% set _lname = current_user.last_name
+                or (current_user.fullname.split(' ')[1] if current_user.fullname and ' ' in current_user.fullname else '') %}
+            {% set _name = _fname %}
           {% endif %}
           
           <div class="user-menu">
-          {# Avatar button (initials + name when logged in) #}
-          {% set _name = None %}
-          {% if current_user.is_authenticated %}
-            {% set _name = (current_user.first_name
-                            or (current_user.fullname.split(' ')[0] if current_user.fullname else None)
-                            or (current_user.email.split('@')[0])) %}
-          {% endif %}
-        
-          <button id="userMenuBtn" class="avatar-btn" type="button" aria-haspopup="true" aria-expanded="false">
-            {% if _name %}
-              <span class="avatar-circle">{{ (_name[:1] ~ ((current_user.last_name or '')[:1]))|upper }}</span>
-              <span class="avatar-name">{{ _name }}</span>
-            {% else %}
-              <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="Profile" class="user-icon">
-              <span class="avatar-name">Profile</span>
-            {% endif %}
-          </button>
-        
-          {# Dropdown stays as a separate element with the same id the JS uses #}
-          <div id="userDropdown" class="user-dropdown" role="menu">
-            {% if current_user.is_authenticated %}
-              <a href="/dashboard" role="menuitem">👤 {{ _name or 'Profile' }}</a>
-              <a href="/logout" role="menuitem">🚪 Log out</a>
-            {% else %}
-              <a href="/account" role="menuitem">🔑 Sign up / Log in</a>
-            {% endif %}
+            <button id="userMenuBtn"
+                    class="avatar-btn"
+                    aria-label="{{ _name or 'Profile' }}"
+                    aria-haspopup="menu"
+                    aria-expanded="false">
+              {% if _name %}
+                <span class="avatar-circle">{{ (_fname[:1] ~ _lname[:1])|upper }}</span>
+                <span class="avatar-name">{{ _name }}</span>
+              {% else %}
+                <img src="{{ url_for('static', filename='icons/user.svg') }}" alt="Profile" class="user-icon">
+                <span class="avatar-name">Profile</span>
+              {% endif %}
+            </button>
+          
+            <div id="userDropdown" class="user-dropdown" role="menu">
+              {% if current_user.is_authenticated %}
+                <div class="dropdown-label">{{ _name }}</div>
+                <div class="dropdown-email">{{ _email }}</div>
+                <hr class="dropdown-sep">
+                {% if _plan == 'free' %}
+                  <a class="dropdown-item" href="/pricing">⬆️ Upgrade plan</a>
+                {% endif %}
+                <a class="dropdown-item" href="/dashboard">👤 Profile</a>
+                <a class="dropdown-item" href="/logout">🚪 Log out</a>
+              {% else %}
+                <a class="dropdown-item" href="/account">🔑 Sign up / Log in</a>
+              {% endif %}
+            </div>
           </div>
-        </div>
 
           <!-- Hamburger (mobile) -->
           <div class="hamburger" onclick="toggleMobileMenu()">
