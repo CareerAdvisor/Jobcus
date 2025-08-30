@@ -92,6 +92,28 @@ function initModelControls() {
   return { getSelectedModel, setSelectedModel, isPaid, allowedModels };
 }
 
+// ---- Server call helper (handles limit + generic errors) ----
+async function sendMessage(payload) {
+  const res = await fetch('/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.status === 402 || res.status === 403 || res.status === 429) {
+    const body = await res.json().catch(() => ({}));
+    const msg = body.message || body.reply || 'Limit reached.';
+    // Throw a structured error so the submit handler can react
+    throw { kind: 'limit', message: msg };
+  }
+
+  if (!res.ok) {
+    throw { kind: 'server', message: 'Sorry, I ran into an issue. Please try again.' };
+  }
+
+  return res.json(); // expected { reply: "...", modelUsed: "..." }
+}
+
 // ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   // Init model UI/logic first
