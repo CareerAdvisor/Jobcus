@@ -1,5 +1,5 @@
 // ──────────────────────────────────────────────────────────────
-// Small utilities
+// Small utilities (kept from your original, with a couple helpers)
 // ──────────────────────────────────────────────────────────────
 function removeWelcome() {
   const banner = document.getElementById("welcomeBanner");
@@ -52,6 +52,25 @@ function maybeShowScrollIcon() {
     chatboxEl.scrollHeight > chatboxEl.clientHeight + 20 ? "block" : "none";
 }
 
+// Minimal helpers your old code referenced
+function showUpgradeBanner(msg) {
+  let b = document.getElementById("upgradeBanner");
+  if (!b) {
+    b = document.createElement("div");
+    b.id = "upgradeBanner";
+    b.style.cssText = "background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:10px 12px;border-radius:6px;margin:8px 0;font-size:14px;";
+    const box = document.querySelector(".chat-main") || document.body;
+    box.insertBefore(b, box.firstChild);
+  }
+  b.textContent = msg || "You’ve reached your plan limit.";
+}
+function disableComposer(disabled) {
+  const input = document.getElementById("userInput");
+  const sendBtn = document.getElementById("sendButton");
+  if (input)  input.disabled  = !!disabled;
+  if (sendBtn) sendBtn.style.opacity = disabled ? "0.5" : "";
+}
+
 // ──────────────────────────────────────────────────────────────
 // Model selection helpers (read from data-* on #chatShell)
 // ──────────────────────────────────────────────────────────────
@@ -88,12 +107,12 @@ function initModelControls() {
     modelSelect.addEventListener("change", () => setSelectedModel(modelSelect.value));
   }
 
-  // Expose to other modules in this file
   return { getSelectedModel, setSelectedModel, isPaid, allowedModels };
 }
 
-// ---- Server call helper (handles limit + generic errors) ----
-// ---- Server call helper (handles limit + generic errors) ----
+// ──────────────────────────────────────────────────────────────
+// Server call helper (handles limit + generic errors)
+// ──────────────────────────────────────────────────────────────
 async function sendMessage(payload) {
   const res = await fetch('/ask', {
     method: 'POST',
@@ -101,7 +120,6 @@ async function sendMessage(payload) {
     body: JSON.stringify(payload),
   });
 
-  // Try to parse JSON if provided
   let data = null;
   const ct = res.headers.get('content-type') || '';
   if (ct.includes('application/json')) {
@@ -120,8 +138,7 @@ async function sendMessage(payload) {
     throw { kind: 'server', message: (data?.message || data?.reply || `Request failed (${res.status})`) };
   }
 
-  // Return the parsed JSON (your caller expects { reply, modelUsed })
-  return data;
+  return data; // { reply, modelUsed }
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -129,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Init model UI/logic first
   const modelCtl = initModelControls();
 
-  // ───── Storage model
+  // ───── Storage model (same keys as your old code)
   const STORAGE = {
     current: "jobcus:chat:current",   // [{role:'user'|'assistant', content:'...'}]
     history: "jobcus:chat:history"    // [{id,title,created,messages:[...] }]
@@ -140,40 +157,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const form    = document.getElementById("chat-form");
   const input   = document.getElementById("userInput");
 
-  // Build a user entry matching your renderChat() markup
-  function makeUserEntry(text){
-    const div = document.createElement("div");
-    div.className = "chat-entry user";
-    div.innerHTML = `
-      <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 .5rem;color:#104879;">
-        ${escapeHtml(text)}
-      </h2>`;
-    return div;
-  }
-
-  // Build an assistant entry (same structure your renderer uses)
-  function makeAssistantEntry(content){
-    const div = document.createElement("div");
-    div.className = "chat-entry ai-answer";
-    const id = `ai-${Math.random().toString(36).slice(2)}`;
-    div.innerHTML = `
-      <div id="${id}" class="markdown"></div>
-      <div class="response-footer">
-        <span class="copy-wrapper">
-          <img src="/static/icons/copy.svg" class="copy-icon"
-               title="Copy" onclick="copyToClipboard('${id}')">
-          <span class="copy-text">Copy</span>
-        </span>
-      </div>
-      <hr class="response-separator" />`;
-    const target = div.querySelector(`#${id}`);
-    if (window.marked && typeof window.marked.parse === "function") {
-      target.innerHTML = window.marked.parse(content);
-    } else {
-      target.textContent = content;
-    }
-    return div;
-  }
+  // Escape util
+  const escapeHtml = (s='') => s
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
   // ───── Storage helpers
   const getCurrent = () => JSON.parse(localStorage.getItem(STORAGE.current) || "[]");
@@ -181,22 +168,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const getHistory = () => JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
   const setHistory = (arr) => localStorage.setItem(STORAGE.history, JSON.stringify(arr));
 
-  const escapeHtml = (s='') => s
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-
   function firstUserTitle(messages){
     const firstUser = messages.find(m => m.role === "user");
     const raw = (firstUser?.content || "Conversation").trim();
     return raw.length > 60 ? raw.slice(0,60) + "…" : raw;
   }
 
-  // ───── Welcome rendering (shown when no messages)
+  // ───── Welcome rendering
   function renderWelcome(){
-    const chatbox = document.getElementById("chatbox");
     const shell   = document.getElementById("chatShell");
     const fname   = (shell?.dataset.firstName || "there");
-  
     chatbox.innerHTML = `
       <div class="welcome" id="welcomeBanner">
         <p class="welcome-title">Welcome back, ${escapeHtml(fname)}. How can I help you today?</p>
@@ -317,7 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // ───── Credits panel updater
+  // ───── Credits panel updater (same UI you had, still local)
   function refreshCreditsPanel() {
     const planEl  = document.getElementById("credits-plan");
     const leftEl  = document.getElementById("credits-left");
@@ -380,17 +361,14 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshCreditsPanel();
   maybeShowScrollIcon();
 
-  // ───── Send flow
+  // ───── Send flow (fixed: everything is now INSIDE the submit handler)
   if (form && input && chatbox) {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const message = input.value.trim();
       if (!message) return;
-  
-      removeWelcome?.(); // keep your UI logic
-      // ⬇️ insert the payload + send, catch, finally here
-    });
-  }
+
+      removeWelcome?.();
 
       // 1) UI: show user message
       const userMsg = document.createElement("div");
@@ -415,35 +393,26 @@ document.addEventListener("DOMContentLoaded", () => {
       chatbox.appendChild(aiBlock);
       scrollToAI(aiBlock);
 
-      // 5) Count a message and sync
-      const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
-      localStorage.setItem("chatUsed", usedNow);
-      refreshCreditsPanel();                  // keep this to update the sidebar numbers
-      if (window.syncState) window.syncState();
-
-
-      // 6) Fetch AI (send chosen model if any)
+      // 5) Send to server
       let finalReply = "";
       let data = null;
-      try {
-        const payload = { message, model: currentModel };
+      const currentModel = modelCtl.getSelectedModel();
 
-        try {
-          // optional: disable composer while sending
-          disableComposer?.(true);
-        
-          const resp = await sendMessage(payload); // returns JSON { reply, modelUsed }
-          // TODO: append user message + resp.reply to chat UI, clear input, etc.
-        
-        } catch (err) {
-          // When the helper throws {kind:'limit'} it will already have shown the banner.
-          if (err?.kind === 'limit') return;
-          // Otherwise show a generic error
-          (window.showTransientError || alert)(err.message || 'Sorry, something went wrong.');
-        } finally {
-          disableComposer?.(false);
-          input.focus();
+      try {
+        disableComposer(true);
+        data = await sendMessage({ message, model: currentModel }); // { reply, modelUsed }
+        finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
+      } catch (err) {
+        if (err?.kind === 'limit') {
+          // Limit banners already shown by sendMessage()
+          aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || 'Limit reached.')}</p><hr class="response-separator" />`;
+          return;
         }
+        aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || 'Sorry, something went wrong.')}</p><hr class="response-separator" />`;
+        return;
+      } finally {
+        disableComposer(false);
+        input.focus();
       }
 
       const copyId = `ai-${Date.now()}`;
@@ -460,7 +429,7 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       const targetDiv = document.getElementById(copyId);
 
-      // 7) Typewriter effect → then render markdown and persist assistant message
+      // 6) Typewriter effect → then render markdown and persist assistant message
       let i = 0, buffer = "";
       (function typeWriter() {
         if (i < finalReply.length) {
@@ -477,10 +446,14 @@ document.addEventListener("DOMContentLoaded", () => {
           // Persist assistant message after finished
           saveMessage("assistant", finalReply);
 
-          // Optional: job suggestions if API flags it
-          if (data && data.suggestJobs) {
-            fetchJobs(message, aiBlock);
-          }
+          // Increment credits after a successful reply
+          const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
+          localStorage.setItem("chatUsed", usedNow);
+          refreshCreditsPanel();
+          if (window.syncState) window.syncState();
+
+          // Optional: job suggestions if you want to trigger them
+          // fetchJobs(message, aiBlock);
 
           scrollToAI(aiBlock);
           maybeShowScrollIcon();
@@ -500,7 +473,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ──────────────────────────────────────────────────────────────
-// Optional job suggestions (unchanged)
+// Optional job suggestions (kept from your original)
 // ──────────────────────────────────────────────────────────────
 async function fetchJobs(query, aiBlock) {
   try {
