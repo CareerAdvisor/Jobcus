@@ -3,6 +3,17 @@
 // ───── 1) Initialize AOS ─────
 AOS.init();
 
+// ───── 1.1) Global upgrade banner helper ─────
+window.showUpgradeBanner = function (text) {
+  const el = document.getElementById('upgrade-banner');
+  if (el) {
+    el.textContent = text || 'You’ve reached your plan limit. Upgrade to continue.';
+    el.hidden = false;
+  } else {
+    alert(text || 'You’ve reached your plan limit. Upgrade to continue.');
+  }
+};
+
 // ───── 2) User menu (avatar button) ─────
 document.addEventListener('DOMContentLoaded', () => {
   const btn  = document.getElementById('userMenuBtn');
@@ -14,18 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.stopPropagation();
     drop.classList.toggle('show');
     const open = drop.classList.contains('show');
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-
-  // keyboard support
-  btn.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      btn.click();
-    }
-  });
-});
-
+ 
 // static
 window.syncState = async (data = {}) => {
   try {
