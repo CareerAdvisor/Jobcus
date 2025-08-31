@@ -1,12 +1,16 @@
-from flask import request, jsonify, current_app, make_response, send_file, render_template
+import base64, re, json, logging, os, docx
+from io import BytesIO
+
+from flask import Blueprint, request, jsonify, current_app, make_response, send_file, render_template
 from flask_login import login_required, current_user
+
 from limits import feature_enabled, check_and_increment
+
+import docx
 from weasyprint import HTML, CSS
 from docxtpl import DocxTemplate
-from io import BytesIO
 from PyPDF2 import PdfReader
 from openai import RateLimitError
-import base64, re, json, logging, os, docx
 
 resumes_bp = Blueprint("resumes", __name__)
 
