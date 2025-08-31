@@ -548,19 +548,24 @@ def chat():
         model_default=allowed_models_for_plan(plan)[0],
     )
 
+# keep this single definition only
 @app.route("/api/state", methods=["GET", "POST"])
 @login_required
 def api_state():
-    # robustly get the auth id
-    auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
+    auth_id = str(getattr(current_user, "id", None) or getattr(current_user, "auth_id", None))
     if not auth_id:
-        return jsonify({"error": "no auth id"}), 400
+        # Telemetry should never block the UI; don't 4xx here
+        return jsonify({"data": {}}), 200
 
     if request.method == "GET":
         try:
-            resp = supabase.table("user_state").select("data").eq("auth_id", auth_id).limit(1).execute()
-            row = resp.data[0] if getattr(resp, "data", None) else None
-            return jsonify({"data": (row["data"] if row else {})})
+            # use admin client so RLS can't block legitimate reads
+            resp = supabase_admin.table("user_state") \
+                .select("data") \
+                .eq("auth_id", auth_id) \
+                .limit(1).execute()
+            row = (resp.data or [None])[0]
+            return jsonify({"data": (row.get("data") if row else {})}), 200
         except Exception:
             current_app.logger.exception("state fetch failed")
             return jsonify({"data": {}}), 200
@@ -568,18 +573,22 @@ def api_state():
     # POST
     payload = request.get_json(silent=True) or {}
     data = payload.get("data", {})
+
     try:
-        upsert = {
-            "auth_id": auth_id,
-            "data": data,
-            "updated_at": datetime.now(timezone.utc).isoformat()  # okay to omit if column not present
-        }
-        # requires a unique constraint on user_state.auth_id
-        supabase.table("user_state").upsert(upsert, on_conflict="auth_id").execute()
-        return jsonify({"ok": True})
+        supabase_admin.table("user_state").upsert(
+            {
+                "auth_id": auth_id,
+                "data": data,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+            on_conflict="auth_id",
+        ).execute()
+        # Telemetry: return no content on success
+        return ("", 204)
     except Exception:
+        # Swallow errors so this never trips a 500 in the browser console
         current_app.logger.exception("state upsert failed")
-        return jsonify({"ok": False}), 500
+        return ("", 204)
 
 @app.get("/resume-analyzer")
 def page_resume_analyzer():
@@ -1033,21 +1042,6 @@ def verify_token():
     except Exception as e:
         print("verify_token error:", e)
         return jsonify(ok=False, error="Token verification failed"), 400
-
-@app.post("/api/state")
-def api_state():
-    payload = request.get_json(force=True, silent=True) or {}
-    upsert = {
-        "auth_id": g.auth_id or payload.get("auth_id"),  # however you determine auth_id
-        "state": payload.get("state"),
-        "updated_at": datetime.utcnow().isoformat()
-    }
-    try:
-        supabase_admin.table("user_state").upsert(upsert, on_conflict="auth_id").execute()
-    except Exception as e:
-        app.logger.warning("state upsert failed (non-fatal): %s", e)
-        # DO NOT propagate an error for telemetry – it should never break the UI
-    return ("", 204)
 
 @app.route("/ask", methods=["POST"])
 @login_required
