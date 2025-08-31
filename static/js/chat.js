@@ -426,23 +426,23 @@ document.addEventListener("DOMContentLoaded", () => {
       let finalReply = "";
       let data = null;
       try {
-        const payload = { message, model: modelCtl.getSelectedModel() };
-        data = await sendMessage(payload); // <— use the helper
-        finalReply = data.reply || data.message || "";
-      
-        // reflect server's model if provided
-        if (data.modelUsed) modelCtl.setSelectedModel(data.modelUsed);
-      
-      } catch (err) {
-        if (err && err.kind === 'limit') {
-          // Quota reached
-          finalReply = err.message;
-          showUpgradeBanner(err.message);
-          disableComposer(true);
-        } else {
-          // Generic server/network issue
-          finalReply = "Sorry, I ran into an issue. Please try again.";
-          showTransientError(finalReply);
+        const payload = { message, model: currentModel };
+
+        try {
+          // optional: disable composer while sending
+          disableComposer?.(true);
+        
+          const resp = await sendMessage(payload); // returns JSON { reply, modelUsed }
+          // TODO: append user message + resp.reply to chat UI, clear input, etc.
+        
+        } catch (err) {
+          // When the helper throws {kind:'limit'} it will already have shown the banner.
+          if (err?.kind === 'limit') return;
+          // Otherwise show a generic error
+          (window.showTransientError || alert)(err.message || 'Sorry, something went wrong.');
+        } finally {
+          disableComposer?.(false);
+          input.focus();
         }
       }
 
