@@ -1,12 +1,12 @@
-from limits import check_and_increment, feature_enabled
-from flask import Blueprint, render_template, request, make_response, send_file, jsonify, current_app
+from flask import request, jsonify, current_app, make_response, send_file, render_template
+from flask_login import login_required, current_user
+from limits import feature_enabled, check_and_increment
 from weasyprint import HTML, CSS
 from docxtpl import DocxTemplate
 from io import BytesIO
 from PyPDF2 import PdfReader
 from openai import RateLimitError
 import base64, re, json, logging, os, docx
-from flask_login import login_required, current_user
 
 resumes_bp = Blueprint("resumes", __name__)
 
@@ -679,22 +679,11 @@ def _penalties(resume_text: str, roles: list, hard_fail: bool):
 
 # ---------- 1) Template-based resume (HTML/PDF) ----------
 @resumes_bp.post("/build-resume")
+@login_required
 def build_resume():
     data  = request.get_json(force=True) or {}
     theme = (data.get("theme") or "modern").lower()
     fmt   = (data.get("format") or "html").lower()
-
-    template_path = f"resumes/{'minimal' if theme == 'minimal' else 'modern'}.html"
-    html = render_template(template_path, for_pdf=(fmt == "pdf"), **tpl_ctx)
-
-    if fmt == "pdf":
-        # ✳️ PLAN GATE: File downloads (Standard & Premium)
-        plan = (getattr(current_user, "plan", "free") or "free").lower()
-        if not feature_enabled(plan, "downloads"):
-            return jsonify(
-                error="upgrade_required",
-                message="File downloads are available on Standard and Premium."
-            ), 403
 
     ctx = _normalize_ctx(data)
 
@@ -709,17 +698,24 @@ def build_resume():
         "education":      ctx.get("education", []),
         "certifications": ctx.get("certifications", []),
     }
-          
+
+    template_path = f"resumes/{'minimal' if theme == 'minimal' else 'modern'}.html"
+    html = render_template(template_path, for_pdf=(fmt == "pdf"), **tpl_ctx)
+
+    if fmt == "pdf":
+        plan = (getattr(current_user, "plan", "free") or "free").lower()
+        if not feature_enabled(plan, "downloads"):
+            return jsonify(
+                error="upgrade_required",
+                message="File downloads are available on Standard and Premium."
+            ), 403
+
         stylesheets = [CSS(string=PDF_CSS_OVERRIDES)]
         pdf_css_path = os.path.join(current_app.root_path, "static", "pdf.css")
         if os.path.exists(pdf_css_path):
             stylesheets.append(CSS(filename=pdf_css_path))
 
-        pdf_bytes = HTML(
-            string=html,
-            base_url=current_app.root_path
-        ).write_pdf(stylesheets=stylesheets)
-
+        pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf(stylesheets=stylesheets)
         resp = make_response(pdf_bytes)
         resp.headers["Content-Type"] = "application/pdf"
         resp.headers["Content-Disposition"] = "inline; filename=resume.pdf"
@@ -731,16 +727,15 @@ def build_resume():
 
 # ---------- 2) Template-based resume (DOCX) ----------
 @resumes_bp.post("/build-resume-docx")
+@login_required
 def build_resume_docx():
-
-    # ✳️ PLAN GATE: File downloads (Standard & Premium)
     plan = (getattr(current_user, "plan", "free") or "free").lower()
     if not feature_enabled(plan, "downloads"):
         return jsonify(
             error="upgrade_required",
             message="File downloads are available on Standard and Premium."
         ), 403
-      
+
     data = request.get_json(force=True) or {}
     ctx  = _normalize_ctx(data)
 
@@ -759,14 +754,14 @@ def build_resume_docx():
     })
 
     buf = BytesIO()
-    tpl.save(buf); buf.seek(0)
+    tpl.save(buf)
+    buf.seek(0)
     return send_file(buf, as_attachment=True, download_name="resume.docx")
 
 # ---------- 4) AI resume optimisation ----------
 @resumes_bp.route("/api/optimize-resume", methods=["POST"])
+@login_required
 def optimize_resume():
-   
-    # ✳️ PLAN GATE: Optimize with AI (Standard & Premium)
     plan = (getattr(current_user, "plan", "free") or "free").lower()
     if not feature_enabled(plan, "optimize_ai"):
         return jsonify(
@@ -778,7 +773,6 @@ def optimize_resume():
     data = request.get_json(force=True)
     resume_text = ""
 
-    # NEW: support docx alongside pdf/text
     if data.get("pdf"):
         try:
             pdf_bytes = base64.b64decode(data["pdf"])
@@ -789,8 +783,7 @@ def optimize_resume():
         except Exception:
             logging.exception("PDF Decode Error")
             return jsonify(error="Unable to extract PDF text (corrupt or scanned). Upload a text-based PDF or DOCX."), 400
-
-    elif data.get("docx"):  # <— NEW
+    elif data.get("docx"):
         try:
             docx_bytes = base64.b64decode(data["docx"])
             d = docx.Document(BytesIO(docx_bytes))
@@ -800,7 +793,6 @@ def optimize_resume():
         except Exception:
             logging.exception("DOCX Decode Error")
             return jsonify(error="Unable to read DOCX. Re-save as .docx and try again."), 400
-
     elif data.get("text"):
         resume_text = (data.get("text") or "").strip()
         if not resume_text:
@@ -816,7 +808,7 @@ def optimize_resume():
     try:
         resp = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role":"user","content":prompt}],
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.3
         )
         optimized = (resp.choices[0].message.content or "").strip()
