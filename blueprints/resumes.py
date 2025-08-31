@@ -1,16 +1,22 @@
-import base64, re, json, logging, os, docx
+import base64, re, json, logging, os
 from io import BytesIO
 
 from flask import Blueprint, request, jsonify, current_app, make_response, send_file, render_template
 from flask_login import login_required, current_user
 
-from limits import feature_enabled, check_and_increment, quota_for
+from limits import feature_enabled, check_and_increment
 
 import docx
 from weasyprint import HTML, CSS
 from docxtpl import DocxTemplate
 from PyPDF2 import PdfReader
-from openai import RateLimitError
+
+# OpenAI SDKs changed a bit across versions; this keeps RateLimitError optional.
+try:
+    from openai import RateLimitError  # v0.x and v1.x expose this
+except Exception:  # pragma: no cover
+    class RateLimitError(Exception):  # fallback so except still works
+        pass
 
 resumes_bp = Blueprint("resumes", __name__)
 
@@ -113,7 +119,7 @@ def _normalize_ctx(data: dict) -> dict:
     return ctx
 
 # === ATS model: weights and deterministic checks ===
-import math, datetime, collections, statistics, itertools, re
+import math, datetime, collections, statistics, itertools
 
 # We’ll use this to approximate pages for text resumes (PDF page count is not reliable post-OCR)
 WORDS_PER_PAGE = 600
@@ -180,15 +186,14 @@ TITLE_HINTS  = {"project manager","delivery manager","scrum master","program man
 DOMAIN_HINTS = {"healthcare","fintech","ecommerce","telecom","banking","government","cloud","security","cybersecurity"}
 
 def _is_acronym(w: str) -> bool:
-    return len(w) >= 2 and len(w) <= 6 and w.isupper()
+    return 2 <= len(w) <= 6 and w.isupper()
 
-# NEW: sanitize keyword lists before sending to the UI
+# Sanitize keyword lists before returning to UI
 def _clean_kw_list(lst):
     out = []
-    for t in lst:
+    for t in lst or []:
         t = t.strip().lower()
         parts = re.findall(r"[a-z0-9+\-/#]+", t)
-        # trim leading/trailing stopwords
         while parts and parts[0] in STOPWORDS_KW: parts.pop(0)
         while parts and parts[-1] in STOPWORDS_KW: parts.pop()
         if not parts:
@@ -416,70 +421,6 @@ def _sections_structure_score(text: str):
         "roles_parsed": len(roles)
     }
 
-# ---------------------- Improved JD term extraction ----------------------
-
-    if not jd:
-        return {"skills": [], "titles": [], "certs": [], "all": [], "acronyms": {}}
-
-    words = re.findall(r"[A-Za-z][A-Za-z+\-/#0-9]*", jd)
-    toks  = [w.lower() for w in words]
-
-    # Clean tokens first (remove stopwords/noise; keep acronyms)
-    clean_toks = []
-    for i, t in enumerate(toks):
-        raw = words[i]
-        if (len(t) < 3 and not _is_acronym(raw)):     # keep real acronyms only
-            continue
-        if t in STOPWORDS_KW or t in NOISE_VERBS or t in NOISE_NOUNS:
-            continue
-        clean_toks.append(t)
-
-    # n-grams from CLEAN tokens → eliminates “in agile”, “on time …”
-    bigrams  = [" ".join([clean_toks[i], clean_toks[i+1]]) for i in range(len(clean_toks)-1)]
-    trigrams = [" ".join([clean_toks[i], clean_toks[i+1], clean_toks[i+2]]) for i in range(len(clean_toks)-2)]
-
-    def looks_useful_phrase(p: str) -> bool:
-        tokens = p.split()
-        # must not begin/end with stopwords
-        if tokens[0] in STOPWORDS_KW or tokens[-1] in STOPWORDS_KW:
-            return False
-        if any(h in p for h in (SKILL_HINTS | TITLE_HINTS | DOMAIN_HINTS)):
-            return True
-        if any(c in p for c in CERT_HINTS):
-            return True
-        if any(t in p for t in TITLE_HINTS):
-            return True
-        return False
-
-    phrases = [p for p in (bigrams + trigrams) if looks_useful_phrase(p)]
-
-    acronyms = {
-        "aws": "amazon web services",
-        "ad": "active directory",
-        "sql": "structured query language",
-        "k8s": "kubernetes",
-        "mdm": "mobile device management",
-        "sso": "single sign on",
-        "u at": "user acceptance testing",
-        "sd lc": "software development life cycle",
-    }
-
-    expanded = set(clean_toks) | set(phrases)
-    for a, full in acronyms.items():
-        if a in expanded:    expanded.add(full)
-        if full in expanded: expanded.add(a)
-
-    certs  = sorted({w for w in expanded if any(c in w for c in CERT_HINTS)})
-    titles = sorted({w for w in expanded if any(t in w for t in TITLE_HINTS)})
-    skills = sorted({
-        w for w in expanded
-        if w not in set(certs) | set(titles)
-        and (any(h in w for h in SKILL_HINTS | DOMAIN_HINTS) or _is_acronym(w.replace(" ", "").upper()))
-    })
-
-    all_terms = sorted(set(skills) | set(titles) | set(certs), key=lambda x: (-len(x), x))
-    return {"skills": skills, "titles": titles, "certs": certs, "all": all_terms, "acronyms": acronyms}
-
 # ---------------------- JD keyword scoring (0–100) ----------------------
 def _keyword_match_to_jd(resume_text: str, jd_terms: dict, roles: list):
     """
@@ -499,7 +440,7 @@ def _keyword_match_to_jd(resume_text: str, jd_terms: dict, roles: list):
         if not terms: return 0.0, [], terms
         hits = []
         for t in terms:
-            if (len(t) < 3 and not _is_acronym(t.upper())): 
+            if (len(t) < 3 and not _is_acronym(t.upper())):
                 continue
             if t in STOPWORDS_KW or t in NOISE_VERBS or t in NOISE_NOUNS:
                 continue
@@ -586,7 +527,7 @@ def _education_and_certs(resume_text: str, jd_terms: dict):
     score = 0
     if re.search(r"\b(bsc|msc|b\.?sc|m\.?sc|bachelor|master|degree)\b", resume_text, re.I):
         score += 3
-    certs_found = [c for c in jd_terms["certs"] if c in resume_text.lower()]
+    certs_found = [c for c in jd_terms.get("certs", []) if c in resume_text.lower()]
     if certs_found: score += 3
     return {"score": score, "certs_found": certs_found}
 
@@ -661,7 +602,6 @@ def _penalties(resume_text: str, roles: list, hard_fail: bool):
     if toks:
         counts = collections.Counter(toks)
         common_actions = {"managed","led","delivered","supported","coordinated"}
-        # exclude common action verbs from stuffing check
         for a in common_actions: counts.pop(a, None)
         if counts:
             top, n = counts.most_common(1)[0]
@@ -1061,14 +1001,13 @@ def ai_suggest():
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 @login_required
 def build_cover_letter():
-    allowed, info = check_and_increment(
-        current_user.id,
-        "cover_letters",
-        current_plan_limits(),
-    )
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "cover_letters")
+    # Quota enforcement (fixed: removed invalid/undefined variables)
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    supabase_admin = current_app.config["SUPABASE_ADMIN"]
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "cover_letter")
     if not allowed:
         return jsonify(info), 402
+
     try:
         data = request.get_json(force=True) or {}
     except Exception:
@@ -1120,6 +1059,7 @@ def resume_analysis():
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
     plan = (getattr(current_user, "plan", "free") or "free").lower()
 
+    # Quota key aligned with existing server usage
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "resume_analyses")
     if not allowed:
         info["message"] = info.get("message") or "You’ve reached your resume analyses limit. Upgrade to continue."
@@ -1165,34 +1105,33 @@ def resume_analysis():
     pf_score, hard_fail = _parse_and_format_score(resume_text, file_kind, raw_bytes)  # /10
     sec_struct   = _sections_structure_score(resume_text)                              # /15
     roles        = _extract_roles_with_dates(resume_text)
-  
+
     # Build JD terms with fallbacks: JD > role > summary/skills
     jd_source = (job_desc or "").strip()
     if not jd_source and job_role:
-      jd_source = job_role
-
+        jd_source = job_role
     if not jd_source:
-      secs = _split_sections(resume_text)
-      summary_blob = " ".join(secs.get("summary", []))
-      skills_blob  = " ".join(secs.get("skills", []))
-      jd_source = f"{summary_blob}\n{skills_blob}".strip()
+        secs = _split_sections(resume_text)
+        summary_blob = " ".join(secs.get("summary", []))
+        skills_blob  = " ".join(secs.get("skills", []))
+        jd_source = f"{summary_blob}\n{skills_blob}".strip()
 
     jd_terms = _build_jd_terms(jd_source) if jd_source else {"all": [], "skills": [], "titles": [], "certs": [], "acronyms": {}}
 
-    kw_match     = _keyword_match_to_jd(resume_text, jd_terms, roles)                  # points 0–35
+    kw_match     = _keyword_match_to_jd(resume_text, jd_terms, roles)   # points 0–35
     kw_points    = kw_match["score"]
 
-     # NEW: clean the keyword lists before returning
+    # Clean the keyword lists before returning
     matched = _clean_kw_list(kw_match.get("matched", []))
     missing = _clean_kw_list(kw_match.get("missing", []))
-  
-    exp_rel      = _experience_relevance(job_desc, roles, resume_text)                 # /15
-    quant        = _quant_stats(resume_text)                                           # achievements
+
+    exp_rel      = _experience_relevance(job_desc, roles, resume_text)  # /15
+    quant        = _quant_stats(resume_text)                             # achievements
     ach_score    = (5 if quant["pct_with_numbers"] >= 50 else int(5 * quant["pct_with_numbers"]/50)) \
                    + (3 if quant["pct_action_starts"] >= 70 else int(3 * quant["pct_action_starts"]/70))  # /8
-    edu_certs    = _education_and_certs(resume_text, jd_terms)                         # /6
-    elig_loc     = _eligibility_location(resume_text)                                  # /3
-    read_brief   = _readability_brevity(resume_text, level)                            # /8
+    edu_certs    = _education_and_certs(resume_text, jd_terms)           # /6
+    elig_loc     = _eligibility_location(resume_text)                    # /3
+    read_brief   = _readability_brevity(resume_text, level)              # /8
 
     # ---- Penalties ----
     depth_pts, depth_reasons = _content_depth_penalty(resume_text, level)
@@ -1208,7 +1147,7 @@ def resume_analysis():
     score = 0
     score += pf_score                              # 10
     score += min(15, sec_struct["score"])          # 15
-    score += kw_points                              # 35
+    score += kw_points                             # 35
     score += min(15, exp_rel["score"])             # 15
     score += min(8,  ach_score)                    # 8
     score += min(6,  edu_certs["score"])           # 6
@@ -1283,8 +1222,9 @@ Resume:
         "keywords":   kw_match["score"],                # 0–100 already
         "sections":   int(round((sec_struct["score"]/15)*100)),
         "readability": int(round((read_brief["score"]/8)*100)),
-        "length":     int(round((read_brief.get("length_component", 0)/3)*100)) if isinstance(read_brief.get("length_component"), int)
-                  else int(round((min(3, read_brief["score"])/3)*100)),
+        "length":     int(round((read_brief.get("length_component", 0)/3)*100))
+                      if isinstance(read_brief.get("length_component"), int)
+                      else int(round((min(3, read_brief["score"])/3)*100)),
         "parseable":  (not hard_fail),
     }
 
@@ -1299,8 +1239,8 @@ Resume:
     ]
     avg_visible = int(round(sum(visible) / len(visible)))
     all_hundred = all(v >= 100 for v in visible)
-    headline = score if all_hundred else min(score, avg_visible)   # or use min(visible) if you want stricter
-    
+    headline = score if all_hundred else min(score, avg_visible)
+
     # ----- Diagnostics (build BEFORE using) -----
     diagnostics = {
         "achievements": quant,
@@ -1313,22 +1253,20 @@ Resume:
         "roles_parsed": roles[:4],
         "length_pages_est": read_brief["length_pages"]
     }
-    
+
     # ----- Single, final response payload -----
     out = {
-        "score": int(headline),                                    # ← don't use undefined final_score
+        "score": int(headline),
         "analysis": {
             "issues": llm.get("analysis", {}).get("issues", []),
             "strengths": llm.get("analysis", {}).get("strengths", [])
         },
         "suggestions": llm.get("suggestions", []),
         "breakdown": breakdown,
-        # in the final response payload
         "keywords": {
             "matched": matched,
             "missing": missing,
         },
-     # ← cleaned lists
         "sections": {
             "present": [k for k, v in sec_struct["std"].items() if v],
             "missing": [k for k, v in sec_struct["std"].items() if not v]
@@ -1341,7 +1279,7 @@ Resume:
         "relevance": llm.get("relevance", {}),
         "diagnostics": diagnostics
     }
-    
+
     # Concrete fixes (append to issues)
     fixes = []
     if not sec_struct["std"]["experience"]:
@@ -1350,7 +1288,7 @@ Resume:
         fixes.append("Ensure roles are in reverse-chronological order (most recent first) with Month YYYY dates.")
     if breakdown.get("length", 100) < 70:
         fixes.append("Expand to 1–2 pages with impact bullets (8–20 words each).")
-    
+
     out["analysis"]["issues"] = (out["analysis"]["issues"] or []) + fixes
-    
+
     return jsonify(out), 200
