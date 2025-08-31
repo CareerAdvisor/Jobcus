@@ -65,7 +65,7 @@ if missing:
     raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
 
 supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-
+app.config["SUPABASE_ADMIN"] = supabase_admin   # <-- add this line
 
 # --- Flask-Login init ---
 login_manager.init_app(app)
@@ -372,10 +372,9 @@ def guard_free_plan_abuse():
         return
     if (getattr(current_user, "plan", "free") or "free").lower() != "free":
         return
-    protected = {"ask", "api_resume_analysis"}  # endpoints that burn credits
+    protected = {"ask", "resume_analysis", "api_resume_analysis"}  # include your endpoint name(s)
     if request.endpoint in protected:
         if too_many_free_accounts_from_ip(ip_hash_from_request(request)):
-            # Return JSON the frontend can understand
             return jsonify({
                 "error": "too_many_free_accounts",
                 "message": "Too many free accounts from your network. Please upgrade or contact support."
