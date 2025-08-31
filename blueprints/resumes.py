@@ -1117,15 +1117,14 @@ def build_cover_letter():
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
 @login_required
 def resume_analysis():
-    # ✅ define plan and get admin client from app config
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-    # ✅ single, correct quota check
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "resume_analyses")
     if not allowed:
         info["message"] = info.get("message") or "You’ve reached your resume analyses limit. Upgrade to continue."
         return jsonify(info), 402
+
     """
     ATS scoring model (100 pts) + penalties, aligned to industry best practice.
     Preserves your existing response shape for the dashboard.
