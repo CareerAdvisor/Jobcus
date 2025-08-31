@@ -12,29 +12,46 @@ class Quota:
     limit: Optional[int]  # None = unlimited
 
 
+# Backward-compatible feature aliases: old -> new
+_FEATURE_ALIASES = {
+    "resume_analyses": "resume_analyzer",
+    "cover_letters": "cover_letter",
+    # Add any future migrations here.
+}
+
+def _normalize_feature(feature: str) -> str:
+    """Map legacy feature keys to the canonical ones used by the app."""
+    if not feature:
+        return feature
+    f = feature.strip().lower()
+    return _FEATURE_ALIASES.get(f, f)
+
+
 PLAN_QUOTAS = {
     "free": {
         "chat_messages":   Quota("total", 15),
-        "resume_analyses": Quota("month", 3),
-        "cover_letters":   Quota("month", 2),
+        "resume_analyzer": Quota("month", 3),
+        "cover_letter":    Quota("month", 2),
         "skill_gap":       Quota("month", 1),
+        # (optional) if you later decide to meter interview_coach or resume_builder,
+        # add them here; otherwise they'll default to unlimited for the period.
     },
     "weekly": {
         "chat_messages":   Quota("week", 200),
-        "resume_analyses": Quota("week", 10),
-        "cover_letters":   Quota("week", 5),
+        "resume_analyzer": Quota("week", 10),
+        "cover_letter":    Quota("week", 5),
         "skill_gap":       Quota("week", None),
     },
     "standard": {
         "chat_messages":   Quota("month", 800),
-        "resume_analyses": Quota("month", 50),
-        "cover_letters":   Quota("month", 20),
+        "resume_analyzer": Quota("month", 50),
+        "cover_letter":    Quota("month", 20),
         "skill_gap":       Quota("month", None),
     },
     "premium": {
         "chat_messages":   Quota("year", 12000),
-        "resume_analyses": Quota("month", None),
-        "cover_letters":   Quota("month", None),
+        "resume_analyzer": Quota("month", None),
+        "cover_letter":    Quota("month", None),
         "skill_gap":       Quota("month", None),
     },
 }
@@ -149,9 +166,11 @@ def increment_usage(
 def quota_for(plan: str, feature: str) -> Quota:
     """
     Return the Quota for a given plan & feature. Defaults to a month/None quota if unknown.
+    Accepts legacy keys via _FEATURE_ALIASES for backward compatibility.
     """
     p = _plan_code(plan)
-    return PLAN_QUOTAS.get(p, PLAN_QUOTAS["free"]).get(feature, Quota("month", None))
+    f = _normalize_feature(feature)
+    return PLAN_QUOTAS.get(p, PLAN_QUOTAS["free"]).get(f, Quota("month", None))
 
 
 def check_and_increment(
@@ -161,7 +180,8 @@ def check_and_increment(
     Returns (allowed: bool, payload: dict).
     If allowed=True, this function has already incremented the counter atomically for the current period.
     """
-    q = quota_for(plan, feature)
+    f = _normalize_feature(feature)
+    q = quota_for(plan, f)
     kind = q.period_kind
     key = period_key(kind)
 
@@ -169,23 +189,24 @@ def check_and_increment(
     if q.limit is None:
         return True, {"limit": None}
 
-    used = get_usage_count(supabase_admin, user_id, feature, kind, key)
+    used = get_usage_count(supabase_admin, user_id, f, kind, key)
     if used >= q.limit:
         return False, {
             "error": "quota_exceeded",
-            "feature": feature,
+            "feature": f,
             "limit": q.limit,
             "period_kind": kind,
             "period_key": key,
             "message": "You’ve reached your plan limit for this feature.",
         }
 
-    increment_usage(supabase_admin, user_id, feature, kind, key, used + 1)
+    increment_usage(supabase_admin, user_id, f, kind, key, used + 1)
     return True, {
         "used": used + 1,
         "limit": q.limit,
         "period_kind": kind,
         "period_key": key,
+        "feature": f,
     }
 
 
