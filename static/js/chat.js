@@ -100,6 +100,16 @@ async function sendMessage(payload) {
     body: JSON.stringify(payload),
   });
 
+  function showUpgradeBanner(text){ alert(text); }
+  function disableComposer(disabled){
+    const i = document.getElementById('userInput');   // your IDs
+    const b = document.getElementById('sendButton');
+    if (i) i.disabled = !!disabled;
+    if (b) b.disabled = !!disabled;
+  }
+  function showTransientError(text){ console.warn(text); }
+
+
   if (res.status === 402 || res.status === 403 || res.status === 429) {
     const body = await res.json().catch(() => ({}));
     const msg = body.message || body.reply || 'Limit reached.';
@@ -416,24 +426,23 @@ document.addEventListener("DOMContentLoaded", () => {
       let data = null;
       try {
         const payload = { message, model: modelCtl.getSelectedModel() };
-        const res = await fetch("/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        data = await res.json();
-        finalReply = data.reply || "";
-        // reflect server's actual model if it responds with one
-        if (data.modelUsed) {
-          modelCtl.setSelectedModel(data.modelUsed);
-        }
-        if (!res.ok && res.status === 403) {
-          // plan limit reached
-          finalReply = data.reply || "You've hit your plan's chat limit. See the Pricing page to upgrade.";
-        }
+        data = await sendMessage(payload); // <— use the helper
+        finalReply = data.reply || data.message || "";
+      
+        // reflect server's model if provided
+        if (data.modelUsed) modelCtl.setSelectedModel(data.modelUsed);
+      
       } catch (err) {
-        console.error("AI error:", err);
-        finalReply = "Sorry, I ran into an issue. Please try again.";
+        if (err && err.kind === 'limit') {
+          // Quota reached
+          finalReply = err.message;
+          showUpgradeBanner(err.message);
+          disableComposer(true);
+        } else {
+          // Generic server/network issue
+          finalReply = "Sorry, I ran into an issue. Please try again.";
+          showTransientError(finalReply);
+        }
       }
 
       const copyId = `ai-${Date.now()}`;
