@@ -1,10 +1,8 @@
-from datetime import datetime, date
-from flask import current_app
-from flask_login import current_user
-from auth_utils import require_superadmin, is_staff, is_superadmin
 from __future__ import annotations
 from dataclasses import dataclass
+from datetime import datetime, date
 from typing import Optional
+from auth_utils import require_superadmin, is_staff, is_superadmin
 
 # ---------- Plan config ----------
 
@@ -24,7 +22,7 @@ PLAN_QUOTAS = {
         "chat_messages":   Quota("week", 200),
         "resume_analyses": Quota("week", 10),
         "cover_letters":   Quota("week", 5),
-        "skill_gap":       Quota("week", None),  # effectively unlimited
+        "skill_gap":       Quota("week", None),
     },
     "standard": {
         "chat_messages":   Quota("month", 800),
@@ -42,34 +40,10 @@ PLAN_QUOTAS = {
 
 # Feature gates (booleans / levels)
 FEATURE_FLAGS = {
-    "free": {
-        "rebuild_with_ai": False,
-        "optimize_ai":     False,
-        "downloads":       False,   # PDF/DOCX/TXT
-        "cloud_history":   False,   # /api/state enabled?
-        "job_insights":    "basic", # 'basic' vs 'full'
-    },
-    "weekly": {
-        "rebuild_with_ai": True,
-        "optimize_ai":     False,
-        "downloads":       False,
-        "cloud_history":   False,
-        "job_insights":    "full",
-    },
-    "standard": {
-        "rebuild_with_ai": True,
-        "optimize_ai":     True,
-        "downloads":       True,
-        "cloud_history":   True,
-        "job_insights":    "full",
-    },
-    "premium": {
-        "rebuild_with_ai": True,
-        "optimize_ai":     True,
-        "downloads":       True,
-        "cloud_history":   True,
-        "job_insights":    "full",
-    },
+    "free":    {"rebuild_with_ai": False, "optimize_ai": False, "downloads": False, "cloud_history": False, "job_insights": "basic"},
+    "weekly":  {"rebuild_with_ai": True,  "optimize_ai": False, "downloads": False, "cloud_history": False, "job_insights": "full"},
+    "standard":{"rebuild_with_ai": True,  "optimize_ai": True,  "downloads": True,  "cloud_history": True,  "job_insights": "full"},
+    "premium": {"rebuild_with_ai": True,  "optimize_ai": True,  "downloads": True,  "cloud_history": True,  "job_insights": "full"},
 }
 
 def _plan_code(plan: str | None) -> str:
@@ -77,18 +51,17 @@ def _plan_code(plan: str | None) -> str:
 
 # ---------- Period helpers ----------
 
-def period_key(kind: str, d: Optional[date] = None) -> str:
+def period_key(kind: str, d: date | None = None) -> str:
     d = d or date.today()
     if kind == "total":
         return "all"
     if kind == "week":
-        iso = d.isocalendar()  # (year, week, weekday)
+        iso = d.isocalendar()
         return f"{iso.year}-W{iso.week:02d}"
     if kind == "month":
         return d.strftime("%Y-%m")
     if kind == "year":
         return d.strftime("%Y")
-    # fallback
     return "all"
 
 # ---------- Counters ----------
@@ -119,12 +92,11 @@ def increment_usage(supabase_admin, user_id: str, feature: str, kind: str, key: 
 
 def quota_for(plan: str, feature: str) -> Quota:
     p = _plan_code(plan)
-    # fall back to free if unknown
     return PLAN_QUOTAS.get(p, PLAN_QUOTAS["free"]).get(feature, Quota("month", None))
 
-def check_and_increment(supabase_admin, user_id: str, plan: str, feature: str):
+def check_and_increment(supabase_admin, user_id: str, plan: str, feature: str) -> tuple[bool, dict]:
     """
-    Returns (allowed: bool, payload: dict). If allowed=True, it ALREADY increments.
+    Returns (allowed: bool, payload: dict). If allowed=True, it already increments.
     """
     q = quota_for(plan, feature)
     kind = q.period_kind
