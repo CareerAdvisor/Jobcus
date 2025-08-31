@@ -6,7 +6,7 @@ from PyPDF2 import PdfReader
 from openai import RateLimitError
 import base64, re, json, logging, os, docx
 from flask_login import login_required, current_user
-from limits import check_and_increment, current_plan_limits
+from limits import check_and_increment, feature_enabled, current_plan_limits
 
 resumes_bp = Blueprint("resumes", __name__)
 
@@ -702,6 +702,14 @@ def build_resume():
     html = render_template(template_path, for_pdf=(fmt == "pdf"), **tpl_ctx)
 
     if fmt == "pdf":
+        # ✳️ PLAN GATE: File downloads (Standard & Premium)
+        plan = (getattr(current_user, "plan", "free") or "free").lower()
+        if not feature_enabled(plan, "downloads"):
+            return jsonify(
+                error="upgrade_required",
+                message="File downloads are available on Standard and Premium."
+            ), 403
+          
         stylesheets = [CSS(string=PDF_CSS_OVERRIDES)]
         pdf_css_path = os.path.join(current_app.root_path, "static", "pdf.css")
         if os.path.exists(pdf_css_path):
@@ -724,6 +732,15 @@ def build_resume():
 # ---------- 2) Template-based resume (DOCX) ----------
 @resumes_bp.post("/build-resume-docx")
 def build_resume_docx():
+
+    # ✳️ PLAN GATE: File downloads (Standard & Premium)
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    if not feature_enabled(plan, "downloads"):
+        return jsonify(
+            error="upgrade_required",
+            message="File downloads are available on Standard and Premium."
+        ), 403
+      
     data = request.get_json(force=True) or {}
     ctx  = _normalize_ctx(data)
 
@@ -748,9 +765,18 @@ def build_resume_docx():
 # ---------- 4) AI resume optimisation ----------
 @resumes_bp.route("/api/optimize-resume", methods=["POST"])
 def optimize_resume():
+   
     client = current_app.config["OPENAI_CLIENT"]
     data = request.get_json(force=True)
     resume_text = ""
+
+    # ✳️ PLAN GATE: Optimize with AI (Standard & Premium)
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    if not feature_enabled(plan, "optimize_ai"):
+        return jsonify(
+            error="upgrade_required",
+            message="Optimize with AI is available on Standard and Premium."
+        ), 403
 
     # NEW: support docx alongside pdf/text
     if data.get("pdf"):
