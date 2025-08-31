@@ -967,7 +967,6 @@ def ai_suggest():
                 "Results-driven professional with experience delivering measurable impact across X, Y, and Z. "
                 "Recognized for A, B, and C; partners cross-functionally to ship results."
             ))
-    ...
         return jsonify(normalize(items=[
             "Increased X by Y% by doing Z",
             "Reduced A by B% through C initiative",
