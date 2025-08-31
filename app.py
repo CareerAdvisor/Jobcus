@@ -568,7 +568,7 @@ def api_state():
     if not auth_id:
         return jsonify({"error":"no auth id"}), 400
 
-    # Free/Weekly: pretend-success (don’t write), never 500
+    # Plans without cloud sync: pretend-success, never 500
     if not feature_enabled(plan, "cloud_history"):
         if request.method == "GET":
             return jsonify({"data": {}}), 200
@@ -576,9 +576,10 @@ def api_state():
 
     if request.method == "GET":
         try:
-            r = supabase_admin.table("user_state").select("data").eq("auth_id", auth_id).limit(1).execute()
+            r = supabase_admin.table("user_state") \
+                .select("data").eq("auth_id", auth_id).limit(1).execute()
             row = r.data[0] if r.data else None
-            return jsonify({"data": row["data"] if row else {}}), 200
+            return jsonify({"data": (row["data"] if row else {})}), 200
         except Exception as e:
             current_app.logger.warning("state fetch failed: %s", e)
             return jsonify({"data": {}}), 200
@@ -591,11 +592,11 @@ def api_state():
             {"auth_id": auth_id, "data": data, "updated_at": datetime.utcnow().isoformat()},
             on_conflict="auth_id"
         ).execute()
-        return ("", 204)
     except Exception as e:
         current_app.logger.warning("state upsert failed (non-fatal): %s", e)
-        return ("", 204)
-
+        # do not break the UI
+    return ("", 204)
+    
 @app.get("/resume-analyzer")
 def page_resume_analyzer():
     return render_template("resume-analyzer.html")
