@@ -29,11 +29,11 @@
 
 {% block content %}
 <main id="chatShell"
-      class="chat-shell"
       data-is-paid="{{ 1 if is_paid else 0 }}"
       data-default-model="{{ model_default }}"
       data-free-model="{{ free_model }}"
-      data-allowed-models="{{ model_options|join(',') }}">
+      data-allowed-models="{{ ','.join(model_options) }}"
+      data-first-name="{{ (current_user.fullname.split(' ')[0] if current_user.fullname else current_user.email.split('@')[0]) }}">
 
   <!-- LEFT: fixed sidebar -->
   <aside id="chatSidebar" class="chat-sidebar" aria-label="Chat menu">
