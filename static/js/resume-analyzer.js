@@ -16,7 +16,6 @@ async function initRoleDatalist() {
   if (!input || !dl) return;
 
   try {
-    // cache for the session to avoid repeated network calls
     const cached = sessionStorage.getItem("jobcus:roles");
     let roles;
     if (cached) {
@@ -75,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("analysisCount", String(n));
   }
   function showInlineBanner(container, msg, kind="warn"){
-    if (!container) return alert(msg);
+    if (!container) { alert(msg); return; }
     let b = container.querySelector(".inline-banner");
     if (!b) {
       b = document.createElement("div");
@@ -88,6 +87,10 @@ document.addEventListener("DOMContentLoaded", () => {
     b.style.border     = kind === "error" ? "1px solid #f5c2c7" : "1px solid #ffeeba";
     b.textContent = msg;
   }
+  // mirror the chat page UX text when limits hit
+  function showUpgradeBanner(msg, container){
+    showInlineBanner(container || document.querySelector(".upload-card"), msg || "You have reached the limit for the free version, upgrade to enjoy more features");
+  }
   function isDocx(file){
     return file && (
       file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
@@ -96,6 +99,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   function isPdf(file){
     return file && (file.type === "application/pdf" || /\.pdf$/i.test(file.name || ""));
+  }
+  async function parseJsonSafe(res, text){
+    try { return JSON.parse(text); } catch { return null; }
   }
 
   // =========================================================
@@ -157,27 +163,34 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const text = await res.text();
+        let data   = await parseJsonSafe(res, text);
 
+        // --- Auth/plan/guard handling ---
         if (res.status === 401 || res.status === 403) {
           showInlineBanner(card, "Please sign in to analyze resumes.", "error");
           setTimeout(()=>{ window.location.href = "/account?mode=login"; }, 800);
           return;
         }
         if (res.status === 402) {
-          let data;
-          try { data = JSON.parse(text); } catch { data = null; }
           showInlineBanner(card, (data?.message || "You’ve reached your resume analysis limit. Upgrade to continue."), "warn");
           return;
         }
-        if (!res.ok) {
-          console.error("Resume analysis failed:", text);
-          showInlineBanner(card, "Resume analysis failed. Please try again.", "error");
+        if (res.status === 429 && (data?.error === "too_many_free_accounts" || data?.error === "quota_exceeded")) {
+          // New behavior parity with chat
+          showUpgradeBanner("You have reached the limit for the free version, upgrade to enjoy more features", card);
           return;
         }
-
-        let data;
-        try { data = JSON.parse(text); }
-        catch { console.error("Invalid JSON from /api/resume-analysis:", text); showInlineBanner(card, "Unexpected server response.", "error"); return; }
+        if (!res.ok) {
+          const msg = (data?.error || data?.message) || "Resume analysis failed. Please try again.";
+          console.error("Resume analysis failed:", text);
+          showInlineBanner(card, msg, "error");
+          return;
+        }
+        if (!data) {
+          console.error("Invalid JSON from /api/resume-analysis:", text);
+          showInlineBanner(card, "Unexpected server response.", "error");
+          return;
+        }
 
         // persist for dashboard + optimize
         localStorage.setItem("resumeAnalysis", JSON.stringify(data));
@@ -217,12 +230,13 @@ document.addEventListener("DOMContentLoaded", () => {
         carriedText = resumeText.value.trim();
         payload = { text: carriedText };
       } else if (file) {
-        if (!isPdf(file) && !isDocx(file)) return alert("Unsupported type. Upload PDF or DOCX.");
+        if (!isPdf(file) && !isDocx(file)) { alert("Unsupported type. Upload PDF or DOCX."); return; }
         const b64 = await fileToBase64(file);
         localStorage.setItem("resumeBase64", b64);
         payload = isPdf(file) ? { pdf: b64 } : { docx: b64 };
       } else {
-        return alert("Paste text or upload a file.");
+        alert("Paste text or upload a file.");
+        return;
       }
 
       analyzingIndicator && (analyzingIndicator.style.display = "block");
@@ -236,6 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const text = await res.text();
+        let data   = await parseJsonSafe(res, text);
 
         if (res.status === 401 || res.status === 403) {
           alert("Please sign in to analyze resumes.");
@@ -243,14 +258,20 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
         if (res.status === 402) {
-          let data;
-          try { data = JSON.parse(text); } catch { data = null; }
-          alert(data?.message || "You’ve reached your resume analysis limit. Upgrade to continue.");
+          alert((data?.message || "You’ve reached your resume analysis limit. Upgrade to continue."));
           return;
         }
-        if (!res.ok) { console.error("Resume analysis failed:", text); alert("Analysis failed. Try again."); return; }
-
-        let data; try { data = JSON.parse(text); } catch { console.error(text); alert("Unexpected server response."); return; }
+        if (res.status === 429 && (data?.error === "too_many_free_accounts" || data?.error === "quota_exceeded")) {
+          alert("You have reached the limit for the free version, upgrade to enjoy more features");
+          return;
+        }
+        if (!res.ok) {
+          const msg = (data?.error || data?.message) || "Analysis failed. Try again.";
+          console.error("Resume analysis failed:", text);
+          alert(msg);
+          return;
+        }
+        if (!data) { console.error(text); alert("Unexpected server response."); return; }
 
         // basic summary on-page
         const score = typeof data.score === "number" ? data.score : "—";
