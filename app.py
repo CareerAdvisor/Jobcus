@@ -19,7 +19,6 @@ from dotenv import load_dotenv
 # Local modules
 from extensions import login_manager, init_supabase, init_openai
 from blueprints.resumes import resumes_bp  # <-- your blueprint with all resume endpoints
-import logging
 from typing import Optional  # if you're on Python <3.10
 from datetime import datetime, timedelta, timezone, date
 from auth_utils import require_superadmin, is_staff, is_superadmin
@@ -252,12 +251,11 @@ def log_login_event():
     try:
         supabase.table("login_events").insert({
             "auth_id": getattr(current_user, "id", None) or getattr(current_user, "auth_id", None),
-            "ip_hash": ip_hash(client_ip()),
+            "ip_hash": ip_hash_from_request(request),
             "user_agent": request.headers.get("User-Agent", "")[:512],
         }).execute()
     except Exception:
-        current_app
-
+        current_app.logger.exception("state: login event insert failed")
 
 # --- Config/secrets ---
 SID_COOKIE = "sid"
@@ -1157,9 +1155,19 @@ def cover_letter():
 @login_required
 def skill_gap_api():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
+
+    # If you have a quota for skill_gap, keep this line; otherwise gate by feature_enabled().
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
     if not allowed:
         return jsonify(info), 402
+
+    try:
+        data = request.get_json(force=True) or {}
+        goal = (data.get("goal") or "").strip()
+        skills = (data.get("skills") or "").strip()
+
+        if not goal or not skills:
+            return jsonify({"error": "Missing required input"}), 400
 
         messages = [
             {"role": "system", "content":
@@ -1184,7 +1192,7 @@ def skill_gap_api():
         reply = response.choices[0].message.content
         return jsonify({"result": reply})
 
-    except Exception as e:
+    except Exception:
         logging.exception("Skill Gap Error")
         return jsonify({"error": "Server error"}), 500
 
