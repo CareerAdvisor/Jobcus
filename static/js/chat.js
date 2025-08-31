@@ -1,3 +1,16 @@
+// /static/js/chat.js
+
+// ──────────────────────────────────────────────────────────────
+// Ensure cookies (SameSite/Lax) are sent on all fetches
+// ──────────────────────────────────────────────────────────────
+(function(){
+  const _fetch = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    if (!("credentials" in init)) init.credentials = "same-origin";
+    return _fetch(input, init);
+  };
+})();
+
 // ──────────────────────────────────────────────────────────────
 // Small utilities (kept from your original, with a couple helpers)
 // ──────────────────────────────────────────────────────────────
@@ -72,8 +85,6 @@ function disableComposer(disabled) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Model selection helpers (read from data-* on #chatShell)
-// ──────────────────────────────────────────────────────────────
 function initModelControls() {
   const shell = document.getElementById("chatShell");
   const modelSelect = document.getElementById("modelSelect");
@@ -124,17 +135,21 @@ async function sendMessage(payload) {
   const ct = res.headers.get('content-type') || '';
   if (ct.includes('application/json')) {
     data = await res.json().catch(() => null);
+  } else {
+    try { data = JSON.parse(await res.text()); } catch { /* ignore */ }
   }
 
+  // New unified “free limit reached” handling:
+  // - 402 with quota_exceeded (legacy)
+  // - 429 with too_many_free_accounts (device/network guard)
+  // - 429 with quota_exceeded (some routes now use 429)
   if (!res.ok) {
-    if (res.status === 402 && data?.error === 'quota_exceeded') {
-      showUpgradeBanner(data.message || 'You’ve reached your chat limit. Upgrade to continue.');
-      throw { kind: 'limit', message: data?.message || 'Limit reached.' };
+    if ((res.status === 402 && data?.error === 'quota_exceeded') ||
+        (res.status === 429 && (data?.error === 'too_many_free_accounts' || data?.error === 'quota_exceeded'))) {
+      showUpgradeBanner('You have reached the limit for the free version, upgrade to enjoy more features');
+      throw { kind: 'limit', message: data?.message || 'Free limit reached' };
     }
-    if (res.status === 429 && data?.error === 'too_many_free_accounts') {
-      showUpgradeBanner(data.message || 'Too many free accounts from your network.');
-      throw { kind: 'limit', message: data?.message || 'Network abuse guard.' };
-    }
+    // Other errors
     throw { kind: 'server', message: (data?.message || data?.reply || `Request failed (${res.status})`) };
   }
 
@@ -146,23 +161,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // Init model UI/logic first
   const modelCtl = initModelControls();
 
-  // ───── Storage model (same keys as your old code)
+  // Storage keys
   const STORAGE = {
     current: "jobcus:chat:current",   // [{role:'user'|'assistant', content:'...'}]
     history: "jobcus:chat:history"    // [{id,title,created,messages:[...] }]
   };
 
-  // ───── DOM refs
+  // DOM refs
   const chatbox = document.getElementById("chatbox");
   const form    = document.getElementById("chat-form");
   const input   = document.getElementById("userInput");
 
-  // Escape util
   const escapeHtml = (s='') => s
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
-  // ───── Storage helpers
   const getCurrent = () => JSON.parse(localStorage.getItem(STORAGE.current) || "[]");
   const setCurrent = (arr) => localStorage.setItem(STORAGE.current, JSON.stringify(arr));
   const getHistory = () => JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
@@ -174,7 +187,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return raw.length > 60 ? raw.slice(0,60) + "…" : raw;
   }
 
-  // ───── Welcome rendering
   function renderWelcome(){
     const shell   = document.getElementById("chatShell");
     const fname   = (shell?.dataset.firstName || "there");
@@ -189,7 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>`;
   }
 
-  // ───── Message rendering (main stream)
   function renderChat(messages){
     chatbox.innerHTML = "";
     if (!messages.length){
@@ -229,7 +240,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ───── History UI (sidebar list)
   function renderHistory(){
     const list = document.getElementById("chatHistory");
     if (!list) return;
@@ -242,14 +252,12 @@ document.addEventListener("DOMContentLoaded", () => {
         <span class="history-item-title" title="${escapeHtml(h.title)}">${escapeHtml(h.title)}</span>
         <button class="delete" aria-label="Delete">✕</button>
       `;
-      // open conversation
       li.addEventListener("click", (e) => {
         if (e.target.closest(".delete")) return;
         setCurrent(h.messages || []);
         renderChat(getCurrent());
         try { closeChatMenu?.(); } catch {}
       });
-      // delete conversation
       li.querySelector(".delete").addEventListener("click", (e) => {
         e.stopPropagation();
         setHistory(getHistory().filter(x => x.id !== h.id));
@@ -259,14 +267,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ───── Save one message
   window.saveMessage = function(role, content){
     const msgs = getCurrent();
     msgs.push({ role, content });
     setCurrent(msgs);
   };
 
-  // ───── Clear conversation (archive → history, then reset current)
   let clearInProgress = false;
   window.clearChat = function(){
     if (clearInProgress) return;
@@ -275,11 +281,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const current = getCurrent();
       if (current.length){
         const hist = getHistory();
-
-        // prevent duplicate pushes
         const sig = JSON.stringify(current);
         const lastSig = hist.length ? JSON.stringify(hist[0].messages || []) : null;
-
         if (sig !== lastSig){
           hist.unshift({
             id: Date.now().toString(36),
@@ -298,14 +301,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // ───── Credits panel updater (same UI you had, still local)
   function refreshCreditsPanel() {
     const planEl  = document.getElementById("credits-plan");
     const leftEl  = document.getElementById("credits-left");
     const resetEl = document.getElementById("credits-reset");
     if (!planEl && !leftEl && !resetEl) return;
 
-    const serverPlan = planEl?.dataset.plan; // from Jinja
+    const serverPlan = planEl?.dataset.plan;
     const PLAN = (serverPlan || localStorage.getItem("userPlan") || "free");
     if (serverPlan) localStorage.setItem("userPlan", serverPlan);
 
@@ -324,7 +326,6 @@ document.addEventListener("DOMContentLoaded", () => {
     resetEl && (resetEl.textContent = q.reset);
   }
 
-  // ───── Left drawer (sidebar) toggle
   const chatMenuToggle = document.getElementById("chatMenuToggle");
   const chatMenu       = document.getElementById("chatSidebar");
   const chatOverlay    = document.getElementById("chatOverlay");
@@ -351,17 +352,14 @@ document.addEventListener("DOMContentLoaded", () => {
   chatCloseBtn?.addEventListener("click", closeChatMenu);
   document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeChatMenu(); });
 
-  // Wire sidebar buttons
   document.getElementById("newChatBtn")?.addEventListener("click", () => { clearChat(); closeChatMenu(); });
   document.getElementById("clearChatBtn")?.addEventListener("click", () => { clearChat(); closeChatMenu(); });
 
-  // ───── Initial render on page load
-  renderChat(getCurrent());   // if empty -> welcome
+  renderChat(getCurrent());
   renderHistory();
   refreshCreditsPanel();
   maybeShowScrollIcon();
 
-  // ───── Send flow (fixed: everything is now INSIDE the submit handler)
   if (form && input && chatbox) {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -370,7 +368,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       removeWelcome?.();
 
-      // 1) UI: show user message
       const userMsg = document.createElement("div");
       userMsg.className = "chat-entry user";
       userMsg.innerHTML = `
@@ -380,20 +377,16 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       chatbox.appendChild(userMsg);
 
-      // 2) Persist user message
       saveMessage("user", message);
 
-      // 3) Clear input & keep sizing tidy
       input.value = "";
       autoResize(input);
 
-      // 4) Placeholder for AI reply
       const aiBlock = document.createElement("div");
       aiBlock.className = "chat-entry ai-answer";
       chatbox.appendChild(aiBlock);
       scrollToAI(aiBlock);
 
-      // 5) Send to server
       let finalReply = "";
       let data = null;
       const currentModel = modelCtl.getSelectedModel();
@@ -404,8 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
         finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
       } catch (err) {
         if (err?.kind === 'limit') {
-          // Limit banners already shown by sendMessage()
-          aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || 'Limit reached.')}</p><hr class="response-separator" />`;
+          aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || 'Free limit reached.')}</p><hr class="response-separator" />`;
           return;
         }
         aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || 'Sorry, something went wrong.')}</p><hr class="response-separator" />`;
@@ -429,7 +421,6 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       const targetDiv = document.getElementById(copyId);
 
-      // 6) Typewriter effect → then render markdown and persist assistant message
       let i = 0, buffer = "";
       (function typeWriter() {
         if (i < finalReply.length) {
@@ -443,17 +434,12 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             targetDiv.textContent = buffer;
           }
-          // Persist assistant message after finished
           saveMessage("assistant", finalReply);
 
-          // Increment credits after a successful reply
           const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
           localStorage.setItem("chatUsed", usedNow);
           refreshCreditsPanel();
           if (window.syncState) window.syncState();
-
-          // Optional: job suggestions if you want to trigger them
-          // fetchJobs(message, aiBlock);
 
           scrollToAI(aiBlock);
           maybeShowScrollIcon();
@@ -461,13 +447,12 @@ document.addEventListener("DOMContentLoaded", () => {
       })();
     });
 
-    // paper-plane icon
     const sendBtn = document.getElementById("sendButton");
     sendBtn?.addEventListener("click", () => form.dispatchEvent(new Event("submit")));
 
-    // Auto-scroll on new nodes
     new MutationObserver(() => {
-      chatbox.scrollTop = chatbox.scrollHeight;
+      const box = document.getElementById("chatbox");
+      if (box) box.scrollTop = box.scrollHeight;
     }).observe(chatbox, { childList: true, subtree: true });
   }
 });
