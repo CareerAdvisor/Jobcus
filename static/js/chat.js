@@ -93,6 +93,7 @@ function initModelControls() {
 }
 
 // ---- Server call helper (handles limit + generic errors) ----
+// ---- Server call helper (handles limit + generic errors) ----
 async function sendMessage(payload) {
   const res = await fetch('/ask', {
     method: 'POST',
@@ -100,28 +101,27 @@ async function sendMessage(payload) {
     body: JSON.stringify(payload),
   });
 
-  function showUpgradeBanner(text){ alert(text); }
-  function disableComposer(disabled){
-    const i = document.getElementById('userInput');   // your IDs
-    const b = document.getElementById('sendButton');
-    if (i) i.disabled = !!disabled;
-    if (b) b.disabled = !!disabled;
-  }
-  function showTransientError(text){ console.warn(text); }
-
-
-  if (res.status === 402 || res.status === 403 || res.status === 429) {
-    const body = await res.json().catch(() => ({}));
-    const msg = body.message || body.reply || 'Limit reached.';
-    // Throw a structured error so the submit handler can react
-    throw { kind: 'limit', message: msg };
+  // Try to parse JSON if provided
+  let data = null;
+  const ct = res.headers.get('content-type') || '';
+  if (ct.includes('application/json')) {
+    data = await res.json().catch(() => null);
   }
 
   if (!res.ok) {
-    throw { kind: 'server', message: 'Sorry, I ran into an issue. Please try again.' };
+    if (res.status === 402 && data?.error === 'quota_exceeded') {
+      showUpgradeBanner(data.message || 'You’ve reached your chat limit. Upgrade to continue.');
+      throw { kind: 'limit', message: data?.message || 'Limit reached.' };
+    }
+    if (res.status === 429 && data?.error === 'too_many_free_accounts') {
+      showUpgradeBanner(data.message || 'Too many free accounts from your network.');
+      throw { kind: 'limit', message: data?.message || 'Network abuse guard.' };
+    }
+    throw { kind: 'server', message: (data?.message || data?.reply || `Request failed (${res.status})`) };
   }
 
-  return res.json(); // expected { reply: "...", modelUsed: "..." }
+  // Return the parsed JSON (your caller expects { reply, modelUsed })
+  return data;
 }
 
 // ──────────────────────────────────────────────────────────────
