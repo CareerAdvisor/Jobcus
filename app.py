@@ -1051,9 +1051,20 @@ def verify_token():
 @login_required
 def ask():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
+    supabase_admin = current_app.config["SUPABASE_ADMIN"]
+
+    # Optional: your own abuse guard
+    if too_many_free_accounts(request):  # if you have such a function
+        return jsonify({
+            "error": "too_many_free_accounts",
+            "message": "Too many free accounts from your network."
+        }), 429
+
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages")
     if not allowed:
+        info["message"] = info.get("message") or "You’ve reached your chat limit. Upgrade to continue."
         return jsonify(info), 402
+
     body = request.get_json(force=True) or {}
     user_msg = body.get("message", "")
     model = choose_model(body.get("model"))
