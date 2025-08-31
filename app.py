@@ -6,7 +6,7 @@ import re, json, base64, logging, requests
 
 from flask import (
     Flask, request, jsonify, render_template, redirect,
-    session, flash, url_for, current_app, make_response, render_template_string
+    session, flash, url_for, current_app, make_response, g
 )
 from flask_cors import CORS
 from flask_login import (
@@ -32,6 +32,9 @@ from limits import (
 )
 from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
+
+# NEW: device/user-scoped guard (replaces router-IP guard)
+from abuse_guard import allow_free_use
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -67,10 +70,6 @@ if missing:
 
 supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 app.config["SUPABASE_ADMIN"] = supabase_admin
-
-# --- Config toggles ---
-# Disable the old router-IP guard by default.
-ENABLE_IP_ABUSE_GUARD = (os.getenv("ENABLE_IP_ABUSE_GUARD", "false").lower() == "true")
 
 # --- Flask-Login init ---
 login_manager.init_app(app)
@@ -315,9 +314,15 @@ def start_user_session(user):
     session_id = ins.data[0]["id"] if ins.data else None
     token = _sign_session_id(session_id)
 
+    # Expose session id on g for this request (abuse_guard can read if needed)
+    g.session_id = session_id
+
     def _set_cookie(resp):
         resp.set_cookie(SID_COOKIE, token, max_age=SID_TTL_SECONDS,
                         httponly=True, samesite="Lax", secure=True, path="/")
+        # NEW: set a durable, non-HTTPOnly device cookie used by abuse_guard
+        resp.set_cookie("jobcus_device", dev, max_age=SID_TTL_SECONDS,
+                        httponly=False, samesite="Lax", secure=True, path="/")
         return resp
     return session_id, _set_cookie
 
@@ -331,6 +336,7 @@ def end_current_session(redirect_endpoint="account"):
             current_app.logger.exception("failed to end session")
     resp = make_response(redirect(url_for(redirect_endpoint)))
     resp.set_cookie(SID_COOKIE, "", expires=0, path="/")
+    resp.set_cookie("jobcus_device", "", expires=0, path="/")
     logout_user()
     return resp
 
@@ -359,7 +365,7 @@ def enforce_single_active_session():
         current_app.logger.exception("session check failed")
         return end_current_session()
 
-# --- IP abuse heuristic (LEGACY; disabled by default) ---
+# --- IP abuse heuristic (legacy; UNUSED now) ---
 def too_many_free_accounts_from_ip(ip_hash, window_days=7, threshold=3):
     if not ip_hash: return False
     try:
@@ -371,35 +377,22 @@ def too_many_free_accounts_from_ip(ip_hash, window_days=7, threshold=3):
         current_app.logger.exception("RPC count_distinct_auth_for_ip_window failed")
         return False
 
+# NEW: Narrowed/free-plan guard based on device/user (not router IP)
 @app.before_request
-def guard_free_plan_abuse():
-    """
-    Previously blocked by router IP. Now:
-      - Disabled by default (ENABLE_IP_ABUSE_GUARD=false).
-      - If enabled, DO NOT use router IP; rely on per-user/session controls already in place.
-      - Any limit response uses the unified upgrade message and 402.
-    """
+def free_plan_device_guard():
     if not current_user.is_authenticated:
         return
-    if (getattr(current_user, "plan", "free") or "free").lower() != "free":
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    if plan != "free":
         return
-    if not ENABLE_IP_ABUSE_GUARD:
-        return  # disabled by default
-
-    # If you decide to keep a guard, scope it to user/session counts — not router IP.
-    # Example (gentle): block if somehow >1 active session slipped through for free user.
-    try:
-        q = supabase.table("user_sessions").select("id").eq("auth_id", current_user.id).eq("is_active", True).execute()
-        active = len(q.data or [])
-        if active > 1:
-            return jsonify({
-                "error": "quota_exceeded",
-                "message": "You have reached the limit for the free version, upgrade to enjoy more features"
-            }), 402
-    except Exception:
-        # Never break the page on guard issues
-        current_app.logger.warning("guard_free_plan_abuse check failed; allowing request")
-        return
+    # endpoints to guard gently (same names you had)
+    protected = {"ask", "resume_analysis", "api_resume_analysis"}
+    if request.endpoint in protected:
+        ok, payload = allow_free_use(current_user.id, plan)
+        if not ok:
+            # Keep error code for frontend (matches your new chat UI handler)
+            msg = payload.get("message") or "Free usage limit reached for this device."
+            return jsonify({"error": "too_many_free_accounts", "message": msg}), 429
 
 # Jobs fetch (add short timeouts to avoid worker hangs)
 DEFAULT_HTTP_TIMEOUT = (5, 15)  # connect, read
@@ -609,7 +602,7 @@ def api_state():
     data = payload.get("data", {})
     try:
         supabase_admin.table("user_state").upsert(
-            {"auth_id": auth_id, "data": data, "updated_at": datetime.utcnow().isoformat() },
+            {"auth_id": auth_id, "data": data, "updated_at": datetime.utcnow().isoformat()},
             on_conflict="auth_id"
         ).execute()
     except Exception as e:
@@ -619,16 +612,7 @@ def api_state():
 
 @app.get("/resume-analyzer")
 def page_resume_analyzer():
-    # Hardened: never 500 this page; log and show a minimal fallback if template breaks.
-    try:
-        return render_template("resume-analyzer.html")
-    except Exception:
-        current_app.logger.exception("resume-analyzer template error")
-        return render_template_string(
-            "<!doctype html><title>Resume Analyzer</title>"
-            "<h1>Resume Analyzer</h1>"
-            "<p>We’re loading the analyzer. If this persists, please refresh or try again later.</p>"
-        ), 200
+    return render_template("resume-analyzer.html")
 
 @app.get("/resume-builder")
 def page_resume_builder():
@@ -1072,30 +1056,26 @@ def verify_token():
         print("verify_token error:", e)
         return jsonify(ok=False, error="Token verification failed"), 400
 
-UPGRADE_MSG = "You have reached the limit for the free version, upgrade to enjoy more features"
-
-def _is_superadmin():
-    try:
-        return bool(getattr(current_user, "is_superadmin", False)) or getattr(current_user, "role", "") == "superadmin"
-    except Exception:
-        return False
-
 @app.route("/ask", methods=["POST"])
 @login_required
 def ask():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
 
-    # SUPERADMIN bypass
-    bypass_limits = _is_superadmin()
+    # NEW: device/user-scoped free-use guard (no router IP checks)
+    ok, payload = allow_free_use(current_user.id, plan)
+    if not ok:
+        return jsonify({
+            "error": "too_many_free_accounts",
+            "message": payload.get("message") or "Free usage limit reached for this device."
+        }), 429
 
-    # Old router-IP network block: removed (disabled in guard). We rely on per-user quotas.
-
-    if not bypass_limits:
-        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages")
-        if not allowed:
-            info["message"] = UPGRADE_MSG
-            return jsonify(info), 402
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages")
+    if not allowed:
+        # Standardize for frontend
+        info["message"] = info.get("message") or "You’ve reached your chat limit. Upgrade to continue."
+        info.setdefault("error", "quota_exceeded")
+        return jsonify(info), 402
 
     body = request.get_json(force=True) or {}
     user_msg = body.get("message", "")
@@ -1216,11 +1196,11 @@ def cover_letter():
 def skill_gap_api():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-    if not _is_superadmin():
-        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
-        if not allowed:
-            info["message"] = UPGRADE_MSG
-            return jsonify(info), 402
+    # Enforce quota for skill_gap
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
+    if not allowed:
+        info.setdefault("error", "quota_exceeded")
+        return jsonify(info), 402
 
     try:
         data = request.get_json(force=True) or {}
@@ -1263,11 +1243,10 @@ def skill_gap_api():
 def interview_coach_api():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-    if not _is_superadmin():
-        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
-        if not allowed:
-            info["message"] = UPGRADE_MSG
-            return jsonify(info), 402
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+    if not allowed:
+        info.setdefault("error", "quota_exceeded")
+        return jsonify(info), 402
 
     try:
         data = request.get_json(force=True)
@@ -1290,12 +1269,10 @@ def interview_coach_api():
 @login_required
 def get_interview_question():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
-
-    if not _is_superadmin():
-        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
-        if not allowed:
-            info["message"] = UPGRADE_MSG
-            return jsonify(info), 402
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+    if not allowed:
+        info.setdefault("error", "quota_exceeded")
+        return jsonify(info), 402
 
     try:
         data     = request.get_json(force=True)
@@ -1319,12 +1296,10 @@ def get_interview_question():
 @login_required
 def get_interview_feedback():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
-
-    if not _is_superadmin():
-        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
-        if not allowed:
-            info["message"] = UPGRADE_MSG
-            return jsonify(info), 402
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+    if not allowed:
+        info.setdefault("error", "quota_exceeded")
+        return jsonify(info), 402
 
     try:
         data     = request.get_json(force=True)
@@ -1437,4 +1412,4 @@ Required Qualifications, Preferred Skills, and How to Apply.
 # --- Entrypoint ---
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port
+    app.run(host="0.0.0.0", port=port)
