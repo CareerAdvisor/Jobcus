@@ -24,9 +24,7 @@ from datetime import datetime, timedelta, timezone, date
 from auth_utils import require_superadmin, is_staff, is_superadmin
 from limits import (
     check_and_increment, 
-    plan_limit, 
     get_usage_count, 
-    increment_usage, 
     job_insights_level, 
     feature_enabled,
     quota_for,
