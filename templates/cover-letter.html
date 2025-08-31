@@ -7,25 +7,34 @@
 {# ---------- LETTER-ONLY (iframe preview / PDF) ---------- #}
 {% if letter_only %}
   <style>
-    /* Hide site chrome coming from base.html */
+    /* Hide site chrome from base layout for clean letter-only rendering */
     header, nav, footer,
     .site-header, .site-footer, .navbar, .topbar, .app-footer,
     .chat-widget, .floating-chat, .intercom-lightweight-app { display:none !important; }
 
-    html,body { background:#fff; margin:0; }
-    /* 12pt Arial everywhere; legible line height for print */
-    .cl { max-width: 650px; margin: 36px auto; padding: 0 16px; color:#111;
-          font: 12pt/1.55 Arial, Helvetica, sans-serif; }
+    html, body { background:#fff; margin:0; }
 
-    /* Centered identity block */
+    /* Wider, print-friendly page body.
+       - Mobile stays comfy
+       - Desktop grows up to ~A4 width without being clipped by site chrome */
+    .cl {
+      max-width: clamp(680px, 84vw, 860px);
+      margin: 36px auto;
+      padding: 0 16px;
+      color:#111;
+      font: 12pt/1.55 Arial, Helvetica, sans-serif;
+    }
+
+    /* Centered identity block; bigger name */
     .cl-header { text-align:center; margin: 0 auto 14pt; }
-    .cl-header .name { font-weight:800; font-size:26pt; margin:0; }
+    .cl-header .name { font-weight:800; font-size:32pt; margin:0; }
     .cl-header .contact { margin-top:4pt; }
 
-    .date { margin: 12pt 0 14pt; }           /* space below contact, above recipient */
-    .recipient { margin: 0 0 12pt; }         /* space before "Dear ..." */
+    .date { margin: 12pt 0 14pt; }
+    .recipient { margin: 0 0 12pt; }
     .salutation { margin: 0 0 10pt; }
     .block { white-space:pre-wrap; overflow-wrap:anywhere; }
+
     @page { size:A4; margin:18mm 18mm; }
   </style>
 
@@ -34,7 +43,6 @@
     <div class="cl-header">
       {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
       <div class="contact">
-        {# Address + city/postcode, then pipes for email/phone #}
         {% if sender.address1 %}{{ sender.address1 }}{% endif %}
         {% if sender.city or sender.postcode %}
           {% if sender.address1 %} {% endif %}
@@ -71,6 +79,33 @@
 {# ---------- BUILDER PAGE ---------- #}
 {% else %}
   <main id="cover-letter" class="rb-wrap">
+    <!-- Desktop-only overrides for a wider preview experience -->
+    <style>
+      /* Wider container on large screens so the preview isn’t visually clipped */
+      @media (min-width: 1024px) {
+        .rb-container.rb-layout { max-width: 1300px; }
+        .rb-preview { max-width: none; }
+        #clPreviewWrap { max-width: none; }
+        #clPreview {
+          width: min(100%, 900px);  /* ~A4 width at typical CSS px */
+          height: 90vh;
+          margin: 0 auto;
+          display: block;
+          border: 0;
+          background: #fff;
+        }
+      }
+
+      /* Golden yellow refresh button with high-contrast text */
+      .ai-suggest .ai-refresh {
+        background: #ffc957;
+        border: 1px solid #ffc957;
+        color: #104879;
+      }
+      .ai-suggest .ai-refresh:hover { filter: brightness(0.95); }
+      .ai-suggest .ai-refresh:focus { outline: 2px solid #104879; outline-offset: 2px; }
+    </style>
+
     <!-- Hero -->
     <div class="interview-container" style="padding:20px 16px;width:100%;background:#104879;">
       <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
