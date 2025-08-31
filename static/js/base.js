@@ -1,4 +1,4 @@
-// static/js/base.js
+// /static/js/base.js
 "use strict";
 
 /* ─────────────────────────────────────────────────────────────
@@ -9,6 +9,66 @@ try {
     window.AOS.init();
   }
 } catch { /* ignore */ }
+
+/* ─────────────────────────────────────────────────────────────
+ * 0.1) Ensure a persistent device identifier for abuse guard
+ *      - Matches backend: abuse_guard._device_id() looks for "jobcus_device"
+ * ───────────────────────────────────────────────────────────── */
+(function ensureDeviceCookie(){
+  const NAME = "jobcus_device";
+  const ttlDays = 730; // ~2 years
+  function hasCookie(n){ return document.cookie.split("; ").some(c => c.startsWith(n + "=")); }
+  function setCookie(name, value, days) {
+    const d = new Date();
+    d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${d.toUTCString()}; path=/; SameSite=Lax; Secure`;
+  }
+  function v4(){
+    // crypto-safe UUID v4
+    if (crypto && crypto.getRandomValues) {
+      const a = new Uint8Array(16);
+      crypto.getRandomValues(a);
+      a[6] = (a[6] & 0x0f) | 0x40;
+      a[8] = (a[8] & 0x3f) | 0x80;
+      const b = [...a].map((x,i)=> (i===4||i===6||i===8||i===10 ? "-" : "") + x.toString(16).padStart(2,"0")).join("");
+      // b is hex pairs with dashes every 2 bytes; convert to canonical 8-4-4-4-12:
+      return (
+        b.slice(0,8) + "-" +
+        b.slice(9,13) + "-" +
+        b.slice(14,18) + "-" +
+        b.slice(19,23) + "-" +
+        (b.slice(24,36).replace(/-/g,""))
+      );
+    }
+    // Fallback (not crypto-strong, but acceptable as last resort)
+    return "xxxxxxxxyxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0, v = c === "x" ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+  if (!hasCookie(NAME)) {
+    const id = v4();
+    setCookie(NAME, id, ttlDays);
+    window.DEVICE_ID = id; // optional: surface for debugging
+  } else {
+    // expose for debugging if needed
+    try {
+      const val = document.cookie.split("; ").find(r => r.startsWith(NAME + "="))?.split("=")[1] || "";
+      window.DEVICE_ID = decodeURIComponent(val);
+    } catch {}
+  }
+})();
+
+/* ─────────────────────────────────────────────────────────────
+ * 0.2) Global fetch wrapper to always send cookies
+ * ───────────────────────────────────────────────────────────── */
+(function(){
+  const _fetch = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    if (!("credentials" in init)) init.credentials = "same-origin";
+    return _fetch(input, init);
+  };
+})();
 
 /* ─────────────────────────────────────────────────────────────
  * 1) Global upgrade banner helper
