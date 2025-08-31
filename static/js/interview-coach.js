@@ -1,4 +1,4 @@
-// static/js/interview-coach.js
+// /static/js/interview-coach.js
 
 // Always send cookies with fetch (SameSite=Lax)
 (function () {
@@ -19,7 +19,57 @@ function escapeHtml(s = "") {
     .replace(/'/g, "&#39;");
 }
 
-// Shared API helper (handles JSON + quota banner)
+// Centralized error handling consistent with other pages
+async function handleCommonErrors(res) {
+  if (res.ok) return null;
+
+  const ct = res.headers.get("content-type") || "";
+  let data = null;
+  try {
+    if (ct.includes("application/json")) {
+      data = await res.json();
+    } else {
+      const txt = await res.text();
+      data = txt ? { message: txt } : null;
+    }
+  } catch {
+    data = null;
+  }
+
+  const msg =
+    data?.message ||
+    data?.error ||
+    `Request failed (${res.status})`;
+
+  // Auth required
+  if (res.status === 401 || res.status === 403) {
+    // Distinguish upgrade_required vs auth
+    if (data?.error === "upgrade_required") {
+      window.showUpgradeBanner?.(msg || "This feature requires a paid plan.");
+      throw new Error(msg);
+    }
+    // default to login flow
+    window.showUpgradeBanner?.(msg || "Please sign in to continue.");
+    setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
+    throw new Error(msg);
+  }
+
+  // Plan limits
+  if (res.status === 402 || data?.error === "upgrade_required") {
+    window.showUpgradeBanner?.(msg || "You’ve reached your plan limit. Upgrade to continue.");
+    throw new Error(msg);
+  }
+
+  // Abuse guard (network/device)
+  if (res.status === 429 && (data?.error === "too_many_free_accounts" || data?.error === "device_limit")) {
+    window.showUpgradeBanner?.(msg || "Too many free accounts detected from your network/device.");
+    throw new Error(msg);
+  }
+
+  throw new Error(msg);
+}
+
+// Shared API helper (POST JSON + shared error branches)
 async function apiPost(url, payload) {
   const res = await fetch(url, {
     method: "POST",
@@ -27,26 +77,15 @@ async function apiPost(url, payload) {
     body: JSON.stringify(payload),
   });
 
-  // prefer JSON, but don't explode on text/empty
-  let data = null;
+  await handleCommonErrors(res);
+
+  // prefer JSON; tolerate empty/text
   const ct = res.headers.get("content-type") || "";
   if (ct.includes("application/json")) {
-    data = await res.json().catch(() => null);
-  } else {
-    const txt = await res.text().catch(() => "");
-    try { data = JSON.parse(txt); } catch { data = { message: txt || null }; }
+    return (await res.json().catch(() => ({}))) || {};
   }
-
-  if (!res.ok) {
-    // Show upgrade banner when quota is hit
-    if (res.status === 402 && data?.error === "quota_exceeded") {
-      window.showUpgradeBanner?.(data.message || "You’ve reached your plan limit. Upgrade to continue.");
-    }
-    const msg = data?.message || data?.error || `Request failed (${res.status})`;
-    throw new Error(msg);
-  }
-
-  return data || {};
+  const txt = await res.text().catch(() => "");
+  try { return JSON.parse(txt); } catch { return { message: txt || null }; }
 }
 
 // Keep a local session history (Q/A pairs + feedback)
@@ -68,6 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let previousRole    = "";
   let targetRole      = "";
   let experience      = "";
+  let asking          = false;
 
   // Small helpers
   function setBusy(el, busy) {
@@ -84,6 +124,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function getNextQuestion() {
+    if (asking) return;
+    asking = true;
+
     // Reset UI areas
     if (feedbackBox) { feedbackBox.style.display = "none"; setLive(feedbackBox, ""); }
     if (suggestionsBox) { suggestionsBox.style.display = "none"; setLive(suggestionsBox, ""); }
@@ -103,6 +146,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       currentQuestion = data?.question || "Sorry, no question returned.";
       setLive(questionBox, `<strong>🗨️ ${escapeHtml(currentQuestion)}</strong>`);
+
+      // best-effort telemetry
+      try { window.syncState?.({ interview_last_q: currentQuestion }); } catch {}
     } catch (err) {
       console.error("Question fetch error:", err);
       setLive(questionBox, "⚠️ Error fetching interview question.");
@@ -111,6 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setBusy(nextBtn, false);
       ensureVisible(questionBox);
       answerInput?.focus();
+      asking = false;
     }
   }
 
@@ -124,7 +171,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const exp  = document.getElementById("experience")?.value;
 
       if (!prev || !targ || !exp) {
-        // Browser required attributes should handle this, but just in case:
         alert("Please fill in your previous role, target role, and experience level.");
         return;
       }
@@ -145,18 +191,22 @@ document.addEventListener("DOMContentLoaded", () => {
   if (form) {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const submitBtn = form.querySelector('button[type="submit"]');
       const answer = (answerInput?.value || "").trim();
       if (!answer) return;
 
       setLive(feedbackBox, "<em>⏳ Analyzing your answer...</em>");
       feedbackBox.style.display = "block";
       suggestionsBox.style.display = "none";
-      setBusy(form.querySelector('button[type="submit"]'), true);
+      setBusy(submitBtn, true);
 
       try {
         const data = await apiPost("/api/interview/feedback", {
           question: currentQuestion,
           answer,
+          previousRole,
+          targetRole,
+          experience,
         });
 
         // Feedback (escaped, but keep formatting in <pre>)
@@ -190,12 +240,20 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         renderHistory();
         ensureVisible(feedbackBox);
+
+        // best-effort telemetry
+        try {
+          window.syncState?.({
+            interview_qas: history.length,
+            interview_last_feedback_len: (data?.feedback || "").length
+          });
+        } catch {}
       } catch (err) {
         console.error("Feedback error:", err);
-        setLive(feedbackBox, "❌ Error analyzing your answer.");
+        setLive(feedbackBox, `❌ ${escapeHtml(err.message || "Error analyzing your answer.")}`);
         feedbackBox.style.display = "block";
       } finally {
-        setBusy(form.querySelector('button[type="submit"]'), false);
+        setBusy(submitBtn, false);
       }
     });
   }
@@ -211,8 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .map((entry, idx) => {
         const tipsHtml = entry.tips?.length
           ? `<p><strong>Tips:</strong><ul>${entry.tips
-              .map(t => `<li>${escapeHtml(t)}</li>`)
-              .join("")}</ul></p>`
+              .map(t => `<li>${escapeHtml(t)}</li>`).join("")}</ul></p>`
           : "";
         return `
           <div class="history-entry">
