@@ -1,8 +1,8 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
-from datetime import datetime, date
+from datetime import date
 from typing import Optional
-from auth_utils import require_superadmin, is_staff, is_superadmin
 
 # ---------- Plan config ----------
 
@@ -10,6 +10,7 @@ from auth_utils import require_superadmin, is_staff, is_superadmin
 class Quota:
     period_kind: str  # 'total' | 'week' | 'month' | 'year'
     limit: Optional[int]  # None = unlimited
+
 
 PLAN_QUOTAS = {
     "free": {
@@ -40,68 +41,131 @@ PLAN_QUOTAS = {
 
 # Feature gates (booleans / levels)
 FEATURE_FLAGS = {
-    "free":    {"rebuild_with_ai": False, "optimize_ai": False, "downloads": False, "cloud_history": False, "job_insights": "basic"},
-    "weekly":  {"rebuild_with_ai": True,  "optimize_ai": False, "downloads": False, "cloud_history": False, "job_insights": "full"},
-    "standard":{"rebuild_with_ai": True,  "optimize_ai": True,  "downloads": True,  "cloud_history": True,  "job_insights": "full"},
-    "premium": {"rebuild_with_ai": True,  "optimize_ai": True,  "downloads": True,  "cloud_history": True,  "job_insights": "full"},
+    "free": {
+        "rebuild_with_ai": False,
+        "optimize_ai":     False,
+        "downloads":       False,
+        "cloud_history":   False,
+        "job_insights":    "basic",
+    },
+    "weekly": {
+        "rebuild_with_ai": True,
+        "optimize_ai":     False,
+        "downloads":       False,
+        "cloud_history":   False,
+        "job_insights":    "full",
+    },
+    "standard": {
+        "rebuild_with_ai": True,
+        "optimize_ai":     True,
+        "downloads":       True,
+        "cloud_history":   True,
+        "job_insights":    "full",
+    },
+    "premium": {
+        "rebuild_with_ai": True,
+        "optimize_ai":     True,
+        "downloads":       True,
+        "cloud_history":   True,
+        "job_insights":    "full",
+    },
 }
+
 
 def _plan_code(plan: str | None) -> str:
     return (plan or "free").lower()
 
+
 # ---------- Period helpers ----------
 
 def period_key(kind: str, d: date | None = None) -> str:
+    """
+    Return a stable key for counters depending on the period kind.
+    Kind: 'total' | 'week' | 'month' | 'year'
+    """
     d = d or date.today()
-    if kind == "total":
+    k = kind.lower()
+    if k == "total":
         return "all"
-    if kind == "week":
+    if k == "week":
         iso = d.isocalendar()
-        return f"{iso.year}-W{iso.week:02d}"
-    if kind == "month":
+        year = getattr(iso, "year", iso[0])
+        week = getattr(iso, "week", iso[1])
+        return f"{year}-W{week:02d}"
+    if k == "month":
         return d.strftime("%Y-%m")
-    if kind == "year":
+    if k == "year":
         return d.strftime("%Y")
+    # Fallback: treat unknown kinds as total
     return "all"
+
 
 # ---------- Counters ----------
 
 def get_usage_count(supabase_admin, user_id: str, feature: str, kind: str, key: str) -> int:
-    r = (supabase_admin.table("usage_counters")
-         .select("count")
-         .eq("user_id", user_id)
-         .eq("feature", feature)
-         .eq("period_kind", kind)
-         .eq("period_key", key)
-         .limit(1)
-         .execute())
-    return (r.data[0]["count"] if r.data else 0)
+    """
+    Read the current usage count for (user_id, feature, kind, key).
+    Defensive against SDK returning list or dict.
+    """
+    r = (
+        supabase_admin.table("usage_counters")
+        .select("count")
+        .eq("user_id", user_id)
+        .eq("feature", feature)
+        .eq("period_kind", kind)
+        .eq("period_key", key)
+        .limit(1)
+        .execute()
+    )
+    data = getattr(r, "data", None)
+    if isinstance(data, list) and data:
+        return int(data[0].get("count") or 0)
+    if isinstance(data, dict):
+        return int(data.get("count") or 0)
+    return 0
 
-def increment_usage(supabase_admin, user_id: str, feature: str, kind: str, key: str, new_count: int) -> None:
-    (supabase_admin.table("usage_counters")
-     .upsert({
-        "user_id": user_id,
-        "feature": feature,
-        "period_kind": kind,
-        "period_key": key,
-        "count": new_count,
-     }, on_conflict="user_id,feature,period_kind,period_key")
-     .execute())
+
+def increment_usage(
+    supabase_admin, user_id: str, feature: str, kind: str, key: str, new_count: int
+) -> None:
+    (
+        supabase_admin.table("usage_counters")
+        .upsert(
+            {
+                "user_id": user_id,
+                "feature": feature,
+                "period_kind": kind,
+                "period_key": key,
+                "count": new_count,
+            },
+            on_conflict="user_id,feature,period_kind,period_key",
+        )
+        .execute()
+    )
+
 
 # ---------- Public API ----------
 
 def quota_for(plan: str, feature: str) -> Quota:
+    """
+    Return the Quota for a given plan & feature. Defaults to a month/None quota if unknown.
+    """
     p = _plan_code(plan)
     return PLAN_QUOTAS.get(p, PLAN_QUOTAS["free"]).get(feature, Quota("month", None))
 
-def check_and_increment(supabase_admin, user_id: str, plan: str, feature: str) -> tuple[bool, dict]:
+
+def check_and_increment(
+    supabase_admin, user_id: str, plan: str, feature: str
+) -> tuple[bool, dict]:
     """
-    Returns (allowed: bool, payload: dict). If allowed=True, it already increments.
+    Returns (allowed: bool, payload: dict).
+    If allowed=True, this function has already incremented the counter atomically for the current period.
     """
     q = quota_for(plan, feature)
     kind = q.period_kind
-    key  = period_key(kind)
+    key = period_key(kind)
 
+    # Unlimited
     if q.limit is None:
         return True, {"limit": None}
 
@@ -113,15 +177,34 @@ def check_and_increment(supabase_admin, user_id: str, plan: str, feature: str) -
             "limit": q.limit,
             "period_kind": kind,
             "period_key": key,
-            "message": "You’ve reached your plan limit for this feature."
+            "message": "You’ve reached your plan limit for this feature.",
         }
 
     increment_usage(supabase_admin, user_id, feature, kind, key, used + 1)
-    return True, {"used": used + 1, "limit": q.limit, "period_kind": kind, "period_key": key}
+    return True, {
+        "used": used + 1,
+        "limit": q.limit,
+        "period_kind": kind,
+        "period_key": key,
+    }
+
 
 def feature_enabled(plan: str, flag: str):
-    return FEATURE_FLAGS.get(_plan_code(plan), FEATURE_FLAGS["free"]).get(flag)
+    """
+    Return a feature flag value for a plan.
+    For boolean flags, returns bool. For string-valued flags (like 'job_insights'),
+    returns the string (e.g., 'basic' or 'full'). Defaults to False if missing.
+    """
+    plan_flags = FEATURE_FLAGS.get(_plan_code(plan), FEATURE_FLAGS["free"])
+    return plan_flags.get(flag, False)
+
 
 def job_insights_level(plan: str) -> str:
-    return str(FEATURE_FLAGS.get(_plan_code(plan), FEATURE_FLAGS["free"]).get("job_insights", "basic"))
-
+    """
+    Convenience accessor for the job insights level.
+    """
+    return str(
+        FEATURE_FLAGS.get(_plan_code(plan), FEATURE_FLAGS["free"]).get(
+            "job_insights", "basic"
+        )
+    )
