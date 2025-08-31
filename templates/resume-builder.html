@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Resume Builder – Jobcus{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-builder.css') }}">
+{% endblock %}
+
 {% block content %}
 <main id="resume-builder" class="rb-wrap">
   <div class="interview-container" style="padding:20px 10px;width:100%;background:#104879;">
@@ -40,16 +44,10 @@
                   <input type="text" name="title" placeholder="Product Designer">
                 </label>
 
-                <details class="rb-disclosure" id="personal-extra" style="margin-top:12px;">
-                  <summary>
-                    <span class="label-closed">▼ — Show additional details</span>
-                    <span class="label-open">▲ — Hide additional details</span>
-                  </summary>
-                  <div class="rb-grid" style="margin-top:.5rem;">
-                    <label>Nationality <input type="text" name="nationality" placeholder="Britain"></label>
-                    <label class="full">Birth date <input type="date" name="dob" placeholder="1996-02-03"></label>
-                  </div>
-                </details>
+                <!-- NOTE: We intentionally omit DOB/Nationality (can trigger ATS penalties). -->
+                <p class="help full" style="margin-top:8px;">
+                  Tip: Omit date of birth, nationality, photo, and other personal details—they’re unnecessary and can reduce ATS scores.
+                </p>
               </div>
             </div>
           </article>
@@ -208,6 +206,7 @@ Google IT Support Professional Certificate (2021)"></textarea>
               <div class="rb-row">
                 <button type="button" id="previewTemplate" class="cta-secondary">Preview</button>
                 <button type="button" id="downloadTemplatePdf" class="cta-primary">Download PDF</button>
+                <button type="button" id="downloadTemplateDocx" class="cta-secondary">Download DOCX</button>
               </div>
               <div id="resumePreviewWrap" style="display:none;margin-top:1rem;">
                 <h3>Preview</h3>
@@ -227,6 +226,7 @@ Google IT Support Professional Certificate (2021)"></textarea>
               <div class="rb-row">
                 <button type="button" id="previewTemplateFinish" class="cta-secondary">Preview</button>
                 <button type="button" id="downloadTemplatePdfFinish" class="cta-primary">Download PDF</button>
+                <button type="button" id="downloadTemplateDocxFinish" class="cta-secondary">Download DOCX</button>
               </div>
               <div id="resumePreviewWrapFinish" style="display:none;margin-top:1rem;">
                 <h3>Preview</h3>
@@ -243,7 +243,7 @@ Google IT Support Professional Certificate (2021)"></textarea>
         <button type="submit" id="rb-submit" class="cta-primary" style="display:none;">✨ Generate Resume</button>
       </footer>
 
-      <div id="builderGeneratingIndicator" style="display:none;">🤖 Generating your resume…</div>
+      <div id="builderGeneratingIndicator" role="status" aria-live="polite" style="display:none;">🤖 Generating your resume…</div>
       <div id="builderGeneratedContent" hidden></div>
       <div id="resumeDownloadOptions" hidden></div>
     </form>
@@ -252,7 +252,5 @@ Google IT Support Professional Certificate (2021)"></textarea>
 {% endblock %}
 
 {% block scripts %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/resume-builder.css') }}">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-<script src="{{ url_for('static', filename='js/resume-builder.js') }}"></script>
+<script src="{{ url_for('static', filename='js/resume-builder.js') }}" defer></script>
 {% endblock %}
