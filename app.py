@@ -253,7 +253,7 @@ def log_login_event():
             "user_agent": request.headers.get("User-Agent", "")[:512],
         }).execute()
     except Exception:
-        current_app.logger.exception("state: login event insert failed")
+        current_app.logger.exception("log_login_event failed")
 
 # --- Config/secrets ---
 SID_COOKIE = "sid"
