@@ -253,27 +253,32 @@ document.addEventListener("DOMContentLoaded", () => {
       else if (f.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") body.docx = b64;
       else { alert("Unsupported type. Upload PDF or DOCX."); analyzingEl.style.display = "none"; analyzeBtn.disabled = false; return; }
 
-      const res  = await fetch("/api/resume-analysis", {
+      const res = await fetch("/api/resume-analysis", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(body) // or JSON.stringify(payload) if you named it payload
       });
       
-      const text = await res.text();
+      let data = null;
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) data = await res.json();
+      
       if (!res.ok) {
-        console.error("Resume analysis failed:", text);
-        alert("Resume analysis failed. Please try again.");
+        if (res.status === 402 && data?.error === "quota_exceeded") {
+          showUpgradeBanner(data.message || "You’ve reached your resume analyses limit. Upgrade to continue.");
+          return;
+        }
+        if (res.status === 429 && data?.error === "too_many_free_accounts") {
+          showUpgradeBanner(data.message || "Too many free accounts from your network.");
+          return;
+        }
+        console.error("Resume analysis failed:", data || res.statusText);
+        alert(data?.message || "Resume analysis failed. Please try again.");
         return;
       }
       
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        console.error("Invalid JSON from /api/resume-analysis:", text);
-        alert("Unexpected server response. Please try again.");
-        return;
-      }
+      // success continues with your existing logic (set localStorage, repaint UI, etc.)
+
 
       // you already have:
       data.lastAnalyzed = new Date().toLocaleString();
