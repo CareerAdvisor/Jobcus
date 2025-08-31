@@ -18,17 +18,17 @@ from dotenv import load_dotenv
 
 # Local modules
 from extensions import login_manager, init_supabase, init_openai
-from blueprints.resumes import resumes_bp  # <-- your blueprint with all resume endpoints
-from typing import Optional  # if you're on Python <3.10
+from blueprints.resumes import resumes_bp  # your blueprint with all resume endpoints
+from typing import Optional  # Python 3.11 ok (pep 604 used below)
 from datetime import datetime, timedelta, timezone, date
 from auth_utils import require_superadmin, is_staff, is_superadmin
 from limits import (
-    check_and_increment, 
-    get_usage_count, 
-    job_insights_level, 
+    check_and_increment,
+    get_usage_count,
+    job_insights_level,
     feature_enabled,
     quota_for,
-    period_key
+    period_key,
 )
 from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
@@ -36,7 +36,8 @@ from supabase import create_client
 # --- Environment & app setup ---
 load_dotenv()
 
-app = Flask(__name__)
+# NOTE: make static path explicit to avoid zero-byte responses in prod
+app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
 # Session cookie hardening
@@ -65,7 +66,7 @@ if missing:
     raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
 
 supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-app.config["SUPABASE_ADMIN"] = supabase_admin   # <-- add this line
+app.config["SUPABASE_ADMIN"] = supabase_admin
 
 # --- Flask-Login init ---
 login_manager.init_app(app)
@@ -94,7 +95,7 @@ PLAN_TO_PRICE = {
     "standard": os.getenv("STRIPE_PRICE_STANDARD"),
     "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
 }
-       
+
 # ---- Model selection helpers ----
 def _dedupe(seq):
     seen, out = set(), []
@@ -152,7 +153,7 @@ def choose_model(requested: str | None) -> str:
     req = (requested or "").strip()
     return req if req in allowed else default
 
-# --- User model (replace your existing one) ---
+# --- User model ---
 class User(UserMixin):
     def __init__(
         self,
@@ -214,7 +215,7 @@ def load_user(user_id: "Optional[str]"):
         )
     except Exception:
         logging.exception("load_user: failed to restore user")
-        return None   
+        return None
 
 def get_user_resume_text(user_id: str) -> Optional[str]:
     """Fetch the latest stored resume text for a user from Supabase."""
@@ -336,10 +337,10 @@ def enforce_single_active_session():
 
     if request.endpoint in {None, "account", "logout", "static"}:
         return
-        
+
     token = request.cookies.get(SID_COOKIE)
     sid = _unsign_session_token(token) if token else None
-    
+
     if not sid:
         return end_current_session("account")  # no bound session cookie → sign out
     try:
@@ -380,10 +381,12 @@ def guard_free_plan_abuse():
                 "message": "Too many free accounts from your network. Please upgrade or contact support."
             }), 429
 
-# Jobs fetch
+# Jobs fetch (add short timeouts to avoid worker hangs)
+DEFAULT_HTTP_TIMEOUT = (5, 15)  # connect, read
+
 def fetch_remotive_jobs(query: str):
     try:
-        r = requests.get(REMOTIVE_API_URL, params={"search": query})
+        r = requests.get(REMOTIVE_API_URL, params={"search": query}, timeout=DEFAULT_HTTP_TIMEOUT)
         jobs = r.json().get("jobs", [])
         return [
             {
@@ -395,7 +398,7 @@ def fetch_remotive_jobs(query: str):
             }
             for job in jobs
         ]
-    except:
+    except Exception:
         return []
 
 def fetch_adzuna_jobs(query: str, location: str, job_type: str):
@@ -408,7 +411,7 @@ def fetch_adzuna_jobs(query: str, location: str, job_type: str):
         "results_per_page": 10
     }
     try:
-        r = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params=params)
+        r = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params=params, timeout=DEFAULT_HTTP_TIMEOUT)
         results = r.json().get("results", [])
         return [
             {
@@ -420,7 +423,7 @@ def fetch_adzuna_jobs(query: str, location: str, job_type: str):
             }
             for job in results
         ]
-    except:
+    except Exception:
         return []
 
 def fetch_jsearch_jobs(query: str):
@@ -431,7 +434,7 @@ def fetch_jsearch_jobs(query: str):
     }
     params = {"query": query, "num_pages": 1}
     try:
-        r = requests.get(url, headers=headers, params=params)
+        r = requests.get(url, headers=headers, params=params, timeout=DEFAULT_HTTP_TIMEOUT)
         data = r.json().get("data", [])
         return [
             {
@@ -443,7 +446,7 @@ def fetch_jsearch_jobs(query: str):
             }
             for job in data
         ]
-    except:
+    except Exception:
         return []
 
 def fetch_salary_data():
@@ -457,16 +460,16 @@ def fetch_salary_data():
             "results_per_page": 1
         }
         try:
-            r = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params=params)
+            r = requests.get(f"{ADZUNA_API_URL}/{country}/search/1", params=params, timeout=DEFAULT_HTTP_TIMEOUT)
             results = r.json().get("results", [])
             if results:
                 job = results[0]
-                low = float(job.get("salary_min", 0))
-                high = float(job.get("salary_max", 0))
-                data.append(((low + high) / 2) or 0)
+                low = float(job.get("salary_min", 0) or 0)
+                high = float(job.get("salary_max", 0) or 0)
+                data.append(((low + high) / 2) if (low or high) else 0)
             else:
                 data.append(0)
-        except:
+        except Exception:
             data.append(0)
     return data
 
@@ -474,22 +477,22 @@ def fetch_job_counts():
     counts = []
     for title in JOB_TITLES:
         try:
-            r = requests.get(REMOTIVE_API_URL, params={"search": title})
+            r = requests.get(REMOTIVE_API_URL, params={"search": title}, timeout=DEFAULT_HTTP_TIMEOUT)
             counts.append(len(r.json().get("jobs", [])))
-        except:
+        except Exception:
             counts.append(0)
     return counts
 
 def fetch_skill_trends():
     freq = Counter()
     try:
-        r = requests.get(REMOTIVE_API_URL, params={"limit": 50})
+        r = requests.get(REMOTIVE_API_URL, params={"limit": 50}, timeout=DEFAULT_HTTP_TIMEOUT)
         for job in r.json().get("jobs", []):
             text = (job.get("description") or "").lower()
             for key in KEYWORDS:
                 if key.lower() in text:
                     freq[key] += 1
-    except:
+    except Exception:
         pass
     return freq
 
@@ -501,12 +504,12 @@ def fetch_location_counts():
             "app_id": ADZUNA_APP_ID,
             "app_key": ADZUNA_APP_KEY,
             "results_per_page": 30
-        })
+        }, timeout=DEFAULT_HTTP_TIMEOUT)
         for job in r.json().get("results", []):
             loc = job.get("location", {}).get("display_name")
             if loc:
                 freq[loc] += 1
-    except:
+    except Exception:
         pass
     return freq.most_common(5)
 
@@ -593,7 +596,7 @@ def api_state():
         current_app.logger.warning("state upsert failed (non-fatal): %s", e)
         # do not break the UI
     return ("", 204)
-    
+
 @app.get("/resume-analyzer")
 def page_resume_analyzer():
     return render_template("resume-analyzer.html")
@@ -847,7 +850,7 @@ def stripe_webhook():
         pass
 
     return ("OK", 200)
-        
+
 # ----------------------------
 # Email confirmation
 # ----------------------------
@@ -872,7 +875,6 @@ def resend_confirmation():
         # Supabase Python SDK v2: resend a signup confirmation
         # If your SDK signature differs, adjust the call accordingly.
         supabase.auth.resend({"type": "signup", "email": email})
-
         flash("Confirmation email resent. Please check your inbox.", "success")
     except Exception:
         current_app.logger.exception("Resend confirmation failed")
@@ -929,14 +931,12 @@ def account():
                 except Exception:
                     current_app.logger.exception("auto-promote admin failed")
 
-            # ⬇️ NEW: remember email for the /check-email page
+            # ⬇️ remember email for the /check-email page
             if not ud.get("email_confirmed_at"):
                 session["pending_email"] = email
                 return jsonify(success=True, redirect=url_for("check_email")), 200
 
             login_user(User(auth_id=auth_id, email=email, fullname=name))
-            
-            # NEW lines:
             record_login_event(current_user)
             _, set_cookie = start_user_session(current_user)
             resp = jsonify(success=True, redirect=url_for("dashboard"))
@@ -970,7 +970,7 @@ def account():
                         .eq("auth_id", auth_id).execute()
                 except Exception:
                     current_app.logger.exception("auto-promote admin failed")
-                    
+
             try:
                 r = supabase.table("users").select("fullname").eq("auth_id", auth_id).single().execute()
                 fullname = (r.data or {}).get("fullname")
@@ -978,18 +978,14 @@ def account():
                 fullname = None
 
             login_user(User(auth_id=auth_id, email=email, fullname=fullname))
-
-            # NEW lines:
             record_login_event(current_user)
             _, set_cookie = start_user_session(current_user)
             resp = jsonify(success=True, redirect=url_for("dashboard"))
             return set_cookie(resp), 200
 
-
         except AuthApiError as e:
             msg = str(e).lower()
             if "email not confirmed" in msg or "not confirmed" in msg:
-                # Optionally remember email here too
                 session["pending_email"] = email
                 return jsonify(
                     success=False,
@@ -1053,8 +1049,8 @@ def ask():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
 
-    # Optional: your own abuse guard
-    if too_many_free_accounts(request):  # if you have such a function
+    # FIX: call the correct abuse guard (was too_many_free_accounts(request))
+    if too_many_free_accounts_from_ip(ip_hash_from_request(request)):
         return jsonify({
             "error": "too_many_free_accounts",
             "message": "Too many free accounts from your network."
@@ -1099,6 +1095,24 @@ def api_credits():
     return jsonify(plan=plan, used=used, max=q.limit, left=left,
                    period_kind=q.period_kind, period_key=key)
 
+# NEW: expose limits for all features so UI can pre-lock actions nicely
+@app.get("/api/limits")
+@login_required
+def api_limits():
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    features = ["chat_messages", "resume_builder", "resume_analyzer", "interview_coach", "cover_letter", "skill_gap"]
+    data = {"plan": plan, "features": {}}
+    for f in features:
+        q = quota_for(plan, f)  # -> Quota(period_kind, limit)
+        if q.limit is None:
+            data["features"][f] = {"used": None, "max": None, "left": None, "period_kind": q.period_kind}
+            continue
+        key = period_key(q.period_kind)
+        used = get_usage_count(supabase_admin, current_user.id, f, q.period_kind, key)
+        left = max(q.limit - used, 0)
+        data["features"][f] = {"used": used, "max": q.limit, "left": left, "period_kind": q.period_kind, "period_key": key}
+    return jsonify(data)
+
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
     try:
@@ -1112,7 +1126,7 @@ def get_jobs():
         js  = [] if rem or adz else fetch_jsearch_jobs(query)
 
         return jsonify(remotive=rem, adzuna=adz, jsearch=js)
-    except:
+    except Exception:
         return jsonify(remotive=[], adzuna=[], jsearch=[])
 
 @app.route("/api/salary")
@@ -1166,7 +1180,7 @@ def cover_letter():
 def skill_gap_api():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-    # If you have a quota for skill_gap, keep this line; otherwise gate by feature_enabled().
+    # Enforce quota for skill_gap
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
     if not allowed:
         return jsonify(info), 402
@@ -1206,10 +1220,18 @@ def skill_gap_api():
         logging.exception("Skill Gap Error")
         return jsonify({"error": "Server error"}), 500
 
+# Require login + quota for interview endpoints so pricing is enforced
 @app.route("/api/interview", methods=["POST"])
+@login_required
 def interview_coach_api():
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+    if not allowed:
+        return jsonify(info), 402
+
     try:
-        data = request.get_json()
+        data = request.get_json(force=True)
         role = data.get("role","").strip()
         exp  = data.get("experience","").strip()
         if not role or not exp:
@@ -1226,9 +1248,15 @@ def interview_coach_api():
         return jsonify(error="Server error"), 500
 
 @app.route("/api/interview/question", methods=["POST"])
+@login_required
 def get_interview_question():
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+    if not allowed:
+        return jsonify(info), 402
+
     try:
-        data     = request.get_json()
+        data     = request.get_json(force=True)
         prev     = data.get("previousRole","").strip()
         target   = data.get("targetRole","").strip()
         exp      = data.get("experience","").strip()
@@ -1246,9 +1274,15 @@ def get_interview_question():
         return jsonify(error="Unable to generate question"), 500
 
 @app.route("/api/interview/feedback", methods=["POST"])
+@login_required
 def get_interview_feedback():
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+    if not allowed:
+        return jsonify(info), 402
+
     try:
-        data     = request.get_json()
+        data     = request.get_json(force=True)
         question = data.get("question","")
         answer   = data.get("answer","")
         msgs = [
