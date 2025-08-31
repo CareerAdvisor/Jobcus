@@ -23,7 +23,7 @@ import logging
 from typing import Optional  # if you're on Python <3.10
 from datetime import datetime, timedelta, timezone, date
 from auth_utils import require_superadmin, is_staff, is_superadmin
-from limits import check_and_increment, current_plan_limits, plan_limit, month_key, get_usage_count, increment_usage
+from limits import check_and_increment, current_plan_limits, plan_limit, month_key, get_usage_count, increment_usage, job_insights_level, feature_enabled
 from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
 
@@ -1046,17 +1046,11 @@ def verify_token():
 @app.route("/ask", methods=["POST"])
 @login_required
 def ask():
-    # quota check
-    limit  = plan_limit(current_user)
-    period = month_key()
-    used   = get_usage_count(supabase_admin, current_user.id, period)
-    if limit is not None and used >= limit:
-        return jsonify({
-            "error": "quota_exceeded",
-            "message": "You’ve reached your monthly chat limit. Upgrade to continue."
-        }), 402
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages")
+    if not allowed:
+        return jsonify(info), 402
 
-    # your existing OpenAI call
     body = request.get_json(force=True) or {}
     user_msg = body.get("message", "")
     model = choose_model(body.get("model"))
@@ -1064,15 +1058,12 @@ def ask():
         resp = current_app.config["OPENAI_CLIENT"].chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": "You are Jobcus, a helpful AI career assistant."},
-                {"role": "user", "content": user_msg},
+                {"role":"system","content":"You are Jobcus, a helpful AI career assistant."},
+                {"role":"user","content":user_msg}
             ],
             temperature=0.6,
         )
         ai_msg = resp.choices[0].message.content
-
-        # count usage after success
-        increment_usage(supabase_admin, current_user.id, period, used + 1)
         return jsonify(reply=ai_msg, modelUsed=model)
     except Exception:
         current_app.logger.exception("OpenAI error")
@@ -1143,14 +1134,12 @@ def cover_letter():
 # Skill Gap & Interview Coach
 # ----------------------------
 @app.route("/api/skill-gap", methods=["POST"])
+@login_required
 def skill_gap_api():
-    try:
-        data = request.get_json()
-        goal = data.get("goal", "").strip()
-        skills = data.get("skills", "").strip()
-
-        if not goal or not skills:
-            return jsonify({"error": "Missing required input"}), 400
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
+    if not allowed:
+        return jsonify(info), 402
 
         messages = [
             {"role": "system", "content":
