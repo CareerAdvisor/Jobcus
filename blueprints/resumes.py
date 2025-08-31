@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify, current_app, make_response, send_
 from flask_login import login_required, current_user
 
 from limits import feature_enabled, check_and_increment
+from abuse_guard import allow_free_use  # NEW: device/user-scoped guard
 
 import docx
 from weasyprint import HTML, CSS
@@ -966,6 +967,7 @@ def ai_suggest():
                 "Results-driven professional with experience delivering measurable impact across X, Y, and Z. "
                 "Recognized for A, B, and C; partners cross-functionally to ship results."
             ))
+    ...
         return jsonify(normalize(items=[
             "Increased X by Y% by doing Z",
             "Reduced A by B% through C initiative",
@@ -1001,11 +1003,13 @@ def ai_suggest():
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 @login_required
 def build_cover_letter():
-    # Quota enforcement (fixed: removed invalid/undefined variables)
+    # Quota enforcement
     plan = (getattr(current_user, "plan", "free") or "free").lower()
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "cover_letter")
     if not allowed:
+        # NEW: standardize for the frontend banner handler
+        info.setdefault("error", "quota_exceeded")
         return jsonify(info), 402
 
     try:
@@ -1059,10 +1063,19 @@ def resume_analysis():
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
     plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-    # Quota key aligned with existing server usage
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "resume_analyses")
+    # NEW: device/user-scoped free-plan guard (no router IP)
+    ok, payload = allow_free_use(current_user.id, plan)
+    if not ok:
+        return jsonify({
+            "error": "too_many_free_accounts",
+            "message": payload.get("message") or "Free usage limit reached for this device."
+        }), 429
+
+    # FIX: align quota key with limits/UI: resume_analyzer
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "resume_analyzer")
     if not allowed:
         info["message"] = info.get("message") or "You’ve reached your resume analyses limit. Upgrade to continue."
+        info.setdefault("error", "quota_exceeded")  # NEW: for frontend banner
         return jsonify(info), 402
 
     """
