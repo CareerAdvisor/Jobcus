@@ -1044,11 +1044,9 @@ def build_cover_letter():
         "cover_letters",
         current_plan_limits(),
     )
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "cover_letters")
     if not allowed:
-        return jsonify({
-            "error": "Limit reached",
-            "detail": f"You've used {info['used']} of {info['limit']} this {info['period_kind']}."
-        }), 403
+        return jsonify(info), 402
     try:
         data = request.get_json(force=True) or {}
     except Exception:
@@ -1103,11 +1101,9 @@ def resume_analysis():
         "resume_analyses",
         current_plan_limits(),
     )
+    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "resume_analyses")
     if not allowed:
-        return jsonify({
-            "error": "Limit reached",
-            "detail": f"You've used {info['used']} of {info['limit']} this {info['period_kind']}."
-        }), 403
+        return jsonify(info), 402
     """
     ATS scoring model (100 pts) + penalties, aligned to industry best practice.
     Preserves your existing response shape for the dashboard.
