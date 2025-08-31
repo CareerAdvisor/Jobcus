@@ -386,8 +386,11 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       const message = input.value.trim();
       if (!message) return;
-
-      removeWelcome();
+  
+      removeWelcome?.(); // keep your UI logic
+      // ⬇️ insert the payload + send, catch, finally here
+    });
+  }
 
       // 1) UI: show user message
       const userMsg = document.createElement("div");
