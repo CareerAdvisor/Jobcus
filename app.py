@@ -6,7 +6,7 @@ import re, json, base64, logging, requests
 
 from flask import (
     Flask, request, jsonify, render_template, redirect,
-    session, flash, url_for, current_app, make_response
+    session, flash, url_for, current_app, make_response, render_template_string
 )
 from flask_cors import CORS
 from flask_login import (
@@ -67,6 +67,10 @@ if missing:
 
 supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 app.config["SUPABASE_ADMIN"] = supabase_admin
+
+# --- Config toggles ---
+# Disable the old router-IP guard by default.
+ENABLE_IP_ABUSE_GUARD = (os.getenv("ENABLE_IP_ABUSE_GUARD", "false").lower() == "true")
 
 # --- Flask-Login init ---
 login_manager.init_app(app)
@@ -355,7 +359,7 @@ def enforce_single_active_session():
         current_app.logger.exception("session check failed")
         return end_current_session()
 
-# --- IP abuse heuristic (KEEP this too) ---
+# --- IP abuse heuristic (LEGACY; disabled by default) ---
 def too_many_free_accounts_from_ip(ip_hash, window_days=7, threshold=3):
     if not ip_hash: return False
     try:
@@ -369,17 +373,33 @@ def too_many_free_accounts_from_ip(ip_hash, window_days=7, threshold=3):
 
 @app.before_request
 def guard_free_plan_abuse():
+    """
+    Previously blocked by router IP. Now:
+      - Disabled by default (ENABLE_IP_ABUSE_GUARD=false).
+      - If enabled, DO NOT use router IP; rely on per-user/session controls already in place.
+      - Any limit response uses the unified upgrade message and 402.
+    """
     if not current_user.is_authenticated:
         return
     if (getattr(current_user, "plan", "free") or "free").lower() != "free":
         return
-    protected = {"ask", "resume_analysis", "api_resume_analysis"}  # include your endpoint name(s)
-    if request.endpoint in protected:
-        if too_many_free_accounts_from_ip(ip_hash_from_request(request)):
+    if not ENABLE_IP_ABUSE_GUARD:
+        return  # disabled by default
+
+    # If you decide to keep a guard, scope it to user/session counts — not router IP.
+    # Example (gentle): block if somehow >1 active session slipped through for free user.
+    try:
+        q = supabase.table("user_sessions").select("id").eq("auth_id", current_user.id).eq("is_active", True).execute()
+        active = len(q.data or [])
+        if active > 1:
             return jsonify({
-                "error": "too_many_free_accounts",
-                "message": "Too many free accounts from your network. Please upgrade or contact support."
-            }), 429
+                "error": "quota_exceeded",
+                "message": "You have reached the limit for the free version, upgrade to enjoy more features"
+            }), 402
+    except Exception:
+        # Never break the page on guard issues
+        current_app.logger.warning("guard_free_plan_abuse check failed; allowing request")
+        return
 
 # Jobs fetch (add short timeouts to avoid worker hangs)
 DEFAULT_HTTP_TIMEOUT = (5, 15)  # connect, read
@@ -589,7 +609,7 @@ def api_state():
     data = payload.get("data", {})
     try:
         supabase_admin.table("user_state").upsert(
-            {"auth_id": auth_id, "data": data, "updated_at": datetime.utcnow().isoformat()},
+            {"auth_id": auth_id, "data": data, "updated_at": datetime.utcnow().isoformat() },
             on_conflict="auth_id"
         ).execute()
     except Exception as e:
@@ -599,7 +619,16 @@ def api_state():
 
 @app.get("/resume-analyzer")
 def page_resume_analyzer():
-    return render_template("resume-analyzer.html")
+    # Hardened: never 500 this page; log and show a minimal fallback if template breaks.
+    try:
+        return render_template("resume-analyzer.html")
+    except Exception:
+        current_app.logger.exception("resume-analyzer template error")
+        return render_template_string(
+            "<!doctype html><title>Resume Analyzer</title>"
+            "<h1>Resume Analyzer</h1>"
+            "<p>We’re loading the analyzer. If this persists, please refresh or try again later.</p>"
+        ), 200
 
 @app.get("/resume-builder")
 def page_resume_builder():
@@ -1043,23 +1072,30 @@ def verify_token():
         print("verify_token error:", e)
         return jsonify(ok=False, error="Token verification failed"), 400
 
+UPGRADE_MSG = "You have reached the limit for the free version, upgrade to enjoy more features"
+
+def _is_superadmin():
+    try:
+        return bool(getattr(current_user, "is_superadmin", False)) or getattr(current_user, "role", "") == "superadmin"
+    except Exception:
+        return False
+
 @app.route("/ask", methods=["POST"])
 @login_required
 def ask():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
 
-    # FIX: call the correct abuse guard (was too_many_free_accounts(request))
-    if too_many_free_accounts_from_ip(ip_hash_from_request(request)):
-        return jsonify({
-            "error": "too_many_free_accounts",
-            "message": "Too many free accounts from your network."
-        }), 429
+    # SUPERADMIN bypass
+    bypass_limits = _is_superadmin()
 
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages")
-    if not allowed:
-        info["message"] = info.get("message") or "You’ve reached your chat limit. Upgrade to continue."
-        return jsonify(info), 402
+    # Old router-IP network block: removed (disabled in guard). We rely on per-user quotas.
+
+    if not bypass_limits:
+        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages")
+        if not allowed:
+            info["message"] = UPGRADE_MSG
+            return jsonify(info), 402
 
     body = request.get_json(force=True) or {}
     user_msg = body.get("message", "")
@@ -1180,10 +1216,11 @@ def cover_letter():
 def skill_gap_api():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-    # Enforce quota for skill_gap
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
-    if not allowed:
-        return jsonify(info), 402
+    if not _is_superadmin():
+        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
+        if not allowed:
+            info["message"] = UPGRADE_MSG
+            return jsonify(info), 402
 
     try:
         data = request.get_json(force=True) or {}
@@ -1226,9 +1263,11 @@ def skill_gap_api():
 def interview_coach_api():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
-    if not allowed:
-        return jsonify(info), 402
+    if not _is_superadmin():
+        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+        if not allowed:
+            info["message"] = UPGRADE_MSG
+            return jsonify(info), 402
 
     try:
         data = request.get_json(force=True)
@@ -1251,9 +1290,12 @@ def interview_coach_api():
 @login_required
 def get_interview_question():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
-    if not allowed:
-        return jsonify(info), 402
+
+    if not _is_superadmin():
+        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+        if not allowed:
+            info["message"] = UPGRADE_MSG
+            return jsonify(info), 402
 
     try:
         data     = request.get_json(force=True)
@@ -1277,9 +1319,12 @@ def get_interview_question():
 @login_required
 def get_interview_feedback():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
-    if not allowed:
-        return jsonify(info), 402
+
+    if not _is_superadmin():
+        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+        if not allowed:
+            info["message"] = UPGRADE_MSG
+            return jsonify(info), 402
 
     try:
         data     = request.get_json(force=True)
@@ -1392,4 +1437,4 @@ Required Qualifications, Preferred Skills, and How to Apply.
 # --- Entrypoint ---
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port
