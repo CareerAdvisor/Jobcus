@@ -549,45 +549,40 @@ def chat():
     )
 
 # keep this single definition only
-@app.route("/api/state", methods=["GET", "POST"])
+@app.route("/api/state", methods=["GET","POST"])
 @login_required
 def api_state():
-    auth_id = str(getattr(current_user, "id", None) or getattr(current_user, "auth_id", None))
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
     if not auth_id:
-        # Telemetry should never block the UI; don't 4xx here
-        return jsonify({"data": {}}), 200
+        return jsonify({"error":"no auth id"}), 400
+
+    # Free/Weekly: pretend-success (don’t write), never 500
+    if not feature_enabled(plan, "cloud_history"):
+        if request.method == "GET":
+            return jsonify({"data": {}}), 200
+        return ("", 204)
 
     if request.method == "GET":
         try:
-            # use admin client so RLS can't block legitimate reads
-            resp = supabase_admin.table("user_state") \
-                .select("data") \
-                .eq("auth_id", auth_id) \
-                .limit(1).execute()
-            row = (resp.data or [None])[0]
-            return jsonify({"data": (row.get("data") if row else {})}), 200
-        except Exception:
-            current_app.logger.exception("state fetch failed")
+            r = supabase_admin.table("user_state").select("data").eq("auth_id", auth_id).limit(1).execute()
+            row = r.data[0] if r.data else None
+            return jsonify({"data": row["data"] if row else {}}), 200
+        except Exception as e:
+            current_app.logger.warning("state fetch failed: %s", e)
             return jsonify({"data": {}}), 200
 
     # POST
     payload = request.get_json(silent=True) or {}
     data = payload.get("data", {})
-
     try:
         supabase_admin.table("user_state").upsert(
-            {
-                "auth_id": auth_id,
-                "data": data,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            },
-            on_conflict="auth_id",
+            {"auth_id": auth_id, "data": data, "updated_at": datetime.utcnow().isoformat()},
+            on_conflict="auth_id"
         ).execute()
-        # Telemetry: return no content on success
         return ("", 204)
-    except Exception:
-        # Swallow errors so this never trips a 500 in the browser console
-        current_app.logger.exception("state upsert failed")
+    except Exception as e:
+        current_app.logger.warning("state upsert failed (non-fatal): %s", e)
         return ("", 204)
 
 @app.get("/resume-analyzer")
@@ -1099,8 +1094,15 @@ def get_salary_data():
     return jsonify(labels=JOB_TITLES, salaries=fetch_salary_data())
 
 @app.route("/api/job-count")
+@login_required
 def get_job_count_data():
-    return jsonify(labels=JOB_TITLES, counts=fetch_job_counts())
+    level = job_insights_level(getattr(current_user, "plan", "free"))
+    labels = JOB_TITLES
+    counts = fetch_job_counts()
+    if level == "basic":
+        labels = labels[:3]
+        counts = counts[:3]
+    return jsonify(labels=labels, counts=counts)
 
 @app.route("/api/skills")
 def get_skills_data():
