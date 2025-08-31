@@ -80,7 +80,7 @@
 
       <!-- Centered Cover Letter CTA -->
       <div style="text-align:center; margin-top:24px;">
-        <a href="{{ url_for('cover_letter') if 'cover_letter' in globals() else '/cover-letter' }}"
+        <a href="/cover-letter" id="openCoverLetter" class="button">Open Cover Letter Builder</a>
            class="primary-btn"
            style="background:#ffc957;color:#104879;padding:12px 16px;border-radius:6px;
                   text-decoration:none;font-weight:600;font-size:16px;display:inline-block;">
@@ -88,7 +88,6 @@
           <small style="display:block;font-weight:400;font-size:14px;color:#104879;">
             Opens cover letter page
           </small>
-        </a>
       </div>
     </div>
   </section>
