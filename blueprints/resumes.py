@@ -1,3 +1,4 @@
+from limits import check_and_increment, feature_enabled
 from flask import Blueprint, render_template, request, make_response, send_file, jsonify, current_app
 from weasyprint import HTML, CSS
 from docxtpl import DocxTemplate
@@ -6,7 +7,6 @@ from PyPDF2 import PdfReader
 from openai import RateLimitError
 import base64, re, json, logging, os, docx
 from flask_login import login_required, current_user
-from limits import check_and_increment, feature_enabled, current_plan_limits
 
 resumes_bp = Blueprint("resumes", __name__)
 
@@ -684,6 +684,18 @@ def build_resume():
     theme = (data.get("theme") or "modern").lower()
     fmt   = (data.get("format") or "html").lower()
 
+    template_path = f"resumes/{'minimal' if theme == 'minimal' else 'modern'}.html"
+    html = render_template(template_path, for_pdf=(fmt == "pdf"), **tpl_ctx)
+
+    if fmt == "pdf":
+        # ✳️ PLAN GATE: File downloads (Standard & Premium)
+        plan = (getattr(current_user, "plan", "free") or "free").lower()
+        if not feature_enabled(plan, "downloads"):
+            return jsonify(
+                error="upgrade_required",
+                message="File downloads are available on Standard and Premium."
+            ), 403
+
     ctx = _normalize_ctx(data)
 
     tpl_ctx = {
@@ -697,18 +709,6 @@ def build_resume():
         "education":      ctx.get("education", []),
         "certifications": ctx.get("certifications", []),
     }
-
-    template_path = f"resumes/{'minimal' if theme == 'minimal' else 'modern'}.html"
-    html = render_template(template_path, for_pdf=(fmt == "pdf"), **tpl_ctx)
-
-    if fmt == "pdf":
-        # ✳️ PLAN GATE: File downloads (Standard & Premium)
-        plan = (getattr(current_user, "plan", "free") or "free").lower()
-        if not feature_enabled(plan, "downloads"):
-            return jsonify(
-                error="upgrade_required",
-                message="File downloads are available on Standard and Premium."
-            ), 403
           
         stylesheets = [CSS(string=PDF_CSS_OVERRIDES)]
         pdf_css_path = os.path.join(current_app.root_path, "static", "pdf.css")
@@ -766,10 +766,6 @@ def build_resume_docx():
 @resumes_bp.route("/api/optimize-resume", methods=["POST"])
 def optimize_resume():
    
-    client = current_app.config["OPENAI_CLIENT"]
-    data = request.get_json(force=True)
-    resume_text = ""
-
     # ✳️ PLAN GATE: Optimize with AI (Standard & Premium)
     plan = (getattr(current_user, "plan", "free") or "free").lower()
     if not feature_enabled(plan, "optimize_ai"):
@@ -777,6 +773,10 @@ def optimize_resume():
             error="upgrade_required",
             message="Optimize with AI is available on Standard and Premium."
         ), 403
+
+    client = current_app.config["OPENAI_CLIENT"]
+    data = request.get_json(force=True)
+    resume_text = ""
 
     # NEW: support docx alongside pdf/text
     if data.get("pdf"):
