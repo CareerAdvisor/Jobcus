@@ -110,49 +110,30 @@ def check_and_increment(user_id: str, feature_key: str, plan_limits: dict):
         "period_key": period_key,
     }
 
-FREE_MONTHLY_MSGS = 20  # example; adjust per plan
+# limits.py
+from datetime import date
+
+FREE_MONTHLY_MSGS = 20
 
 def month_key(dt=None):
     d = dt or date.today()
     return d.strftime("%Y-%m")
 
-def get_usage_count(user_id: str, period_key: str) -> int:
-    r = supabase.table("usage_counters") \
-        .select("count") \
-        .eq("user_id", user_id) \
-        .eq("period_kind", "month") \
-        .eq("period_key", period_key) \
+def plan_limit(user):
+    if getattr(user, "plan", None) in ("pro", "team") and getattr(user, "plan_status", None) == "active":
+        return None
+    return FREE_MONTHLY_MSGS
+
+def get_usage_count(sb, user_id: str, period_key: str) -> int:
+    r = sb.table("usage_counters").select("count")\
+        .eq("user_id", user_id).eq("period_kind", "month").eq("period_key", period_key)\
         .limit(1).execute()
     return (r.data[0]["count"] if r.data else 0)
 
-def plan_limit(user) -> int | None:
-    # None/0 means unlimited; adjust to your plans
-    if user.plan in ("pro", "team") and user.plan_status == "active":
-        return None  # unlimited
-    return FREE_MONTHLY_MSGS
-
-@app.post("/ask")
-def ask():
-    user = current_user  # or however you load user
-    limit = plan_limit(user)
-    period = month_key()
-    used = get_usage_count(user.id, period)
-
-    if limit is not None and used >= limit:
-        return jsonify({
-            "error": "quota_exceeded",
-            "message": "You’ve reached your monthly chat limit. Upgrade to continue."
-        }), 402  # or 429/403
-
-    # ... proceed to call OpenAI ...
-
-    # after success, increment usage
-    supabase.table("usage_counters").upsert({
-        "user_id": user.id,
+def increment_usage(sb, user_id: str, period_key: str, new_count: int):
+    sb.table("usage_counters").upsert({
+        "user_id": user_id,
         "period_kind": "month",
-        "period_key": period,
-        "count": used + 1
+        "period_key": period_key,
+        "count": new_count,
     }, on_conflict="user_id,period_kind,period_key").execute()
-
-    return jsonify(response)
-
