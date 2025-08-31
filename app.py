@@ -50,10 +50,16 @@ app.config["OPENAI_CLIENT"] = init_openai()
 supabase = app.config["SUPABASE"]
 client   = app.config["OPENAI_CLIENT"]
 
-SUPABASE_URL = os.environ["SUPABASE_URL"]
-SUPABASE_SERVICE_ROLE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+missing = [k for k in ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY") if not os.getenv(k)]
+if missing:
+    # Fail fast with a clear message (don’t print secrets)
+    raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
 
 supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
 
 # --- Flask-Login init ---
 login_manager.init_app(app)
