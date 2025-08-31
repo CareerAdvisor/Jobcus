@@ -1,7 +1,7 @@
-<!-- static/js/resume-analyzer.js -->
-<!-- keep this as the only script the page loads -->
-// Keep cookies for SameSite/Lax
-;(function(){
+// static/js/resume-analyzer.js
+
+// Keep cookies for SameSite/Lax on all fetches
+(function(){
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
@@ -9,15 +9,23 @@
   };
 })();
 
-/* ---------- INSERT THIS BLOCK ---------- */
+/* ---------- Role <datalist> loader with small cache ---------- */
 async function initRoleDatalist() {
   const input = document.getElementById("dashRoleSelect");
   const dl    = document.getElementById("roleList");
   if (!input || !dl) return;
 
   try {
-    const res   = await fetch("/static/data/roles.json", { credentials: "same-origin" });
-    const roles = await res.json();
+    // cache for the session to avoid repeated network calls
+    const cached = sessionStorage.getItem("jobcus:roles");
+    let roles;
+    if (cached) {
+      roles = JSON.parse(cached);
+    } else {
+      const res = await fetch("/static/data/roles.json", { credentials: "same-origin" });
+      roles = await res.json();
+      sessionStorage.setItem("jobcus:roles", JSON.stringify(roles));
+    }
 
     const seen = new Set();
     roles
@@ -45,14 +53,18 @@ async function initRoleDatalist() {
   }
 }
 document.addEventListener("DOMContentLoaded", initRoleDatalist);
-/* --------- END INSERTED BLOCK --------- */
 
+/* ----------------------------- Main logic ----------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
   // ---------- shared helpers ----------
   function fileToBase64(file){
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
-      fr.onload  = () => resolve(fr.result.split(",")[1]);
+      fr.onload  = () => {
+        const s = String(fr.result || "");
+        const idx = s.indexOf(",");
+        resolve(idx >= 0 ? s.slice(idx+1) : s);
+      };
       fr.onerror = reject;
       fr.readAsDataURL(file);
     });
@@ -62,10 +74,32 @@ document.addEventListener("DOMContentLoaded", () => {
     const n = parseInt(localStorage.getItem("analysisCount")||"0",10) + 1;
     localStorage.setItem("analysisCount", String(n));
   }
+  function showInlineBanner(container, msg, kind="warn"){
+    if (!container) return alert(msg);
+    let b = container.querySelector(".inline-banner");
+    if (!b) {
+      b = document.createElement("div");
+      b.className = "inline-banner";
+      b.style.cssText = "margin-top:10px;padding:10px 12px;border-radius:6px;font-size:14px;";
+      container.appendChild(b);
+    }
+    b.style.background = kind === "error" ? "#fdecea" : "#fff3cd";
+    b.style.color      = kind === "error" ? "#611a15" : "#856404";
+    b.style.border     = kind === "error" ? "1px solid #f5c2c7" : "1px solid #ffeeba";
+    b.textContent = msg;
+  }
+  function isDocx(file){
+    return file && (
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      /\.docx$/i.test(file.name || "")
+    );
+  }
+  function isPdf(file){
+    return file && (file.type === "application/pdf" || /\.pdf$/i.test(file.name || ""));
+  }
 
   // =========================================================
-  // A) NEW dashboard-style uploader present on resume-builder
-  //    (IDs: dropzone, dashResumeFile, dashAnalyzeBtn, etc.)
+  // A) Dashboard-style uploader (preferred)
   // =========================================================
   const dashAnalyzeBtn = document.getElementById("dashAnalyzeBtn");
   if (dashAnalyzeBtn) {
@@ -96,18 +130,25 @@ document.addEventListener("DOMContentLoaded", () => {
       const f = fileInput.files?.[0]; dashAnalyzeBtn.disabled = !f; showFileName(f||null);
     });
 
-    // analyze then redirect to /dashboard
     dashAnalyzeBtn.addEventListener("click", async () => {
       const f = fileInput.files?.[0]; if(!f) return;
+      const card = dashAnalyzeBtn.closest(".upload-card");
       analyzingEl && (analyzingEl.style.display = "inline");
       dashAnalyzeBtn.disabled = true;
 
       try {
+        if (!isPdf(f) && !isDocx(f)) {
+          showInlineBanner(card, "Upload a PDF or DOCX file.", "error");
+          return;
+        }
+
         const b64  = await fileToBase64(f);
-        const body = { jobDescription: jdInput?.value || "", jobRole: roleSelect?.value || "" };
-        if (f.type === "application/pdf") body.pdf = b64;
-        else if (f.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") body.docx = b64;
-        else { alert("Upload a PDF or DOCX file."); analyzingEl && (analyzingEl.style.display="none"); dashAnalyzeBtn.disabled=false; return; }
+        const body = {
+          jobDescription: jdInput?.value || "",
+          jobRole: roleSelect?.value || ""
+        };
+        if (isPdf(f)) body.pdf = b64;
+        else if (isDocx(f)) body.docx = b64;
 
         const res  = await fetch("/api/resume-analysis", {
           method: "POST",
@@ -115,29 +156,42 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify(body)
         });
 
-        // read as text first so 500 HTML doesn't crash JSON.parse
         const text = await res.text();
-        if (!res.ok) { console.error("Resume analysis failed:", text); alert("Resume analysis failed. Please try again."); return; }
+
+        if (res.status === 401 || res.status === 403) {
+          showInlineBanner(card, "Please sign in to analyze resumes.", "error");
+          setTimeout(()=>{ window.location.href = "/account?mode=login"; }, 800);
+          return;
+        }
+        if (res.status === 402) {
+          let data;
+          try { data = JSON.parse(text); } catch { data = null; }
+          showInlineBanner(card, (data?.message || "You’ve reached your resume analysis limit. Upgrade to continue."), "warn");
+          return;
+        }
+        if (!res.ok) {
+          console.error("Resume analysis failed:", text);
+          showInlineBanner(card, "Resume analysis failed. Please try again.", "error");
+          return;
+        }
 
         let data;
         try { data = JSON.parse(text); }
-        catch { console.error("Invalid JSON from /api/resume-analysis:", text); alert("Unexpected server response."); return; }
+        catch { console.error("Invalid JSON from /api/resume-analysis:", text); showInlineBanner(card, "Unexpected server response.", "error"); return; }
 
         // persist for dashboard + optimize
         localStorage.setItem("resumeAnalysis", JSON.stringify(data));
         localStorage.setItem("resumeBase64", b64);
-        localStorage.setItem("resumeKind", f.type);
+        localStorage.setItem("resumeKind", isPdf(f) ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 
-        // free-usage counter
         incCount();
-
-        // show results on dashboard
         window.location.href = "/dashboard";
       } catch (err) {
         console.error(err);
-        alert("Analysis failed. Please try again.");
+        showInlineBanner(dashAnalyzeBtn.closest(".upload-card"), "Analysis failed. Please try again.", "error");
       } finally {
         analyzingEl && (analyzingEl.style.display = "none");
+        dashAnalyzeBtn.disabled = false;
       }
     });
 
@@ -146,8 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===========================================
-  // B) Legacy analyzer UI still on the page
-  //    (IDs: analyze-btn, resume-text, resumeFile)
+  // B) Legacy analyzer UI (still supported)
   // ===========================================
   const analyzeBtn         = document.getElementById("analyze-btn");
   const resumeText         = document.getElementById("resume-text");
@@ -155,7 +208,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const analyzingIndicator = document.getElementById("analyzingIndicator");
   const resultsWrap        = document.getElementById("analysisResults");
   const resultsSummary     = document.getElementById("analysisSummary");
-  const rebuildBtn         = document.getElementById("rebuildButton");
 
   if (analyzeBtn) {
     async function sendAnalysis(file) {
@@ -165,11 +217,10 @@ document.addEventListener("DOMContentLoaded", () => {
         carriedText = resumeText.value.trim();
         payload = { text: carriedText };
       } else if (file) {
+        if (!isPdf(file) && !isDocx(file)) return alert("Unsupported type. Upload PDF or DOCX.");
         const b64 = await fileToBase64(file);
         localStorage.setItem("resumeBase64", b64);
-        if (file.type === "application/pdf") payload = { pdf: b64 };
-        else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") payload = { docx: b64 };
-        else return alert("Unsupported type. Upload PDF or DOCX.");
+        payload = isPdf(file) ? { pdf: b64 } : { docx: b64 };
       } else {
         return alert("Paste text or upload a file.");
       }
@@ -185,6 +236,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const text = await res.text();
+
+        if (res.status === 401 || res.status === 403) {
+          alert("Please sign in to analyze resumes.");
+          window.location.href = "/account?mode=login";
+          return;
+        }
+        if (res.status === 402) {
+          let data;
+          try { data = JSON.parse(text); } catch { data = null; }
+          alert(data?.message || "You’ve reached your resume analysis limit. Upgrade to continue.");
+          return;
+        }
         if (!res.ok) { console.error("Resume analysis failed:", text); alert("Analysis failed. Try again."); return; }
 
         let data; try { data = JSON.parse(text); } catch { console.error(text); alert("Unexpected server response."); return; }
@@ -224,14 +287,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// --- Cover letter handoff (kept from your original file) ---
+/* --- Cover letter handoff (unchanged logic, hardened) --- */
 (function(){
   function guessNameFromText(txt="") {
     const firstLine = (txt.split(/\r?\n/).find(Boolean) || "").trim();
     if (firstLine && /\b[A-Za-z]+(?:\s+[A-Za-z\.\-']+){1,3}\b/.test(firstLine)) return firstLine;
     return "";
   }
-  function toContactLine(txt=""){ return ""; }
+  function toContactLine(){ return ""; }
 
   const openCLBtn = document.getElementById("openCoverLetter");
   if (!openCLBtn) return;
