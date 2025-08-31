@@ -1043,34 +1043,38 @@ def api_state():
         # DO NOT propagate an error for telemetry – it should never break the UI
     return ("", 204)
 
-# ----------------------------
-# Chat & Jobs & Insights
-# ----------------------------
 @app.route("/ask", methods=["POST"])
 @login_required
 def ask():
-    allowed, info = check_and_increment(current_user.id, "chat_messages", current_plan_limits())
-    if not allowed:
-        return jsonify({"reply": "⚠️ You've reached your chat limit. Please upgrade on the Pricing page."}), 403
+    # quota check
+    limit  = plan_limit(current_user)
+    period = month_key()
+    used   = get_usage_count(supabase_admin, current_user.id, period)
+    if limit is not None and used >= limit:
+        return jsonify({
+            "error": "quota_exceeded",
+            "message": "You’ve reached your monthly chat limit. Upgrade to continue."
+        }), 402
 
+    # your existing OpenAI call
     body = request.get_json(force=True) or {}
     user_msg = body.get("message", "")
-    # Paid users can request a model via body["model"]; free users are forced by choose_model()
     model = choose_model(body.get("model"))
-
-    msgs = [
-        {"role": "system", "content": "You are Jobcus, a helpful AI career assistant."},
-        {"role": "user", "content": user_msg}
-    ]
     try:
         resp = current_app.config["OPENAI_CLIENT"].chat.completions.create(
             model=model,
-            messages=msgs,
+            messages=[
+                {"role": "system", "content": "You are Jobcus, a helpful AI career assistant."},
+                {"role": "user", "content": user_msg},
+            ],
             temperature=0.6,
         )
         ai_msg = resp.choices[0].message.content
+
+        # count usage after success
+        increment_usage(supabase_admin, current_user.id, period, used + 1)
         return jsonify(reply=ai_msg, modelUsed=model)
-    except Exception as e:
+    except Exception:
         current_app.logger.exception("OpenAI error")
         return jsonify(reply="⚠️ Server error talking to the AI. Please try again.", modelUsed=model), 500
 
