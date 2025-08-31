@@ -23,7 +23,18 @@ import logging
 from typing import Optional  # if you're on Python <3.10
 from datetime import datetime, timedelta, timezone, date
 from auth_utils import require_superadmin, is_staff, is_superadmin
-from limits import check_and_increment, current_plan_limits, plan_limit, month_key, get_usage_count, increment_usage, job_insights_level, feature_enabled
+from limits import (
+    check_and_increment, 
+    current_plan_limits, 
+    plan_limit, 
+    month_key, 
+    get_usage_count, 
+    increment_usage, 
+    job_insights_level, 
+    feature_enabled,
+    quota_for,
+    period_key
+)
 from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
 
@@ -1045,7 +1056,6 @@ def ask():
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages")
     if not allowed:
         return jsonify(info), 402
-
     body = request.get_json(force=True) or {}
     user_msg = body.get("message", "")
     model = choose_model(body.get("model"))
@@ -1067,11 +1077,18 @@ def ask():
 @app.get("/api/credits")
 @login_required
 def api_credits():
-    plan = getattr(current_user, "plan", "free")
-    lims = current_plan_limits()  # your existing function
-    used = get_usage(current_user.id, "chat_messages")  # your counter in DB
-    left = max(lims.max_messages - used, 0)
-    return jsonify(plan=plan, used=used, max=lims.max_messages, left=left)
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+
+    # example: chat credits
+    q = quota_for(plan, "chat_messages")  # Quota(period_kind, limit)
+    if q.limit is None:
+        return jsonify(plan=plan, used=None, max=None, left=None)
+
+    key   = period_key(q.period_kind)
+    used  = get_usage_count(supabase_admin, current_user.id, "chat_messages", q.period_kind, key)
+    left  = max(q.limit - used, 0)
+    return jsonify(plan=plan, used=used, max=q.limit, left=left,
+                   period_kind=q.period_kind, period_key=key)
 
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
