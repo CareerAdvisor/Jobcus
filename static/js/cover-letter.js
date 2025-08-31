@@ -1,20 +1,36 @@
 // static/js/cover-letter.js
 (function () {
+  // Always send cookies with fetch (SameSite=Lax)
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
     return _fetch(input, init);
   };
 
+  // Escape helper for any dynamic HTML we might add in the future
+  function escapeHtml(s = "") {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function gatherContext(form) {
     const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
+    const baseTone = (form.tone?.value || "professional").trim();
+
+    // Nudge the AI: natural, human-like, concise; max 3 paragraphs
+    const toneAugmented = `${baseTone}; human-like and natural; concise; maximum 3 short paragraphs`;
+
     return {
       name,
       contact: form.contact?.value || "",
       company: form.company?.value || "",
       role: form.role?.value || "",
       jobUrl: form.jobUrl?.value || "",
-      tone: form.tone?.value || "professional",
+      tone: toneAugmented,
 
       // Applicant (sender)
       sender: {
@@ -41,18 +57,30 @@
         company: form.company?.value || "",
         role: form.role?.value || "",
         jobUrl: form.jobUrl?.value || "",
-        tone: form.tone?.value || "professional",
+        tone: toneAugmented,
         draft: form.body?.value || ""
       }
     };
   }
 
-  // Keep only the letter body (no greeting/closing) even if AI returns them.
+  // Keep only the body (no greeting/closing), cap to 3 paragraphs, keep a natural flow
   function sanitizeDraft(text) {
     if (!text) return text;
     let t = String(text).trim();
-    t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, ""); // drop any leading "Dear ..."
-    t = t.replace(/\n+\s*(yours sincerely|sincerely|kind regards|best regards)[\s\S]*$/i, ""); // drop sign-off
+
+    // Drop greeting if present
+    t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, "");
+
+    // Drop sign-off if present
+    t = t.replace(/\n+\s*(yours\s+sincerely|sincerely|kind\s+regards|best\s+regards|regards)[\s\S]*$/i, "");
+
+    // Normalize excessive blank lines
+    t = t.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
+
+    // Cap at 3 paragraphs
+    const paras = t.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+    t = paras.slice(0, 3).join("\n\n");
+
     return t.trim();
   }
 
@@ -63,6 +91,7 @@
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ field, context: ctx })
     });
+
     const json = await res.json().catch(() => ({}));
     if (!res.ok || json.error) throw new Error(json.error || "AI suggest failed");
 
@@ -79,8 +108,8 @@
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        format,                      // "html" for preview, "pdf" for download
-        letter_only: true,           // <— IMPORTANT: force the letter-only view in preview
+        format,            // "html" for preview, "pdf" for download
+        letter_only: true, // ensure letter-only view for preview
         sender: ctx.sender,
         recipient: ctx.recipient,
         coverLetter: ctx.coverLetter
@@ -99,7 +128,7 @@
     }
 
     const html = await res.text();
-    const wrap = document.getElementById("clPreviewWrap");
+    const wrap  = document.getElementById("clPreviewWrap");
     const frame = document.getElementById("clPreview");
     if (wrap && frame) {
       wrap.style.display = "block";
@@ -108,8 +137,9 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("clForm");
+    const form  = document.getElementById("clForm");
     const aiCard = document.getElementById("ai-cl");
+    const aiText = () => aiCard?.querySelector(".ai-text");
 
     aiCard?.addEventListener("click", async (e) => {
       const btn = e.target.closest(".ai-refresh, .ai-add");
@@ -117,16 +147,20 @@
 
       if (btn.classList.contains("ai-refresh")) {
         try {
+          btn.disabled = true;
+          if (aiText()) aiText().textContent = "Thinking…";
           const ctx = gatherContext(form);
           const draft = await aiSuggestCoverLetter(ctx);
-          aiCard.querySelector(".ai-text").textContent = draft || "No draft yet.";
+          if (aiText()) aiText().textContent = draft || "No draft yet.";
         } catch (err) {
-          aiCard.querySelector(".ai-text").textContent = err.message || "AI failed.";
+          if (aiText()) aiText().textContent = err.message || "AI failed.";
+        } finally {
+          btn.disabled = false;
         }
       }
 
       if (btn.classList.contains("ai-add")) {
-        const draft = aiCard.querySelector(".ai-text")?.textContent?.trim();
+        const draft = aiText()?.textContent?.trim();
         if (draft) form.body.value = sanitizeDraft(draft);
       }
     });
