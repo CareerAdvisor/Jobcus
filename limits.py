@@ -110,9 +110,6 @@ def check_and_increment(user_id: str, feature_key: str, plan_limits: dict):
         "period_key": period_key,
     }
 
-# limits.py
-from datetime import date
-
 FREE_MONTHLY_MSGS = 20
 
 def month_key(dt=None):
