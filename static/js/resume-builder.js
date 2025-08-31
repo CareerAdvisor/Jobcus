@@ -1,4 +1,4 @@
-// static/js/resume-builder.js
+// /static/js/resume-builder.js
 "use strict";
 
 // Ensure fetch keeps cookies (SameSite=Lax safe)
@@ -21,6 +21,42 @@ const AI_ENDPOINT = "/ai/suggest";
 const escapeHtml = (s="") =>
   s.replace(/&/g,"&amp;").replace(/</g,"&lt;")
    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+
+// Centralized server-response handling for plan/auth/abuse messages
+async function handleCommonErrors(res) {
+  if (res.ok) return null;
+  const ct = res.headers.get("content-type") || "";
+  let body = null;
+  try { body = ct.includes("application/json") ? await res.json() : { message: await res.text() }; }
+  catch { body = null; }
+
+  // Auth required
+  if (res.status === 401 || res.status === 403) {
+    const msg = body?.message || "Please sign in to continue.";
+    window.showUpgradeBanner?.(msg);
+    // For AI suggestions we avoid auto-redirect on auto triggers; but on explicit actions, redirect feels okay.
+    setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
+    throw new Error(msg);
+  }
+
+  // Plan limits / feature gating
+  if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
+    const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
+    window.showUpgradeBanner?.(msg);
+    throw new Error(msg);
+  }
+
+  // Abuse guard (free misuse)
+  if (res.status === 429 && body?.error === "too_many_free_accounts") {
+    const msg = body?.message || "Too many free accounts detected from your network/device.";
+    window.showUpgradeBanner?.(msg);
+    throw new Error(msg);
+  }
+
+  // Generic
+  const msg = body?.message || `Request failed (${res.status})`;
+  throw new Error(msg);
+}
 
 // ───────────────────────────────────────────────
 // Context gatherers
@@ -96,8 +132,12 @@ async function aiSuggest(field, ctx, index) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ field, index, context: ctx })
     });
+
+    await handleCommonErrors(res);
+
     const json = await res.json().catch(() => ({}));
-    if (!res.ok || json.error) throw new Error(json.error || `AI suggest failed for ${field}`);
+    if (json.error) throw new Error(json.error || `AI suggest failed for ${field}`);
+
     const list = Array.isArray(json.list) ? json.list : null;
     const text = typeof json.text === "string" ? json.text : "";
     const lines = list && list.length
@@ -105,7 +145,8 @@ async function aiSuggest(field, ctx, index) {
       : (text ? text.split(/\r?\n/).map(s => s.trim()).filter(Boolean) : []);
     return lines.length ? lines : ["AI suggestion currently unavailable. Try again."];
   } catch (e) {
-    console.warn(e);
+    // If this was triggered silently (auto-refresh) don't force a redirect loop; just show a gentle message upstream
+    console.warn("aiSuggest:", e?.message || e);
     return ["AI suggestion currently unavailable. Try again."];
   }
 }
@@ -133,7 +174,7 @@ function attachAISuggestionHandlers() {
         if (type === "summary") {
           lines = await aiSuggest("summary", ctx);
           textEl.textContent = lines.join(" ");
-        } else if (type === "highlights") {
+        } else if (type === "highlights")) {
           const allItems = qsa(builder, "#exp-list .rb-item");
           const itemEl = btn.closest(".rb-item");
           const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
@@ -181,8 +222,10 @@ function cloneFromTemplate(tplId) {
   const node = tpl.content.firstElementChild.cloneNode(true);
   // remove button
   qs(node, ".rb-remove")?.addEventListener("click", () => node.remove());
-  // auto-create suggestions for new blocks (non-blocking)
-  setTimeout(() => { qs(node, ".ai-suggest .ai-refresh")?.click(); }, 0);
+  // auto-create suggestions for new blocks (non-blocking) — only if signed in
+  if (window.USER_AUTHENTICATED) {
+    setTimeout(() => { qs(node, ".ai-suggest .ai-refresh")?.click(); }, 0);
+  }
   return node;
 }
 function addExperienceFromObj(obj = {}) {
@@ -264,14 +307,28 @@ function initSkills() {
 // Render with server templates (HTML/PDF/DOCX)
 // ───────────────────────────────────────────────
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
-  if (format === "pdf") {
-    const res = await fetch("/build-resume", {
+  // helper to POST and handle errors/upgrade guard
+  async function postAndMaybeError(url, payload) {
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ format: "pdf", theme, ...ctx })
+      body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error(`PDF build failed: ${res.status}`);
+    // If HTML route returns JSON error (403 upgrade), handle that
+    if (!res.ok) {
+      await handleCommonErrors(res);
+    }
+    return res;
+  }
+
+  if (format === "pdf") {
+    const res = await postAndMaybeError("/build-resume", { format: "pdf", theme, ...ctx });
     const blob = await res.blob();
+    const ct   = res.headers.get("content-type") || "";
+    if (!ct.includes("application/pdf")) {
+      // server might have returned an HTML error page; show generic msg
+      throw new Error("PDF generation failed.");
+    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = "resume.pdf"; a.click();
@@ -280,13 +337,12 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
   }
 
   if (format === "docx") {
-    const res = await fetch("/build-resume-docx", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...ctx })
-    });
-    if (!res.ok) throw new Error(`DOCX build failed: ${res.status}`);
+    const res = await postAndMaybeError("/build-resume-docx", { ...ctx });
     const blob = await res.blob();
+    const ct   = res.headers.get("content-type") || "";
+    if (!ct.includes("application/vnd.openxmlformats-officedocument.wordprocessingml.document")) {
+      throw new Error("DOCX generation failed.");
+    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = "resume.docx"; a.click();
@@ -295,16 +351,33 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
   }
 
   // HTML preview
-  const r = await fetch("/build-resume", {
+  const res = await fetch("/build-resume", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ format: "html", theme, ...ctx })
   });
-  const html = await r.text();
-  if (!r.ok) throw new Error(`HTML build failed: ${r.status} ${html}`);
+
+  // If server sent an error JSON (e.g., upgrade_required on preview? unlikely, but safe)
+  if (!res.ok) {
+    await handleCommonErrors(res);
+  }
+
+  const ct = res.headers.get("content-type") || "";
   const wrap  = qs(document, withinBuilder("#resumePreviewWrap, #resumePreviewWrapFinish"));
   const frame = qs(document, withinBuilder("#resumePreview, #resumePreviewFinish"));
-  if (wrap && frame) { wrap.style.display = "block"; frame.srcdoc = html; }
+
+  if (ct.includes("text/html")) {
+    const html = await res.text();
+    if (wrap && frame) { wrap.style.display = "block"; frame.srcdoc = html; }
+  } else if (ct.includes("application/json")) {
+    const data = await res.json().catch(() => ({}));
+    if (data?.message) window.showUpgradeBanner?.(data.message);
+    throw new Error(data?.message || "Preview failed.");
+  } else {
+    // unknown type
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Preview failed. ${txt ? "Server said: " + txt : ""}`);
+  }
 }
 
 // ───────────────────────────────────────────────
@@ -349,13 +422,15 @@ function initWizard() {
     const node = steps[i]; if (!node) return;
     if (node.id === "step-summary" && !node.dataset.loaded) {
       node.dataset.loaded = "1";
-      qs(node, "#ai-summary .ai-refresh")?.click();
+      if (window.USER_AUTHENTICATED) qs(node, "#ai-summary .ai-refresh")?.click();
     }
     if (node.id === "step-experience" && !qs(builder, "#exp-list .rb-item")) addExperienceFromObj();
     if (node.id === "step-education"  && !qs(builder, "#edu-list .rb-item")) addEducationFromObj();
     if (node.id === "step-experience" && !node.dataset.loaded) {
       node.dataset.loaded = "1";
-      qsa(builder, "#exp-list .ai-suggest .ai-refresh").forEach(btn => btn.click());
+      if (window.USER_AUTHENTICATED) {
+        qsa(builder, "#exp-list .ai-suggest .ai-refresh").forEach(btn => btn.click());
+      }
     }
     // best-effort telemetry
     try { window.syncState?.({ builder_step: node.id }); } catch {}
@@ -454,14 +529,20 @@ function initWizard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
+      await handleCommonErrors(gen);
+
       const genJson = await gen.json().catch(() => ({}));
-      if (!gen.ok || genJson.error) throw new Error(genJson.error || "Resume generation failed");
+      if (genJson.error) throw new Error(genJson.error || "Resume generation failed");
 
       // Merge AI-enriched context into current context
       window._resumeCtx = { ...ctxForTemplate, ...(genJson.context || {}) };
 
-      // telemetry best-effort
-      try { window.syncState?.({ resume_generated: true }); } catch {}
+      // Persist/sync latest resume for cloud history (best-effort)
+      try {
+        localStorage.setItem("resume_latest", JSON.stringify(window._resumeCtx));
+        window.syncState?.({ resume_latest: window._resumeCtx, resume_generated: true });
+      } catch {}
 
       // Jump to Finish step
       const finishIdx = steps.findIndex(s => s && s.id === "step-finish");
@@ -491,6 +572,7 @@ function initWizard() {
       await renderWithTemplateFromContext(ctx, kind, theme);
     } catch (e) {
       console.error(e);
+      // If handleCommonErrors already showed upgrade banner, just surface message
       alert(e.message || (kind === "pdf" ? "PDF build failed" : kind === "docx" ? "DOCX build failed" : "Preview failed"));
     } finally {
       if (indicator) indicator.style.display = "none";
@@ -536,8 +618,11 @@ async function maybePrefillFromAnalyzer(form, helpers) {
         education: "", experience: raw, skills: "", certifications: "", portfolio: ""
       }),
     });
+
+    await handleCommonErrors(gen);
+
     const genJson = await gen.json().catch(() => ({}));
-    if (!gen.ok || genJson.error) throw new Error(genJson.error || "Generate failed");
+    if (genJson.error) throw new Error(genJson.error || "Generate failed");
 
     const ctx = genJson.context || {};
     const name = (ctx.name || "").trim().split(/\s+/);
@@ -567,6 +652,10 @@ async function maybePrefillFromAnalyzer(form, helpers) {
     }
 
     window._resumeCtx = ctx;
+    try {
+      localStorage.setItem("resume_latest", JSON.stringify(ctx));
+      window.syncState?.({ resume_latest: ctx });
+    } catch {}
   } catch (e) {
     console.warn("Prefill from analyzer failed:", e);
   }
