@@ -375,7 +375,11 @@ def guard_free_plan_abuse():
     protected = {"ask", "api_resume_analysis"}  # endpoints that burn credits
     if request.endpoint in protected:
         if too_many_free_accounts_from_ip(ip_hash_from_request(request)):
-            return ("Too many free accounts from your network. Please upgrade or contact support.", 429)
+            # Return JSON the frontend can understand
+            return jsonify({
+                "error": "too_many_free_accounts",
+                "message": "Too many free accounts from your network. Please upgrade or contact support."
+            }), 429
 
 # Jobs fetch
 def fetch_remotive_jobs(query: str):
