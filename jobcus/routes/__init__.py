@@ -70,6 +70,7 @@ def register_routes(app: Flask) -> None:
     alias_endpoint("main.page_resume_analyzer", "/resume-analyzer", "page_resume_analyzer")
     alias_endpoint("main.page_resume_builder", "/resume-builder", "page_resume_builder")
     alias_endpoint("main.interview_coach", "/interview-coach", "interview_coach")
+    alias_endpoint("main.cover_letter", "/cover-letter", "cover_letter")
     alias_endpoint("main.skill_gap", "/skill-gap", "skill_gap")
     alias_endpoint("main.job_insights", "/job-insights", "job_insights")
     alias_endpoint("main.employers", "/employers", "employers")
