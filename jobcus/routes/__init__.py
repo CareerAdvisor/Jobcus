@@ -1,6 +1,6 @@
 # jobcus/routes/__init__.py
 from __future__ import annotations
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for
 
 def register_routes(app: Flask) -> None:
     from .main import main_bp
