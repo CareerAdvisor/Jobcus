@@ -1,6 +1,6 @@
 # jobcus/routes/__init__.py
 from __future__ import annotations
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for
 
 def register_routes(app: Flask) -> None:
     from .main import main_bp
@@ -52,31 +52,79 @@ def register_routes(app: Flask) -> None:
     if auth_bp:
         app.register_blueprint(auth_bp)
 
-    # ---- Helpers to create top-level aliases for blueprint endpoints ----
+    # ---- Helper to create top-level aliases for blueprint endpoints ----
     def alias_endpoint(source_ep: str, rule: str, alias_ep: str):
         """
         Add a new URL rule that points to an existing view function registered
         under a blueprint (e.g., 'main.pricing' -> '/pricing', endpoint='pricing').
-        Safe: only adds if the source exists and alias doesn't.
+        Only adds if the source exists and alias doesn't.
         """
         if source_ep in app.view_functions and alias_ep not in app.view_functions:
             app.add_url_rule(rule, endpoint=alias_ep, view_func=app.view_functions[source_ep])
 
-    # Create aliases for endpoints your templates call without blueprint prefix.
-    # base.html uses url_for('pricing'), so map main.pricing -> pricing
-    alias_endpoint("main.pricing", "/pricing", "pricing")
-    # If your templates link to /chat with url_for('chat'), alias it too:
-    alias_endpoint("main.chat", "/chat", "chat")
-    # If you have a plain 'index' reference anywhere:
+    # ----- Aliases for MAIN endpoints (your templates call them unqualified) -----
     alias_endpoint("main.index", "/", "index")
+    alias_endpoint("main.chat", "/chat", "chat")
+    alias_endpoint("main.pricing", "/pricing", "pricing")
+    alias_endpoint("main.dashboard", "/dashboard", "dashboard")
+    alias_endpoint("main.page_resume_analyzer", "/resume-analyzer", "page_resume_analyzer")
+    alias_endpoint("main.page_resume_builder", "/resume-builder", "page_resume_builder")
+    alias_endpoint("main.interview_coach", "/interview-coach", "interview_coach")
+    alias_endpoint("main.skill_gap", "/skill-gap", "skill_gap")
+    alias_endpoint("main.job_insights", "/job-insights", "job_insights")
+    alias_endpoint("main.employers", "/employers", "employers")
+    alias_endpoint("main.faq", "/faq", "faq")
+    alias_endpoint("main.privacy_policy", "/privacy-policy", "privacy_policy")
+    alias_endpoint("main.terms_of_service", "/terms-of-service", "terms_of_service")
+    alias_endpoint("main.admin_settings", "/admin/settings", "admin_settings")
 
-    # Account route:
-    # Prefer aliasing an existing auth view if present, otherwise provide a tiny shim.
+    # ----- Auth routes: prefer aliasing real views; otherwise provide shims -----
+    # account
     if "account" not in app.view_functions:
         if "auth.account" in app.view_functions:
             alias_endpoint("auth.account", "/account", "account")
         else:
             @app.get("/account", endpoint="account")
-            def account_page():
-                # Minimal fallback so url_for('account') and login_view='account' both work
+            def _account_page():
+                # Minimal fallback page
                 return render_template("account.html")
+
+    # login
+    if "login" not in app.view_functions:
+        if "auth.login" in app.view_functions:
+            alias_endpoint("auth.login", "/login", "login")
+        else:
+            @app.get("/login", endpoint="login")
+            def _login_redirect():
+                # Use the same page as account if you don't split them
+                return render_template("account.html")
+
+    # signup
+    if "signup" not in app.view_functions:
+        if "auth.signup" in app.view_functions:
+            alias_endpoint("auth.signup", "/signup", "signup")
+        else:
+            @app.get("/signup", endpoint="signup")
+            def _signup_redirect():
+                return render_template("account.html")
+
+    # logout
+    if "logout" not in app.view_functions:
+        if "auth.logout" in app.view_functions:
+            alias_endpoint("auth.logout", "/logout", "logout")
+        else:
+            # Safe shim: log the user out if Flask-Login is present; then redirect.
+            try:
+                from flask_login import logout_user
+            except Exception:
+                logout_user = None
+
+            @app.get("/logout", endpoint="logout")
+            def _logout_shim():
+                try:
+                    if logout_user:
+                        logout_user()
+                except Exception:
+                    # Don't let logout failures crash the page
+                    pass
+                return redirect(url_for("account"))
