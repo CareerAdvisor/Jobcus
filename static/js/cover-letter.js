@@ -1,4 +1,5 @@
-// static/js/cover-letter.js
+<!-- /static/js/cover-letter.js -->
+<script>
 (function () {
   // Always send cookies with fetch (SameSite=Lax)
   const _fetch = window.fetch.bind(window);
@@ -7,7 +8,7 @@
     return _fetch(input, init);
   };
 
-  // Escape helper for any dynamic HTML we might add in the future
+  // Simple escaper
   function escapeHtml(s = "") {
     return String(s)
       .replace(/&/g, "&amp;")
@@ -17,11 +18,43 @@
       .replace(/'/g, "&#39;");
   }
 
+  // Centralized server-response handling (auth/limits/abuse)
+  async function handleCommonErrors(res) {
+    if (res.ok) return null;
+    const ct = res.headers.get("content-type") || "";
+    let body = null;
+    try { body = ct.includes("application/json") ? await res.json() : { message: await res.text() }; }
+    catch { body = null; }
+
+    // Auth
+    if (res.status === 401 || res.status === 403) {
+      const msg = body?.message || "Please sign in to continue.";
+      window.showUpgradeBanner?.(msg);
+      setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
+      throw new Error(msg);
+    }
+
+    // Plan limits / feature gating
+    if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
+      const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
+      window.showUpgradeBanner?.(msg);
+      throw new Error(msg);
+    }
+
+    // Abuse guard
+    if (res.status === 429 && body?.error === "too_many_free_accounts") {
+      const msg = body?.message || "Too many free accounts detected from your network/device.";
+      window.showUpgradeBanner?.(msg);
+      throw new Error(msg);
+    }
+
+    const msg = body?.message || `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+
   function gatherContext(form) {
     const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
     const baseTone = (form.tone?.value || "professional").trim();
-
-    // Nudge the AI: natural, human-like, concise; max 3 paragraphs
     const toneAugmented = `${baseTone}; human-like and natural; concise; maximum 3 short paragraphs`;
 
     return {
@@ -63,7 +96,7 @@
     };
   }
 
-  // Keep only the body (no greeting/closing), cap to 3 paragraphs, keep a natural flow
+  // Keep only the body (no greeting/closing), cap to 3 paragraphs, normalize spacing
   function sanitizeDraft(text) {
     if (!text) return text;
     let t = String(text).trim();
@@ -92,8 +125,10 @@
       body: JSON.stringify({ field, context: ctx })
     });
 
+    await handleCommonErrors(res);
+
     const json = await res.json().catch(() => ({}));
-    if (!res.ok || json.error) throw new Error(json.error || "AI suggest failed");
+    if (json.error) throw new Error(json.error || "AI suggest failed");
 
     const raw =
       json.text ||
@@ -109,16 +144,23 @@
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
         format,            // "html" for preview, "pdf" for download
-        letter_only: true, // ensure letter-only view for preview
+        letter_only: true, // ensure letter-only view for preview/download
         sender: ctx.sender,
         recipient: ctx.recipient,
         coverLetter: ctx.coverLetter
       })
     });
 
-    if (!res.ok) throw new Error(`Build failed: ${res.status}`);
+    if (!res.ok) {
+      await handleCommonErrors(res);
+    }
 
     if (format === "pdf") {
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/pdf")) {
+        const maybeText = await res.text().catch(() => "");
+        throw new Error(maybeText || "PDF generation failed.");
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -127,6 +169,14 @@
       return;
     }
 
+    // HTML preview
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("text/html")) {
+      const body = ct.includes("application/json") ? await res.json().catch(() => ({})) : { message: await res.text().catch(() => "") };
+      const msg = body?.message || "Preview failed.";
+      window.showUpgradeBanner?.(msg);
+      throw new Error(msg);
+    }
     const html = await res.text();
     const wrap  = document.getElementById("clPreviewWrap");
     const frame = document.getElementById("clPreview");
@@ -136,10 +186,28 @@
     }
   }
 
+  // Optional: prefill from analyzer handoff (if present)
+  function maybePrefillFromSeed(form) {
+    try {
+      const raw = localStorage.getItem("coverLetterSeed");
+      if (!raw) return;
+      const seed = JSON.parse(raw);
+      if (seed.firstName && form.firstName) form.firstName.value = seed.firstName;
+      if (seed.lastName  && form.lastName)  form.lastName.value  = seed.lastName;
+      if (seed.role      && form.role)      form.role.value      = seed.role;
+      if (seed.company   && form.company)   form.company.value   = seed.company;
+      // contact line, if provided by your analyzer
+      if (seed.contact   && form.contact)   form.contact.value   = seed.contact;
+    } catch {}
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
-    const form  = document.getElementById("clForm");
+    const form   = document.getElementById("clForm");
     const aiCard = document.getElementById("ai-cl");
-    const aiText = () => aiCard?.querySelector(".ai-text");
+    const getAiTextEl = () => aiCard?.querySelector(".ai-text");
+
+    // Prefill if analyzer passed a seed
+    if (form) maybePrefillFromSeed(form);
 
     aiCard?.addEventListener("click", async (e) => {
       const btn = e.target.closest(".ai-refresh, .ai-add");
@@ -148,20 +216,23 @@
       if (btn.classList.contains("ai-refresh")) {
         try {
           btn.disabled = true;
-          if (aiText()) aiText().textContent = "Thinking…";
+          const el = getAiTextEl();
+          if (el) el.textContent = "Thinking…";
           const ctx = gatherContext(form);
           const draft = await aiSuggestCoverLetter(ctx);
-          if (aiText()) aiText().textContent = draft || "No draft yet.";
+          if (el) el.textContent = draft || "No draft yet.";
         } catch (err) {
-          if (aiText()) aiText().textContent = err.message || "AI failed.";
+          const el = getAiTextEl();
+          if (el) el.textContent = err.message || "AI failed.";
         } finally {
           btn.disabled = false;
         }
       }
 
       if (btn.classList.contains("ai-add")) {
-        const draft = aiText()?.textContent?.trim();
-        if (draft) form.body.value = sanitizeDraft(draft);
+        const el = getAiTextEl();
+        const draft = el ? el.textContent.trim() : "";
+        if (draft && form?.body) form.body.value = sanitizeDraft(draft);
       }
     });
 
@@ -176,3 +247,4 @@
     });
   });
 })();
+</script>
