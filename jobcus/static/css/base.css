@@ -270,31 +270,29 @@
 /* Fallback svg size (logged out) */
 .avatar-icon{ width:24px; height:24px; display:block; }
 
-.upgrade-banner{
-  display:block;
-  background:#fff3cd;
-  color:#664d03;
-  border:1px solid #ffecb5;
-  padding:.75rem 1rem;
-  margin:0 1rem 1rem;
-  border-radius:.5rem;
-  font-weight:600;
-}
+/* Upgrade banner — hidden by default */
+#upgrade-banner[hidden] { display: none !important; }
 
-/* static/css/base.css */
-.upgrade-banner {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-
+/* Visuals only when shown */
+#upgrade-banner {
+  position: fixed;
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
+  z-index: 2000;
+  max-width: 960px;
+  width: calc(100% - 24px);
   padding: 10px 14px;
-  text-align: center;
-
-  background: #fff3cd;        /* soft warning yellow */
-  color: #664d03;
-  border-top: 1px solid #ffe69c;
-  border-bottom: 1px solid #ffe69c;
+  border-radius: 12px;
+  border: 1px solid #ffe69c;         /* optional */
+  background: #fff3cd;               /* pale yellow */
+  color: #663c00;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
 }
+
+/* Only display when explicitly “shown” */
+#upgrade-banner:not(.show) { display: none; }
+#upgrade-banner.show { display: block; }
 
 @media (max-width: 480px) {
   .cc-banner { left: 12px; right: 12px; bottom: 12px; }
