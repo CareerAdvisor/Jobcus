@@ -1,4 +1,5 @@
-// /static/js/resume-builder.js
+<!-- /static/js/resume-builder.js -->
+<script>
 "use strict";
 
 // Ensure fetch keeps cookies (SameSite=Lax safe)
@@ -34,7 +35,6 @@ async function handleCommonErrors(res) {
   if (res.status === 401 || res.status === 403) {
     const msg = body?.message || "Please sign in to continue.";
     window.showUpgradeBanner?.(msg);
-    // For AI suggestions we avoid auto-redirect on auto triggers; but on explicit actions, redirect feels okay.
     setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
     throw new Error(msg);
   }
@@ -145,7 +145,6 @@ async function aiSuggest(field, ctx, index) {
       : (text ? text.split(/\r?\n/).map(s => s.trim()).filter(Boolean) : []);
     return lines.length ? lines : ["AI suggestion currently unavailable. Try again."];
   } catch (e) {
-    // If this was triggered silently (auto-refresh) don't force a redirect loop; just show a gentle message upstream
     console.warn("aiSuggest:", e?.message || e);
     return ["AI suggestion currently unavailable. Try again."];
   }
@@ -174,7 +173,7 @@ function attachAISuggestionHandlers() {
         if (type === "summary") {
           lines = await aiSuggest("summary", ctx);
           textEl.textContent = lines.join(" ");
-        } else if (type === "highlights")) {
+        } else if (type === "highlights") {
           const allItems = qsa(builder, "#exp-list .rb-item");
           const itemEl = btn.closest(".rb-item");
           const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
@@ -314,7 +313,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    // If HTML route returns JSON error (403 upgrade), handle that
     if (!res.ok) {
       await handleCommonErrors(res);
     }
@@ -326,7 +324,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     const blob = await res.blob();
     const ct   = res.headers.get("content-type") || "";
     if (!ct.includes("application/pdf")) {
-      // server might have returned an HTML error page; show generic msg
       throw new Error("PDF generation failed.");
     }
     const url = URL.createObjectURL(blob);
@@ -357,7 +354,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     body: JSON.stringify({ format: "html", theme, ...ctx })
   });
 
-  // If server sent an error JSON (e.g., upgrade_required on preview? unlikely, but safe)
   if (!res.ok) {
     await handleCommonErrors(res);
   }
@@ -374,7 +370,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     if (data?.message) window.showUpgradeBanner?.(data.message);
     throw new Error(data?.message || "Preview failed.");
   } else {
-    // unknown type
     const txt = await res.text().catch(() => "");
     throw new Error(`Preview failed. ${txt ? "Server said: " + txt : ""}`);
   }
@@ -432,7 +427,6 @@ function initWizard() {
         qsa(builder, "#exp-list .ai-suggest .ai-refresh").forEach(btn => btn.click());
       }
     }
-    // best-effort telemetry
     try { window.syncState?.({ builder_step: node.id }); } catch {}
   }
 
@@ -572,7 +566,6 @@ function initWizard() {
       await renderWithTemplateFromContext(ctx, kind, theme);
     } catch (e) {
       console.error(e);
-      // If handleCommonErrors already showed upgrade banner, just surface message
       alert(e.message || (kind === "pdf" ? "PDF build failed" : kind === "docx" ? "DOCX build failed" : "Preview failed"));
     } finally {
       if (indicator) indicator.style.display = "none";
@@ -676,3 +669,4 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Resume builder init failed:", e);
   }
 });
+</script>
