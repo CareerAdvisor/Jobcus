@@ -2,7 +2,6 @@
 
 {% block title %}Resume Analyzer – Jobcus{% endblock %}
 
-{# Reuse dashboard styles so the upload card/dropzone match #}
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 {% endblock %}
@@ -59,7 +58,6 @@
 
         <label class="field">
           <span class="field__label center">Or pick a target role to assess relevance</span>
-          <!-- keep id for existing JS -->
           <input id="dashRoleSelect" class="select" list="roleList"
                  placeholder="Start typing a role (e.g., Business Analyst, Azure Architect, Animator)…" />
           <datalist id="roleList"></datalist>
@@ -78,9 +76,9 @@
         <div id="analyzerNotice" class="notice" hidden role="alert" aria-live="polite"></div>
       </article>
 
-      <!-- Centered Cover Letter CTA -->
+      <!-- Centered Cover Letter CTA (add id for seeding) -->
       <div style="text-align:center; margin-top:24px;">
-        <a href="/cover-letter" class="primary-btn"
+        <a id="openCoverLetter" href="/cover-letter" class="primary-btn"
            style="background:#ffc957;color:#104879;padding:12px 16px;border-radius:6px;
                   text-decoration:none;font-weight:600;font-size:16px;display:inline-block;">
           ➜ Create Cover Letter
@@ -96,7 +94,7 @@
 {% endblock %}
 
 {% block scripts %}
-  <!-- Your consolidated JS should handle: file -> base64, POST /api/resume-analysis, redirect to /dashboard -->
-<  script defer src="/static/js/base.js"></script>
-  <script defer src="/static/js/resume-analyzer.js"></script>
+  <!-- Load base helpers (upgrade banner, state sync) then analyzer logic -->
+  <script defer src="{{ url_for('static', filename='js/base.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/resume-analyzer.js') }}"></script>
 {% endblock %}
