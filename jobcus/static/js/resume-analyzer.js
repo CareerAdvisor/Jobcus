@@ -52,26 +52,43 @@ async function initRoleDatalist() {
 document.addEventListener("DOMContentLoaded", initRoleDatalist);
 
 /* ----------------------- Metered Massage Import -------------------------- */
-// jobcus/static/js/resume-analyzer.js
-import { postWithLimit } from "/static/js/api.js";
+// Uses window.api.postWithLimit; shows the upgrade banner automatically on 402/429.
 
-const form = document.getElementById("analyze-form");
-form?.addEventListener("submit", async (e) => {
-  e.preventDefault();
+const form    = document.getElementById('analyze-form');   // <form id="analyze-form">
+const txt     = document.getElementById('resume-text');    // <textarea id="resume-text">
+const jdInput = document.getElementById('job-description'); // optional
 
-  const role = document.getElementById("target-role")?.value || "";
-  const level = document.getElementById("experience-level")?.value || "";
-  // If you upload a file first, include a file reference/presigned URL instead of raw file
-  const payload = { role, level };
+function renderResult(result) {
+  const out = document.getElementById('analysis-output');
+  if (!out) return;
+  out.textContent = JSON.stringify(result, null, 2);
+}
 
-  try {
-    const data = await postWithLimit("/api/resume-analysis", payload);
-    // render results with `data`
-  } catch (err) {
-    if (err?.kind === "limit") return;     // banner shown
-    alert(err?.message || "Could not analyze resume.");
-  }
-});
+if (form) {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const resumeText = (txt?.value || '').trim();
+    const jd         = (jdInput?.value || '').trim();
+
+    if (!resumeText) {
+      window.showUpgradeBanner?.('Please paste your resume text first.');
+      return;
+    }
+
+    try {
+      const data = await window.api.postWithLimit('/api/resume-analysis', {
+        text: resumeText,   // keep it simple; backend can accept pdf/docx too
+        jd: jd
+      });
+      renderResult(data);
+    } catch (err) {
+      if (err?.kind !== 'limit') {
+        window.showUpgradeBanner?.(err?.message || 'Analysis failed. Please try again.');
+      }
+    }
+  });
+}
 
 /* ----------------------------- Main logic ----------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
