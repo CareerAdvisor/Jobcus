@@ -5,8 +5,8 @@ from collections import Counter
 import re, json, base64, logging, requests
 
 from flask import (
-    Flask, request, jsonify, render_template, redirect,
-    session, flash, url_for, current_app, make_response, g
+    Blueprint, Flask, request, jsonify, render_template, redirect,
+    session, flash, url_for, current_app, make_response, current_app as app
 )
 from flask_cors import CORS
 from flask_login import (
@@ -32,9 +32,9 @@ from limits import (
 )
 from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
-
-# NEW: device/user-scoped guard (replaces router-IP guard)
 from abuse_guard import allow_free_use
+from services.users import get_or_bootstrap_user
+from services.ai import call_ai
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -1056,44 +1056,53 @@ def verify_token():
         print("verify_token error:", e)
         return jsonify(ok=False, error="Token verification failed"), 400
 
-@app.route("/ask", methods=["POST"])
-@login_required
+# ----------------------------
+# Ask
+# ----------------------------
+ask_bp = Blueprint("ask", __name__)
+
+@ask_bp.post("/ask")
 def ask():
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-    supabase_admin = current_app.config["SUPABASE_ADMIN"]
-
-    # NEW: device/user-scoped free-use guard (no router IP checks)
-    ok, payload = allow_free_use(current_user.id, plan)
-    if not ok:
-        return jsonify({
-            "error": "too_many_free_accounts",
-            "message": payload.get("message") or "Free usage limit reached for this device."
-        }), 429
-
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages")
-    if not allowed:
-        # Standardize for frontend
-        info["message"] = info.get("message") or "You’ve reached your chat limit. Upgrade to continue."
-        info.setdefault("error", "quota_exceeded")
-        return jsonify(info), 402
-
-    body = request.get_json(force=True) or {}
-    user_msg = body.get("message", "")
-    model = choose_model(body.get("model"))
     try:
-        resp = current_app.config["OPENAI_CLIENT"].chat.completions.create(
-            model=model,
-            messages=[
-                {"role":"system","content":"You are Jobcus, a helpful AI career assistant."},
-                {"role":"user","content":user_msg}
-            ],
-            temperature=0.6,
-        )
-        ai_msg = resp.choices[0].message.content
-        return jsonify(reply=ai_msg, modelUsed=model)
+        supabase_admin = app.config["SUPABASE_ADMIN"]
+
+        payload = request.get_json(silent=True) or {}
+        message = (payload.get("message") or "").strip()
+        model   = (payload.get("model") or "gpt-4o-mini").strip()
+
+        if not message:
+            return jsonify(error="bad_request", message="Message is required."), 400
+
+        auth_id = current_user.id if getattr(current_user, "is_authenticated", False) else None
+        email   = current_user.email if getattr(current_user, "is_authenticated", False) else None
+
+        user_row = get_or_bootstrap_user(supabase_admin, auth_id, email) if auth_id else {"plan": "free"}
+        plan = (user_row.get("plan") or "free").lower()
+
+        ok, guard = allow_free_use(request, user_id=auth_id, plan=plan)
+        if not ok:
+            return jsonify(
+                error="too_many_free_accounts",
+                message=guard.get("message") or "You have reached the limit for the free version, upgrade to enjoy more features"
+            ), 429
+
+        subject = auth_id or request.remote_addr
+        allowed, info = check_and_increment(supabase_admin, subject, plan, "chat_messages")
+        if not allowed:
+            return jsonify(error="quota_exceeded", **info), 402
+
+        try:
+            reply = call_ai(model=model, prompt=message)
+        except Exception:
+            app.logger.exception("AI provider failed")
+            return jsonify(error="ai_error", message="AI provider error. Please try again."), 502
+
+        return jsonify(reply=reply, modelUsed=model)
+
     except Exception:
-        current_app.logger.exception("OpenAI error")
-        return jsonify(reply="⚠️ Server error talking to the AI. Please try again.", modelUsed=model), 500
+        app.logger.exception("Unhandled error in /ask")
+        return jsonify(error="server_error", message="Something went wrong on our side. Please try again."), 500
+
 
 @app.get("/api/credits")
 @login_required
