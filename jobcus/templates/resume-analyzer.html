@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Resume Analyzer – Jobcus{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="res-page">
+
+  <!-- Hero -->
+  <div class="interview-container" style="padding:20px 16px;width:100%;background:#104879;">
+    <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+      <h5 style="color:#ffc957;font-weight:600;font-size:14px;letter-spacing:1px;">AI RESUME ANALYZER</h5>
+      <h1 style="font-size:28px;font-weight:700;color:#fff;margin:10px 0;">
+        Improve your <span style="color:#ffc957;">resume</span> with instant feedback
+      </h1>
+      <p style="max-width:520px;color:#fff;font-size:16px;margin:10px 0 10px;">
+        Get a score, keyword insights, and actionable suggestions, all optimized for ATS.
+      </p>
+    </section>
+  </div>
+
+  <!-- Analyzer (IDs match dashboard for shared JS) -->
+  <section id="resume-analyzer" style="padding:30px 16px; background:#f9fafb;">
+    <div style="max-width:880px;margin:0 auto;">
+      <h2 style="color:#104879;margin:0 0 10px;">AI Resume Analyzer</h2>
+      <p style="color:#555;margin:0 0 16px;">
+        Upload a PDF or DOCX and optionally paste a job description or target role. Results will appear on your dashboard.
+      </p>
+
+      <!-- Upload card -->
+      <article class="card upload-card" aria-labelledby="uploadCardTitle">
+        <h3 id="uploadCardTitle" class="upload-title">
+          Upload a PDF/DOCX. Optionally add a job description to check keyword match.
+        </h3>
+
+        <div id="dropzone" class="dropzone" role="button" tabindex="0"
+             aria-label="Browse files, or drag and drop your resume here"
+             onclick="document.getElementById('dashResumeFile').click()">
+          <div class="dropzone__cloud" aria-hidden="true"></div>
+          <div class="dropzone__title">Browse Files</div>
+          <div class="dropzone__hint">Drag and drop files here</div>
+          <input id="dashResumeFile" type="file"
+                 accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                 hidden>
+        </div>
+
+        <div id="fileName" class="file-name" aria-live="polite"></div>
+
+        <label class="field">
+          <span class="field__label sr-only">Job description (optional)</span>
+          <textarea id="dashJobDesc" class="textarea"
+                    placeholder="Optional: paste job description to check keywords…"
+                    rows="6"></textarea>
+        </label>
+
+        <label class="field">
+          <span class="field__label center">Or pick a target role to assess relevance</span>
+          <input id="dashRoleSelect" class="select" list="roleList"
+                 placeholder="Start typing a role (e.g., Business Analyst, Azure Architect, Animator)…" />
+          <datalist id="roleList"></datalist>
+        </label>
+
+        <div class="actions">
+          <button id="dashAnalyzeBtn" class="btn btn-primary" disabled>Analyze resume</button>
+          <span id="dashAnalyzing" class="loading" style="display:none;" aria-live="polite">Analyzing…</span>
+        </div>
+
+        <p class="help">
+          Your latest result is saved locally. Standard &amp; Premium plans sync across devices.
+        </p>
+
+        <!-- Inline notice rail; JS can toggle text + visibility -->
+        <div id="analyzerNotice" class="notice" hidden role="alert" aria-live="polite"></div>
+      </article>
+
+      <!-- Centered Cover Letter CTA (add id for seeding) -->
+      <div style="text-align:center; margin-top:24px;">
+        <a id="openCoverLetter" href="/cover-letter" class="primary-btn"
+           style="background:#ffc957;color:#104879;padding:12px 16px;border-radius:6px;
+                  text-decoration:none;font-weight:600;font-size:16px;display:inline-block;">
+          ➜ Create Cover Letter
+          <small style="display:block;font-weight:400;font-size:14px;color:#104879;">
+            Opens cover letter page
+          </small>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+  <!-- Load base helpers (upgrade banner, state sync) then analyzer logic -->
+  <script defer src="{{ url_for('static', filename='js/base.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/resume-analyzer.js') }}"></script>
+{% endblock %}

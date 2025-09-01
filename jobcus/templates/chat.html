@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Chat with Jobcus{% endblock %}
+{% block body_class %}chat-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+{% endblock %}
+
+{# Left “sidebar” toggle icon in the header #}
+{% block header_icon %}
+  <img
+    id="chatMenuToggle"
+    src="{{ url_for('static', filename='icons/sidebar.svg') }}"
+    class="header-menu-icon"
+    alt="Open chat menu"
+    title="Menu"
+  />
+{% endblock %}
+
+{% set show_footer = false %}
+
+{# --- Plan/model helpers (robust defaults) --- #}
+{% set plan_code = (plan if plan is defined else ((current_user.plan if current_user.is_authenticated else '') or 'free')) %}
+{% set is_paid   = (is_paid if is_paid is defined else (plan_code != 'free')) %}
+{% set free_model    = (free_model if free_model is defined else 'gpt-4o-mini') %}
+{% set model_default = (model_default if model_default is defined else (is_paid and 'gpt-4o-mini' or free_model)) %}
+{# Only used if server didn't pass model_options #}
+{% set model_options = (model_options if model_options is defined else ['gpt-4o','gpt-4o-mini']) %}
+{% set show_upgrade  = (show_upgrade if show_upgrade is defined else (plan_code == 'free')) %}
+{# Cloud history is enabled for Standard/Premium in current flags #}
+{% set cloud_history = 1 if plan_code in ['standard','premium'] else 0 %}
+
+{% block content %}
+<main id="chatShell"
+      data-is-paid="{{ 1 if is_paid else 0 }}"
+      data-plan="{{ plan_code }}"
+      data-cloud-history="{{ cloud_history }}"
+      data-default-model="{{ model_default }}"
+      data-free-model="{{ free_model }}"
+      data-allowed-models="{{ ','.join(model_options) }}"
+      data-first-name="{{ (current_user.fullname.split(' ')[0] if (current_user.is_authenticated and current_user.fullname) else (current_user.email.split('@')[0] if current_user.is_authenticated else '') ) }}">
+
+  <!-- LEFT: fixed sidebar -->
+  <aside id="chatSidebar" class="chat-sidebar" aria-label="Chat menu">
+    <div class="sidebar-header">
+      <button id="chatSidebarClose" class="sb-btn" type="button" aria-label="Close menu">✕ Close</button>
+      <button id="newChatBtn" class="sb-btn sb-primary" type="button">New chat</button>
+    </div>
+
+    <!-- Quick links -->
+    <nav class="sb-menu">
+      <a class="sb-btn" href="{{ url_for('pricing') }}">View pricing</a>
+      <a class="sb-btn" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+      <button id="clearChatBtn" class="sb-btn" type="button">Clear conversation</button>
+    </nav>
+
+    <!-- Credits card -->
+    <section class="credits-panel is-card" aria-labelledby="credits-title">
+      <h2 id="credits-title" class="credits-title">AI Chat credits &amp; fair-use</h2>
+
+      <div class="credits-topgrid">
+        <div class="credits-col">
+          <span class="credits-label">Your plan</span>
+          <div class="credits-planline">
+            <strong id="credits-plan" data-plan="{{ plan_code }}">{{ plan_code|capitalize }}</strong>
+            <span class="pill pill-muted">
+              {% if plan_code == 'free' %}Trial{% else %}Active{% endif %}
+            </span>
+          </div>
+        </div>
+
+        <div class="credits-col credits-right">
+          <span class="credits-label">Messages left</span>
+          <div class="credits-leftline">
+            <strong id="credits-left">—</strong>
+            <div class="credits-sub" id="credits-reset">
+              {% if plan_code == 'free' %}Trial{% elif plan_code == 'weekly' %}Resets weekly{% elif plan_code == 'standard' %}Resets monthly{% else %}Resets yearly{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% if show_upgrade %}
+        <a class="credits-upgrade" href="{{ url_for('pricing') }}">Upgrade</a>
+      {% endif %}
+
+      <hr class="credits-div" />
+
+      <div class="model-block">
+        <span class="credits-label">Model</span>
+        {% if is_paid %}
+          <select id="modelSelect" class="model-select" aria-label="Choose AI model">
+            {% for m in model_options %}
+              <option value="{{ m }}" {% if m == model_default %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+          </select>
+        {% else %}
+          <span class="pill model-pill" id="modelBadge" title="Free plan model">{{ free_model }}</span>
+        {% endif %}
+      </div>
+
+      <details class="credits-details" style="margin-top:10px;">
+        <summary>How credits work</summary>
+        <ul class="credits-list">
+          <li><strong>Free:</strong> 15 total messages (trial)</li>
+          <li><strong>Weekly:</strong> 200 / week</li>
+          <li><strong>Standard:</strong> 800 / month</li>
+          <li><strong>Premium:</strong> 12,000 / year (~1,000 / mo)</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- History (synced when cloud history is enabled; server no-ops when disabled) -->
+    <section class="history-panel">
+      <h3 class="history-title">Conversation history</h3>
+      <ul id="chatHistory" class="history-list" aria-live="polite"></ul>
+      <div id="historyEmpty" class="history-empty" hidden>No saved conversations yet.</div>
+    </section>
+  </aside>
+  <div id="chatOverlay" class="chat-overlay" hidden></div>
+
+  <!-- RIGHT: chat content pane -->
+  <section class="chat-main">
+    <div class="chatbox" id="chatbox" aria-live="polite">
+      <div id="welcomeBanner" class="welcome">
+        {% set first_name = (current_user.fullname.split(' ')[0] if (current_user.is_authenticated and current_user.fullname) else (current_user.email.split('@')[0] if current_user.is_authenticated else '')) %}
+        {% if first_name %}
+          <p class="welcome-title">👋 Welcome {{ first_name }}! How can I help you today?</p>
+        {% else %}
+          <p class="welcome-title">👋 Welcome! How can I help you today?</p>
+        {% endif %}
+
+        <div class="suggestion-chips">
+          <button type="button" onclick="insertSuggestion('How do I improve my resume?')" class="chip">Improve my resume</button>
+          <button type="button" onclick="insertSuggestion('Interview tips for a UX role')" class="chip">Interview tips</button>
+          <button type="button" onclick="insertSuggestion('Show me job market insights for London')" class="chip">Job insights</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error/notice rail (populated by JS) -->
+    <div id="chatNotice" class="chat-notice" hidden role="alert"></div>
+
+    <!-- Bottom docked input -->
+    <form id="chat-form" class="input-dock" autocomplete="off" novalidate>
+      <div class="input-container" id="inputContainer">
+        <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)" aria-label="Type your message"></textarea>
+        <div class="icon-group">
+          <label for="file-upload" title="Attach a file">
+            <img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach">
+          </label>
+          <input id="file-upload" type="file" style="display:none" onchange="handleAttach()">
+          <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Voice input" onclick="handleMic()">
+          <img id="sendButton" src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" role="button" tabindex="0">
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <img id="scrollDown" class="scroll-down-icon"
+       src="{{ url_for('static', filename='icons/scrolldown.svg') }}"
+       alt="Scroll Down"
+       onclick="(function(){const c=document.getElementById('chatbox'); if(c){c.scrollTop=c.scrollHeight;}})()" />
+</main>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

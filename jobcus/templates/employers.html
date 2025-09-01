@@ -1,0 +1,112 @@
+<!-- employers.html -->
+{% extends "base.html" %}
+
+{% block title %}Employers – Jobcus{% endblock %}
+
+{% block content %}
+
+<!-- 🌟 Hero Banner -->
+<section class="employer-hero-full" style="animation: fadeInUp 1s ease-in-out;">
+  <img src="{{ url_for('static', filename='images/employer-hero.png') }}" alt="Hire Smarter with Jobcus">
+</section>
+
+<!-- 🤝 Employer Inquiry Form -->
+<section class="employer-section" style="background-color: #f2f7fc; padding: 20px; border-radius: 8px;">
+  <h2 style="color: #104879;">🤝 Employer Inquiry Form</h2>
+  <p style="color: #333;">
+    Tell us who you're looking to hire and how we can assist your recruitment process.
+  </p>
+
+  <form id="employer-inquiry-form">
+    <label>Company</label>
+    <input type="text" name="company">
+
+    <label>Name</label>
+    <input type="text" name="name" required>
+
+    <label>Email</label>
+    <input type="email" name="email" required
+      style="width: 100%; height: auto; display: block; max-width: 100%; border-radius: 8px; padding: 10px; border: 1px solid #ccc;">
+
+    <label>Phone</label>
+    <input type="text" name="phone" required>
+
+    <label>Job Roles You're Hiring For</label>
+    <input type="text" name="job_roles">
+
+    <label>Message</label>
+    <textarea name="message" rows="4" required></textarea>
+
+    <button type="submit" class="primary-btn">Submit Inquiry</button>
+    <div id="inquiry-response"></div>
+  </form>
+</section>
+
+</section>
+
+<!-- 🤖 AI Job Post Generator -->
+<section class="employer-section" style="background-color: #ffc957; padding: 20px; border-radius: 8px;">
+  <h2 style="color: #104879;">AI-Powered Job Post Generator</h2>
+  <p style="color: #333; margin-bottom: 20px;">
+    Instantly create a professional job description with the help of AI.
+  </p>
+
+  <form id="job-post-form">
+  <label>Job Title</label>
+  <input type="text" name="jobTitle" required>
+
+  <label>Company Name</label>
+  <input type="text" name="company" required>
+
+  <label>Location</label>
+  <input type="text" name="location" placeholder="e.g. London, Manchester" required>
+
+  <label>Employment Type</label>
+  <select name="employmentType" required>
+    <option value="">Select Employment Type</option>
+    <option value="Full-time">Full-time</option>
+    <option value="Part-time">Part-time</option>
+    <option value="Contract">Contract</option>
+    <option value="Hybrid">Hybrid</option>
+    <option value="Remote">Remote</option>
+  </select>
+
+  <label>Salary Range</label>
+  <input type="text" name="salaryRange" placeholder="e.g. £45,000 – £60,000/year">
+
+  <label>Application Email or Link</label>
+  <input type="text" name="applicationEmail" placeholder="e.g. careers@company.com or https://company.com/apply" required>
+
+  <label>Application Deadline</label>
+  <input type="date" name="applicationDeadline"></br>
+
+  <label>Summary (Optional)</label>
+  <textarea name="summary" rows="3" placeholder="Short intro or mission statement"></textarea>
+
+  <button type="submit" class="primary-btn">✨ Generate Job Description</button>
+</form>
+
+  <!-- Output Box -->
+ <div id="job-description-output" style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+  <!-- Spinner goes here while loading -->
+</div>
+
+</section>
+<!-- Download Buttons -->
+  <div id="download-options" class="download-buttons hidden;">
+    <button id="download-txt" class="primary-btn">⬇️ Download .txt</button>
+    <button id="download-pdf" class="primary-btn">⬇️ Download .pdf</button>
+  </div>
+
+{% endblock %}
+
+{% block scripts %}
+  <!-- 3rd-party libs must come first -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.7.0/docx.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <!-- your main logic -->
+  <script src="{{ url_for('static', filename='js/employers.js') }}" defer></script>
+{% endblock %}
+

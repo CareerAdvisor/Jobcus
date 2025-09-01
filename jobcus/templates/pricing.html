@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Pricing – Jobcus{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pricing.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="pricing-wrap">
+  <!-- Hero -->
+  <header class="pricing-head">
+    <h1>Simple pricing for job seekers</h1>
+    <p>Start free. Upgrade when you need the AI chat &amp; advanced tools.</p>
+  </header>
+
+  <div class="plans">
+    <!-- Free -->
+    <article class="plan" data-plan="free">
+      <header class="plan__head">
+        <div class="plan__left">
+          <h3 class="plan__title">Free</h3>
+          <div class="price">
+            <span class="currency">£</span><span class="amount">0</span>
+            <span class="period">/mo</span>
+          </div>
+        </div>
+        <p class="plan__tagline">Great for a quick check</p>
+      </header>
+
+      <ul class="plan__list">
+        <li><strong>3</strong> resume analyses / month (basic score + tips)</li>
+        <li><strong>2</strong> AI cover letters / month</li>
+        <li>AI Resume Builder (basic templates)</li>
+        <li>Skill-Gap snapshot (1 basic analysis)</li>
+        <li>Job Insights (basic charts)</li>
+        <li>Interview Coach (limited practice)</li>
+        <li>AI Chat trial: <strong>15 messages</strong> total</li>
+        <li>Local device history</li>
+      </ul>
+
+      <footer class="plan__foot">
+        <a class="btn btn-outline w-full" href="/subscribe?plan=free">Continue Free</a>
+      </footer>
+    </article>
+
+    <!-- Weekly Pass -->
+    <article class="plan" data-plan="weekly">
+      <header class="plan__head">
+        <div class="plan__left">
+          <h3 class="plan__title">Weekly Pass</h3>
+          <div class="price">
+            <span class="currency">£</span><span class="amount">7<span class="cents">.99</span></span>
+            <span class="period">/week</span>
+          </div>
+        </div>
+        <p class="plan__tagline">For urgent applications</p>
+      </header>
+
+      <ul class="plan__list">
+        <li>AI Chat credits: <strong>200 messages</strong> / week</li>
+        <li><strong>10</strong> resume analyses / week</li>
+        <li><strong>5</strong> AI cover letters / week</li>
+        <li>“Rebuild with AI” for resumes</li>
+        <li>Skill-Gap (standard)</li>
+        <li>Job Insights (full access)</li>
+        <li>Interview Coach sessions</li>
+        <li>Email support</li>
+      </ul>
+
+      <footer class="plan__foot">
+        <a class="btn btn-primary w-full" href="/subscribe?plan=weekly">Get Weekly Pass</a>
+      </footer>
+    </article>
+
+    <!-- Standard (Most popular) -->
+    <article class="plan plan--popular" data-plan="standard">
+      <div class="plan__badge" aria-hidden="true">Most Popular</div>
+      <header class="plan__head">
+        <div class="plan__left">
+          <h3 class="plan__title">Standard</h3>
+          <div class="price">
+            <span class="currency">£</span><span class="amount">23<span class="cents">.99</span></span>
+            <span class="period">/mo</span>
+          </div>
+        </div>
+        <p class="plan__tagline">Serious applications, smarter tools</p>
+      </header>
+
+      <ul class="plan__list">
+        <li>AI Chat credits: <strong>800 messages</strong> / month</li>
+        <li><strong>50</strong> resume analyses / month (deep ATS + JD match)</li>
+        <li><strong>20</strong> AI cover letters / month</li>
+        <li>AI Optimize + Rebuild with AI</li>
+        <li>Interview Coach sessions</li>
+        <li>Skill-Gap (pro)</li>
+        <li>Job Insights (full access)</li>
+        <li>Download optimized PDF / DOCX / TXT</li>
+        <li>Save history across devices</li>
+        <li>Email support</li>
+      </ul>
+
+      <footer class="plan__foot">
+        <a class="btn btn-primary w-full" href="/subscribe?plan=standard">Get Standard</a>
+      </footer>
+    </article>
+
+    <!-- Premium -->
+    <article class="plan" data-plan="premium">
+      <header class="plan__head">
+        <div class="plan__left">
+          <h3 class="plan__title">Premium</h3>
+          <div class="price">
+            <span class="currency">£</span><span class="amount">229</span>
+            <span class="period">/yr</span>
+          </div>
+        </div>
+        <p class="plan__tagline">Best value for ongoing career growth</p>
+      </header>
+
+      <ul class="plan__list">
+        <li>AI Chat credits: <strong>12,000 messages</strong> / year (~1,000 / mo)</li>
+        <li><strong>Unlimited*</strong> resume analyses (fair use)</li>
+        <li><strong>Unlimited</strong> AI cover letters (fair use)</li>
+        <li>All Standard features + multi-resume versions & template pack</li>
+        <li>Priority support & early access to new AI tools</li>
+      </ul>
+
+      <footer class="plan__foot">
+        <a class="btn btn-primary w-full" href="/subscribe?plan=premium">Get Premium</a>
+      </footer>
+    </article>
+  </div>
+
+  <!-- Optional: Employer CTA kept separate from job-seeker plans -->
+  <p class="pricing-fine">
+    Hiring? Visit the <a href="/employers">Employers</a> page for AI job-post generation and inquiry options.
+  </p>
+</section>
+{% endblock %}
