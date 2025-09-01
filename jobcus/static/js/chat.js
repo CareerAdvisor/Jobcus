@@ -122,39 +122,35 @@ function initModelControls() {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Server call helper (handles limit + generic errors)
+// importing the upgrademessage banner
 // ──────────────────────────────────────────────────────────────
-async function sendMessage(payload) {
-  const res = await fetch('/ask', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
 
-  let data = null;
-  const ct = res.headers.get('content-type') || '';
-  if (ct.includes('application/json')) {
-    data = await res.json().catch(() => null);
-  } else {
-    try { data = JSON.parse(await res.text()); } catch { /* ignore */ }
-  }
+import { postWithLimit } from "/static/js/api.js";
 
-  // New unified “free limit reached” handling:
-  // - 402 with quota_exceeded (legacy)
-  // - 429 with too_many_free_accounts (device/network guard)
-  // - 429 with quota_exceeded (some routes now use 429)
-  if (!res.ok) {
-    if ((res.status === 402 && data?.error === 'quota_exceeded') ||
-        (res.status === 429 && (data?.error === 'too_many_free_accounts' || data?.error === 'quota_exceeded'))) {
-      showUpgradeBanner('You have reached the limit for the free version, upgrade to enjoy more features');
-      throw { kind: 'limit', message: data?.message || 'Free limit reached' };
+const form = document.getElementById("chat-form");
+const input = document.getElementById("chat-input");
+
+form?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const message = (input?.value || "").trim();
+  if (!message) return;
+
+  try {
+    const data = await postWithLimit("/ask", {
+      message,
+      model: window.DEFAULT_MODEL || "gpt-4o-mini",
+    });
+    // render reply...
+    // renderMessage("assistant", data.reply);
+  } catch (err) {
+    if (err?.kind === "limit") {
+      // Already showed the banner; optionally disable input, etc.
+      return;
     }
-    // Other errors
-    throw { kind: 'server', message: (data?.message || data?.reply || `Request failed (${res.status})`) };
+    // Generic failure UX
+    alert(err?.message || "Something went wrong. Please try again.");
   }
-
-  return data; // { reply, modelUsed }
-}
+});
 
 // ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
