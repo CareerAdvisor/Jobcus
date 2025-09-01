@@ -171,6 +171,9 @@ def quota_for(plan: str, feature: str) -> Quota:
     return PLAN_QUOTAS.get(p, PLAN_QUOTAS["free"]).get(f, Quota("month", None))
 
 
+# services/limits.py (or limits.py if you haven't moved yet)
+from flask_login import current_user
+
 def check_and_increment(
     supabase_admin, user_id: str, plan: str, feature: str
 ) -> tuple[bool, dict]:
@@ -178,6 +181,13 @@ def check_and_increment(
     Returns (allowed: bool, payload: dict).
     If allowed=True, this function has already incremented the counter atomically for the current period.
     """
+
+    # --- Admin/Superadmin bypass (put this FIRST) ---
+    role = (getattr(current_user, "role", "") or "").lower()
+    if role in ("admin", "superadmin"):
+        return True, {"bypass": "admin", "feature": feature}
+
+    # --- existing logic ---
     f = _normalize_feature(feature)
     q = quota_for(plan, f)
     kind = q.period_kind
@@ -185,7 +195,7 @@ def check_and_increment(
 
     # Unlimited
     if q.limit is None:
-        return True, {"limit": None}
+        return True, {"limit": None, "feature": f, "period_kind": kind, "period_key": key}
 
     used = get_usage_count(supabase_admin, user_id, f, kind, key)
     if used >= q.limit:
