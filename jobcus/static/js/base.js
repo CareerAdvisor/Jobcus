@@ -73,14 +73,32 @@ try {
 /* ─────────────────────────────────────────────────────────────
  * 1) Global upgrade banner helper
  * ───────────────────────────────────────────────────────────── */
+// Global upgrade banner helper
 window.showUpgradeBanner = function (text) {
   const el = document.getElementById("upgrade-banner");
-  if (el) {
-    el.textContent = text || "You’ve reached your plan limit. Upgrade to continue.";
-    el.hidden = false;
-  } else {
-    alert(text || "You’ve reached your plan limit. Upgrade to continue.");
-  }
+  if (!el) return alert(text || "You’ve reached your plan limit. Upgrade to continue.");
+
+  el.textContent = text || "You’ve reached your plan limit. Upgrade to continue.";
+  el.hidden = false;
+  el.classList.add("show");
+
+  // Auto-hide after a while (optional)
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => {
+    el.classList.remove("show");
+    el.hidden = true;
+    el.textContent = "";
+  }, 8000);
+};
+
+// Optional manual hide
+window.hideUpgradeBanner = function () {
+  const el = document.getElementById("upgrade-banner");
+  if (!el) return;
+  clearTimeout(el._hideTimer);
+  el.classList.remove("show");
+  el.hidden = true;
+  el.textContent = "";
 };
 
 /* ─────────────────────────────────────────────────────────────
