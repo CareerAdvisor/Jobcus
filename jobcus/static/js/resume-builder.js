@@ -655,6 +655,22 @@ async function maybePrefillFromAnalyzer(form, helpers) {
 }
 
 // ───────────────────────────────────────────────
+// Resume Builder Metered
+// ───────────────────────────────────────────────
+
+import { postWithLimit } from "/static/js/api.js";
+
+async function buildResume(payload) {
+  try {
+    const data = await postWithLimit("/api/resume-builder/generate", payload);
+    // render
+  } catch (err) {
+    if (err?.kind === "limit") return;
+    alert(err?.message || "Failed to build resume.");
+  }
+}
+
+// ───────────────────────────────────────────────
 // Boot
 // ───────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
