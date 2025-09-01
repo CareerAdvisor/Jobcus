@@ -163,18 +163,23 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const text = await res.text();
-        let data   = await parseJsonSafe(res, text);
 
-        // --- Auth/plan/guard handling ---
-        if (res.status === 401 || res.status === 403) {
-          showInlineBanner(card, "Please sign in to analyze resumes.", "error");
-          setTimeout(()=>{ window.location.href = "/account?mode=login"; }, 800);
+        // NEW: handle device/IP abuse guard from backend
+        if (res.status === 429) {
+          let data;
+          try { data = JSON.parse(text); } catch { data = null; }
+          // Big global banner (from base.js) + local inline hint
+          window.showUpgradeBanner?.(
+            data?.message || 'You have reached the limit for the free version, upgrade to enjoy more features'
+          );
+          showInlineBanner(
+            card,
+            data?.message || 'You have reached the limit for the free version, upgrade to enjoy more features',
+            "warn"
+          );
           return;
         }
-        if (res.status === 402) {
-          showInlineBanner(card, (data?.message || "You’ve reached your resume analysis limit. Upgrade to continue."), "warn");
-          return;
-        }
+
         if (res.status === 429 && (data?.error === "too_many_free_accounts" || data?.error === "quota_exceeded")) {
           // New behavior parity with chat
           showUpgradeBanner("You have reached the limit for the free version, upgrade to enjoy more features", card);
