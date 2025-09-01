@@ -1,0 +1,192 @@
+/* Scoped to the account page only */
+body.account-page { --header-h: 60px; }
+
+/* Make sure the global main wrapper doesn't constrain this page */
+body.account-page main{
+  max-width: none;
+  width: 100%;
+  padding: 0;
+}
+
+/* Keep the page full height with modern viewport units */
+body.account-page .page-container{
+  min-height: 100svh;            /* handles mobile browser UI chrome */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hide any floating chat button on this page so it never overlaps the form */
+body.account-page .chat-float-button{ display: none !important; }
+
+/* ===== Wrapper =====
+   Centered, below the fixed header, with safe-area padding on iOS */
+body.account-page .auth-wrapper{
+  min-height: calc(100svh - var(--header-h));
+  padding:
+    calc(var(--header-h) + 12px)
+    clamp(12px, 4vw, 24px)
+    max(24px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f6f9fb;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ===== Card =====
+   Smaller, calmer width on desktop; full-width on phones */
+body.account-page .auth-card{
+  /* Narrower than before: keep it tidy on large screens */
+  width: min(100%, 560px);                  /* ↓ was 800px */
+  margin: 0 auto;
+  background: #fff;
+  padding: clamp(22px, 2.2vw + 12px, 40px) clamp(18px, 2.4vw + 8px, 30px);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(16,72,121,.08);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+/* Slightly different caps for larger breakpoints if you want it even smaller */
+@media (min-width: 1280px){
+  body.account-page .auth-card{
+    width: min(100%, 520px);
+  }
+}
+
+/* ===== Typography ===== */
+body.account-page .auth-title{
+  /* Scales smoothly from small phones to desktops */
+  font-size: clamp(1.6rem, 1.1rem + 2vw, 2.2rem);
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 8px;
+  color: #104879;
+  text-align: center;
+}
+body.account-page .auth-subtitle{
+  font-size: clamp(.9rem, .85rem + .4vw, 1rem);
+  color: #444;
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+body.account-page .flash-message{
+  margin: 8px 0 12px;
+  color: #b42318;
+  text-align: center;
+}
+
+/* ===== Form ===== */
+body.account-page .auth-form{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+body.account-page .auth-form .form-group{ text-align: left; }
+body.account-page .auth-form label{
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #333;
+  font-size: .96rem;
+}
+body.account-page .auth-form input{
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 16px;
+  background: #fff;
+}
+body.account-page .auth-form input:focus{
+  border-color: #104879;
+  outline: 2px solid #104879;
+  outline-offset: 1px;
+}
+
+/* ===== Primary button (scoped) ===== */
+body.account-page .btn-primary{
+  width: 100%;
+  background: #104879;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+body.account-page .btn-primary:hover{ background: #0d3a66; }
+
+/* ===== Toggle / OR / Socials ===== */
+body.account-page .toggle-text{
+  margin-top: 12px;
+  font-size: .95rem;
+  color: #555;
+  text-align: center;
+}
+body.account-page .toggle-link{
+  color: #104879;
+  font-weight: 700;
+  text-decoration: none;
+}
+body.account-page .toggle-link:hover{ text-decoration: underline; }
+
+body.account-page .or-divider{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: #888;
+  font-size: 12px;
+}
+body.account-page .or-divider::before,
+body.account-page .or-divider::after{
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+body.account-page .social-buttons{
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+body.account-page .social-btn{
+  background: #f0f4f9;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+}
+body.account-page .social-btn:hover{ background: #e9eef6; }
+body.account-page .social-btn img{ width: 24px; height: 24px; }
+
+/* ===== Small/mobile polish ===== */
+@media (max-width: 480px){
+  /* A touch more compact on small phones */
+  body.account-page .auth-wrapper{
+    padding: calc(var(--header-h) + 10px) 12px max(20px, env(safe-area-inset-bottom));
+  }
+  body.account-page .auth-card{
+    border-radius: 12px;
+    padding: 22px 16px;
+  }
+}
+
+/* Guard rails: never allow horizontal scrolling on this page */
+body.account-page, 
+body.account-page .auth-wrapper,
+body.account-page .auth-card{
+  max-width: 100%;
+  overflow-x: hidden;
+}
