@@ -51,6 +51,23 @@
     throw new Error(msg);
   }
 
+  // Skill-gap metered
+  import { postWithLimit } from "/static/js/api.js";
+  
+  document.getElementById("run-gap")?.addEventListener("click", async () => {
+    const jobTitle = document.getElementById("job-title")?.value || "";
+    const resumeText = document.getElementById("resume-text")?.value || "";
+    const payload = { jobTitle, resumeText };
+  
+    try {
+      const data = await postWithLimit("/api/skill-gap", payload);
+      // render gap analysis
+    } catch (err) {
+      if (err?.kind === "limit") return;
+      alert(err?.message || "Could not compute skill gap.");
+    }
+  });
+  
   document.addEventListener("DOMContentLoaded", () => {
     const form       = document.getElementById("skillGapForm");
     const goalInput  = document.getElementById("goal");
