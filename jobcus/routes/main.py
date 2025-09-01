@@ -51,6 +51,9 @@ def page_resume_builder():
 def interview_coach():
     return render_template("interview-coach.html")
 
+@main_bp.get("/cover-letter")
+def cover_letter():
+    return render_template("cover-letter.html")
 
 @main_bp.get("/skill-gap")
 def skill_gap():
