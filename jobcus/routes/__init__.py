@@ -1,6 +1,6 @@
 # jobcus/routes/__init__.py
 from __future__ import annotations
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template
 
 def register_routes(app: Flask) -> None:
     from .main import main_bp
@@ -32,6 +32,10 @@ def register_routes(app: Flask) -> None:
         from .billing import billing_bp
     except Exception:
         billing_bp = None
+    try:
+        from .admin import admin_bp   # ← NEW
+    except Exception:
+        admin_bp = None
 
     # Register core blueprints
     app.register_blueprint(main_bp)
@@ -51,6 +55,8 @@ def register_routes(app: Flask) -> None:
         app.register_blueprint(billing_bp)
     if auth_bp:
         app.register_blueprint(auth_bp)
+    if admin_bp:
+        app.register_blueprint(admin_bp)
 
     # ---- Helper to create top-level aliases for blueprint endpoints ----
     def alias_endpoint(source_ep: str, rule: str, alias_ep: str):
