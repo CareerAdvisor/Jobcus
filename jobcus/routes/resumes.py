@@ -121,15 +121,14 @@ def api_resume_analysis():
         supabase_admin = current_app.config["SUPABASE_ADMIN"]
         plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-        # Abuse guard (429)
         ok, guard = _allow_free(request, user_id=current_user.id, plan=plan)
         if not ok:
             return jsonify(
                 error="too_many_free_accounts",
-                message=(guard or {}).get("message") or "You have reached the limit for the free version, upgrade to enjoy more features"
+                message=(guard or {}).get("message")
+                        or "You have reached the limit for the free version, upgrade to enjoy more features"
             ), 429
 
-        # Quota (402)
         feature = "resume_analyzer"
         allowed, info = check_and_increment(supabase_admin, current_user.id, plan, feature)
         if not allowed:
@@ -138,7 +137,14 @@ def api_resume_analysis():
             return jsonify(info), 402
 
         data = request.get_json(silent=True) or {}
-        result = run_analyzer(data)
+        # Accept text or (pdf/docx) payloads; require at least one
+        has_text = bool((data.get("text") or "").strip())
+        has_pdf  = bool(data.get("pdf"))
+        has_docx = bool(data.get("docx"))
+        if not (has_text or has_pdf or has_docx):
+            return jsonify(error="bad_request", message="Provide resume text, pdf, or docx."), 400
+
+        result = run_analyzer(data)  # should handle text/pdf/docx internally
         return jsonify(result), 200
 
     except Exception:
