@@ -3,6 +3,8 @@ from flask_login import current_user
 from dataclasses import dataclass
 from datetime import date
 from typing import Optional
+from jobcus.services.limits import *
+
 
 # ---------- Plan config ----------
 
