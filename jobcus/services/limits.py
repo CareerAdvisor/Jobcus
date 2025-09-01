@@ -1,9 +1,13 @@
 from __future__ import annotations
-from flask_login import current_user
 from dataclasses import dataclass
 from datetime import date
-from typing import Optional
-from jobcus.services.limits import *
+from typing import Optional, Tuple, Dict, Any
+
+try:
+    # Optional: only used for role bypass; function still works without login context
+    from flask_login import current_user  # type: ignore
+except Exception:  # pragma: no cover
+    current_user = None  # type: ignore
 
 
 # ---------- Plan config ----------
@@ -17,12 +21,11 @@ class Quota:
 # Backward-compatible feature aliases: old -> new
 _FEATURE_ALIASES = {
     "resume_analyses": "resume_analyzer",
-    "cover_letters": "cover_letter",
+    "cover_letters":   "cover_letter",
     # Add any future migrations here.
 }
 
 def _normalize_feature(feature: str) -> str:
-    """Map legacy feature keys to the canonical ones used by the app."""
     if not feature:
         return feature
     f = feature.strip().lower()
@@ -35,8 +38,6 @@ PLAN_QUOTAS = {
         "resume_analyzer": Quota("month", 3),
         "cover_letter":    Quota("month", 2),
         "skill_gap":       Quota("month", 1),
-        # (optional) if you later decide to meter interview_coach or resume_builder,
-        # add them here; otherwise they'll default to unlimited for the period.
     },
     "weekly": {
         "chat_messages":   Quota("week", 200),
@@ -58,7 +59,6 @@ PLAN_QUOTAS = {
     },
 }
 
-# Feature gates (booleans / levels)
 FEATURE_FLAGS = {
     "free": {
         "rebuild_with_ai": False,
@@ -115,16 +115,14 @@ def period_key(kind: str, d: date | None = None) -> str:
         return d.strftime("%Y-%m")
     if k == "year":
         return d.strftime("%Y")
-    # Fallback: treat unknown kinds as total
     return "all"
 
 
-# ---------- Counters ----------
+# ---------- Counters (Supabase) ----------
 
 def get_usage_count(supabase_admin, user_id: str, feature: str, kind: str, key: str) -> int:
     """
     Read the current usage count for (user_id, feature, kind, key).
-    Defensive against SDK returning list or dict.
     """
     r = (
         supabase_admin.table("usage_counters")
@@ -138,23 +136,24 @@ def get_usage_count(supabase_admin, user_id: str, feature: str, kind: str, key: 
     )
     data = getattr(r, "data", None)
     if isinstance(data, list) and data:
-        return int(data[0].get("count") or 0)
+        # Column is 'used' (not 'count')
+        return int(data[0].get("used") or 0)
     if isinstance(data, dict):
-        return int(data.get("count") or 0)
+        return int(data.get("used") or 0)
     return 0
 
 
 def increment_usage(
-    supabase_admin, user_id: str, feature: str, kind: str, key: str, new_count: int
+    supabase_admin, user_id: str, feature: str, kind: str, key: str, new_used_value: int
 ) -> None:
     (
         supabase_admin.table("usage_counters").upsert(
             {
                 "user_id": user_id,
                 "feature": feature,
-                "period_kind": period_kind,
-                "period_key": period_key,
-                "used": new_used_value,   # ← not "count"
+                "period_kind": kind,
+                "period_key": key,
+                "used": new_used_value,
             },
             on_conflict="user_id,feature,period_kind,period_key"
         ).execute()
@@ -165,23 +164,33 @@ def increment_usage(
 
 def quota_for(plan: str, feature: str) -> Quota:
     """
-    Return the Quota for a given plan & feature. Defaults to a month/None quota if unknown.
-    Accepts legacy keys via _FEATURE_ALIASES for backward compatibility.
+    Return the Quota for a given plan & feature. Defaults to month/None if unknown.
+    Accepts legacy keys via _FEATURE_ALIASES.
     """
     p = _plan_code(plan)
     f = _normalize_feature(feature)
     return PLAN_QUOTAS.get(p, PLAN_QUOTAS["free"]).get(f, Quota("month", None))
 
 
-# services/limits.py (or limits.py if you haven't moved yet)
 def check_and_increment(
-    supabase_admin, user_id: str, plan: str, feature: str):
+    supabase_admin, user_id: str, plan: str, feature: str
+) -> Tuple[bool, Dict[str, Any]]:
+    """
+    Returns (allowed, info_dict)
+    - allowed=True → increments counter (unless unlimited) and returns info
+    - allowed=False → info contains {error="quota_exceeded", limit, ...}
+    Admin/superadmin bypass limits.
+    """
     # Bypass for admin/superadmin
-    role = (getattr(current_user, "role", "") or "").lower()
+    role = ""
+    try:
+        if current_user and getattr(current_user, "is_authenticated", False):
+            role = (getattr(current_user, "role", "") or "").lower()
+    except Exception:
+        pass
     if role in ("admin", "superadmin"):
-        return True, {"bypass": "admin"}
+        return True, {"bypass": role or "admin"}
 
-    # --- existing logic ---
     f = _normalize_feature(feature)
     q = quota_for(plan, f)
     kind = q.period_kind
@@ -213,19 +222,11 @@ def check_and_increment(
 
 
 def feature_enabled(plan: str, flag: str):
-    """
-    Return a feature flag value for a plan.
-    For boolean flags, returns bool. For string-valued flags (like 'job_insights'),
-    returns the string (e.g., 'basic' or 'full'). Defaults to False if missing.
-    """
     plan_flags = FEATURE_FLAGS.get(_plan_code(plan), FEATURE_FLAGS["free"])
     return plan_flags.get(flag, False)
 
 
 def job_insights_level(plan: str) -> str:
-    """
-    Convenience accessor for the job insights level.
-    """
     return str(
         FEATURE_FLAGS.get(_plan_code(plan), FEATURE_FLAGS["free"]).get(
             "job_insights", "basic"
