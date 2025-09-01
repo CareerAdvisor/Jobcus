@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from flask_login import current_user
 from dataclasses import dataclass
 from datetime import date
 from typing import Optional
@@ -146,18 +146,16 @@ def increment_usage(
     supabase_admin, user_id: str, feature: str, kind: str, key: str, new_count: int
 ) -> None:
     (
-        supabase_admin.table("usage_counters")
-        .upsert(
+        supabase_admin.table("usage_counters").upsert(
             {
                 "user_id": user_id,
                 "feature": feature,
-                "period_kind": kind,
-                "period_key": key,
-                "used": new_count,
+                "period_kind": period_kind,
+                "period_key": period_key,
+                "used": new_used_value,   # ← not "count"
             },
-            on_conflict="user_id,feature,period_kind,period_key",
-        )
-        .execute()
+            on_conflict="user_id,feature,period_kind,period_key"
+        ).execute()
     )
 
 
