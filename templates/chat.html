@@ -157,7 +157,10 @@
     </form>
   </section>
 
-  <img id="scrollDown" class="scroll-down-icon" src="{{ url_for('static', filename='icons/scrolldown.svg') }}" alt="Scroll Down" onclick="scrollToBottom()" />
+  <img id="scrollDown" class="scroll-down-icon"
+       src="{{ url_for('static', filename='icons/scrolldown.svg') }}"
+       alt="Scroll Down"
+       onclick="(function(){const c=document.getElementById('chatbox'); if(c){c.scrollTop=c.scrollHeight;}})()" />
 </main>
 {% endblock %}
 
