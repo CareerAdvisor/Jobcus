@@ -1331,9 +1331,6 @@ def get_interview_feedback():
         logging.exception("Interview feedback error")
         return jsonify(error="Error generating feedback"), 500
 
-# --- Register the resume blueprint last (after app/config exists) ---
-app.register_blueprint(resumes_bp)
-
 # ---- Employer inquiry endpoints ----
 
 @app.post("/api/employer-inquiry")
@@ -1417,6 +1414,10 @@ Required Qualifications, Preferred Skills, and How to Apply.
     except Exception:
         current_app.logger.exception("Employer submission error")
         return jsonify(success=False, message="Server error generating job post."), 500
+
+# Register blueprints
+app.register_blueprint(ask_bp)
+app.register_blueprint(resumes_bp)  # you already had this
 
 # --- Entrypoint ---
 if __name__ == "__main__":
