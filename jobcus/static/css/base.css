@@ -281,6 +281,21 @@
   font-weight:600;
 }
 
+/* static/css/base.css */
+.upgrade-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  padding: 10px 14px;
+  text-align: center;
+
+  background: #fff3cd;        /* soft warning yellow */
+  color: #664d03;
+  border-top: 1px solid #ffe69c;
+  border-bottom: 1px solid #ffe69c;
+}
+
 @media (max-width: 480px) {
   .cc-banner { left: 12px; right: 12px; bottom: 12px; }
   .cc-panel { width: calc(100% - 24px); left: 12px; right: 12px; transform: none; }
