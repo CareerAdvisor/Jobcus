@@ -252,6 +252,6 @@
 {% block scripts %}
   {% if not letter_only %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}">
-    <script defer src="{{ url_for('static', filename='js/cover-letter.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/cover-letter.js') }}"></script>
   {% endif %}
 {% endblock %}
