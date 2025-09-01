@@ -3,7 +3,8 @@
 {% block title %}Resume Analyzer – Jobcus{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}"
+    >
 {% endblock %}
 
 {% block content %}
@@ -94,7 +95,6 @@
 {% endblock %}
 
 {% block scripts %}
-  <!-- Load base helpers (upgrade banner, state sync) then analyzer logic -->
   <script defer src="{{ url_for('static', filename='js/base.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/resume-analyzer.js') }}"></script>
 {% endblock %}
