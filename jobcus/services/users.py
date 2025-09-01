@@ -1,26 +1,64 @@
-from typing import Optional, Dict, Any
+# jobcus/services/users.py
+from __future__ import annotations
 
-def get_or_bootstrap_user(supabase_admin, auth_id: Optional[str], email: Optional[str]) -> Dict[str, Any]:
+def fetch_user_row(auth_id: str) -> dict | None:
     """
-    Ensure a users row exists for this auth_id. Returns a dict with at least 'plan' and 'role'.
+    Return a dict: {auth_id, email, plan, role, first_name?, last_name?, fullname?}
     """
-    try:
-        if not auth_id:
-            return {"plan": "free", "role": "guest"}
-        r = supabase_admin.table("users").select("auth_id,plan,plan_status,role").eq("auth_id", auth_id).limit(1).execute()
-        row = (getattr(r, "data", None) or [None])[0]
-        if not row:
-            row = {
+    # You likely have a global admin client on current_app.config["SUPABASE_ADMIN"].
+    # If not, import your init_supabase() and create one here (not shown).
+    from flask import current_app
+    supabase_admin = current_app.config["SUPABASE_ADMIN"]
+
+    r = (
+        supabase_admin.table("users")
+        .select("auth_id,email,plan,role,first_name,last_name,fullname")
+        .eq("auth_id", auth_id)
+        .limit(1)
+        .execute()
+    )
+    data = getattr(r, "data", None) or []
+    if isinstance(data, list) and data:
+        row = dict(data[0])
+        row.setdefault("plan", "free")
+        row.setdefault("role", "user")
+        return row
+    return None
+
+
+def get_or_bootstrap_user(supabase_admin, auth_id: str, email: str | None) -> dict:
+    """
+    Ensure a user row exists; return {auth_id,email,plan,role,...}
+    """
+    r = (
+        supabase_admin.table("users")
+        .select("auth_id,email,plan,role,first_name,last_name,fullname")
+        .eq("auth_id", auth_id)
+        .limit(1)
+        .execute()
+    )
+    data = getattr(r, "data", None) or []
+    if isinstance(data, list) and data:
+        row = dict(data[0])
+        row.setdefault("plan", "free")
+        row.setdefault("role", "user")
+        return row
+
+    # Create a new user with defaults
+    insert = (
+        supabase_admin.table("users")
+        .insert(
+            {
                 "auth_id": auth_id,
                 "email": email,
                 "plan": "free",
-                "plan_status": "active",
                 "role": "user",
             }
-            supabase_admin.table("users").insert(row).execute()
-        row["plan"] = (row.get("plan") or "free").lower()
-        row["role"] = (row.get("role") or "user").lower()
-        return row
-    except Exception:
-        # Fail-safe: never explode chat due to user bootstrap
-        return {"plan": "free", "role": "user"}
+        )
+        .execute()
+    )
+    created = getattr(insert, "data", None) or [{}]
+    row = dict(created[0])
+    row.setdefault("plan", "free")
+    row.setdefault("role", "user")
+    return row
