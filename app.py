@@ -1047,53 +1047,6 @@ def verify_token():
         print("verify_token error:", e)
         return jsonify(ok=False, error="Token verification failed"), 400
 
-# ----------------------------
-# Ask
-# ----------------------------
-ask_bp = Blueprint("ask", __name__)
-
-@ask_bp.post("/ask")
-def ask():
-    try:
-        supabase_admin = app.config["SUPABASE_ADMIN"]
-
-        payload = request.get_json(silent=True) or {}
-        message = (payload.get("message") or "").strip()
-        model   = (payload.get("model") or "gpt-4o-mini").strip()
-
-        if not message:
-            return jsonify(error="bad_request", message="Message is required."), 400
-
-        auth_id = current_user.id if getattr(current_user, "is_authenticated", False) else None
-        email   = current_user.email if getattr(current_user, "is_authenticated", False) else None
-
-        user_row = get_or_bootstrap_user(supabase_admin, auth_id, email) if auth_id else {"plan": "free"}
-        plan = (user_row.get("plan") or "free").lower()
-
-        ok, guard = allow_free_use(request, user_id=auth_id, plan=plan)
-        if not ok:
-            return jsonify(
-                error="too_many_free_accounts",
-                message=guard.get("message") or "You have reached the limit for the free version, upgrade to enjoy more features"
-            ), 429
-
-        subject = auth_id or request.remote_addr
-        allowed, info = check_and_increment(supabase_admin, subject, plan, "chat_messages")
-        if not allowed:
-            return jsonify(error="quota_exceeded", **info), 402
-
-        try:
-            reply = call_ai(model=model, prompt=message)
-        except Exception:
-            app.logger.exception("AI provider failed")
-            return jsonify(error="ai_error", message="AI provider error. Please try again."), 502
-
-        return jsonify(reply=reply, modelUsed=model)
-
-    except Exception:
-        app.logger.exception("Unhandled error in /ask")
-        return jsonify(error="server_error", message="Something went wrong on our side. Please try again."), 500
-
 
 @app.get("/api/credits")
 @login_required
