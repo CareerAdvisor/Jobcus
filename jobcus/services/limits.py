@@ -172,20 +172,12 @@ def quota_for(plan: str, feature: str) -> Quota:
 
 
 # services/limits.py (or limits.py if you haven't moved yet)
-from flask_login import current_user
-
 def check_and_increment(
-    supabase_admin, user_id: str, plan: str, feature: str
-) -> tuple[bool, dict]:
-    """
-    Returns (allowed: bool, payload: dict).
-    If allowed=True, this function has already incremented the counter atomically for the current period.
-    """
-
-    # --- Admin/Superadmin bypass (put this FIRST) ---
+    supabase_admin, user_id: str, plan: str, feature: str):
+    # Bypass for admin/superadmin
     role = (getattr(current_user, "role", "") or "").lower()
     if role in ("admin", "superadmin"):
-        return True, {"bypass": "admin", "feature": feature}
+        return True, {"bypass": "admin"}
 
     # --- existing logic ---
     f = _normalize_feature(feature)
