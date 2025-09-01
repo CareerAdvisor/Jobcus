@@ -97,5 +97,6 @@
 
 {% block scripts %}
   <!-- Your consolidated JS should handle: file -> base64, POST /api/resume-analysis, redirect to /dashboard -->
-  <script defer src="{{ url_for('static', filename='js/resume-analyzer.js') }}"></script>
+<  script defer src="/static/js/base.js"></script>
+  <script defer src="/static/js/resume-analyzer.js"></script>
 {% endblock %}
