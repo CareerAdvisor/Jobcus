@@ -1,5 +1,3 @@
-// static/js/resume-analyzer.js
-
 // Keep cookies for SameSite/Lax on all fetches
 (function(){
   const _fetch = window.fetch.bind(window);
@@ -52,6 +50,28 @@ async function initRoleDatalist() {
   }
 }
 document.addEventListener("DOMContentLoaded", initRoleDatalist);
+
+/* ----------------------- Metered Massage Import -------------------------- */
+// jobcus/static/js/resume-analyzer.js
+import { postWithLimit } from "/static/js/api.js";
+
+const form = document.getElementById("analyze-form");
+form?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const role = document.getElementById("target-role")?.value || "";
+  const level = document.getElementById("experience-level")?.value || "";
+  // If you upload a file first, include a file reference/presigned URL instead of raw file
+  const payload = { role, level };
+
+  try {
+    const data = await postWithLimit("/api/resume-analysis", payload);
+    // render results with `data`
+  } catch (err) {
+    if (err?.kind === "limit") return;     // banner shown
+    alert(err?.message || "Could not analyze resume.");
+  }
+});
 
 /* ----------------------------- Main logic ----------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
