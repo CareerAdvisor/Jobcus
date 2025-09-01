@@ -14,6 +14,7 @@ from .routes import register_routes
 def create_app() -> Flask:
     app = Flask(__name__, static_folder="static", static_url_path="/static")
     app.secret_key = os.getenv("SECRET_KEY", "supersecret")
+    app.config.update(SESSION_COOKIE_SECURE=True, SESSION_COOKIE_SAMESITE="Lax")
 
     # secure cookies
     app.config.update(
@@ -25,9 +26,10 @@ def create_app() -> Flask:
     CORS(app)
     logging.basicConfig(level=logging.INFO)
 
-    # External clients
+    # Extensions / clients
     app.config["SUPABASE"] = init_supabase()
     app.config["OPENAI_CLIENT"] = init_openai()
+    app.config["SUPABASE_ADMIN"] = app.config["SUPABASE"]  # or your service-role client if you use one
 
     # Admin (service-role) client
     supabase_url = os.getenv("SUPABASE_URL")
@@ -98,3 +100,4 @@ def create_app() -> Flask:
         return {"ok": True, "ts": datetime.utcnow().isoformat()}
 
     return app
+
