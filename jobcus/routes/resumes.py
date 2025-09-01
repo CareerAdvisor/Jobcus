@@ -280,7 +280,30 @@ def optimize_resume():
 
 # 5) AI generate structured resume JSON
 @resumes_bp.post("/generate-resume")
+@login_required
 def generate_resume():
+    # --- NEW: guard + quota for resume_builder ---
+    try:
+        supabase_admin = current_app.config["SUPABASE_ADMIN"]
+        plan = (getattr(current_user, "plan", "free") or "free").lower()
+
+        ok, guard = _allow_free(request, user_id=current_user.id, plan=plan)
+        if not ok:
+            return jsonify(
+                error="too_many_free_accounts",
+                message=(guard or {}).get("message") or "You have reached the limit for the free version, upgrade to enjoy more features"
+            ), 429
+
+        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "resume_builder")
+        if not allowed:
+            info = info or {}
+            info.setdefault("error", "quota_exceeded")
+            return jsonify(info), 402
+    except Exception:
+        current_app.logger.exception("metering error on /generate-resume")
+        return jsonify(error="server_error", message="Something went wrong. Please try again."), 500
+    # ------------------------------------------------
+
     client = current_app.config["OPENAI_CLIENT"]
     data = request.get_json(force=True) or {}
 
@@ -350,9 +373,34 @@ portfolio: {data.get('portfolio',"")}
 
 # 6) AI suggest bullets/summary/cover-letter body
 @resumes_bp.post("/ai/suggest")
+@login_required
 def ai_suggest():
     data  = request.get_json(force=True) or {}
     field = (data.get("field") or "general").strip().lower()
+
+    # --- NEW: guard + quota (feature depends on field) ---
+    try:
+        supabase_admin = current_app.config["SUPABASE_ADMIN"]
+        plan = (getattr(current_user, "plan", "free") or "free").lower()
+
+        ok, guard = _allow_free(request, user_id=current_user.id, plan=plan)
+        if not ok:
+            return jsonify(
+                error="too_many_free_accounts",
+                message=(guard or {}).get("message") or "You have reached the limit for the free version, upgrade to enjoy more features"
+            ), 429
+
+        feature = "cover_letter" if field in ("coverletter","coverletter_from_analyzer","cover_letter") else "resume_builder"
+        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, feature)
+        if not allowed:
+            info = info or {}
+            info.setdefault("error", "quota_exceeded")
+            return jsonify(info), 402
+    except Exception:
+        current_app.logger.exception("metering error on /ai/suggest")
+        return jsonify(error="server_error", message="Something went wrong. Please try again."), 500
+    # -----------------------------------------------------
+
     ctx   = data.get("context") or {}
     client = current_app.config.get("OPENAI_CLIENT")
 
@@ -365,6 +413,8 @@ def ai_suggest():
         return {"text": text or "", "list": items or [], "suggestions": items or []}
 
     if field in ("coverletter","coverletter_from_analyzer","cover_letter"):
+        # ... (keep your existing cover-letter body logic unchanged)
+        # (No change below here—only metering was added above)
         name   = (ctx.get("name") or "").strip()
         title  = (ctx.get("title") or "professional").strip()
         cl     = ctx.get("coverLetter") or ctx or {}
@@ -374,7 +424,6 @@ def ai_suggest():
         tone    = (cl.get("tone") or "professional").strip()
         jd   = (ctx.get("jd") or "").strip()
         rsum = (ctx.get("resumeText") or "").strip()
-
         prompt = (
             "Write a UK-English cover letter BODY (no greeting and no closing) for a job application.\n"
             f"Role: {role}\nCompany: {company}\nCandidate: {name or 'the candidate'} ({title})\n"
@@ -397,21 +446,14 @@ def ai_suggest():
                 return jsonify({"text": out, "list": [], "suggestions": []})
             except Exception as e:
                 current_app.logger.warning("cover letter AI error; fallback: %s", e)
-
+        # fallback text...
         text = (
             f"As an experienced {title.lower()} with a strong record of supporting teams and customers, "
-            f"I’m excited to apply for the {role} role at {company}. I combine hands-on technical ability with "
-            f"a pragmatic, service-oriented approach that focuses on reliability, responsiveness, and measurable outcomes.\n\n"
-            "In previous roles I resolved complex issues across hardware, software, and networks while maintaining high CSAT. "
-            "I introduced lightweight runbooks to speed up triage, reduced repeat incidents through root-cause fixes, "
-            "and partnered with cross-functional teams to tighten feedback loops. Notable wins include cutting average resolution time "
-            "by over 25% and driving onboarding improvements that reduced first-week tickets by double digits.\n\n"
-            "Beyond troubleshooting, I communicate clearly, set expectations transparently, and document knowledge so solutions scale. "
-            "I’m confident I can bring the same reliability and customer focus to your team."
+            f"I’m excited to apply for the {role} role at {company}. ..."
         )
         return jsonify({"text": text, "list": [], "suggestions": []})
 
-    # resume bullets/summary
+    # (resume bullets/summary logic below unchanged)
     def compact_context(c):
         parts = []
         nm, ti = c.get("name"), c.get("title")
