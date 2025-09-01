@@ -124,33 +124,51 @@ function initModelControls() {
 // ──────────────────────────────────────────────────────────────
 // importing the upgrademessage banner
 // ──────────────────────────────────────────────────────────────
+// static/js/chat.js
+// Works with api.js (which exposes window.api) and avoids inline handlers.
 
-import { postWithLimit } from "/static/js/api.js";
+const form      = document.getElementById('chat-form');     // your <form id="chat-form">
+const input     = document.getElementById('chat-input');    // your <input/textarea id="chat-input">
+const modelSel  = document.getElementById('model-select');  // optional <select id="model-select">
+const thread    = document.getElementById('chat-thread');   // where you render messages
 
-const form = document.getElementById("chat-form");
-const input = document.getElementById("chat-input");
-
-form?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const message = (input?.value || "").trim();
-  if (!message) return;
+async function doSend(message) {
+  const payload = {
+    message: message,
+    model: (modelSel && modelSel.value) || 'gpt-4o-mini'
+  };
 
   try {
-    const data = await postWithLimit("/ask", {
-      message,
-      model: window.DEFAULT_MODEL || "gpt-4o-mini",
-    });
-    // render reply...
-    // renderMessage("assistant", data.reply);
-  } catch (err) {
-    if (err?.kind === "limit") {
-      // Already showed the banner; optionally disable input, etc.
-      return;
+    const data = await (window.api?.postWithLimit
+      ? window.api.postWithLimit('/ask', payload)
+      : fetch('/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(r => r.json()));
+
+    // render assistant reply
+    if (thread) {
+      const li = document.createElement('div');
+      li.className = 'ai-reply';
+      li.textContent = data?.reply ?? '(no reply)';
+      thread.appendChild(li);
     }
-    // Generic failure UX
-    alert(err?.message || "Something went wrong. Please try again.");
+  } catch (err) {
+    if (err?.kind === 'limit') return; // upgrade banner already shown by api.js
+    window.showUpgradeBanner?.(err?.message || 'Something went wrong. Please try again.');
   }
-});
+}
+
+if (form) {
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const msg = (input?.value || '').trim();
+    if (!msg) return;
+    input.value = '';
+    doSend(msg);
+  });
+}
 
 // ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
