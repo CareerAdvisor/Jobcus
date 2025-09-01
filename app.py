@@ -340,30 +340,21 @@ def end_current_session(redirect_endpoint="account"):
     logout_user()
     return resp
 
+# 1) global guard
 @app.before_request
-def enforce_single_active_session():
+def free_plan_device_guard():
     if not current_user.is_authenticated:
         return
-
-    if request.endpoint in {None, "account", "logout", "static"}:
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    if plan != "free":
         return
-
-    token = request.cookies.get(SID_COOKIE)
-    sid = _unsign_session_token(token) if token else None
-
-    if not sid:
-        return end_current_session("account")  # no bound session cookie → sign out
-    try:
-        q = supabase.table("user_sessions").select("*").eq("id", sid).limit(1).execute()
-        row = q.data[0] if q.data else None
-        if not row or (row["auth_id"] != str(current_user.id)) or (not row["is_active"]):
-            return end_current_session()
-        # touch last_seen
-        supabase.table("user_sessions").update({"last_seen": datetime.utcnow().isoformat()})\
-            .eq("id", sid).execute()
-    except Exception:
-        current_app.logger.exception("session check failed")
-        return end_current_session()
+    protected = {"ask", "resume_analysis", "api_resume_analysis"}
+    if request.endpoint in protected:
+        ok, payload = allow_free_use(request, user_id=current_user.id, plan=plan)  # ← pass request
+        if not ok:
+            msg = payload.get("message") or "Free usage limit reached for this device."
+            return jsonify({"error": "too_many_free_accounts", "message": msg}), 429
+            
 
 # --- IP abuse heuristic (legacy; UNUSED now) ---
 def too_many_free_accounts_from_ip(ip_hash, window_days=7, threshold=3):
