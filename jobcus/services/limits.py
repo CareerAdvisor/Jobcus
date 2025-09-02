@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 from flask_login import current_user
+from postgrest.exceptions import APIError  # <-- new
 
 # ---------- Plan config ----------
 
@@ -24,6 +25,9 @@ _FEATURE_ALIASES = {
     "employers":         "employer_tools",
     "job_post":          "employer_tools",
 }
+
+# If older schemas used a different column for usage totals, try these:
+_LEGACY_USED_COLUMNS = ("count", "usage", "value")
 
 def _normalize_feature(feature: str) -> str:
     if not feature:
@@ -122,38 +126,87 @@ def period_key(kind: str, d: date | None = None) -> str:
         return d.strftime("%Y")
     return "all"
 
-# ---------- Counters ----------
+# ---------- Counters (resilient to schema drift) ----------
+def _as_int(val) -> int:
+    try:
+        return int(val)
+    except Exception:
+        return 0
+
 def get_usage_count(supabase_admin, user_id: str, feature: str, kind: str, key: str) -> int:
-    r = (
+    qb = (
         supabase_admin.table("usage_counters")
-        .select("used")
         .eq("user_id", user_id)
         .eq("feature", feature)
         .eq("period_kind", kind)
         .eq("period_key", key)
         .limit(1)
-        .execute()
     )
-    data = getattr(r, "data", None)
-    if isinstance(data, list) and data:
-        return int(data[0].get("used") or 0)
-    if isinstance(data, dict):
-        return int(data.get("used") or 0)
-    return 0
 
+    # Try preferred column first
+    try:
+        res = qb.select("used").execute()
+        if getattr(res, "data", None):
+            row = res.data[0]
+            return _as_int(row.get("used", 0))
+        return 0
+    except APIError as e:
+        # 42703 = undefined_column — try legacy names instead of 500’ing
+        if getattr(e, "code", None) == "42703":
+            for legacy in _LEGACY_USED_COLUMNS:
+                try:
+                    res = qb.select(legacy).execute()
+                    if getattr(res, "data", None):
+                        row = res.data[0]
+                        return _as_int(row.get(legacy, 0))
+                    return 0
+                except APIError:
+                    continue
+        # Re-raise anything else
+        raise
+
+def bump_usage(supabase_admin, user_id: str, feature: str, kind: str, key: str) -> None:
+    """
+    Read current counter via get_usage_count() and upsert +1.
+    If 'used' column is absent, fall back to legacy names.
+    """
+    new_value = get_usage_count(supabase_admin, user_id, feature, kind, key) + 1
+    payload = {
+        "user_id": user_id,
+        "feature": feature,
+        "period_kind": kind,
+        "period_key": key,
+        "used": new_value,  # default path
+    }
+    try:
+        supabase_admin.table("usage_counters").upsert(
+            payload,
+            on_conflict="user_id,feature,period_kind,period_key"
+        ).execute()
+        return
+    except APIError as e:
+        if getattr(e, "code", None) == "42703":
+            # Try legacy column names
+            for legacy in _LEGACY_USED_COLUMNS:
+                try:
+                    legacy_payload = dict(payload)
+                    legacy_payload[legacy] = legacy_payload.pop("used")
+                    supabase_admin.table("usage_counters").upsert(
+                        legacy_payload,
+                        on_conflict="user_id,feature,period_kind,period_key"
+                    ).execute()
+                    return
+                except APIError:
+                    continue
+        # Re-raise on anything else or if all legacy attempts failed
+        raise
+
+# Back-compat: keep increment_usage around (now delegates to bump_usage)
 def increment_usage(
     supabase_admin, user_id: str, feature: str, kind: str, key: str, new_count: int
 ) -> None:
-    supabase_admin.table("usage_counters").upsert(
-        {
-            "user_id": user_id,
-            "feature": feature,
-            "period_kind": kind,
-            "period_key": key,
-            "used": new_count,
-        },
-        on_conflict="user_id,feature,period_kind,period_key",
-    ).execute()
+    # Ignore supplied new_count; we always compute via get_usage_count to avoid races.
+    bump_usage(supabase_admin, user_id, feature, kind, key)
 
 # ---------- Public API ----------
 def quota_for(plan: str, feature: str) -> Quota:
@@ -187,7 +240,9 @@ def check_and_increment(supabase_admin, user_id: str, plan: str, feature: str):
             "message": "You have reached the limit for the free version, upgrade to enjoy more features",
         }
 
-    increment_usage(supabase_admin, user_id, f, kind, key, used + 1)
+    # Resilient increment (handles legacy columns)
+    bump_usage(supabase_admin, user_id, f, kind, key)
+
     return True, {
         "used": used + 1,
         "limit": q.limit,
