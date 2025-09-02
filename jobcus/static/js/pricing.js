@@ -41,7 +41,7 @@ function routePaid(plan) {
   localStorage.setItem("userPlan", plan);
   const authed = document.body?.dataset?.authed === "1";
   if (authed) {
-    window.location.href = `/subscribe?plan=${encodeURIComponent(plan)}`;  // correct path
+    window.location.href = `/subscribe?plan=${encodeURIComponent(plan)}`;
   } else {
     const next = `/subscribe?plan=${encodeURIComponent(plan)}`;
     window.location.href = `/account?next=${encodeURIComponent(next)}`;
