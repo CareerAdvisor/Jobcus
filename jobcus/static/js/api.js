@@ -1,19 +1,42 @@
+// static/js/api.js
+
+// ──────────────────────────────────────────────────────────────
+// Legacy-safe helper available as window.jsonFetch
+// (works even when the server bounces to /account)
+// ──────────────────────────────────────────────────────────────
+;(function(){
+  window.jsonFetch = async function jsonFetch(url, opts = {}) {
+    const res = await fetch(url, { credentials: "same-origin", ...opts });
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    const isJSON = ct.includes("application/json");
+    const body = isJSON ? await res.json() : await res.text();
+
+    // If we were bounced to /account, send the user there with ?next
+    if (!isJSON && res.url.includes("/account")) {
+      location.href = "/account?next=" + encodeURIComponent(location.pathname);
+      return null;
+    }
+    if (!res.ok) {
+      const msg = (isJSON ? (body.message || body.error) : "") || "Request failed";
+      throw new Error(msg);
+    }
+    return body;
+  };
+})();
+
+// ──────────────────────────────────────────────────────────────
 // Unified helpers for JSON API calls with quota/upgrade handling.
 //
 // What it handles (and shows the upgrade banner for):
 // - 402 + { error: "quota_exceeded", ... }          → free tier limit reached
-// - 429 + { error: "too_many_free_accounts" | "quota_exceeded" } → device/network guard or shared-limit cap
-// - 403 + { error: "upgrade_required", ... }        → feature is gated to paid plans
+// - 429 + { error: "too_many_free_accounts" | "quota_exceeded" } → device/network guard
+// - 403 + { error: "upgrade_required", ... }        → feature gated to paid plans
 //
-// Anything else throws a { kind: "server", status, message, data } error.
-// Callers can catch errors and branch on err.kind if needed.
-//
-// Usage (ES modules):
-//   import { postWithLimit, getWithLimit } from "/static/js/api.js";
-//   const data = await postWithLimit("/ask", { message, model });
-//
-// This file assumes base.html includes base.js (which defines window.showUpgradeBanner)
-// before page-scoped <script type="module"> tags.
+// Exports (ES modules):
+//   requestWithLimit / getWithLimit / postWithLimit / putWithLimit / deleteWithLimit
+//   postJSON (simple JSON POST that also respects /account bounce)
+// Also attaches window.api = { getWithLimit, postWithLimit, ... } for non-module callers.
+// ──────────────────────────────────────────────────────────────
 
 function _banner(text) {
   if (typeof window !== "undefined" && typeof window.showUpgradeBanner === "function") {
@@ -24,12 +47,11 @@ function _banner(text) {
 }
 
 /** Try to parse JSON even if server forgot content-type. */
-async function parseJsonResponse(res) {
+export async function parseJsonResponse(res) {
   const ct = (res.headers.get("content-type") || "").toLowerCase();
   if (ct.includes("application/json")) {
     try { return await res.json(); } catch { return null; }
   }
-  // Fallback: attempt to parse text as JSON
   try { return JSON.parse(await res.text()); } catch { return null; }
 }
 
@@ -53,7 +75,7 @@ function _isUpgradeRequired(res, data) {
  * - throws structured errors: { kind: "limit" | "upgrade" | "server", status, message, data }
  */
 export async function requestWithLimit(url, options = {}) {
-  const opts = { method: "GET", ...options };
+  const opts = { method: "GET", credentials: "same-origin", ...options };
   const headers = new Headers(opts.headers || {});
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
 
@@ -122,10 +144,38 @@ export async function deleteWithLimit(url, payload = null, options = {}) {
   return requestWithLimit(url, base);
 }
 
+// Simple JSON POST helper (your provided function), also respects /account bounce.
+export async function postJSON(url, payload) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type":"application/json", Accept: "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(payload),
+  });
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+  const isJSON = ct.includes("application/json");
+  if (!isJSON && res.url.includes("/account")) {
+    location.href = "/account?next=" + encodeURIComponent(location.pathname);
+    return null;
+  }
+  const data = isJSON ? await res.json() : { reply: await res.text() };
+  if (!res.ok) throw new Error(data.message || data.error || "Request failed");
+  return data;
+}
+
 // Optional: tiny type guards you can use in catch blocks
 export function isLimitError(err)   { return err && err.kind === "limit"; }
 export function isUpgradeError(err) { return err && err.kind === "upgrade"; }
 export function isServerError(err)  { return err && err.kind === "server"; }
 
-// Optional: small helper to safely read JSON-ish content from non-API endpoints
-export { parseJsonResponse };
+// Also expose a window.api for non-module pages (chat.js checks this)
+if (typeof window !== "undefined") {
+  window.api = {
+    requestWithLimit,
+    getWithLimit,
+    postWithLimit,
+    putWithLimit,
+    deleteWithLimit,
+    postJSON, // convenient to have here too
+  };
+}
