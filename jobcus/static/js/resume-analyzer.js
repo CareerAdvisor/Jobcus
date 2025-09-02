@@ -7,6 +7,27 @@
   };
 })();
 
+// ──────────────────────────────────────────────────────────────
+// NEW: Minimal handler for #analyzeBtn using window.jsonFetch
+// (Safe login redirect handling via /account bounce.)
+// ──────────────────────────────────────────────────────────────
+document.querySelector("#analyzeBtn")?.addEventListener("click", async (e) => {
+  e.preventDefault();
+  try {
+    // TODO: collect your form data here:
+    const payload = {/* collect your form data here */};
+    const data = await window.jsonFetch("/api/resume-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!data) return; // redirected to login
+    // ... use `data` safely here
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
 /* ---------- Role <datalist> loader with small cache ---------- */
 async function initRoleDatalist() {
   const input = document.getElementById("dashRoleSelect");
@@ -51,7 +72,7 @@ async function initRoleDatalist() {
 }
 document.addEventListener("DOMContentLoaded", initRoleDatalist);
 
-/* ----------------------- Metered Massage Import -------------------------- */
+/* ----------------------- Metered Message Import -------------------------- */
 // Uses window.api.postWithLimit; shows the upgrade banner automatically on 402/429.
 
 const form    = document.getElementById('analyze-form');   // <form id="analyze-form">
@@ -78,7 +99,7 @@ if (form) {
 
     try {
       const data = await window.api.postWithLimit('/api/resume-analysis', {
-        text: resumeText,   // keep it simple; backend can accept pdf/docx too
+        text: resumeText,
         jd: jd
       });
       renderResult(data);
@@ -200,34 +221,28 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const text = await res.text();
+        let data   = await parseJsonSafe(res, text); // ← ensure data is defined for all paths
 
-        // NEW: handle device/IP abuse guard from backend
+        // Device/IP abuse guard from backend
         if (res.status === 429) {
-          let data;
-          try { data = JSON.parse(text); } catch { data = null; }
-          // Big global banner (from base.js) + local inline hint
           window.showUpgradeBanner?.(
-            data?.message || 'You have reached the limit for the free version, upgrade to enjoy more features'
+            (data && data.message) || 'You have reached the limit for the free version, upgrade to enjoy more features'
           );
           showInlineBanner(
             card,
-            data?.message || 'You have reached the limit for the free version, upgrade to enjoy more features',
+            (data && data.message) || 'You have reached the limit for the free version, upgrade to enjoy more features',
             "warn"
           );
           return;
         }
 
-        if (res.status === 429 && (data?.error === "too_many_free_accounts" || data?.error === "quota_exceeded")) {
-          // New behavior parity with chat
-          showUpgradeBanner("You have reached the limit for the free version, upgrade to enjoy more features", card);
-          return;
-        }
         if (!res.ok) {
           const msg = (data?.error || data?.message) || "Resume analysis failed. Please try again.";
           console.error("Resume analysis failed:", text);
           showInlineBanner(card, msg, "error");
           return;
         }
+
         if (!data) {
           console.error("Invalid JSON from /api/resume-analysis:", text);
           showInlineBanner(card, "Unexpected server response.", "error");
