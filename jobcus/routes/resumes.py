@@ -1,4 +1,3 @@
-# jobcus/routes/resumes.py
 from __future__ import annotations
 
 import os, re, json, base64, logging
@@ -29,14 +28,14 @@ import docx
 resumes_bp = Blueprint("resumes", __name__)
 
 # --- helper: support both signatures of allow_free_use across code versions ---
-def _allow_free(req, user_id, plan):
+def _allow_free_use(req, user_id, plan):
     try:
         # new signature
         return allow_free_use(req, user_id=user_id, plan=plan)
     except TypeError:
         try:
             # legacy signature
-            return allow_free_use(user_id, plan)
+            return allow_free_use(req, user_id, plan)
         except TypeError:
             return True, {}
 
@@ -121,7 +120,7 @@ def api_resume_analysis():
         supabase_admin = current_app.config["SUPABASE_ADMIN"]
         plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-        ok, guard = _allow_free(request, user_id=current_user.id, plan=plan)
+        ok, guard = _allow_free_use(request, user_id=current_user.id, plan=plan)
         if not ok:
             return jsonify(
                 error="too_many_free_accounts",
@@ -293,7 +292,7 @@ def generate_resume():
         supabase_admin = current_app.config["SUPABASE_ADMIN"]
         plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-        ok, guard = _allow_free(request, user_id=current_user.id, plan=plan)
+        ok, guard = _allow_free_use(request, user_id=current_user.id, plan=plan)
         if not ok:
             return jsonify(
                 error="too_many_free_accounts",
@@ -389,7 +388,7 @@ def ai_suggest():
         supabase_admin = current_app.config["SUPABASE_ADMIN"]
         plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-        ok, guard = _allow_free(request, user_id=current_user.id, plan=plan)
+        ok, guard = _allow_free_use(request, user_id=current_user.id, plan=plan)
         if not ok:
             return jsonify(
                 error="too_many_free_accounts",
