@@ -1,5 +1,4 @@
-<!-- /static/js/resume-builder.js -->
-<script>
+// /static/js/resume-builder.js
 "use strict";
 
 // Ensure fetch keeps cookies (SameSite=Lax safe)
@@ -14,14 +13,14 @@
 // ───────────────────────────────────────────────
 // Tiny helpers
 // ───────────────────────────────────────────────
-function qs(root, sel)  { return (root || document).querySelector(sel); }
+function qs(root, sel) { return (root || document).querySelector(sel); }
 function qsa(root, sel) { return Array.from((root || document).querySelectorAll(sel)); }
 function withinBuilder(sel) { return `#resume-builder ${sel}`; }
 const AI_ENDPOINT = "/ai/suggest";
 
-const escapeHtml = (s="") =>
-  s.replace(/&/g,"&amp;").replace(/</g,"&lt;")
-   .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+const escapeHtml = (s = "") =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;")
+   .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
 // Centralized server-response handling for plan/auth/abuse messages
 async function handleCommonErrors(res) {
@@ -98,7 +97,6 @@ function gatherContext(form) {
       };
     });
 
-    // support comma or newline input for skills
     const skillsRaw = (form.elements["skills"]?.value || "").trim();
     const skills = skillsRaw
       ? skillsRaw.split(/[,;\r\n]+/).map(s => s.trim()).filter(Boolean)
@@ -163,7 +161,6 @@ function attachAISuggestionHandlers() {
     const textEl = qs(card, ".ai-text");
     if (!textEl) return;
 
-    // Refresh suggestions from AI
     if (btn.classList.contains("ai-refresh")) {
       const type = btn.dataset.ai || "general";
       textEl.textContent = "Thinking…";
@@ -189,7 +186,7 @@ function attachAISuggestionHandlers() {
       return;
     }
 
-    // Insert the suggestion into the relevant textarea
+    // Insert suggestion
     if (btn.classList.contains("ai-add")) {
       const wrap = btn.closest(".rb-card, .rb-item, .rb-step");
       const taSummary = qs(wrap, 'textarea[name="summary"]');
@@ -219,9 +216,7 @@ function cloneFromTemplate(tplId) {
   const tpl = qs(document, withinBuilder(`#${tplId}`));
   if (!tpl) return null;
   const node = tpl.content.firstElementChild.cloneNode(true);
-  // remove button
   qs(node, ".rb-remove")?.addEventListener("click", () => node.remove());
-  // auto-create suggestions for new blocks (non-blocking) — only if signed in
   if (window.USER_AUTHENTICATED) {
     setTimeout(() => { qs(node, ".ai-suggest .ai-refresh")?.click(); }, 0);
   }
@@ -290,7 +285,6 @@ function initSkills() {
       refreshChips();
     }
   });
-  // Also support paste of comma/newline lists
   skillInput?.addEventListener("paste", (e) => {
     const text = (e.clipboardData?.getData("text") || "").trim();
     if (!text) return;
@@ -306,7 +300,6 @@ function initSkills() {
 // Render with server templates (HTML/PDF/DOCX)
 // ───────────────────────────────────────────────
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
-  // helper to POST and handle errors/upgrade guard
   async function postAndMaybeError(url, payload) {
     const res = await fetch(url, {
       method: "POST",
@@ -386,14 +379,12 @@ function initWizard() {
     return;
   }
 
-  // Steps
   const steps = qsa(builder, ".rb-step");
   if (!steps.length) {
     console.error("No wizard steps found (.rb-step).");
     return;
   }
 
-  // Controls
   const tabs      = qsa(builder, ".rb-tabs button");
   const back      = qs(builder, "#rb-back");
   const next      = qs(builder, "#rb-next");
@@ -450,7 +441,6 @@ function initWizard() {
     onEnterStep(idx);
   }
 
-  // Tabs: jump directly
   tabs.forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -460,7 +450,6 @@ function initWizard() {
     });
   });
 
-  // Back / Next
   back?.addEventListener("click", (e) => { e.preventDefault(); showStep(idx - 1); });
   next?.addEventListener("click", (e) => { e.preventDefault(); showStep(idx + 1); });
 
@@ -473,7 +462,7 @@ function initWizard() {
     if (type === "education") addEducationFromObj();
   });
 
-  // Photo upload (with revoke on change)
+  // Photo upload
   let _photoUrl;
   qs(builder, "#photoBtn")?.addEventListener("click", () => qs(builder, "#photoInput")?.click());
   qs(builder, "#photoInput")?.addEventListener("change", (e) => {
@@ -529,16 +518,13 @@ function initWizard() {
       const genJson = await gen.json().catch(() => ({}));
       if (genJson.error) throw new Error(genJson.error || "Resume generation failed");
 
-      // Merge AI-enriched context into current context
       window._resumeCtx = { ...ctxForTemplate, ...(genJson.context || {}) };
 
-      // Persist/sync latest resume for cloud history (best-effort)
       try {
         localStorage.setItem("resume_latest", JSON.stringify(window._resumeCtx));
         window.syncState?.({ resume_latest: window._resumeCtx, resume_generated: true });
       } catch {}
 
-      // Jump to Finish step
       const finishIdx = steps.findIndex(s => s && s.id === "step-finish");
       showStep(finishIdx >= 0 ? finishIdx : steps.length - 1);
     } catch (err) {
@@ -561,7 +547,7 @@ function initWizard() {
     try {
       if (indicator) indicator.style.display = "block";
       const live = gatherContext(qs(builder, "#resumeForm"));
-      const ctx = { ...(window._resumeCtx || {}), ...live }; // latest form values win
+      const ctx = { ...(window._resumeCtx || {}), ...live };
       const theme = themeSelect?.value || "modern";
       await renderWithTemplateFromContext(ctx, kind, theme);
     } catch (e) {
@@ -574,115 +560,4 @@ function initWizard() {
 
   previewBtn?.addEventListener("click", () => buildAndRender("html"));
   pdfBtn?.addEventListener("click",     () => buildAndRender("pdf"));
-  docxBtn?.addEventListener("click",    () => buildAndRender("docx"));
-
-  // Finish-screen mirrors
-  qs(builder, "#previewTemplateFinish")?.addEventListener("click", () => previewBtn?.click());
-  qs(builder, "#downloadTemplatePdfFinish")?.addEventListener("click", () => pdfBtn?.click());
-  qs(builder, "#downloadTemplateDocxFinish")?.addEventListener("click", () => docxBtn?.click());
-
-  // Start
-  showStep(idx || 0);
-
-  // Expose for quick debugging
-  window.__rbWizard = { steps, showStep, get index(){return idx;} };
-}
-
-// ───────────────────────────────────────────────
-// Prefill from analyzer (optional)
-// ───────────────────────────────────────────────
-async function maybePrefillFromAnalyzer(form, helpers) {
-  const raw = localStorage.getItem("resumeTextRaw");
-  if (!raw || !form) return;
-
-  const builder = qs(document, "#resume-builder");
-  const isEmpty =
-    !(form.firstName?.value || form.lastName?.value || form.title?.value || form.summary?.value) &&
-    !qs(builder, "#exp-list .rb-item input[value]");
-
-  if (!isEmpty) return;
-
-  try {
-    const gen = await fetch("/generate-resume", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fullName: "", title: "", contact: "", summary: raw,
-        education: "", experience: raw, skills: "", certifications: "", portfolio: ""
-      }),
-    });
-
-    await handleCommonErrors(gen);
-
-    const genJson = await gen.json().catch(() => ({}));
-    if (genJson.error) throw new Error(genJson.error || "Generate failed");
-
-    const ctx = genJson.context || {};
-    const name = (ctx.name || "").trim().split(/\s+/);
-    if (form.firstName) form.firstName.value = name.shift() || "";
-    if (form.lastName)  form.lastName.value  = name.join(" ");
-    if (form.title)     form.title.value     = ctx.title || "";
-    if (form.summary)   form.summary.value   = ctx.summary || "";
-    if (ctx.links && ctx.links[0] && form.portfolio) form.portfolio.value = ctx.links[0].url || "";
-
-    if (Array.isArray(ctx.skills) && ctx.skills.length) {
-      ctx.skills.forEach((s) => helpers.skillsSet.add(s));
-      helpers.refreshChips();
-    }
-
-    const expList = document.querySelector("#exp-list");
-    if (expList) {
-      expList.innerHTML = "";
-      (ctx.experience || []).forEach(addExperienceFromObj);
-      if (!expList.children.length) addExperienceFromObj();
-    }
-
-    const eduList = document.querySelector("#edu-list");
-    if (eduList) {
-      eduList.innerHTML = "";
-      (ctx.education || []).forEach(addEducationFromObj);
-      if (!eduList.children.length) addEducationFromObj();
-    }
-
-    window._resumeCtx = ctx;
-    try {
-      localStorage.setItem("resume_latest", JSON.stringify(ctx));
-      window.syncState?.({ resume_latest: ctx });
-    } catch {}
-  } catch (e) {
-    console.warn("Prefill from analyzer failed:", e);
-  }
-}
-
-// ───────────────────────────────────────────────
-// Resume Builder Metered
-// ───────────────────────────────────────────────
-
-import { postWithLimit } from "/static/js/api.js";
-
-async function buildResume(payload) {
-  try {
-    const data = await postWithLimit("/api/resume-builder/generate", payload);
-    // render
-  } catch (err) {
-    if (err?.kind === "limit") return;
-    alert(err?.message || "Failed to build resume.");
-  }
-}
-
-// ───────────────────────────────────────────────
-// Boot
-// ───────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-  try {
-    const helpers = initSkills();
-    if (!document.querySelector("#exp-list .rb-item")) addExperienceFromObj();
-    if (!document.querySelector("#edu-list .rb-item")) addEducationFromObj();
-    attachAISuggestionHandlers();
-    initWizard();
-    maybePrefillFromAnalyzer(document.getElementById("resumeForm"), helpers);
-  } catch (e) {
-    console.error("Resume builder init failed:", e);
-  }
-});
-</script>
+  docxBtn?.
