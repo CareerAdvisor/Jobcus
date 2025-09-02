@@ -14,6 +14,17 @@ except ImportError:
 
 ask_bp = Blueprint("ask", __name__)
 
+# ---- add this helper (matches the one in resumes.py) ----
+def _allow_free(req, user_id, plan):
+    try:
+        return allow_free_use(req, user_id=user_id, plan=plan)  # new signature
+    except TypeError:
+        try:
+            return allow_free_use(user_id, plan)  # legacy signature
+        except TypeError:
+            return True, {}
+# ---------------------------------------------------------
+
 @ask_bp.post("/ask")
 def ask():
     try:
@@ -26,29 +37,27 @@ def ask():
         if not message:
             return jsonify(error="bad_request", message="Message is required."), 400
 
-        # Identify user (guest is allowed if you want)
+        # Identify user (guest allowed)
         auth_id = current_user.id if getattr(current_user, "is_authenticated", False) else None
         email   = current_user.email if getattr(current_user, "is_authenticated", False) else None
 
-        # Bootstrap defaults for new users
         user_row = get_or_bootstrap_user(supabase_admin, auth_id, email) if auth_id else {"plan": "free"}
         plan = (user_row.get("plan") or "free").lower()
 
-        # Abuse/fair-use guard → returns JSON 429 if blocked
-        ok, guard = allow_free_use(request, user_id=auth_id, plan=plan)
+        # ---- use the shim here instead of calling allow_free_use directly ----
+        ok, guard = _allow_free(request, user_id=auth_id, plan=plan)
         if not ok:
             return jsonify(
                 error="too_many_free_accounts",
-                message=guard.get("message") or "You have reached the limit for the free version, upgrade to enjoy more features"
+                message=(guard or {}).get("message") or "You have reached the limit for the free version, upgrade to enjoy more features"
             ), 429
+        # ---------------------------------------------------------------------
 
-        # Quota (402 when exceeded)
         subject = auth_id or request.remote_addr
         allowed, info = check_and_increment(supabase_admin, subject, plan, "chat_messages")
         if not allowed:
-            return jsonify(error="quota_exceeded", **info), 402
+            return jsonify(error="quota_exceeded", **(info or {})), 402
 
-        # Call AI safely
         try:
             reply = call_ai(model=model, prompt=message)
         except Exception:
