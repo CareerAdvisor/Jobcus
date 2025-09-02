@@ -1,6 +1,6 @@
 /* static/js/account.js */
 
-/* 1) Force cookies on every fetch */
+/* 1) Force cookies on every fetch (SameSite/Lax) */
 ;(function(){
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
@@ -22,6 +22,7 @@ function getSupabase() {
 function nextUrl() {
   return new URLSearchParams(location.search).get("next") || "/dashboard";
 }
+
 async function exchangeSession(access_token) {
   const r = await fetch("/auth/session", {
     method: "POST",
@@ -29,6 +30,18 @@ async function exchangeSession(access_token) {
     body: JSON.stringify({ access_token }),
   });
   if (!r.ok) throw new Error("Could not establish server session");
+}
+
+function setFlash(msg) {
+  const flash = document.getElementById('flashMessages');
+  if (!flash) return;
+  flash.textContent = "";
+  if (msg) {
+    const div = document.createElement("div");
+    div.className = "flash-item";
+    div.textContent = msg;
+    flash.appendChild(div);
+  }
 }
 
 /* 4) UI & form logic */
@@ -45,15 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitBtn   = document.getElementById('submitButton');
   const toggleLink  = document.getElementById('toggleMode');
   const togglePrompt= document.getElementById('togglePrompt');
-  const flash       = document.getElementById('flashMessages');
 
-  function setFlash(msg) {
-    if (!flash) return;
-    flash.textContent = "";
-    if (msg) flash.textContent = msg;
-  }
-
-  // ─── updateView() swaps login ↔ signup UI ───
   function updateView() {
     const mode = modeInput.value;
     if (mode === 'login') {
@@ -74,17 +79,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setFlash("");
   }
 
-  // ─── Toggle link ───
   toggleLink.addEventListener('click', e => {
     e.preventDefault();
     modeInput.value = (modeInput.value === 'login' ? 'signup' : 'login');
     updateView();
   });
 
-  // ─── Init ───
   updateView();
 
-  // ─── Form submit (Supabase, not /account) ───
+  // ─── Email/password submit via Supabase ───
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     setFlash("");
@@ -99,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
-        // create Flask session
         await exchangeSession(data.session.access_token);
         location.href = nextUrl();
         return;
@@ -108,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // signup
       const { data, error } = await sb.auth.signUp({ email, password });
       if (error) {
-        // very common: "User already registered"
         if (String(error.message || "").toLowerCase().includes("already")) {
           modeInput.value = 'login';
           updateView();
@@ -119,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         throw error;
       }
 
-      // optional: upsert profile on your backend
+      // optional: seed profile
       try {
         await fetch("/auth/profile", {
           method: "POST",
@@ -128,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       } catch {}
 
-      // if email confirmation is ON, there may be no session yet
       if (data.session?.access_token) {
         await exchangeSession(data.session.access_token);
         location.href = nextUrl();
@@ -140,4 +140,17 @@ document.addEventListener('DOMContentLoaded', () => {
       setFlash(err.message || "Request failed. Please try again.");
     }
   });
+
+  // ─── Social sign-in (OAuth) ───
+  function oauth(provider) {
+    const redirectTo = `${location.origin}/auth/callback?next=${encodeURIComponent(nextUrl())}`;
+    sb.auth.signInWithOAuth({ provider, options: { redirectTo } })
+      .catch(err => setFlash(err.message || "OAuth failed."));
+  }
+
+  document.querySelector('.social-btn.google')?.addEventListener('click', () => oauth('google'));
+  document.querySelector('.social-btn.facebook')?.addEventListener('click', () => oauth('facebook'));
+  document.querySelector('.social-btn.apple')?.addEventListener('click', () => oauth('apple'));
+  // LinkedIn in Supabase is linkedin_oidc
+  document.querySelector('.social-btn.linkedin')?.addEventListener('click', () => oauth('linkedin_oidc'));
 });
