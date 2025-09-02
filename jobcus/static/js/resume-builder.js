@@ -560,4 +560,4 @@ function initWizard() {
 
   previewBtn?.addEventListener("click", () => buildAndRender("html"));
   pdfBtn?.addEventListener("click",     () => buildAndRender("pdf"));
-  docxBtn?s
+  docxBtn?
