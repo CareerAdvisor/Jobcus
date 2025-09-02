@@ -1,5 +1,3 @@
-// static/js/account.js
-
 // ─── 1) Force cookies on every fetch ───
 ;(function(){
   const _fetch = window.fetch.bind(window);
