@@ -133,37 +133,33 @@ def _as_int(val) -> int:
     except Exception:
         return 0
 
-def get_usage_count(supabase_admin, user_id: str, feature: str, kind: str, key: str) -> int:
-    qb = (
-        supabase_admin.table("usage_counters")
-        .eq("user_id", user_id)
-        .eq("feature", feature)
-        .eq("period_kind", kind)
-        .eq("period_key", key)
-        .limit(1)
-    )
-
-    # Try preferred column first
+# ...
+def get_usage_count(supabase_admin, user_id, feature, kind, key):
+    qb = (supabase_admin.table("usage_counters")
+          .eq("user_id", user_id)
+          .eq("feature", feature)
+          .eq("period_kind", kind)
+          .eq("period_key", key)
+          .limit(1))
     try:
         res = qb.select("used").execute()
-        if getattr(res, "data", None):
-            row = res.data[0]
-            return _as_int(row.get("used", 0))
-        return 0
+        return int(res.data[0]["used"]) if res.data else 0
     except APIError as e:
-        # 42703 = undefined_column — try legacy names instead of 500’ing
         if getattr(e, "code", None) == "42703":
-            for legacy in _LEGACY_USED_COLUMNS:
+            for legacy in ("count", "usage", "value"):
                 try:
                     res = qb.select(legacy).execute()
-                    if getattr(res, "data", None):
-                        row = res.data[0]
-                        return _as_int(row.get(legacy, 0))
-                    return 0
+                    return int(res.data[0].get(legacy, 0)) if res.data else 0
                 except APIError:
                     continue
-        # Re-raise anything else
         raise
+
+def increment_usage(supabase_admin, user_id, feature, kind, key, new_count):
+    supabase_admin.table("usage_counters").upsert(
+        {"user_id": user_id, "feature": feature, "period_kind": kind, "period_key": key, "used": new_count},
+        on_conflict="user_id,feature,period_kind,period_key"
+    ).execute()
+
 
 def bump_usage(supabase_admin, user_id: str, feature: str, kind: str, key: str) -> None:
     """
