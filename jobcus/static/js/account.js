@@ -1,4 +1,6 @@
-// ─── 1) Force cookies on every fetch ───
+/* static/js/account.js */
+
+/* 1) Force cookies on every fetch */
 ;(function(){
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
@@ -7,8 +9,34 @@
   };
 })();
 
+/* 2) Supabase client guard */
+function getSupabase() {
+  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY || !window.supabase) {
+    console.error("Supabase not available on account page");
+    return null;
+  }
+  return window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+}
+
+/* 3) Helpers */
+function nextUrl() {
+  return new URLSearchParams(location.search).get("next") || "/dashboard";
+}
+async function exchangeSession(access_token) {
+  const r = await fetch("/auth/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ access_token }),
+  });
+  if (!r.ok) throw new Error("Could not establish server session");
+}
+
+/* 4) UI & form logic */
 document.addEventListener('DOMContentLoaded', () => {
-  // ─── 2) Grab elements ───
+  const sb = getSupabase();
+  if (!sb) return;
+
+  // ─── Grab elements ───
   const form        = document.getElementById('accountForm');
   const modeInput   = document.getElementById('mode');
   const nameGroup   = document.getElementById('nameGroup');
@@ -19,10 +47,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const togglePrompt= document.getElementById('togglePrompt');
   const flash       = document.getElementById('flashMessages');
 
-  // ─── 3) updateView() swaps login ↔ signup UI ───
+  function setFlash(msg) {
+    if (!flash) return;
+    flash.textContent = "";
+    if (msg) flash.textContent = msg;
+  }
+
+  // ─── updateView() swaps login ↔ signup UI ───
   function updateView() {
     const mode = modeInput.value;
-
     if (mode === 'login') {
       nameGroup.style.display = 'none';
       formTitle.innerHTML     = 'Sign In to<br>Jobcus';
@@ -38,74 +71,73 @@ document.addEventListener('DOMContentLoaded', () => {
       togglePrompt.textContent= 'Already have an account?';
       toggleLink.textContent  = 'Sign In';
     }
-
-    flash.innerHTML = '';
+    setFlash("");
   }
 
-  // ─── 4) Toggle link click handler ───
+  // ─── Toggle link ───
   toggleLink.addEventListener('click', e => {
     e.preventDefault();
     modeInput.value = (modeInput.value === 'login' ? 'signup' : 'login');
     updateView();
   });
 
-  // ─── 5) Initialize on page load ───
+  // ─── Init ───
   updateView();
 
-  // ─── 6) Form submit via fetch(JSON) ───
+  // ─── Form submit (Supabase, not /account) ───
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (flash) flash.textContent = '';
+    setFlash("");
 
-  const payload = {
-    mode:     modeInput.value,
-    email:    document.getElementById('email').value.trim(),
-    password: document.getElementById('password').value,
-    name:     document.getElementById('name')?.value.trim() || ''
-  };
+    const mode     = modeInput.value;
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const fullname = document.getElementById('name')?.value.trim() || "";
 
-  let data = {};
-  try {
-    const res = await fetch('/account', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    try {
+      if (mode === "login") {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw error;
 
-    // Try to parse JSON even on error responses
-    try { data = await res.json(); } catch { data = {}; }
-
-    // Handle known failure shapes
-    if (!res.ok || data.success === false) {
-      if (data.code === 'user_exists') {
-        modeInput.value = 'login';
-        updateView();
-        document.getElementById('email').value = payload.email;
-        alert(data.message || 'Account already exists. Please log in.');
+        // create Flask session
+        await exchangeSession(data.session.access_token);
+        location.href = nextUrl();
         return;
       }
-      if (data.code === 'email_not_confirmed' && data.redirect) {
-        window.location.assign(data.redirect); // /check-email
-        return;
+
+      // signup
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if (error) {
+        // very common: "User already registered"
+        if (String(error.message || "").toLowerCase().includes("already")) {
+          modeInput.value = 'login';
+          updateView();
+          document.getElementById('email').value = email;
+          setFlash("Account already exists. Please log in.");
+          return;
+        }
+        throw error;
       }
-      flash.textContent = data.message || 'Request failed. Please try again.';
-      return;
-    }
 
-    // Success → redirect (single call)
-    if (data.redirect) {
-      // clear any previous anon data
-      localStorage.removeItem('resumeAnalysis');
-      localStorage.removeItem('resumeBase64');
-      localStorage.removeItem('dashboardVisited');
-      window.location.assign(data.redirect);
-      return;
-    }
+      // optional: upsert profile on your backend
+      try {
+        await fetch("/auth/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, fullname }),
+        });
+      } catch {}
 
-    flash.textContent = 'Unexpected response. Please try again.';
-  } catch (err) {
-    console.error('Account request failed:', err);
-    flash.textContent = 'Server error. Please try again later.';
-  }
-});
+      // if email confirmation is ON, there may be no session yet
+      if (data.session?.access_token) {
+        await exchangeSession(data.session.access_token);
+        location.href = nextUrl();
+      } else {
+        setFlash("Check your email to confirm your account.");
+      }
+    } catch (err) {
+      console.error("Auth error:", err);
+      setFlash(err.message || "Request failed. Please try again.");
+    }
+  });
 });
