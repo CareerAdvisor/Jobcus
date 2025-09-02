@@ -20,33 +20,26 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-const PLAN_ROUTES = {
-  free() {
-    localStorage.setItem("userPlan", "free");
-    // lightweight onboarding: jump to dashboard
-    window.location.href = "/dashboard";
-  },
-  weekly() {
-    routePaid("weekly");
-  },
-  standard() {
-    routePaid("standard");
-  },
-  premium() {
-    routePaid("premium");
-  }
-};
-
-function routePaid(plan) {
-  localStorage.setItem("userPlan", plan);
-  const authed = document.body?.dataset?.authed === "1";
-  if (authed) {
-    window.location.href = `/subscribe?plan=${encodeURIComponent(plan)}`;
-  } else {
-    const next = `/subscribe?plan=${encodeURIComponent(plan)}`;
-    window.location.href = `/account?next=${encodeURIComponent(next)}`;
+// If routePaid already exists globally, don't redeclare.
+if (typeof routePaid !== "function") {
+  function routePaid(plan) {
+    localStorage.setItem("userPlan", plan);
+    const authed = document.body?.dataset?.authed === "1";
+    if (authed) {
+      window.location.href = `/subscribe?plan=${encodeURIComponent(plan)}`;
+    } else {
+      const next = `/subscribe?plan=${encodeURIComponent(plan)}`;
+      window.location.href = `/account?next=${encodeURIComponent(next)}`;
+    }
   }
 }
+
+const PLAN_ROUTES = {
+  free()     { localStorage.setItem("userPlan", "free"); window.location.href = "/dashboard"; },
+  weekly()   { routePaid("weekly"); },
+  standard() { routePaid("standard"); },
+  premium()  { routePaid("premium"); }
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   // Highlight previously chosen plan (optional)
@@ -57,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Intercept clicks on subscribe links
+  // Intercept clicks on subscribe links (progressive enhancement: href still works)
   document.querySelectorAll(".subscribe-link").forEach(a => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
