@@ -1,4 +1,3 @@
-// /static/js/employer.js
 document.addEventListener("DOMContentLoaded", function () {
   // Ensure cookies are sent (SameSite=Lax)
   const _fetch = window.fetch.bind(window);
