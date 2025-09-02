@@ -150,15 +150,16 @@
     {% include "cookie.html" %}
 
     <script>
-      window.USER_AUTHENTICATED = {{ (current_user.is_authenticated)|tojson }};
-      window.AUTH_ID = {{ (current_user.id if current_user.is_authenticated else None)|tojson }};
+      window.SUPABASE_URL = "{{ current_app.config.get('SUPABASE_URL','') }}";
+      window.SUPABASE_ANON_KEY = "{{ current_app.config.get('SUPABASE_ANON_KEY','') }}";
     </script>
 
     <!-- AOS -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   
     <!-- Base JS -->
-    <script type="module" src="{{ url_for('static', filename='js/base.js') }}" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
 
     {# Page-scoped scripts #}
     {% block scripts %}{% endblock %}
