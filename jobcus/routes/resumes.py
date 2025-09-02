@@ -22,8 +22,8 @@ except ImportError:
 
 # libs used by builder/optimizer endpoints
 from weasyprint import HTML, CSS
-from docxtpl import DocxTemplate
 from PyPDF2 import PdfReader
+from docxtpl import DocxTemplate
 import docx
 
 resumes_bp = Blueprint("resumes", __name__)
@@ -419,8 +419,6 @@ def ai_suggest():
         return {"text": text or "", "list": items or [], "suggestions": items or []}
 
     if field in ("coverletter","coverletter_from_analyzer","cover_letter"):
-        # ... (keep your existing cover-letter body logic unchanged)
-        # (No change below here—only metering was added above)
         name   = (ctx.get("name") or "").strip()
         title  = (ctx.get("title") or "professional").strip()
         cl     = ctx.get("coverLetter") or ctx or {}
@@ -452,14 +450,12 @@ def ai_suggest():
                 return jsonify({"text": out, "list": [], "suggestions": []})
             except Exception as e:
                 current_app.logger.warning("cover letter AI error; fallback: %s", e)
-        # fallback text...
         text = (
             f"As an experienced {title.lower()} with a strong record of supporting teams and customers, "
             f"I’m excited to apply for the {role} role at {company}. ..."
         )
         return jsonify({"text": text, "list": [], "suggestions": []})
 
-    # (resume bullets/summary logic below unchanged)
     def compact_context(c):
         parts = []
         nm, ti = c.get("name"), c.get("title")
