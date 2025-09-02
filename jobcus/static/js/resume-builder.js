@@ -390,7 +390,6 @@ function initWizard() {
   const submitBtn = qs(builder, "#rb-submit");
   let idx = Math.max(0, steps.findIndex(s => s.classList.contains("active")));
   if (idx < 0) idx = 0;
-}
 
   function stepIndexById(id) {
     if (!id) return -1;
@@ -560,4 +559,15 @@ function initWizard() {
 
   previewBtn?.addEventListener("click", () => buildAndRender("html"));
   pdfBtn?.addEventListener("click",     () => buildAndRender("pdf"));
-  docxBtn?
+  docxBtn?.addEventListener("click",    () => buildAndRender("docx"));
+
+  // enter initial step
+  (function initStart(){ const i = Math.max(0, steps.findIndex(s => s.classList.contains("active"))); showStep(i < 0 ? 0 : i); })();
+}
+
+// Boot everything
+document.addEventListener("DOMContentLoaded", () => {
+  initSkills();
+  attachAISuggestionHandlers();
+  initWizard();
+});
