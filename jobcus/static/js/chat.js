@@ -3,7 +3,7 @@
 // ──────────────────────────────────────────────────────────────
 // Ensure cookies (SameSite/Lax) are sent on all fetches
 // ──────────────────────────────────────────────────────────────
-(function(){
+(function () {
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
@@ -12,29 +12,39 @@
 })();
 
 // ──────────────────────────────────────────────────────────────
-// Small utilities (kept from your original, with a couple helpers)
+// Small utilities
 // ──────────────────────────────────────────────────────────────
+function _getChatInput() {
+  // support either id="userInput" or id="chat-input"
+  return (
+    document.getElementById("userInput") ||
+    document.getElementById("chat-input") ||
+    null
+  );
+}
 function removeWelcome() {
   const banner = document.getElementById("welcomeBanner");
   if (banner) banner.remove();
 }
 function insertSuggestion(text) {
-  const input = document.getElementById("userInput");
+  const input = _getChatInput();
   if (!input) return;
   input.value = text;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
   input.focus();
 }
-function autoResize(textarea) {
-  if (!textarea) return;
-  textarea.style.height = "auto";
-  textarea.style.height = textarea.scrollHeight + "px";
+function autoResize(elOrEvent) {
+  const el = elOrEvent?.target || elOrEvent;
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
 }
 function sharePage() {
   navigator.clipboard.writeText(window.location.href);
   alert("Link copied!");
 }
-function handleMic()   { alert("Voice input coming soon!"); }
-function handleAttach(){ alert("File upload coming soon!"); }
+function handleMic() { alert("Voice input coming soon!"); }
+function handleAttach() { alert("File upload coming soon!"); }
 
 function copyToClipboard(id) {
   const el = document.getElementById(id);
@@ -65,49 +75,60 @@ function maybeShowScrollIcon() {
     chatboxEl.scrollHeight > chatboxEl.clientHeight + 20 ? "block" : "none";
 }
 
-// Minimal helpers your old code referenced
 function showUpgradeBanner(msg) {
   let b = document.getElementById("upgradeBanner");
   if (!b) {
     b = document.createElement("div");
     b.id = "upgradeBanner";
-    b.style.cssText = "background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:10px 12px;border-radius:6px;margin:8px 0;font-size:14px;";
+    b.style.cssText =
+      "background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:10px 12px;border-radius:6px;margin:8px 0;font-size:14px;";
     const box = document.querySelector(".chat-main") || document.body;
     box.insertBefore(b, box.firstChild);
   }
   b.textContent = msg || "You’ve reached your plan limit.";
 }
 function disableComposer(disabled) {
-  const input = document.getElementById("userInput");
+  const input = _getChatInput();
   const sendBtn = document.getElementById("sendButton");
-  if (input)  input.disabled  = !!disabled;
+  if (input) input.disabled = !!disabled;
   if (sendBtn) sendBtn.style.opacity = disabled ? "0.5" : "";
 }
 
+// Expose globals for inline handlers used in templates
+window.insertSuggestion = insertSuggestion;
+window.autoResize = autoResize;
+window.copyToClipboard = copyToClipboard;
+window.showUpgradeBanner = window.showUpgradeBanner || showUpgradeBanner;
+
+// ──────────────────────────────────────────────────────────────
+// Model controls (unchanged)
 // ──────────────────────────────────────────────────────────────
 function initModelControls() {
   const shell = document.getElementById("chatShell");
   const modelSelect = document.getElementById("modelSelect");
-  const modelBadge  = document.getElementById("modelBadge");
+  const modelBadge = document.getElementById("modelBadge");
   const headerModel = document.getElementById("headerModel");
 
-  const isPaid = (shell?.dataset.isPaid === "1");
+  const isPaid = shell?.dataset.isPaid === "1";
   const defaultModel = shell?.dataset.defaultModel || "gpt-4o-mini";
-  const freeModel    = shell?.dataset.freeModel    || "gpt-4o-mini";
+  const freeModel = shell?.dataset.freeModel || "gpt-4o-mini";
   const allowedModels = (shell?.dataset.allowedModels || "")
-    .split(",").map(s => s.trim()).filter(Boolean);
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
-  function getSelectedModel(){
+  function getSelectedModel() {
     if (!isPaid) return freeModel || defaultModel;
     const saved = localStorage.getItem("chatModel");
     if (saved && allowedModels.includes(saved)) return saved;
-    if (modelSelect && allowedModels.includes(modelSelect.value)) return modelSelect.value;
+    if (modelSelect && allowedModels.includes(modelSelect.value))
+      return modelSelect.value;
     return defaultModel;
   }
 
-  function setSelectedModel(m){
+  function setSelectedModel(m) {
     if (modelSelect && allowedModels.includes(m)) modelSelect.value = m;
-    if (modelBadge)  modelBadge.textContent  = m;
+    if (modelBadge) modelBadge.textContent = m;
     if (headerModel) headerModel.textContent = m;
     if (isPaid) localStorage.setItem("chatModel", m);
   }
@@ -115,95 +136,95 @@ function initModelControls() {
   // Initialize UI
   setSelectedModel(getSelectedModel());
   if (isPaid && modelSelect) {
-    modelSelect.addEventListener("change", () => setSelectedModel(modelSelect.value));
+    modelSelect.addEventListener("change", () =>
+      setSelectedModel(modelSelect.value)
+    );
   }
 
   return { getSelectedModel, setSelectedModel, isPaid, allowedModels };
 }
 
 // ──────────────────────────────────────────────────────────────
-// importing the upgrademessage banner
+// Send message helper (fixes 'sendMessage is not defined')
 // ──────────────────────────────────────────────────────────────
-// static/js/chat.js
-// Works with api.js (which exposes window.api) and avoids inline handlers.
-
-const form      = document.getElementById('chat-form');     // your <form id="chat-form">
-const input     = document.getElementById('chat-input');    // your <input/textarea id="chat-input">
-const modelSel  = document.getElementById('model-select');  // optional <select id="model-select">
-const thread    = document.getElementById('chat-thread');   // where you render messages
-
-async function doSend(message) {
-  const payload = {
-    message: message,
-    model: (modelSel && modelSel.value) || 'gpt-4o-mini'
-  };
-
-  try {
-    const data = await (window.api?.postWithLimit
-      ? window.api.postWithLimit('/ask', payload)
-      : fetch('/ask', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify(payload)
-        }).then(r => r.json()));
-
-    // render assistant reply
-    if (thread) {
-      const li = document.createElement('div');
-      li.className = 'ai-reply';
-      li.textContent = data?.reply ?? '(no reply)';
-      thread.appendChild(li);
-    }
-  } catch (err) {
-    if (err?.kind === 'limit') return; // upgrade banner already shown by api.js
-    window.showUpgradeBanner?.(err?.message || 'Something went wrong. Please try again.');
+async function sendMessage(payload) {
+  // Prefer api.js if present (it shows the upgrade banner on 402/429/403)
+  if (window.api && typeof window.api.postWithLimit === "function") {
+    return window.api.postWithLimit("/ask", payload);
   }
-}
-
-if (form) {
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const msg = (input?.value || '').trim();
-    if (!msg) return;
-    input.value = '';
-    doSend(msg);
+  // Fallback: raw fetch with limit/upgrade handling
+  const res = await fetch("/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(payload),
   });
-}
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+  const data =
+    ct.includes("application/json") ? await res.json() : { reply: await res.text() };
 
+  if (!res.ok) {
+    const err = (data && data.error) || "";
+    const message = data?.message || data?.reply || "Something went wrong.";
+    if (res.status === 402 && err === "quota_exceeded") {
+      showUpgradeBanner(message);
+      const e = new Error(message); e.kind = "limit"; throw e;
+    }
+    if (res.status === 429 && (err === "too_many_free_accounts" || err === "quota_exceeded")) {
+      showUpgradeBanner(message);
+      const e = new Error(message); e.kind = "limit"; throw e;
+    }
+    if (res.status === 403 && err === "upgrade_required") {
+      showUpgradeBanner(message);
+      const e = new Error(message); e.kind = "upgrade"; throw e;
+    }
+    const e = new Error(message); e.kind = "server"; throw e;
+  }
+
+  return data;
+}
+window.sendMessage = sendMessage; // optional global
+
+// ──────────────────────────────────────────────────────────────
+// Chat page boot
 // ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  // Init model UI/logic first
   const modelCtl = initModelControls();
 
-  // Storage keys
   const STORAGE = {
-    current: "jobcus:chat:current",   // [{role:'user'|'assistant', content:'...'}]
-    history: "jobcus:chat:history"    // [{id,title,created,messages:[...] }]
+    current: "jobcus:chat:current", // [{role:'user'|'assistant', content:'...'}]
+    history: "jobcus:chat:history", // [{id,title,created,messages:[...] }]
   };
 
-  // DOM refs
   const chatbox = document.getElementById("chatbox");
-  const form    = document.getElementById("chat-form");
-  const input   = document.getElementById("userInput");
+  const form = document.getElementById("chat-form");
+  const input = _getChatInput();
 
-  const escapeHtml = (s='') => s
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const escapeHtml = (s = "") =>
+    s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
 
-  const getCurrent = () => JSON.parse(localStorage.getItem(STORAGE.current) || "[]");
-  const setCurrent = (arr) => localStorage.setItem(STORAGE.current, JSON.stringify(arr));
-  const getHistory = () => JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
-  const setHistory = (arr) => localStorage.setItem(STORAGE.history, JSON.stringify(arr));
+  const getCurrent = () =>
+    JSON.parse(localStorage.getItem(STORAGE.current) || "[]");
+  const setCurrent = (arr) =>
+    localStorage.setItem(STORAGE.current, JSON.stringify(arr));
+  const getHistory = () =>
+    JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
+  const setHistory = (arr) =>
+    localStorage.setItem(STORAGE.history, JSON.stringify(arr));
 
-  function firstUserTitle(messages){
-    const firstUser = messages.find(m => m.role === "user");
+  function firstUserTitle(messages) {
+    const firstUser = messages.find((m) => m.role === "user");
     const raw = (firstUser?.content || "Conversation").trim();
-    return raw.length > 60 ? raw.slice(0,60) + "…" : raw;
+    return raw.length > 60 ? raw.slice(0, 60) + "…" : raw;
   }
 
-  function renderWelcome(){
-    const shell   = document.getElementById("chatShell");
-    const fname   = (shell?.dataset.firstName || "there");
+  function renderWelcome() {
+    const shell = document.getElementById("chatShell");
+    const fname = shell?.dataset.firstName || "there";
     chatbox.innerHTML = `
       <div class="welcome" id="welcomeBanner">
         <p class="welcome-title">Welcome back, ${escapeHtml(fname)}. How can I help you today?</p>
@@ -215,15 +236,17 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>`;
   }
 
-  function renderChat(messages){
+  function renderChat(messages) {
     chatbox.innerHTML = "";
-    if (!messages.length){
+    if (!messages.length) {
       renderWelcome();
       return;
     }
-    messages.forEach(msg => {
+    messages.forEach((msg) => {
       const div = document.createElement("div");
-      div.className = `chat-entry ${msg.role === "assistant" ? "ai-answer" : "user"}`;
+      div.className = `chat-entry ${
+        msg.role === "assistant" ? "ai-answer" : "user"
+      }`;
       if (msg.role === "assistant") {
         const id = `ai-${Math.random().toString(36).slice(2)}`;
         div.innerHTML = `
@@ -254,55 +277,61 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function renderHistory(){
+  function renderHistory() {
     const list = document.getElementById("chatHistory");
     if (!list) return;
     const hist = getHistory();
     list.innerHTML = "";
-    hist.forEach(h => {
+    hist.forEach((h) => {
       const li = document.createElement("li");
       li.className = "history-item";
       li.innerHTML = `
-        <span class="history-item-title" title="${escapeHtml(h.title)}">${escapeHtml(h.title)}</span>
+        <span class="history-item-title" title="${escapeHtml(
+          h.title
+        )}">${escapeHtml(h.title)}</span>
         <button class="delete" aria-label="Delete">✕</button>
       `;
       li.addEventListener("click", (e) => {
         if (e.target.closest(".delete")) return;
         setCurrent(h.messages || []);
         renderChat(getCurrent());
-        try { closeChatMenu?.(); } catch {}
+        try {
+          closeChatMenu?.();
+        } catch {}
       });
       li.querySelector(".delete").addEventListener("click", (e) => {
         e.stopPropagation();
-        setHistory(getHistory().filter(x => x.id !== h.id));
+        setHistory(getHistory().filter((x) => x.id !== h.id));
         renderHistory();
       });
       list.appendChild(li);
     });
   }
 
-  window.saveMessage = function(role, content){
+  window.saveMessage = function (role, content) {
     const msgs = getCurrent();
     msgs.push({ role, content });
     setCurrent(msgs);
   };
 
   let clearInProgress = false;
-  window.clearChat = function(){
+  window.clearChat = function () {
     if (clearInProgress) return;
     clearInProgress = true;
     try {
       const current = getCurrent();
-      if (current.length){
+      if (current.length) {
         const hist = getHistory();
         const sig = JSON.stringify(current);
-        const lastSig = hist.length ? JSON.stringify(hist[0].messages || []) : null;
-        if (sig !== lastSig){
+        const lastSig = hist.length
+          ? JSON.stringify(hist[0].messages || [])
+          : null;
+        if (sig !== lastSig) {
           hist.unshift({
             id: Date.now().toString(36),
             title: firstUserTitle(current),
             created: new Date().toISOString(),
-            messages: current
+            messages: current,
           });
           setHistory(hist);
         }
@@ -311,51 +340,53 @@ document.addEventListener("DOMContentLoaded", () => {
       renderChat([]);
       renderHistory();
     } finally {
-      setTimeout(() => { clearInProgress = false; }, 50);
+      setTimeout(() => {
+        clearInProgress = false;
+      }, 50);
     }
   };
 
   function refreshCreditsPanel() {
-    const planEl  = document.getElementById("credits-plan");
-    const leftEl  = document.getElementById("credits-left");
+    const planEl = document.getElementById("credits-plan");
+    const leftEl = document.getElementById("credits-left");
     const resetEl = document.getElementById("credits-reset");
     if (!planEl && !leftEl && !resetEl) return;
 
     const serverPlan = planEl?.dataset.plan;
-    const PLAN = (serverPlan || localStorage.getItem("userPlan") || "free");
+    const PLAN = serverPlan || localStorage.getItem("userPlan") || "free";
     if (serverPlan) localStorage.setItem("userPlan", serverPlan);
 
     const QUOTAS = {
-      free:     { label: "Free",     reset: "Trial",           max: 15 },
-      weekly:   { label: "Weekly",   reset: "Resets weekly",   max: 200 },
-      standard: { label: "Standard", reset: "Resets monthly",  max: 800 },
-      premium:  { label: "Premium",  reset: "Resets yearly",   max: 12000 }
+      free: { label: "Free", reset: "Trial", max: 15 },
+      weekly: { label: "Weekly", reset: "Resets weekly", max: 200 },
+      standard: { label: "Standard", reset: "Resets monthly", max: 800 },
+      premium: { label: "Premium", reset: "Resets yearly", max: 12000 },
     };
-    const q    = QUOTAS[PLAN] || QUOTAS.free;
+    const q = QUOTAS[PLAN] || QUOTAS.free;
     const used = Number(localStorage.getItem("chatUsed") || 0);
     const left = Math.max(q.max - used, 0);
 
-    planEl  && (planEl.textContent  = q.label);
-    leftEl  && (leftEl.textContent  = `${left} of ${q.max}`);
+    planEl && (planEl.textContent = q.label);
+    leftEl && (leftEl.textContent = `${left} of ${q.max}`);
     resetEl && (resetEl.textContent = q.reset);
   }
 
   const chatMenuToggle = document.getElementById("chatMenuToggle");
-  const chatMenu       = document.getElementById("chatSidebar");
-  const chatOverlay    = document.getElementById("chatOverlay");
-  const chatCloseBtn   = document.getElementById("chatSidebarClose");
+  const chatMenu = document.getElementById("chatSidebar");
+  const chatOverlay = document.getElementById("chatOverlay");
+  const chatCloseBtn = document.getElementById("chatSidebarClose");
 
-  function openChatMenu(){
+  function openChatMenu() {
     if (!chatMenu) return;
     chatMenu.classList.add("is-open");
-    chatMenu.setAttribute("aria-hidden","false");
+    chatMenu.setAttribute("aria-hidden", "false");
     if (chatOverlay) chatOverlay.hidden = false;
     document.documentElement.style.overflow = "hidden";
   }
-  function closeChatMenu(){
+  function closeChatMenu() {
     if (!chatMenu) return;
     chatMenu.classList.remove("is-open");
-    chatMenu.setAttribute("aria-hidden","true");
+    chatMenu.setAttribute("aria-hidden", "true");
     if (chatOverlay) chatOverlay.hidden = true;
     document.documentElement.style.overflow = "";
   }
@@ -364,10 +395,18 @@ document.addEventListener("DOMContentLoaded", () => {
   chatMenuToggle?.addEventListener("click", openChatMenu);
   chatOverlay?.addEventListener("click", closeChatMenu);
   chatCloseBtn?.addEventListener("click", closeChatMenu);
-  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeChatMenu(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeChatMenu();
+  });
 
-  document.getElementById("newChatBtn")?.addEventListener("click", () => { clearChat(); closeChatMenu(); });
-  document.getElementById("clearChatBtn")?.addEventListener("click", () => { clearChat(); closeChatMenu(); });
+  document.getElementById("newChatBtn")?.addEventListener("click", () => {
+    clearChat();
+    closeChatMenu();
+  });
+  document.getElementById("clearChatBtn")?.addEventListener("click", () => {
+    clearChat();
+    closeChatMenu();
+  });
 
   renderChat(getCurrent());
   renderHistory();
@@ -375,9 +414,12 @@ document.addEventListener("DOMContentLoaded", () => {
   maybeShowScrollIcon();
 
   if (form && input && chatbox) {
+    // If textarea has inline oninput="autoResize(this)" make sure it works:
+    input.addEventListener("input", autoResize);
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const message = input.value.trim();
+      const message = (input.value || "").trim();
       if (!message) return;
 
       removeWelcome?.();
@@ -402,19 +444,23 @@ document.addEventListener("DOMContentLoaded", () => {
       scrollToAI(aiBlock);
 
       let finalReply = "";
-      let data = null;
       const currentModel = modelCtl.getSelectedModel();
 
       try {
         disableComposer(true);
-        data = await sendMessage({ message, model: currentModel }); // { reply, modelUsed }
-        finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
+        const data = await sendMessage({ message, model: currentModel }); // { reply, modelUsed? }
+        finalReply = data && data.reply ? String(data.reply) : "(no reply)";
       } catch (err) {
-        if (err?.kind === 'limit') {
-          aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || 'Free limit reached.')}</p><hr class="response-separator" />`;
+        if (err?.kind === "limit") {
+          aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(
+            err.message || "Free limit reached."
+          )}</p><hr class="response-separator" />`;
           return;
         }
-        aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || 'Sorry, something went wrong.')}</p><hr class="response-separator" />`;
+        showUpgradeBanner(err?.message || "Sorry, something went wrong.");
+        aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(
+          err?.message || "Sorry, something went wrong."
+        )}</p><hr class="response-separator" />`;
         return;
       } finally {
         disableComposer(false);
@@ -435,7 +481,8 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       const targetDiv = document.getElementById(copyId);
 
-      let i = 0, buffer = "";
+      let i = 0,
+        buffer = "";
       (function typeWriter() {
         if (i < finalReply.length) {
           buffer += finalReply[i++];
@@ -453,7 +500,6 @@ document.addEventListener("DOMContentLoaded", () => {
           const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
           localStorage.setItem("chatUsed", usedNow);
           refreshCreditsPanel();
-          if (window.syncState) window.syncState();
 
           scrollToAI(aiBlock);
           maybeShowScrollIcon();
@@ -462,7 +508,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const sendBtn = document.getElementById("sendButton");
-    sendBtn?.addEventListener("click", () => form.dispatchEvent(new Event("submit")));
+    sendBtn?.addEventListener("click", () =>
+      form.dispatchEvent(new Event("submit"))
+    );
 
     new MutationObserver(() => {
       const box = document.getElementById("chatbox");
@@ -470,41 +518,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }).observe(chatbox, { childList: true, subtree: true });
   }
 });
-
-// ──────────────────────────────────────────────────────────────
-// Optional job suggestions (kept from your original)
-// ──────────────────────────────────────────────────────────────
-async function fetchJobs(query, aiBlock) {
-  try {
-    const res = await fetch("/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query })
-    });
-    const data = await res.json();
-    displayJobs(data, aiBlock);
-  } catch (err) {
-    console.error("Job fetch error:", err);
-  }
-}
-function displayJobs(data, aiBlock) {
-  const jobsContainer = document.createElement("div");
-  jobsContainer.className = "job-listings";
-  const allJobs = [...(data.remotive || []), ...(data.adzuna || []), ...(data.jsearch || [])];
-  if (!allJobs.length) return;
-  const heading = document.createElement("p");
-  heading.innerHTML = `<strong>Here are some job opportunities that match your interest:</strong>`;
-  heading.style.marginTop = "16px";
-  jobsContainer.appendChild(heading);
-  allJobs.forEach(job => {
-    const jobCard = document.createElement("div");
-    jobCard.className = "job-card";
-    jobCard.innerHTML = `
-      <h3>${job.title}</h3>
-      <p><strong>${job.company}</strong><br>${job.location || ""}</p>
-      <a href="${job.url}" target="_blank" rel="noopener noreferrer">View Job</a>
-    `;
-    jobsContainer.appendChild(jobCard);
-  });
-  aiBlock.appendChild(jobsContainer);
-}
