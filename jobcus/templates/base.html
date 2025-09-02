@@ -158,7 +158,7 @@
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   
     <!-- Base JS -->
-    <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
+    <script type="module" src="{{ url_for('static', filename='js/base.js') }}" defer></script>
 
     {# Page-scoped scripts #}
     {% block scripts %}{% endblock %}
