@@ -11,7 +11,6 @@ try {
 
 /* ─────────────────────────────────────────────────────────────
  * 0.1) Ensure a persistent device identifier for abuse guard
- *      - Matches backend: abuse_guard._device_id() looks for "jobcus_device"
  * ───────────────────────────────────────────────────────────── */
 (function ensureDeviceCookie(){
   const NAME = "jobcus_device";
@@ -23,23 +22,20 @@ try {
     document.cookie = `${name}=${encodeURIComponent(value)}; expires=${d.toUTCString()}; path=/; SameSite=Lax; Secure`;
   }
   function v4(){
-    // crypto-safe UUID v4
     if (crypto && crypto.getRandomValues) {
       const a = new Uint8Array(16);
       crypto.getRandomValues(a);
       a[6] = (a[6] & 0x0f) | 0x40;
       a[8] = (a[8] & 0x3f) | 0x80;
-      const b = [...a].map((x,i)=> (i===4||i===6||i===8||i===10 ? "-" : "") + x.toString(16).padStart(2,"0")).join("");
-      // b is hex pairs with dashes every 2 bytes; convert to canonical 8-4-4-4-12:
-      return (
-        b.slice(0,8) + "-" +
-        b.slice(9,13) + "-" +
-        b.slice(14,18) + "-" +
-        b.slice(19,23) + "-" +
-        (b.slice(24,36).replace(/-/g,""))
-      );
+      const hex = [...a].map(x => x.toString(16).padStart(2,"0")).join("");
+      return [
+        hex.slice(0,8),
+        hex.slice(8,12),
+        hex.slice(12,16),
+        hex.slice(16,20),
+        hex.slice(20)
+      ].join("-");
     }
-    // Fallback (not crypto-strong, but acceptable as last resort)
     return "xxxxxxxxyxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, c => {
       const r = Math.random() * 16 | 0, v = c === "x" ? r : (r & 0x3 | 0x8);
       return v.toString(16);
@@ -48,9 +44,8 @@ try {
   if (!hasCookie(NAME)) {
     const id = v4();
     setCookie(NAME, id, ttlDays);
-    window.DEVICE_ID = id; // optional: surface for debugging
+    window.DEVICE_ID = id;
   } else {
-    // expose for debugging if needed
     try {
       const val = document.cookie.split("; ").find(r => r.startsWith(NAME + "="))?.split("=")[1] || "";
       window.DEVICE_ID = decodeURIComponent(val);
@@ -72,7 +67,6 @@ try {
 /* ─────────────────────────────────────────────────────────────
  * 1) Global upgrade banner helper
  * ───────────────────────────────────────────────────────────── */
-// Global upgrade banner helper
 window.showUpgradeBanner = function (text) {
   const el = document.getElementById("upgrade-banner");
   if (!el) return alert(text || "You’ve reached your plan limit. Upgrade to continue.");
@@ -81,7 +75,6 @@ window.showUpgradeBanner = function (text) {
   el.hidden = false;
   el.classList.add("show");
 
-  // Auto-hide after a while (optional)
   clearTimeout(el._hideTimer);
   el._hideTimer = setTimeout(() => {
     el.classList.remove("show");
@@ -90,7 +83,6 @@ window.showUpgradeBanner = function (text) {
   }, 8000);
 };
 
-// Optional manual hide
 window.hideUpgradeBanner = function () {
   const el = document.getElementById("upgrade-banner");
   if (!el) return;
@@ -127,7 +119,11 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const menu = btn.nextElementSibling;
-      menu?.classList.toggle("show");
+      const willOpen = !menu?.classList.contains("show");
+      // close any other open dropdowns for cleanliness
+      document.querySelectorAll(".dropdown-content.show").forEach(d => d !== menu && d.classList.remove("show"));
+      menu?.classList.toggle("show", willOpen);
+      btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
     });
   });
 
@@ -142,6 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
       !hamburger?.contains(e.target)
     ) {
       mobileMenu.classList.remove("show");
+      hamburger?.setAttribute("aria-expanded", "false");
     }
 
     // b) Feature dropdowns
@@ -153,6 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
         !btn?.contains(e.target)
       ) {
         drop.classList.remove("show");
+        btn?.setAttribute("aria-expanded", "false");
       }
     });
 
@@ -173,21 +171,25 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".dropdown-content.show")
         .forEach((el) => el.classList.remove("show"));
       toggleUserMenu(false);
+      document.querySelector(".hamburger")?.setAttribute("aria-expanded", "false");
+      document.querySelectorAll(".dropbtn[aria-expanded='true']").forEach(b => b.setAttribute("aria-expanded","false"));
     }
   });
 
   // Expose mobile menu toggle for header button
   window.toggleMobileMenu = function toggleMobileMenu() {
-    document.getElementById("mobileMenu")?.classList.toggle("show");
+    const mm = document.getElementById("mobileMenu");
+    const hb = document.querySelector(".hamburger");
+    const open = !mm?.classList.contains("show");
+    mm?.classList.toggle("show", open);
+    hb?.setAttribute("aria-expanded", open ? "true" : "false");
   };
 });
 
 /* ─────────────────────────────────────────────────────────────
  * 3) Cloud state sync (GET on load; POST on changes)
- *     - /api/state returns/accepts { data: {...} }
  * ───────────────────────────────────────────────────────────── */
 (function () {
-  // pull once on load if authenticated
   if (window.USER_AUTHENTICATED) {
     fetch("/api/state", { credentials: "same-origin" })
       .then((r) => r.ok ? r.json() : Promise.reject())
@@ -204,7 +206,6 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(() => { /* best-effort */ });
   }
 
-  // one canonical syncState
   window.syncState = function syncState(extra = {}) {
     if (!window.USER_AUTHENTICATED) return;
     const payload = {
@@ -220,14 +221,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }).catch(() => { /* best-effort */ });
   };
 
-  // push on tab hide as a best-effort
   window.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
       try { window.syncState(); } catch { /* ignore */ }
     }
   });
 
-  // small example: record basic page view state
   document.addEventListener("DOMContentLoaded", () => {
     if (typeof window.USER_AUTHENTICATED !== "undefined") {
       window.syncState({
