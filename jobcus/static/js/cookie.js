@@ -1,4 +1,3 @@
-// cookie.js
 (function(){
   const CONSENT_COOKIE = "jobcus_consent";
   const CONSENT_TTL_DAYS = 180;
