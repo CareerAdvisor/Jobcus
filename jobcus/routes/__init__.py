@@ -1,4 +1,3 @@
-# jobcus/routes/__init__.py
 from __future__ import annotations
 from flask import Flask, render_template, redirect, url_for
 
