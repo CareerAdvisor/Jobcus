@@ -1,4 +1,3 @@
-// /static/js/resume-builder.js
 "use strict";
 
 // Ensure fetch keeps cookies (SameSite=Lax safe)
