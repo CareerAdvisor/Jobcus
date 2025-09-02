@@ -1,4 +1,3 @@
-// static/js/minimal.js
 import { initCommon } from './resume-common.js';
 
 document.addEventListener('DOMContentLoaded', () => {
