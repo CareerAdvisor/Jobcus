@@ -1,3 +1,4 @@
+# jobcus/services/users.py
 from __future__ import annotations
 
 def fetch_user_row(auth_id: str) -> dict | None:
