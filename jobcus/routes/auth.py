@@ -3,9 +3,9 @@ from flask_login import login_user, logout_user, login_required
 from supabase import Client
 from supabase_py.lib.auth import AuthApiError  # if needed
 
-supabase: Client = current_app.config["SUPABASE_ADMIN"]
-
 auth_bp = Blueprint("auth", __name__)
+
+supabase: Client = current_app.config["SUPABASE_ADMIN"]
 
 @auth_bp.route("/account", methods=["GET", "POST"])
 def account():
