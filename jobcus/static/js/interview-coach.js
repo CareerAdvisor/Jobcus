@@ -1,5 +1,3 @@
-// /static/js/interview-coach.js
-
 // Always send cookies with fetch (SameSite=Lax)
 (function () {
   const _fetch = window.fetch.bind(window);
