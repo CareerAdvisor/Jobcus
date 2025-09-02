@@ -1,6 +1,6 @@
 /* static/js/account.js */
 
-/* 1) Force cookies on every fetch (SameSite/Lax) */
+/* 1) Force cookies on every fetch */
 ;(function(){
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
@@ -11,7 +11,9 @@
 
 /* 2) Supabase client guard */
 function getSupabase() {
-  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY || !window.supabase) {
+  const hasVars = !!(window.SUPABASE_URL && window.SUPABASE_ANON_KEY);
+  const hasSDK  = typeof window.supabase !== "undefined" && typeof window.supabase.createClient === "function";
+  if (!hasVars || !hasSDK) {
     console.error("Supabase not available on account page");
     return null;
   }
@@ -22,7 +24,6 @@ function getSupabase() {
 function nextUrl() {
   return new URLSearchParams(location.search).get("next") || "/dashboard";
 }
-
 async function exchangeSession(access_token) {
   const r = await fetch("/auth/session", {
     method: "POST",
@@ -45,9 +46,24 @@ function setFlash(msg) {
 }
 
 /* 4) UI & form logic */
-document.addEventListener('DOMContentLoaded', () => {
-  const sb = getSupabase();
-  if (!sb) return;
+document.addEventListener('DOMContentLoaded', async () => {
+  // Try immediately…
+  let sb = getSupabase();
+
+  // …and if not ready, wait for window load once (covers slow CDN edge case)
+  if (!sb) {
+    await new Promise(res => window.addEventListener('load', res, { once: true }));
+    sb = getSupabase();
+    if (!sb) {
+      // If env vars are missing, surface a clear message
+      if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+        setFlash("Auth is temporarily unavailable (missing configuration). Please contact support.");
+      } else {
+        setFlash("Auth is temporarily unavailable. Please reload the page.");
+      }
+      return;
+    }
+  }
 
   // ─── Grab elements ───
   const form        = document.getElementById('accountForm');
@@ -87,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   updateView();
 
-  // ─── Email/password submit via Supabase ───
+  // Handle form submit using Supabase (no POST /account 405s anymore)
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     setFlash("");
@@ -120,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         throw error;
       }
 
-      // optional: seed profile
+      // optional: inform backend about profile
       try {
         await fetch("/auth/profile", {
           method: "POST",
@@ -140,17 +156,4 @@ document.addEventListener('DOMContentLoaded', () => {
       setFlash(err.message || "Request failed. Please try again.");
     }
   });
-
-  // ─── Social sign-in (OAuth) ───
-  function oauth(provider) {
-    const redirectTo = `${location.origin}/auth/callback?next=${encodeURIComponent(nextUrl())}`;
-    sb.auth.signInWithOAuth({ provider, options: { redirectTo } })
-      .catch(err => setFlash(err.message || "OAuth failed."));
-  }
-
-  document.querySelector('.social-btn.google')?.addEventListener('click', () => oauth('google'));
-  document.querySelector('.social-btn.facebook')?.addEventListener('click', () => oauth('facebook'));
-  document.querySelector('.social-btn.apple')?.addEventListener('click', () => oauth('apple'));
-  // LinkedIn in Supabase is linkedin_oidc
-  document.querySelector('.social-btn.linkedin')?.addEventListener('click', () => oauth('linkedin_oidc'));
 });
