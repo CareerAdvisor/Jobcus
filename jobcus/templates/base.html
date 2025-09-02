@@ -19,11 +19,8 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 
-    {# Page-scoped CSS #}
+    {# Page-scoped CSS (e.g., account.css) #}
     {% block extra_css %}{% endblock %}
-
-    {# NEW: page-scoped early JS injected into <head> (e.g., Supabase keys + SDK) #}
-    {% block extra_js %}{% endblock %}
   {% endif %}
 </head>
 
@@ -32,7 +29,9 @@
 
     {% if not for_pdf %}
       <header class="site-header">
-        <div class="header-left">{% block header_icon %}{% endblock %}</div>
+        <div class="header-left">
+          {% block header_icon %}{% endblock %}
+        </div>
 
         <div class="header-logo">
           <a href="/"><img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" /></a>
@@ -56,16 +55,21 @@
             <a href="/employers">Partner with Us</a>
           </nav>
 
-          {# Avatar dropdown #}
-          {% set _email = current_user.email if current_user.is_authenticated else None %}
+          {# --- Avatar + dropdown (header) --- #}
+          {% set _first = None %}
+          {% set _lasti = '' %}
+          {% set _name  = None %}
+          {% set _email = None %}
           {% if current_user.is_authenticated %}
-            {% set _first = current_user.first_name
-              or (current_user.fullname.split(' ')[0] if current_user.fullname else _email.split('@')[0]) %}
+            {% set _email = current_user.email %}
+            {% set _first = (current_user.first_name
+                             or (current_user.fullname.split(' ')[0] if current_user.fullname else _email.split('@')[0])) %}
             {% set _lasti = (current_user.last_name[:1] if current_user.last_name
-              else (current_user.fullname.split(' ')[1][:1] if (current_user.fullname and current_user.fullname.split(' ')|length>1) else '')) %}
-            {% set _initials = ((_first[:1] ~ _lasti)|upper) %}
+                             else (current_user.fullname.split(' ')[1][:1] if (current_user.fullname and current_user.fullname.split(' ')|length>1) else '')) %}
+            {% set _name  = _first ~ ((' ' ~ current_user.last_name) if current_user.last_name else '') %}
           {% endif %}
-
+          {% set _initials = ((_first[:1] ~ _lasti)|upper) if _first else '' %}
+          
           <div class="user-menu">
             <button id="userMenuBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-controls="userDropdown">
               {% if current_user.is_authenticated %}
@@ -74,10 +78,13 @@
                 <img class="avatar-icon" src="{{ url_for('static', filename='icons/user.svg') }}" alt="Profile">
               {% endif %}
             </button>
+          
             <div id="userDropdown" class="user-dropdown" role="menu">
               {% if current_user.is_authenticated %}
+                <div class="ud-email">{{ _email }}</div>
+                <hr class="ud-sep">
                 <a class="ud-item" href="{{ url_for('pricing') }}" role="menuitem">⬆️ Upgrade plan</a>
-                <a class="ud-item" href="{{ url_for('dashboard') }}" role="menuitem">👤 Dashboard</a>
+                <a class="ud-item" href="{{ url_for('dashboard') }}" role="menuitem">👤 {{ _name }}</a>
                 <a class="ud-item" href="{{ url_for('logout') }}" role="menuitem">📦 Log out</a>
               {% else %}
                 <a class="ud-item" href="{{ url_for('account') }}" role="menuitem">🔑 Sign up / Log in</a>
@@ -143,13 +150,9 @@
     </script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
     <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
-    
-    <!-- ADD THIS: contains window.jsonFetch -->
-    <script src="{{ url_for('static', filename='js/api.js') }}" defer></script>
-    
-    {# Page-scoped scripts go after this #}
-    {% block scripts %}{% endblock %}
 
+    {# Page-scoped scripts #}
+    {% block scripts %}{% endblock %}
   {% endif %}
 </body>
 </html>
