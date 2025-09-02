@@ -37,6 +37,14 @@ def register_routes(app: Flask) -> None:
     except Exception:
         admin_bp = None
 
+    # inside register_routes(app)
+    try:
+        from .auth_session import auth_session_bp
+        app.register_blueprint(auth_session_bp)
+    except Exception:
+        pass
+
+
     # Register core blueprints
     app.register_blueprint(main_bp)
     app.register_blueprint(ask_bp)
