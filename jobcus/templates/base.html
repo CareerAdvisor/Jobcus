@@ -138,14 +138,18 @@
 
   {% if not for_pdf %}
     <!-- Init globals + AOS + base.js BEFORE page-scoped scripts -->
-    <script>window.USER_AUTHENTICATED = {{ 'true' if current_user.is_authenticated else 'false' }};</script>
+    <script>
+      window.USER_AUTHENTICATED = {{ 'true' if current_user.is_authenticated else 'false' }};
+    </script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
     <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
-    <!-- NEW: JSON helpers (jsonFetch, requestWithLimit, etc.) -->
+    
+    <!-- ADD THIS: contains window.jsonFetch -->
     <script src="{{ url_for('static', filename='js/api.js') }}" defer></script>
-
-    {# Page-scoped scripts (loaded after the globals above) #}
+    
+    {# Page-scoped scripts go after this #}
     {% block scripts %}{% endblock %}
+
   {% endif %}
 </body>
 </html>
