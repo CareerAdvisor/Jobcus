@@ -1,5 +1,3 @@
-// job-insights.js
-
 // === Utility to Render Bar Charts ===
 function renderBarChart(canvasId, labels, data, labelText) {
   const canvas = document.getElementById(canvasId);
