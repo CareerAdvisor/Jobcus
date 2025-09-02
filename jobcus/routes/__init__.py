@@ -93,6 +93,10 @@ def register_routes(app: Flask) -> None:
     alias_endpoint("main.admin_settings", "/admin/settings", "admin_settings")
 
     # ----- Auth routes: prefer aliasing real views; otherwise provide shims -----
+    # account
+    if "account" not in app.view_functions:
+        if "auth.account" in app.view_functions:
+            alias_endpoint("auth.account", "/account", "account")
 
     # login
     if "login" not in app.view_functions:
