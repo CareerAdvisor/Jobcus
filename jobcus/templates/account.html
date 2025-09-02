@@ -118,12 +118,17 @@
 {# account.html.html #}
 {% block extra_js %}
   <script>
-    window.SUPABASE_URL = "{{ current_app.config.get('SUPABASE_URL','') }}";
-    window.SUPABASE_ANON_KEY = "{{ current_app.config.get('SUPABASE_ANON_KEY','') }}";
+    // These come from your context processor: inject_config → "config"
+    window.SUPABASE_URL = "{{ config.get('SUPABASE_URL','') }}";
+    window.SUPABASE_ANON_KEY = "{{ config.get('SUPABASE_ANON_KEY','') }}";
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
 {% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/account.js') }}" defer></script>
+{% endblock %}
+
 
 {% block scripts %}
   <script src="{{ url_for('static', filename='js/account.js') }}"></script>
