@@ -96,6 +96,6 @@
 
 {% block scripts %}
   <script type="module" src="{{ url_for('static', filename='js/api.js') }}"></script>
-  <script defer src="{{ url_for('static', filename='js/base.js') }}"></script>
+  <script type="module" src="{{ url_for('static', filename='js/base.js') }}"></script>
   <script type="module" src="{{ url_for('static', filename='js/resume-analyzer.js') }}" defer></script>
 {% endblock %}
