@@ -18,7 +18,7 @@ document.querySelector("#analyzeBtn")?.addEventListener("click", async (e) => {
     const payload = {/* collect your form data here */};
     const data = await window.jsonFetch("/api/resume-analysis", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify(payload),
     });
     if (!data) return; // redirected to login
@@ -214,51 +214,28 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isPdf(f)) body.pdf = b64;
         else if (isDocx(f)) body.docx = b64;
 
-        const res  = await fetch("/api/resume-analysis", {
+        // ************ REPLACED WITH jsonFetch (safe login bounce) ************
+        const data = await window.jsonFetch("/api/resume-analysis", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
           body: JSON.stringify(body)
         });
+        if (!data) return; // redirected to /account
 
-        const text = await res.text();
-        let data   = await parseJsonSafe(res, text); // ← ensure data is defined for all paths
-
-        // Device/IP abuse guard from backend
-        if (res.status === 429) {
-          window.showUpgradeBanner?.(
-            (data && data.message) || 'You have reached the limit for the free version, upgrade to enjoy more features'
-          );
-          showInlineBanner(
-            card,
-            (data && data.message) || 'You have reached the limit for the free version, upgrade to enjoy more features',
-            "warn"
-          );
-          return;
-        }
-
-        if (!res.ok) {
-          const msg = (data?.error || data?.message) || "Resume analysis failed. Please try again.";
-          console.error("Resume analysis failed:", text);
-          showInlineBanner(card, msg, "error");
-          return;
-        }
-
-        if (!data) {
-          console.error("Invalid JSON from /api/resume-analysis:", text);
-          showInlineBanner(card, "Unexpected server response.", "error");
-          return;
-        }
-
-        // persist for dashboard + optimize
+        // persist for dashboard + optimize (keep your existing success logic)
         localStorage.setItem("resumeAnalysis", JSON.stringify(data));
         localStorage.setItem("resumeBase64", b64);
-        localStorage.setItem("resumeKind", isPdf(f) ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        localStorage.setItem(
+          "resumeKind",
+          isPdf(f) ? "application/pdf"
+                   : "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        );
 
         incCount();
         window.location.href = "/dashboard";
       } catch (err) {
         console.error(err);
-        showInlineBanner(dashAnalyzeBtn.closest(".upload-card"), "Analysis failed. Please try again.", "error");
+        showInlineBanner(card, err?.message || "Analysis failed. Please try again.", "error");
       } finally {
         analyzingEl && (analyzingEl.style.display = "none");
         dashAnalyzeBtn.disabled = false;
@@ -300,35 +277,13 @@ document.addEventListener("DOMContentLoaded", () => {
       resultsWrap && (resultsWrap.style.display = "none");
 
       try {
-        const res = await fetch("/api/resume-analysis", {
+        // ************ REPLACED WITH jsonFetch (safe login bounce) ************
+        const data = await window.jsonFetch("/api/resume-analysis", {
           method:  "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
           body:    JSON.stringify(payload)
         });
-
-        const text = await res.text();
-        let data   = await parseJsonSafe(res, text);
-
-        if (res.status === 401 || res.status === 403) {
-          alert("Please sign in to analyze resumes.");
-          window.location.href = "/account?mode=login";
-          return;
-        }
-        if (res.status === 402) {
-          alert((data?.message || "You’ve reached your resume analysis limit. Upgrade to continue."));
-          return;
-        }
-        if (res.status === 429 && (data?.error === "too_many_free_accounts" || data?.error === "quota_exceeded")) {
-          alert("You have reached the limit for the free version, upgrade to enjoy more features");
-          return;
-        }
-        if (!res.ok) {
-          const msg = (data?.error || data?.message) || "Analysis failed. Try again.";
-          console.error("Resume analysis failed:", text);
-          alert(msg);
-          return;
-        }
-        if (!data) { console.error(text); alert("Unexpected server response."); return; }
+        if (!data) { return; } // likely redirected to /account
 
         // basic summary on-page
         const score = typeof data.score === "number" ? data.score : "—";
@@ -348,7 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
         incCount();
       } catch (err) {
         console.error("Analyzer error:", err);
-        alert("Analysis failed. Try again.");
+        alert(err?.message || "Analysis failed. Try again.");
       } finally {
         analyzingIndicator && (analyzingIndicator.style.display = "none");
       }
