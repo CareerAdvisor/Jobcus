@@ -1,4 +1,3 @@
-// jobcus/static/js/api.js
 // Unified helpers for JSON API calls with quota/upgrade handling.
 //
 // What it handles (and shows the upgrade banner for):
