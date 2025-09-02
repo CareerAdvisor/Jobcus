@@ -131,9 +131,12 @@
     </article>
   </div>
 
-  <!-- Optional: Employer CTA kept separate from job-seeker plans -->
   <p class="pricing-fine">
     Hiring? Visit the <a href="/employers">Employers</a> page for AI job-post generation and inquiry options.
   </p>
 </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/pricing.js') }}" defer></script>
 {% endblock %}
