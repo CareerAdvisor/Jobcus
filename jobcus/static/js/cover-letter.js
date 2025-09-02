@@ -1,4 +1,3 @@
-<!-- /static/js/cover-letter.js -->
 <script>
 (function () {
   // Always send cookies with fetch (SameSite=Lax)
