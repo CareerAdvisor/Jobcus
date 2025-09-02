@@ -1,4 +1,6 @@
 /* static/js/account.js */
+
+/* 1) Always send cookies on fetch (SameSite/Lax) */
 ;(function(){
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
@@ -7,16 +9,24 @@
   };
 })();
 
+/* 2) Supabase client (optional) */
 function getSupabase() {
+  // If keys missing or SDK not loaded, return null and let legacy path run
   if (window.__SUPABASE_MISSING__) return null;
   if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
   if (!window.supabase || typeof window.supabase.createClient !== "function") return null;
-  try { return window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY); }
-  catch (e) { console.error("Supabase init failed:", e); return null; }
+  try {
+    return window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  } catch (e) {
+    console.error("Supabase init failed:", e);
+    return null;
+  }
 }
 
+/* 3) Helpers */
 function nextUrl() {
-  return new URLSearchParams(location.search).get("next") || "/dashboard";
+  const p = new URLSearchParams(location.search).get("next");
+  return p || "/dashboard";
 }
 async function exchangeSession(access_token) {
   const r = await fetch("/auth/session", {
@@ -38,6 +48,7 @@ function setFlash(msg) {
   }
 }
 
+/* 4) UI & form logic */
 document.addEventListener("DOMContentLoaded", () => {
   const form        = document.getElementById('accountForm');
   const modeInput   = document.getElementById('mode');
@@ -73,12 +84,21 @@ document.addEventListener("DOMContentLoaded", () => {
     modeInput.value = (modeInput.value === 'login' ? 'signup' : 'login');
     updateView();
   });
+
   updateView();
 
+  /* 5) Choose auth mode: Supabase (if available) or legacy /account */
   const sb = getSupabase();
   const usingSupabase = !!sb;
-  if (!usingSupabase && window.__SUPABASE_MISSING__) {
-    setFlash("Auth is temporarily unavailable (missing configuration). Using fallback sign-in.");
+
+  if (!usingSupabase) {
+    // Informative (but non-blocking) message if config is missing
+    if (window.__SUPABASE_MISSING__) {
+      setFlash("Auth is temporarily unavailable (missing configuration). Using fallback sign-in.");
+      console.warn("Supabase config missing on account page; using legacy /account login.");
+    } else {
+      console.warn("Supabase not available on account page; using legacy /account login.");
+    }
   }
 
   form.addEventListener('submit', async (e) => {
@@ -99,23 +119,33 @@ document.addEventListener("DOMContentLoaded", () => {
           location.href = nextUrl();
           return;
         } else {
-          const { data, error } = await sb.auth.signUp({ email, password });
+          const { data, error } = await sb.auth.signUp({
+            email,
+            password,
+            // Optionally set redirect URL after email confirmation:
+            // options: { emailRedirectTo: `${location.origin}/account` }
+          });
           if (error) {
-            const m = String(error.message || "");
-            if (m.toLowerCase().includes("already")) {
-              modeInput.value = 'login'; updateView();
+            const msg = String(error.message || "");
+            if (msg.toLowerCase().includes("already")) {
+              modeInput.value = 'login';
+              updateView();
               document.getElementById('email').value = email;
               setFlash("Account already exists. Please log in.");
               return;
             }
-            throw new Error(m || "Sign up failed");
+            throw new Error(msg || "Sign up failed");
           }
+
+          // Optional: profile seed on backend
           try {
             await fetch("/auth/profile", {
-              method: "POST", headers: { "Content-Type": "application/json" },
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ email, fullname }),
             });
-          } catch {}
+          } catch { /* best-effort */ }
+
           if (data.session?.access_token) {
             await exchangeSession(data.session.access_token);
             location.href = nextUrl();
@@ -126,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Legacy fallback – if your server doesn't support this, you'll see 405
+      // ─── Legacy fallback: POST to /account (existing server auth) ───
       const payload = { mode, email, password, name: fullname };
       let data = {};
       const res = await fetch('/account', {
@@ -135,17 +165,12 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(payload)
       });
 
-      // 405 indicates your backend doesn't implement POST /account
-      if (res.status === 405) {
-        setFlash("Server login endpoint is not enabled. Please contact support.");
-        return;
-      }
-
       try { data = await res.json(); } catch { data = {}; }
 
       if (!res.ok || data.success === false) {
         if (data.code === 'user_exists') {
-          modeInput.value = 'login'; updateView();
+          modeInput.value = 'login';
+          updateView();
           document.getElementById('email').value = email;
           setFlash(data.message || 'Account already exists. Please log in.');
           return;
@@ -159,6 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (data.redirect) {
+        // tidy up client cache used elsewhere
         localStorage.removeItem('resumeAnalysis');
         localStorage.removeItem('resumeBase64');
         localStorage.removeItem('dashboardVisited');
