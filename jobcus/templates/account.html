@@ -88,7 +88,7 @@
       <p class="text-sm">
         <a href="{{ url_for('forgot_password') }}">Forgot your password?</a>
       </p>
-      
+
       <div class="or-divider"><span>OR</span></div>
 
       <div class="social-buttons">
@@ -110,15 +110,13 @@
 </section>
 {% endblock %}
 
-{% block extra_js %}
+{# Load Supabase config + SDK, then our page script. Putting it here guarantees order. #}
+{% block scripts %}
   <script>
-    // Injected safely (pass `config` from your view or context processor)
+    // Read from Flask config (these must be set in your environment)
     window.SUPABASE_URL = "{{ config.get('SUPABASE_URL','') }}";
     window.SUPABASE_ANON_KEY = "{{ config.get('SUPABASE_ANON_KEY','') }}";
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-{% endblock %}
-
-{% block scripts %}
   <script src="{{ url_for('static', filename='js/account.js') }}" defer></script>
 {% endblock %}
