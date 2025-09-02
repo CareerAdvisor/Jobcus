@@ -2,6 +2,11 @@ from flask import Blueprint, request, render_template, redirect, url_for, flash,
 
 auth_bp = Blueprint("auth", __name__)
 
+@auth_bp.route("/account")
+def account():
+    mode = request.args.get("mode", "login")
+    return render_template("account.html", mode=mode)
+
 @auth_bp.get("/forgot-password")
 def forgot_password():
     return render_template("forgot-password.html")
