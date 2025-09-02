@@ -45,11 +45,11 @@
             <a href="/interview-coach">Interview Coach</a>
             <a href="/cover-letter">Cover Letter</a>
             <div class="dropdown">
-              <button class="dropbtn">Features ▾</button>
-              <div class="dropdown-content">
-                <a href="/chat">Jobcus AI</a>
-                <a href="/skill-gap">Skill Gap Analysis</a>
-                <a href="/job-insights">Job Insights</a>
+              <button class="dropbtn" aria-haspopup="true" aria-expanded="false" aria-controls="featuresMenu">Features ▾</button>
+              <div class="dropdown-content" id="featuresMenu" role="menu">
+                <a href="/chat" role="menuitem">Jobcus AI</a>
+                <a href="/skill-gap" role="menuitem">Skill Gap Analysis</a>
+                <a href="/job-insights" role="menuitem">Job Insights</a>
               </div>
             </div>
             <a href="/employers">Partner with Us</a>
@@ -71,7 +71,7 @@
           {% set _initials = ((_first[:1] ~ _lasti)|upper) if _first else '' %}
           
           <div class="user-menu">
-            <button id="userMenuBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false">
+            <button id="userMenuBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-controls="userDropdown">
               {% if current_user.is_authenticated %}
                 <span class="avatar-circle">{{ _initials }}</span>
               {% else %}
@@ -79,39 +79,37 @@
               {% endif %}
             </button>
           
-            <div id="userDropdown" class="user-dropdown">
+            <div id="userDropdown" class="user-dropdown" role="menu">
               {% if current_user.is_authenticated %}
-                          
                 <div class="ud-email">{{ _email }}</div>
                 <hr class="ud-sep">
-          
-                <a class="ud-item" href="{{ url_for('pricing') }}">⬆️ Upgrade plan</a>
-                <a class="ud-item" href="{{ url_for('dashboard') }}">👤 {{ _name }}</a>
-                <a class="ud-item" href="{{ url_for('logout') }}">📦 Log out</a>
+                <a class="ud-item" href="{{ url_for('pricing') }}" role="menuitem">⬆️ Upgrade plan</a>
+                <a class="ud-item" href="{{ url_for('dashboard') }}" role="menuitem">👤 {{ _name }}</a>
+                <a class="ud-item" href="{{ url_for('logout') }}" role="menuitem">📦 Log out</a>
               {% else %}
-                <a class="ud-item" href="{{ url_for('account') }}">🔑 Sign up / Log in</a>
+                <a class="ud-item" href="{{ url_for('account') }}" role="menuitem">🔑 Sign up / Log in</a>
               {% endif %}
             </div>
           </div>
 
           <!-- Hamburger (mobile) -->
-          <div class="hamburger" onclick="toggleMobileMenu()">
+          <button class="hamburger" onclick="toggleMobileMenu()" aria-label="Open Menu" aria-controls="mobileMenu" aria-expanded="false">
             <div></div><div></div><div></div>
-          </div>
+          </button>
         </div>
 
         <!-- Mobile nav -->
-        <nav class="mobile-nav" id="mobileMenu">
+        <nav class="mobile-nav" id="mobileMenu" aria-label="Mobile Navigation">
           <a href="/resume-analyzer">Resume Analyzer</a>
           <a href="/resume-builder">Resume Builder</a>
           <a href="/interview-coach">Interview Coach</a>
           <a href="/cover-letter">Cover Letter</a>
           <div class="dropdown">
-            <button class="dropbtn">Features ▾</button>
-            <div class="dropdown-content">
-              <a href="/chat">Jobcus AI</a>
-              <a href="/skill-gap">Skill Gap Analysis</a>
-              <a href="/job-insights">Job Insights</a>
+            <button class="dropbtn" aria-haspopup="true" aria-expanded="false">Features ▾</button>
+            <div class="dropdown-content" role="menu">
+              <a href="/chat" role="menuitem">Jobcus AI</a>
+              <a href="/skill-gap" role="menuitem">Skill Gap Analysis</a>
+              <a href="/job-insights" role="menuitem">Job Insights</a>
             </div>
           </div>
           <a href="/employers">Partner with Us</a>
@@ -146,9 +144,12 @@
   {% endif %}
 
   {% if not for_pdf %}
-    <!-- Cookie banner -->
-    {% include "cookie.html" %}
-
+    <!-- Init globals + AOS + base.js BEFORE page-scoped scripts -->
+    <script>
+      window.USER_AUTHENTICATED = {{ 'true' if current_user.is_authenticated else 'false' }};
+    </script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
+    <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
 
     {# Page-scoped scripts #}
     {% block scripts %}{% endblock %}
