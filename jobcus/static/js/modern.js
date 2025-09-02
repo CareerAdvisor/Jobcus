@@ -1,5 +1,3 @@
-
-// static/js/modern.js
 import { initCommon } from './resume-common.js';
 
 document.addEventListener('DOMContentLoaded', () => {
