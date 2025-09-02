@@ -28,14 +28,12 @@ import docx
 resumes_bp = Blueprint("resumes", __name__)
 
 # --- helper: support both signatures of allow_free_use across code versions ---
-def _allow_free_use(req, user_id, plan):
+def _allow_free(req, user_id, plan):
     try:
-        # new signature
-        return allow_free_use(req, user_id=user_id, plan=plan)
+        return allow_free_use(req, user_id=user_id, plan=plan)  # new signature
     except TypeError:
         try:
-            # legacy signature
-            return allow_free_use(req, user_id, plan)
+            return allow_free_use(user_id, plan)  # legacy signature (no req)
         except TypeError:
             return True, {}
 
