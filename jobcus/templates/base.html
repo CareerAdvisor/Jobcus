@@ -19,7 +19,6 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 
-    {# Page-scoped CSS (e.g., account.css) #}
     {% block extra_css %}{% endblock %}
   {% endif %}
 </head>
@@ -55,7 +54,6 @@
             <a href="/employers">Partner with Us</a>
           </nav>
 
-          {# --- Avatar + dropdown (header) --- #}
           {% set _first = None %}
           {% set _lasti = '' %}
           {% set _name  = None %}
@@ -87,7 +85,7 @@
                 <a class="ud-item" href="{{ url_for('dashboard') }}" role="menuitem">👤 {{ _name }}</a>
                 <a class="ud-item" href="{{ url_for('logout') }}" role="menuitem">📦 Log out</a>
               {% else %}
-                <a class="ud-item" href="{{ url_for('account') }}" role="menuitem">🔑 Sign up / Log in</a>
+                <a class="ud-item" href="{{ url_for('auth.account') }}" role="menuitem">🔑 Sign up / Log in</a>
               {% endif %}
             </div>
           </div>
@@ -98,7 +96,6 @@
           </button>
         </div>
 
-        <!-- Mobile nav -->
         <nav class="mobile-nav" id="mobileMenu" aria-label="Mobile Navigation">
           <a href="/resume-analyzer">Resume Analyzer</a>
           <a href="/resume-builder">Resume Builder</a>
@@ -144,14 +141,16 @@
   {% endif %}
 
   {% if not for_pdf %}
-    <!-- Init globals + AOS + base.js BEFORE page-scoped scripts -->
+    <!-- Expose Supabase values to frontend (for /account JS) -->
     <script>
+      window.SUPABASE_URL = {{ SUPABASE_URL | tojson }};
+      window.SUPABASE_ANON_KEY = {{ SUPABASE_ANON_KEY | tojson }};
       window.USER_AUTHENTICATED = {{ 'true' if current_user.is_authenticated else 'false' }};
     </script>
+
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
     <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
 
-    {# Page-scoped scripts #}
     {% block scripts %}{% endblock %}
   {% endif %}
 </body>
