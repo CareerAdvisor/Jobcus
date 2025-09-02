@@ -7,7 +7,7 @@ supabase: Client = current_app.config["SUPABASE_ADMIN"]
 
 auth_bp = Blueprint("auth", __name__)
 
-@auth_bp.route("/account")
+@auth_bp.route("/account", methods=["GET", "POST"])
 def account():
     mode = request.args.get("mode", "login")
     return render_template("account.html", mode=mode)
