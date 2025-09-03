@@ -1,178 +1,109 @@
 // static/js/account.js
-// Self-initializing auth for Jobcus. Waits for SDK if slow, attaches handlers, shows clear errors.
 
-(function () {
-  "use strict";
+// 1) Always send cookies with fetch (session, CSRF if any)
+;(function () {
+  const _fetch = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    init.credentials = init.credentials || 'same-origin';
+    return _fetch(input, init);
+  };
+})();
 
-  // ---------- Helpers ----------
-  const $  = (sel) => document.querySelector(sel);
-  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-  const show = (el) => el && (el.style.display = "");
-  const hide = (el) => el && (el.style.display = "none");
-  const setText = (el, txt) => el && (el.textContent = txt);
-  const trim = (v) => (v || "").trim();
-  const sanitize = (s) =>
-    String(s).replace(/[&<>"'`=\/]/g, (c) => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;","`":"&#96;","=":"&#61;","/":"&#47;"
-    }[c]));
+document.addEventListener('DOMContentLoaded', () => {
+  // 2) Grab elements
+  const form         = document.getElementById('accountForm');
+  const modeInput    = document.getElementById('mode');
+  const nameGroup    = document.getElementById('nameGroup');
+  const formTitle    = document.querySelector('.auth-title');
+  const subtitle     = document.querySelector('.auth-subtitle');
+  const submitBtn    = document.getElementById('submitButton');
+  const toggleLink   = document.getElementById('toggleMode');
+  const togglePrompt = document.getElementById('togglePrompt');
+  const flash        = document.getElementById('flashMessages');
 
-  // ---------- DOM refs ----------
-  const form = $("#auth-form");
-  const emailEl = $("#email");
-  const passwordEl = $("#password");
-  const nameWrap = $("#name-wrap");
-  const fullNameEl = $("#full_name");
-  const submitBtn = $("#submit-btn");
-  const toSignup = $("#switch-to-signup");
-  const toSignin = $("#switch-to-signin");
-  const modeLabelEls = $$("[data-auth-mode-label]");
-  const errorBox = $("#auth-error");
-  const successBox = $("#auth-success");
-
-  const btnGoogle   = document.querySelector(".social-btn.google");
-  const btnFacebook = document.querySelector(".social-btn.fb");
-  const btnLinkedin = document.querySelector(".social-btn.linkedin");
-  const btnApple    = document.querySelector(".social-btn.apple");
-
-  // ---------- State ----------
-  let mode = "signin"; // 'signin' | 'signup'
-  let supabaseClient = null;
-
-  function clearAlerts() {
-    if (errorBox) { errorBox.hidden = true; errorBox.innerHTML = ""; }
-    if (successBox) { successBox.hidden = true; successBox.innerHTML = ""; }
-  }
-  function showError(msg) {
-    if (!errorBox) return console.error(msg);
-    errorBox.hidden = false; errorBox.innerHTML = sanitize(msg);
-  }
-  function showSuccess(msg) {
-    if (!successBox) return console.log(msg);
-    successBox.hidden = false; successBox.innerHTML = sanitize(msg);
-  }
-  function setBusy(isBusy) {
-    if (!submitBtn) return;
-    submitBtn.disabled = isBusy;
-    setText(submitBtn, isBusy ? (mode === "signup" ? "Creating..." : "Signing in...") : (mode === "signup" ? "Create Account" : "Sign In"));
-  }
-  function renderMode() {
-    const isUp = mode === "signup";
-    modeLabelEls.forEach((el) => setText(el, isUp ? "Create your account" : "Sign in to your account"));
-    if (nameWrap) (isUp ? show(nameWrap) : hide(nameWrap));
-    if (toSignup) (isUp ? hide(toSignup) : show(toSignup));
-    if (toSignin) (isUp ? show(toSignin) : hide(toSignin));
-    setText(submitBtn, isUp ? "Create Account" : "Sign In");
-    clearAlerts();
+  // 3) UI swap login ↔ signup
+  function updateView() {
+    const mode = (modeInput.value || 'signup').toLowerCase();
+    if (mode === 'login') {
+      nameGroup.style.display  = 'none';
+      formTitle.innerHTML      = 'Sign In to<br>Jobcus';
+      subtitle.textContent     = 'Good to see you again! Welcome back.';
+      submitBtn.textContent    = 'Sign In';
+      togglePrompt.textContent = 'Don’t have an account?';
+      toggleLink.textContent   = 'Sign Up';
+    } else {
+      nameGroup.style.display  = 'block';
+      formTitle.innerHTML      = 'Sign Up to<br>Jobcus';
+      subtitle.textContent     = 'Create a free account to get started.';
+      submitBtn.textContent    = 'Sign Up';
+      togglePrompt.textContent = 'Already have an account?';
+      toggleLink.textContent   = 'Sign In';
+    }
+    if (flash) flash.innerHTML = '';
   }
 
-  // ---------- Wait for Supabase SDK (up to 8s) ----------
-  function waitForSupabase(maxMs = 8000, tick = 50) {
-    return new Promise((resolve, reject) => {
-      const start = performance.now();
-      (function check() {
-        if (typeof window.supabase === "object" && window.supabase.createClient) return resolve(window.supabase);
-        if (performance.now() - start >= maxMs) return reject(new Error("Supabase SDK not available"));
-        setTimeout(check, tick);
-      })();
-    });
-  }
-
-  // ---------- Initialize client ----------
-  async function initClient() {
-    const url = window.SUPABASE_URL || "";
-    const key = window.SUPABASE_ANON_KEY || "";
-    if (!url || !key) throw new Error("Missing Supabase URL or ANON KEY.");
-    const lib = await waitForSupabase();
-    supabaseClient = lib.createClient(url, key);
-    // Auth state listener
-    supabaseClient.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN") {
-        const to = window.POST_LOGIN_REDIRECT || "/dashboard";
-        setTimeout(() => (window.location.href = to), 400);
-      }
-    });
-  }
-
-  // ---------- Auth calls ----------
-  async function doSignUp(email, password, fullName) {
-    if (!supabaseClient) throw new Error("Auth is not configured. Please refresh.");
-    const { data, error } = await supabaseClient.auth.signUp({
-      email,
-      password,
-      options: {
-        data: fullName ? { full_name: fullName } : undefined,
-        emailRedirectTo: window.location.origin + "/account?confirmed=1",
-      },
-    });
-    if (error) throw error;
-    return data;
-  }
-  async function doSignIn(email, password) {
-    if (!supabaseClient) throw new Error("Auth is not configured. Please refresh.");
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
-  }
-
-  // ---------- Handlers ----------
-  async function onSubmit(e) {
+  // 4) Toggle click
+  toggleLink.addEventListener('click', (e) => {
     e.preventDefault();
-    clearAlerts();
-
-    const email = trim(emailEl && emailEl.value);
-    const password = trim(passwordEl && passwordEl.value);
-    const fullName = trim(fullNameEl && fullNameEl.value);
-
-    if (!email || !password) {
-      showError("Please enter your email and password.");
-      return;
-    }
-
-    setBusy(true);
-    try {
-      if (!supabaseClient) await initClient();
-      if (mode === "signup") {
-        await doSignUp(email, password, fullName);
-        showSuccess("Check your email to confirm your account. After confirming, return to sign in.");
-      } else {
-        await doSignIn(email, password);
-        showSuccess("Signed in successfully. Redirecting…");
-        const to = window.POST_LOGIN_REDIRECT || "/dashboard";
-        setTimeout(() => (window.location.href = to), 600);
-      }
-    } catch (err) {
-      showError(err?.message || "Authentication failed. Please try again.");
-      console.error("Auth error:", err);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  // ---------- Wire up once DOM is ready ----------
-  window.addEventListener("DOMContentLoaded", () => {
-    if (!form) return; // not on /account
-    // Toggle links
-    toSignup && toSignup.addEventListener("click", (e) => { e.preventDefault(); mode = "signup"; renderMode(); });
-    toSignin && toSignin.addEventListener("click", (e) => { e.preventDefault(); mode = "signin"; renderMode(); });
-    // Form submit
-    form.addEventListener("submit", onSubmit);
-
-    // Preselect mode via ?mode=signup
-    try {
-      const p = new URLSearchParams(window.location.search);
-      if ((p.get("mode") || "").toLowerCase() === "signup") mode = "signup";
-    } catch (_) {}
-
-    renderMode();
+    modeInput.value = (modeInput.value === 'login' ? 'signup' : 'login');
+    updateView();
   });
 
-  // ---------- Social buttons (placeholder) ----------
-  function notImplemented(e) {
+  // 5) Initialize
+  updateView();
+
+  // 6) Submit via JSON to Flask /account
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    showError("Social login isn’t enabled yet. Please use email & password.");
-  }
-  btnGoogle   && btnGoogle.addEventListener("click", notImplemented);
-  btnFacebook && btnFacebook.addEventListener("click", notImplemented);
-  btnLinkedin && btnLinkedin.addEventListener("click", notImplemented);
-  btnApple    && btnApple.addEventListener("click", notImplemented);
-})();
+    if (flash) flash.textContent = '';
+
+    const payload = {
+      mode:     (modeInput.value || 'signup').toLowerCase(),
+      email:    document.getElementById('email').value.trim(),
+      password: document.getElementById('password').value,
+      name:     document.getElementById('name')?.value.trim() || ''
+    };
+
+    try {
+      const res = await fetch('/account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      let data = {};
+      try { data = await res.json(); } catch { data = {}; }
+
+      // Known server responses (from old_app.py)
+      if (!res.ok || data.success === false) {
+        if (data.code === 'user_exists') {
+          modeInput.value = 'login';
+          updateView();
+          document.getElementById('email').value = payload.email;
+          alert(data.message || 'Account already exists. Please log in.');
+          return;
+        }
+        if (data.code === 'email_not_confirmed' && data.redirect) {
+          window.location.assign(data.redirect); // /check-email
+          return;
+        }
+        (flash || {}).textContent = data.message || 'Request failed. Please try again.';
+        return;
+      }
+
+      if (data.redirect) {
+        // clear any previous anon data your app may store
+        localStorage.removeItem('resumeAnalysis');
+        localStorage.removeItem('resumeBase64');
+        localStorage.removeItem('dashboardVisited');
+        window.location.assign(data.redirect);
+        return;
+      }
+
+      (flash || {}).textContent = 'Unexpected response. Please try again.';
+    } catch (err) {
+      console.error('Account request failed:', err);
+      (flash || {}).textContent = 'Server error. Please try again later.';
+    }
+  });
+});
