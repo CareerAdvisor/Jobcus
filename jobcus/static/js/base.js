@@ -1,40 +1,32 @@
-// static/js/base.js
-(function () {
-  "use strict";
-  const $ = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+document.addEventListener('DOMContentLoaded', () => {
+  // Mobile menu toggle
+  window.toggleMobileMenu = function () {
+    const menu = document.getElementById('mobileMenu');
+    const isOpen = menu.getAttribute('aria-expanded') === 'true';
+    menu.setAttribute('aria-expanded', String(!isOpen));
+    menu.classList.toggle('open');
+  };
 
-  function initMenus() {
-    $$(".js-menu-toggle").forEach((btn) => {
-      const target = btn.getAttribute("data-target");
-      const el = target ? $(target) : null;
-      if (!el) return;
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const open = el.getAttribute("data-open") === "1";
-        el.setAttribute("data-open", open ? "0" : "1");
-      });
+  // Header user menu toggle
+  const userMenuBtn = document.getElementById('userMenuBtn');
+  const userDropdown = document.getElementById('userDropdown');
+
+  if (userMenuBtn && userDropdown) {
+    userMenuBtn.addEventListener('click', () => {
+      const expanded = userMenuBtn.getAttribute('aria-expanded') === 'true';
+      userMenuBtn.setAttribute('aria-expanded', String(!expanded));
+      userDropdown.classList.toggle('open');
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+      if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+        userDropdown.classList.remove('open');
+        userMenuBtn.setAttribute('aria-expanded', 'false');
+      }
     });
   }
 
-  function initTheme() {
-    const pref = localStorage.getItem("theme") || "auto";
-    document.documentElement.setAttribute("data-theme", pref);
-    $$(".js-theme-toggle").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const cur = document.documentElement.getAttribute("data-theme") || "auto";
-        const next = cur === "dark" ? "light" : "dark";
-        document.documentElement.setAttribute("data-theme", next);
-        localStorage.setItem("theme", next);
-      });
-    });
-  }
-
-  window.addEventListener("DOMContentLoaded", () => {
-    initMenus();
-    initTheme();
-    if ($("#auth-form")) {
-      console.log("[base.js] account page detected");
-    }
-  });
-})();
+  // Animate on scroll
+  if (typeof AOS !== 'undefined') AOS.init({ once: true });
+});
