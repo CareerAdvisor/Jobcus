@@ -4,7 +4,7 @@ gunicorn
 openai
 requests
 python-dotenv
-supabase
+supabase>=2.0.0
 PyPDF2>=3.0.0
 Flask-Login==0.6.3
 python-docx
