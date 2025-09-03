@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, render_template, redirect, session, url_for, flash, current_app
 from flask_login import login_user, logout_user, login_required
 from supabase import Client
-from supabase_py.lib.auth import AuthApiError  # if needed
+from gotrue.errors import AuthApiError
 
 auth_bp = Blueprint("auth", __name__)
 
