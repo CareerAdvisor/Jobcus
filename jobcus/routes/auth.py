@@ -5,11 +5,6 @@ from gotrue.errors import AuthApiError
 
 auth_bp = Blueprint("auth", __name__)
 
-@auth_bp.before_app_first_request
-def setup_supabase():
-    global supabase
-    supabase = current_app.config.get("SUPABASE_ADMIN")
-
 @auth_bp.route("/account", methods=["GET", "POST"])
 def account():
     mode = request.args.get("mode", "login")
@@ -26,9 +21,9 @@ def forgot_password_post():
         flash("Please enter your email.")
         return redirect(url_for("auth.forgot_password"))
 
-    sb = current_app.config.get("SUPABASE_ADMIN")
     try:
-        sb.auth.admin.generate_link(
+        supabase = current_app.config["SUPABASE_ADMIN"]
+        supabase.auth.admin.generate_link(
             type="recovery",
             email=email,
             redirect_to=url_for("auth.reset_password_page", _external=True)
@@ -37,6 +32,7 @@ def forgot_password_post():
     except Exception:
         current_app.logger.exception("password reset error")
         flash("We couldn’t start a reset. Try again in a moment.")
+
     return redirect(url_for("auth.forgot_password"))
 
 @auth_bp.get("/reset-password")
@@ -45,4 +41,5 @@ def reset_password_page():
 
 @auth_bp.post("/reset-password")
 def reset_password_submit():
+    # If finishing the reset on the server, verify token and set password here.
     return redirect(url_for("login"))
