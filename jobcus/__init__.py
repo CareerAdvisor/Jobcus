@@ -84,32 +84,33 @@ def create_app() -> Flask:
 
     @login_manager.user_loader
     def load_user(user_id: str):
-        supabase = app.config.get("SUPABASE_ADMIN") or app.config.get("SUPABASE")
-        if not user_id or not supabase:
-            return None
-        try:
-            resp = (
-                supabase.table("users")
-                .select("auth_id,email,fullname,role,plan,plan_status")
-                .eq("auth_id", user_id)
-                .limit(1)
-                .execute()
-            )
-            rows = getattr(resp, "data", None) or []
-            if not rows:
+        with app.app_context():
+            supabase = app.config.get("SUPABASE_ADMIN") or app.config.get("SUPABASE")
+            if not user_id or not supabase:
                 return None
-            row = rows[0]
-            return User(
-                auth_id=row.get("auth_id"),
-                email=row.get("email"),
-                fullname=row.get("fullname"),
-                role=row.get("role") or "user",
-                plan=row.get("plan") or "free",
-                plan_status=row.get("plan_status"),
-            )
-        except Exception:
-            logging.exception("load_user failed")
-            return None
+            try:
+                resp = (
+                    supabase.table("users")
+                    .select("auth_id,email,fullname,role,plan,plan_status")
+                    .eq("auth_id", user_id)
+                    .limit(1)
+                    .execute()
+                )
+                rows = getattr(resp, "data", None) or []
+                if not rows:
+                    return None
+                row = rows[0]
+                return User(
+                    auth_id=row.get("auth_id"),
+                    email=row.get("email"),
+                    fullname=row.get("fullname"),
+                    role=row.get("role") or "user",
+                    plan=row.get("plan") or "free",
+                    plan_status=row.get("plan_status"),
+                )
+            except Exception:
+                logging.exception("load_user failed")
+                return None
 
     # Inject public Supabase config into all templates (for front-end JS)
     @app.context_processor
