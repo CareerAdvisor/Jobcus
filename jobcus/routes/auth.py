@@ -5,7 +5,10 @@ from gotrue.errors import AuthApiError
 
 auth_bp = Blueprint("auth", __name__)
 
-supabase: Client = current_app.config["SUPABASE_ADMIN"]
+@auth_bp.before_app_first_request
+def setup_supabase():
+    global supabase
+    supabase = current_app.config.get("SUPABASE_ADMIN")
 
 @auth_bp.route("/account", methods=["GET", "POST"])
 def account():
@@ -22,9 +25,10 @@ def forgot_password_post():
     if not email:
         flash("Please enter your email.")
         return redirect(url_for("auth.forgot_password"))
-    supabase = current_app.config["SUPABASE_ADMIN"]
+
+    sb = current_app.config.get("SUPABASE_ADMIN")
     try:
-        supabase.auth.admin.generate_link(
+        sb.auth.admin.generate_link(
             type="recovery",
             email=email,
             redirect_to=url_for("auth.reset_password_page", _external=True)
@@ -41,5 +45,4 @@ def reset_password_page():
 
 @auth_bp.post("/reset-password")
 def reset_password_submit():
-    # If finishing the reset on the server, verify token and set password here.
     return redirect(url_for("login"))
