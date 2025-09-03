@@ -20,165 +20,154 @@ function getSupabase() {
 }
 
 // 3) Helpers
-function nextUrl() {
-  const p = new URLSearchParams(location.search).get("next");
-  return p || "/dashboard";
-}
-async function exchangeSession(access_token) {
-  const r = await fetch("/auth/session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ access_token }),
-  });
-  if (!r.ok) throw new Error("Could not establish server session");
-}
-function setFlash(msg) {
-  const flash = document.getElementById("flashMessages");
-  if (!flash) return;
-  flash.textContent = "";
-  if (msg) {
-    const div = document.createElement("div");
-    div.className = "flash-item";
-    div.textContent = msg;
-    flash.appendChild(div);
+(function () {
+  // ---------- Helpers ----------
+  const q = (sel) => document.querySelector(sel);
+  const qa = (sel) => Array.from(document.querySelectorAll(sel));
+  const setHidden = (el, hidden) => el && (el.style.display = hidden ? "none" : "");
+  const setText = (el, txt) => el && (el.textContent = txt);
+  const trim = (v) => (v || "").trim();
+
+  // ---------- DOM ----------
+  const form = q("#auth-form");
+  const emailEl = q("#email");
+  const passwordEl = q("#password");
+  const nameWrap = q("#name-wrap");      // container div for name (shown in Sign Up)
+  const nameEl = q("#full_name");        // input for name (optional)
+  const submitBtn = q("#submit-btn");
+  const switchToSignUp = q("#switch-to-signup");
+  const switchToSignIn = q("#switch-to-signin");
+  const modeLabels = qa("[data-auth-mode-label]");
+  const errorBox = q("#auth-error");
+  const successBox = q("#auth-success");
+
+  // ---------- Config checks ----------
+  const SUPABASE_URL = window.SUPABASE_URL;
+  const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error("Supabase keys missing. Set window.SUPABASE_URL and window.SUPABASE_ANON_KEY.");
   }
-}
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 4) Auth form logic
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("accountForm");
-  const modeInput = document.getElementById("mode");
-  const nameGroup = document.getElementById("nameGroup");
-  const formTitle = document.querySelector(".auth-title");
-  const subtitle = document.querySelector(".auth-subtitle");
-  const submitBtn = document.getElementById("submitButton");
-  const toggleLink = document.getElementById("toggleMode");
-  const togglePrompt = document.getElementById("togglePrompt");
+  // ---------- State ----------
+  let mode = "signin"; // 'signin' | 'signup'
 
-  function updateView() {
-    const mode = modeInput.value || "login";
-    if (mode === "login") {
-      nameGroup.style.display = "none";
-      formTitle.innerHTML = "Sign In to<br>Jobcus";
-      subtitle.textContent = "Good to see you again! Welcome back.";
-      submitBtn.textContent = "Sign In";
-      togglePrompt.textContent = "Don’t have an account?";
-      toggleLink.textContent = "Sign Up";
-    } else {
-      nameGroup.style.display = "block";
-      formTitle.innerHTML = "Sign Up to<br>Jobcus";
-      subtitle.textContent = "Create a free account to get started.";
-      submitBtn.textContent = "Sign Up";
-      togglePrompt.textContent = "Already have an account?";
-      toggleLink.textContent = "Sign In";
+  function renderMode() {
+    const isSignUp = mode === "signup";
+    // Update labels/buttons
+    modeLabels.forEach((el) => setText(el, isSignUp ? "Create your account" : "Sign in to your account"));
+    setHidden(nameWrap, !isSignUp);
+    setHidden(switchToSignUp, isSignUp);
+    setHidden(switchToSignIn, !isSignUp);
+    setText(submitBtn, isSignUp ? "Create Account" : "Sign In");
+    clearAlerts();
+  }
+
+  function clearAlerts() {
+    if (errorBox) { errorBox.innerHTML = ""; errorBox.hidden = true; }
+    if (successBox) { successBox.innerHTML = ""; successBox.hidden = true; }
+  }
+
+  function showError(msg) {
+    if (!errorBox) return console.error(msg);
+    errorBox.hidden = false;
+    errorBox.innerHTML = sanitize(msg);
+  }
+
+  function showSuccess(msg) {
+    if (!successBox) return console.log(msg);
+    successBox.hidden = false;
+    successBox.innerHTML = sanitize(msg);
+  }
+
+  // Simple sanitization to avoid inserting HTML
+  function sanitize(s) {
+    return String(s).replace(/[&<>"'`=\/]/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;",
+      "'": "&#39;", "`": "&#96;", "=": "&#61;", "/": "&#47;"
+    }[c]));
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    clearAlerts();
+
+    const email = trim(emailEl?.value);
+    const password = trim(passwordEl?.value);
+    const fullName = trim(nameEl?.value);
+
+    if (!email || !password) {
+      showError("Please enter your email and password.");
+      return;
     }
-    setFlash("");
-  }
 
-  toggleLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    modeInput.value = modeInput.value === "login" ? "signup" : "login";
-    updateView();
-  });
-
-  updateView();
-
-  const sb = getSupabase();
-  const usingSupabase = !!sb;
-
-  if (!usingSupabase) {
-    console.warn("Supabase not available on account page; using legacy /account login.");
-  }
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    setFlash("");
-
-    const mode = (modeInput.value || "login").toLowerCase();
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
-    const fullname = document.getElementById("name")?.value.trim() || "";
+    submitBtn.disabled = true;
+    setText(submitBtn, mode === "signup" ? "Creating..." : "Signing in...");
 
     try {
-      if (usingSupabase) {
-        if (mode === "login") {
-          const { data, error } = await sb.auth.signInWithPassword({ email, password });
-          if (error) throw new Error(error.message || "Login failed");
-          await exchangeSession(data.session.access_token);
-          location.href = nextUrl();
-          return;
-        } else {
-          const { data, error } = await sb.auth.signUp({
-            email,
-            password,
-          });
-          if (error) {
-            const msg = String(error.message || "");
-            if (msg.toLowerCase().includes("already")) {
-              modeInput.value = "login";
-              updateView();
-              document.getElementById("email").value = email;
-              setFlash("Account already exists. Please log in.");
-              return;
-            }
-            throw new Error(msg || "Sign up failed");
-          }
+      if (mode === "signup") {
+        // Sign Up
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: fullName ? { full_name: fullName } : undefined,
+            emailRedirectTo: window.location.origin + "/account?confirmed=1",
+          },
+        });
 
-          try {
-            await fetch("/auth/profile", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email, fullname }),
-            });
-          } catch {}
+        if (error) throw error;
 
-          if (data.session?.access_token) {
-            await exchangeSession(data.session.access_token);
-            location.href = nextUrl();
-          } else {
-            setFlash("Check your email to confirm your account.");
-          }
-          return;
-        }
+        // If email confirmation is on, Supabase will send a link
+        showSuccess("Check your email to confirm your account. Once confirmed, return here to sign in.");
+      } else {
+        // Sign In
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        showSuccess("Signed in successfully. Redirecting...");
+        // Optional redirect after a short delay
+        const to = window.POST_LOGIN_REDIRECT || "/";
+        setTimeout(() => (window.location.href = to), 600);
       }
-
-      // Legacy fallback
-      const payload = { mode, email, password, name: fullname };
-      const res = await fetch("/account", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (!res.ok || data.success === false) {
-        if (data.code === "user_exists") {
-          modeInput.value = "login";
-          updateView();
-          document.getElementById("email").value = email;
-          setFlash(data.message || "Account already exists. Please log in.");
-          return;
-        }
-        if (data.code === "email_not_confirmed" && data.redirect) {
-          window.location.assign(data.redirect);
-          return;
-        }
-        setFlash(data.message || "Request failed. Please try again.");
-        return;
-      }
-
-      if (data.redirect) {
-        localStorage.removeItem("resumeAnalysis");
-        localStorage.removeItem("resumeBase64");
-        localStorage.removeItem("dashboardVisited");
-        window.location.assign(data.redirect);
-        return;
-      }
-
-      setFlash("Unexpected response. Please try again.");
     } catch (err) {
+      // err.message from supabase-js is safe text
+      showError(err?.message || "Authentication failed. Please try again.");
       console.error("Auth error:", err);
-      setFlash(err.message || "Server error. Please try again later.");
+    } finally {
+      submitBtn.disabled = false;
+      setText(submitBtn, mode === "signup" ? "Create Account" : "Sign In");
+    }
+  }
+
+  // Optional: react to auth state changes (e.g., magic link, email confirm)
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    // You could update UI or redirect based on session
+    if (event === "SIGNED_IN") {
+      const to = window.POST_LOGIN_REDIRECT || "/";
+      setTimeout(() => (window.location.href = to), 400);
     }
   });
-});
+
+  // ---------- Wire up ----------
+  form?.addEventListener("submit", handleSubmit);
+  switchToSignUp?.addEventListener("click", (e) => {
+    e.preventDefault();
+    mode = "signup";
+    renderMode();
+  });
+  switchToSignIn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    mode = "signin";
+    renderMode();
+  });
+
+  // If URL has ?mode=signup preselect it
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if ((params.get("mode") || "").toLowerCase() === "signup") {
+      mode = "signup";
+    }
+  } catch (_) {}
+  renderMode();
+})();
