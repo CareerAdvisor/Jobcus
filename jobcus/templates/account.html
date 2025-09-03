@@ -39,7 +39,7 @@
     <div id="auth-success" class="flash-item success" hidden></div>
 
     <form id="auth-form" class="auth-form" autocomplete="on">
-      {# Name (shown in Sign Up mode) #}
+      <!-- Full Name (shown only in Sign Up mode by JS) -->
       <div class="form-group" id="name-wrap" style="display:none;">
         <label for="full_name">Full Name</label>
         <input type="text" id="full_name" name="full_name" placeholder="Your full name" />
@@ -96,7 +96,9 @@
 </section>
 {% endblock %}
 
+{# IMPORTANT: put ALL scripts in the SAME block, in this order #}
 {% block extra_js %}
+  <!-- 1) Inject Supabase config BEFORE loading SDK -->
   <script>
     (function () {
       const url = {{ (config.get('SUPABASE_URL') or current_app.config.get('SUPABASE_URL') or '')|tojson }};
@@ -105,14 +107,18 @@
       window.SUPABASE_URL = url;
       window.SUPABASE_ANON_KEY = key;
       window.POST_LOGIN_REDIRECT = postLogin;
+
+      if (!url || !key) {
+        console.warn("Supabase URL/ANON KEY missing in config. Auth will not initialize.");
+      }
     })();
   </script>
 
-  <!-- Load Supabase SDK BEFORE account.js; defer preserves order -->
-  script src="https://unpkg.com/@supabase/supabase-js@2" defer></script>>
-{% endblock %}
+  <!-- 2) Load Supabase SDK -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2" defer></script>
 
-{% block scripts %}
-  <!-- Your auth logic (the new, fetch-free version) -->
+  <!-- 3) Load your auth logic AFTER the SDK -->
   <script src="{{ url_for('static', filename='js/account.js') }}" defer></script>
 {% endblock %}
+
+{# Don’t include another {% block scripts %}; having two blocks caused ordering issues #}
