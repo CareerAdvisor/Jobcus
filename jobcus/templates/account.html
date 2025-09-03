@@ -96,23 +96,56 @@
 </section>
 {% endblock %}
 
+{# Keep ALL scripts in ONE block, in this strict order #}
 {% block extra_js %}
+  <!-- 1) Inject Supabase config BEFORE loading the SDK -->
+  <script>
+    (function () {
+      const url = {{ (config.get('SUPABASE_URL') or current_app.config.get('SUPABASE_URL') or '')|tojson }};
+      const key = {{ (config.get('SUPABASE_ANON_KEY') or current_app.config.get('SUPABASE_ANON_KEY') or '')|tojson }};
+      const postLogin = {{ (config.get('POST_LOGIN_REDIRECT') or current_app.config.get('POST_LOGIN_REDIRECT') or '/dashboard')|tojson }};
+      window.SUPABASE_URL = url;
+      window.SUPABASE_ANON_KEY = key;
+      window.POST_LOGIN_REDIRECT = postLogin;
 
-<!-- 1) Inject config before the SDK -->
-<script>
-  (function () {
-    const url = {{ (config.get('SUPABASE_URL') or current_app.config.get('SUPABASE_URL') or '')|tojson }};
-    const key = {{ (config.get('SUPABASE_ANON_KEY') or current_app.config.get('SUPABASE_ANON_KEY') or '')|tojson }};
-    const postLogin = {{ (config.get('POST_LOGIN_REDIRECT') or current_app.config.get('POST_LOGIN_REDIRECT') or '/dashboard')|tojson }};
-    window.SUPABASE_URL = url;
-    window.SUPABASE_ANON_KEY = key;
-    window.POST_LOGIN_REDIRECT = postLogin;
-  })();
-</script>
+      if (!url || !key) {
+        console.warn("Supabase URL/ANON KEY missing in config. Auth will not initialize.");
+      }
+    })();
+  </script>
 
-<!-- 2) Supabase SDK (jsDelivr) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+  <!-- 2) Load the UMD build so window.supabase is guaranteed -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 
-<!-- 3) Your auth script (must come AFTER the SDK) -->
-<script src="{{ url_for('static', filename='js/account.js') }}" defer></script>
+  <!-- 3) Guarded loader: wait for window.supabase, then load account.js -->
+  <script defer>
+    (function () {
+      const MAX_WAIT_MS = 5000;   // stop trying after 5s
+      const TICK_MS = 50;
+      const start = performance.now();
+
+      function loadScript(src) {
+        const s = document.createElement("script");
+        s.src = src;
+        s.defer = true;
+        document.head.appendChild(s);
+      }
+
+      (function waitForSupabase() {
+        if (typeof window.supabase === "object" && window.supabase.createClient) {
+          console.log("Supabase present:", typeof window.supabase);
+          loadScript("{{ url_for('static', filename='js/account.js') }}");
+        } else if (performance.now() - start < MAX_WAIT_MS) {
+          setTimeout(waitForSupabase, TICK_MS);
+        } else {
+          console.error("Supabase SDK did not initialize in time. Check CSP/CDN/network.");
+          const box = document.getElementById("auth-error");
+          if (box) {
+            box.hidden = false;
+            box.textContent = "We couldn’t load our authentication library. Please refresh or try another network.";
+          }
+        }
+      })();
+    })();
+  </script>
 {% endblock %}
