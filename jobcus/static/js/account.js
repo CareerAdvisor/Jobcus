@@ -1,71 +1,76 @@
-// 1) Ensure fetch always sends credentials (cookies)
-(function () {
-  const _fetch = window.fetch.bind(window);
-  window.fetch = (input, init = {}) => {
-    if (!("credentials" in init)) init.credentials = "same-origin";
-    return _fetch(input, init);
-  };
-})();
+// static/js/account.js
+// Jobcus Auth (Supabase v2) — no server fetch, no JSON parse on HTML errors.
 
-// 2) Supabase client (optional)
-function getSupabase() {
-  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
-  if (!window.supabase || typeof window.supabase.createClient !== "function") return null;
-  try {
-    return window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-  } catch (e) {
-    console.error("Supabase init failed:", e);
-    return null;
-  }
-}
-
-// 3) Helpers
 (function () {
-  // ---------- Helpers ----------
-  const q = (sel) => document.querySelector(sel);
-  const qa = (sel) => Array.from(document.querySelectorAll(sel));
-  const setHidden = (el, hidden) => el && (el.style.display = hidden ? "none" : "");
+  // ------------------------------
+  // Helpers
+  // ------------------------------
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const show = (el) => el && (el.style.display = "");
+  const hide = (el) => el && (el.style.display = "none");
   const setText = (el, txt) => el && (el.textContent = txt);
   const trim = (v) => (v || "").trim();
+  const sanitize = (s) =>
+    String(s).replace(/[&<>"'`=\/]/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+      "`": "&#96;",
+      "=": "&#61;",
+      "/": "&#47;",
+    }[c]));
 
-  // ---------- DOM ----------
-  const form = q("#auth-form");
-  const emailEl = q("#email");
-  const passwordEl = q("#password");
-  const nameWrap = q("#name-wrap");      // container div for name (shown in Sign Up)
-  const nameEl = q("#full_name");        // input for name (optional)
-  const submitBtn = q("#submit-btn");
-  const switchToSignUp = q("#switch-to-signup");
-  const switchToSignIn = q("#switch-to-signin");
-  const modeLabels = qa("[data-auth-mode-label]");
-  const errorBox = q("#auth-error");
-  const successBox = q("#auth-success");
+  // ------------------------------
+  // DOM
+  // ------------------------------
+  const form = $("#auth-form");
+  const emailEl = $("#email");
+  const passwordEl = $("#password");
+  const nameWrap = $("#name-wrap");
+  const fullNameEl = $("#full_name");
+  const submitBtn = $("#submit-btn");
+  const toSignup = $("#switch-to-signup");
+  const toSignin = $("#switch-to-signin");
+  const modeLabelEls = $$("[data-auth-mode-label]");
+  const errorBox = $("#auth-error");
+  const successBox = $("#auth-success");
 
-  // ---------- Config checks ----------
+  // Optional social buttons (no-op placeholders for now)
+  const btnGoogle = document.querySelector(".social-btn.google");
+  const btnFacebook = document.querySelector(".social-btn.fb");
+  const btnLinkedin = document.querySelector(".social-btn.linkedin");
+  const btnApple = document.querySelector(".social-btn.apple");
+
+  // ------------------------------
+  // Config & Client
+  // ------------------------------
   const SUPABASE_URL = window.SUPABASE_URL;
   const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error("Supabase keys missing. Set window.SUPABASE_URL and window.SUPABASE_ANON_KEY.");
-  }
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const POST_LOGIN_REDIRECT = window.POST_LOGIN_REDIRECT || "/dashboard";
+  const supabaseLib = window.supabase;
 
-  // ---------- State ----------
+  if (!supabaseLib) {
+    console.error("Supabase library not found. Ensure the CDN script loads before account.js.");
+  }
+
+  let supabaseClient = null;
+  if (SUPABASE_URL && SUPABASE_ANON_KEY && supabaseLib) {
+    supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } else {
+    console.warn("Supabase URL/ANON KEY missing or library not loaded. Auth UI will show errors on submit.");
+  }
+
+  // ------------------------------
+  // State & UI
+  // ------------------------------
   let mode = "signin"; // 'signin' | 'signup'
 
-  function renderMode() {
-    const isSignUp = mode === "signup";
-    // Update labels/buttons
-    modeLabels.forEach((el) => setText(el, isSignUp ? "Create your account" : "Sign in to your account"));
-    setHidden(nameWrap, !isSignUp);
-    setHidden(switchToSignUp, isSignUp);
-    setHidden(switchToSignIn, !isSignUp);
-    setText(submitBtn, isSignUp ? "Create Account" : "Sign In");
-    clearAlerts();
-  }
-
   function clearAlerts() {
-    if (errorBox) { errorBox.innerHTML = ""; errorBox.hidden = true; }
-    if (successBox) { successBox.innerHTML = ""; successBox.hidden = true; }
+    if (errorBox) { errorBox.hidden = true; errorBox.innerHTML = ""; }
+    if (successBox) { successBox.hidden = true; successBox.innerHTML = ""; }
   }
 
   function showError(msg) {
@@ -80,94 +85,129 @@ function getSupabase() {
     successBox.innerHTML = sanitize(msg);
   }
 
-  // Simple sanitization to avoid inserting HTML
-  function sanitize(s) {
-    return String(s).replace(/[&<>"'`=\/]/g, (c) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;",
-      "'": "&#39;", "`": "&#96;", "=": "&#61;", "/": "&#47;"
-    }[c]));
+  function setBusy(isBusy) {
+    if (!submitBtn) return;
+    submitBtn.disabled = isBusy;
+    setText(submitBtn, isBusy ? (mode === "signup" ? "Creating..." : "Signing in...") : (mode === "signup" ? "Create Account" : "Sign In"));
   }
 
-  async function handleSubmit(e) {
+  function renderMode() {
+    const isUp = mode === "signup";
+    // title
+    modeLabelEls.forEach((el) => setText(el, isUp ? "Create your account" : "Sign in to your account"));
+    // toggle full name row
+    if (nameWrap) (isUp ? show(nameWrap) : hide(nameWrap));
+    // toggle links
+    if (toSignup) (isUp ? hide(toSignup) : show(toSignup));
+    if (toSignin) (isUp ? show(toSignin) : hide(toSignin));
+    // button text
+    setText(submitBtn, isUp ? "Create Account" : "Sign In");
+    clearAlerts();
+  }
+
+  // ------------------------------
+  // Auth Handlers
+  // ------------------------------
+  async function doSignUp(email, password, fullName) {
+    if (!supabaseClient) {
+      throw new Error("Auth is not configured. Please contact support.");
+    }
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: {
+        data: fullName ? { full_name: fullName } : undefined,
+        emailRedirectTo: window.location.origin + "/account?confirmed=1",
+      },
+    });
+    if (error) throw error;
+    // If email confirmation is enabled, user must confirm via link
+    return data;
+  }
+
+  async function doSignIn(email, password) {
+    if (!supabaseClient) {
+      throw new Error("Auth is not configured. Please contact support.");
+    }
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data;
+  }
+
+  async function onSubmit(e) {
     e.preventDefault();
     clearAlerts();
 
-    const email = trim(emailEl?.value);
-    const password = trim(passwordEl?.value);
-    const fullName = trim(nameEl?.value);
+    const email = trim(emailEl && emailEl.value);
+    const password = trim(passwordEl && passwordEl.value);
+    const fullName = trim(fullNameEl && fullNameEl.value);
 
     if (!email || !password) {
       showError("Please enter your email and password.");
       return;
     }
 
-    submitBtn.disabled = true;
-    setText(submitBtn, mode === "signup" ? "Creating..." : "Signing in...");
-
+    setBusy(true);
     try {
       if (mode === "signup") {
-        // Sign Up
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: fullName ? { full_name: fullName } : undefined,
-            emailRedirectTo: window.location.origin + "/account?confirmed=1",
-          },
-        });
-
-        if (error) throw error;
-
-        // If email confirmation is on, Supabase will send a link
-        showSuccess("Check your email to confirm your account. Once confirmed, return here to sign in.");
+        await doSignUp(email, password, fullName);
+        showSuccess("Check your email to confirm your account. After confirming, return to sign in.");
       } else {
-        // Sign In
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-
-        showSuccess("Signed in successfully. Redirecting...");
-        // Optional redirect after a short delay
-        const to = window.POST_LOGIN_REDIRECT || "/";
-        setTimeout(() => (window.location.href = to), 600);
+        await doSignIn(email, password);
+        showSuccess("Signed in successfully. Redirecting…");
+        setTimeout(() => (window.location.href = POST_LOGIN_REDIRECT), 600);
       }
     } catch (err) {
-      // err.message from supabase-js is safe text
       showError(err?.message || "Authentication failed. Please try again.");
       console.error("Auth error:", err);
     } finally {
-      submitBtn.disabled = false;
-      setText(submitBtn, mode === "signup" ? "Create Account" : "Sign In");
+      setBusy(false);
     }
   }
 
-  // Optional: react to auth state changes (e.g., magic link, email confirm)
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    // You could update UI or redirect based on session
-    if (event === "SIGNED_IN") {
-      const to = window.POST_LOGIN_REDIRECT || "/";
-      setTimeout(() => (window.location.href = to), 400);
-    }
-  });
+  // React to auth state (e.g., deep link or email confirmation)
+  if (supabaseClient) {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN") {
+        setTimeout(() => (window.location.href = POST_LOGIN_REDIRECT), 400);
+      }
+    });
+  }
 
-  // ---------- Wire up ----------
-  form?.addEventListener("submit", handleSubmit);
-  switchToSignUp?.addEventListener("click", (e) => {
+  // ------------------------------
+  // Wire up
+  // ------------------------------
+  form && form.addEventListener("submit", onSubmit);
+
+  toSignup && toSignup.addEventListener("click", (e) => {
     e.preventDefault();
     mode = "signup";
     renderMode();
   });
-  switchToSignIn?.addEventListener("click", (e) => {
+
+  toSignin && toSignin.addEventListener("click", (e) => {
     e.preventDefault();
     mode = "signin";
     renderMode();
   });
 
-  // If URL has ?mode=signup preselect it
+  // Optional query param: ?mode=signup
   try {
     const params = new URLSearchParams(window.location.search);
-    if ((params.get("mode") || "").toLowerCase() === "signup") {
-      mode = "signup";
-    }
+    const m = (params.get("mode") || "").toLowerCase();
+    if (m === "signup") mode = "signup";
   } catch (_) {}
+
+  // Placeholder social auth buttons (wire later if enabled in Supabase)
+  function notImplemented(e) {
+    e.preventDefault();
+    showError("Social login isn’t enabled yet. Please use email & password.");
+  }
+  btnGoogle && btnGoogle.addEventListener("click", notImplemented);
+  btnFacebook && btnFacebook.addEventListener("click", notImplemented);
+  btnLinkedin && btnLinkedin.addEventListener("click", notImplemented);
+  btnApple && btnApple.addEventListener("click", notImplemented);
+
+  // Initial render
   renderMode();
 })();
