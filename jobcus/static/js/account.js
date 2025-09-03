@@ -1,10 +1,8 @@
 // static/js/account.js
-// Jobcus Auth (Supabase v2) — no server fetch, no JSON parse on HTML errors.
+// Jobcus Auth (Supabase v2 UMD). Requires window.supabase (loaded by account.html guarded loader).
 
 (function () {
-  // ------------------------------
-  // Helpers
-  // ------------------------------
+  // ---------------- Helpers ----------------
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
   const show = (el) => el && (el.style.display = "");
@@ -13,19 +11,11 @@
   const trim = (v) => (v || "").trim();
   const sanitize = (s) =>
     String(s).replace(/[&<>"'`=\/]/g, (c) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-      "`": "&#96;",
-      "=": "&#61;",
-      "/": "&#47;",
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;",
+      "'": "&#39;", "`": "&#96;", "=": "&#61;", "/": "&#47;",
     }[c]));
 
-  // ------------------------------
-  // DOM
-  // ------------------------------
+  // ---------------- DOM ----------------
   const form = $("#auth-form");
   const emailEl = $("#email");
   const passwordEl = $("#password");
@@ -38,34 +28,29 @@
   const errorBox = $("#auth-error");
   const successBox = $("#auth-success");
 
-  // Optional social buttons (no-op placeholders for now)
-  const btnGoogle = document.querySelector(".social-btn.google");
+  // Optional social buttons (placeholders)
+  const btnGoogle   = document.querySelector(".social-btn.google");
   const btnFacebook = document.querySelector(".social-btn.fb");
   const btnLinkedin = document.querySelector(".social-btn.linkedin");
-  const btnApple = document.querySelector(".social-btn.apple");
+  const btnApple    = document.querySelector(".social-btn.apple");
 
-  // ------------------------------
-  // Config & Client
-  // ------------------------------
+  // ---------------- Config & Client ----------------
   const SUPABASE_URL = window.SUPABASE_URL;
   const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
   const POST_LOGIN_REDIRECT = window.POST_LOGIN_REDIRECT || "/dashboard";
-  const supabaseLib = window.supabase;
 
-  if (!supabaseLib) {
-    console.error("Supabase library not found. Ensure the CDN script loads before account.js.");
+  if (typeof window.supabase !== "object" || !window.supabase.createClient) {
+    console.error("Supabase library not found. Ensure the SDK loaded before account.js.");
   }
 
   let supabaseClient = null;
-  if (SUPABASE_URL && SUPABASE_ANON_KEY && supabaseLib) {
-    supabaseClient = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase && window.supabase.createClient) {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   } else {
-    console.warn("Supabase URL/ANON KEY missing or library not loaded. Auth UI will show errors on submit.");
+    console.warn("Supabase URL/ANON KEY missing or SDK not available. Auth will error on submit.");
   }
 
-  // ------------------------------
-  // State & UI
-  // ------------------------------
+  // ---------------- State & UI ----------------
   let mode = "signin"; // 'signin' | 'signup'
 
   function clearAlerts() {
@@ -93,25 +78,17 @@
 
   function renderMode() {
     const isUp = mode === "signup";
-    // title
     modeLabelEls.forEach((el) => setText(el, isUp ? "Create your account" : "Sign in to your account"));
-    // toggle full name row
     if (nameWrap) (isUp ? show(nameWrap) : hide(nameWrap));
-    // toggle links
     if (toSignup) (isUp ? hide(toSignup) : show(toSignup));
     if (toSignin) (isUp ? show(toSignin) : hide(toSignin));
-    // button text
     setText(submitBtn, isUp ? "Create Account" : "Sign In");
     clearAlerts();
   }
 
-  // ------------------------------
-  // Auth Handlers
-  // ------------------------------
+  // ---------------- Auth ----------------
   async function doSignUp(email, password, fullName) {
-    if (!supabaseClient) {
-      throw new Error("Auth is not configured. Please contact support.");
-    }
+    if (!supabaseClient) throw new Error("Auth is not configured. Please contact support.");
     const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
@@ -121,14 +98,11 @@
       },
     });
     if (error) throw error;
-    // If email confirmation is enabled, user must confirm via link
     return data;
   }
 
   async function doSignIn(email, password) {
-    if (!supabaseClient) {
-      throw new Error("Auth is not configured. Please contact support.");
-    }
+    if (!supabaseClient) throw new Error("Auth is not configured. Please contact support.");
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
@@ -174,9 +148,7 @@
     });
   }
 
-  // ------------------------------
-  // Wire up
-  // ------------------------------
+  // ---------------- Wire up ----------------
   form && form.addEventListener("submit", onSubmit);
 
   toSignup && toSignup.addEventListener("click", (e) => {
@@ -198,15 +170,15 @@
     if (m === "signup") mode = "signup";
   } catch (_) {}
 
-  // Placeholder social auth buttons (wire later if enabled in Supabase)
+  // Placeholder social auth buttons (enable with supabase.auth.signInWithOAuth later)
   function notImplemented(e) {
     e.preventDefault();
     showError("Social login isn’t enabled yet. Please use email & password.");
   }
-  btnGoogle && btnGoogle.addEventListener("click", notImplemented);
+  btnGoogle   && btnGoogle.addEventListener("click", notImplemented);
   btnFacebook && btnFacebook.addEventListener("click", notImplemented);
   btnLinkedin && btnLinkedin.addEventListener("click", notImplemented);
-  btnApple && btnApple.addEventListener("click", notImplemented);
+  btnApple    && btnApple.addEventListener("click", notImplemented);
 
   // Initial render
   renderMode();
