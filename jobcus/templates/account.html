@@ -97,7 +97,6 @@
 {% endblock %}
 
 {% block extra_js %}
-  <!-- Inject Supabase config from Flask -->
   <script>
     (function () {
       const url = {{ (config.get('SUPABASE_URL') or current_app.config.get('SUPABASE_URL') or '')|tojson }};
@@ -106,15 +105,11 @@
       window.SUPABASE_URL = url;
       window.SUPABASE_ANON_KEY = key;
       window.POST_LOGIN_REDIRECT = postLogin;
-      if (!url || !key) {
-        window.__SUPABASE_MISSING__ = true;
-        console.warn("Supabase URL/ANON KEY missing in config.");
-      }
     })();
   </script>
 
   <!-- Load Supabase SDK BEFORE account.js; defer preserves order -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2" defer></script>
+  script src="https://unpkg.com/@supabase/supabase-js@2" defer></script>>
 {% endblock %}
 
 {% block scripts %}
