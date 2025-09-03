@@ -13,21 +13,12 @@
   <div class="auth-card auth-card--blue">
 
     <h2 class="auth-title" data-auth-mode-label>
-      {% if mode == 'login' %}
-        Sign in to your account
-      {% else %}
-        Create your account
-      {% endif %}
+      {% if mode == 'login' %}Sign in to your account{% else %}Create your account{% endif %}
     </h2>
     <p class="auth-subtitle">
-      {% if mode == 'login' %}
-        Good to see you again! Welcome back.
-      {% else %}
-        Create a free account to get started.
-      {% endif %}
+      {% if mode == 'login' %}Good to see you again! Welcome back.{% else %}Create a free account to get started.{% endif %}
     </p>
 
-    <!-- Flash messages -->
     <div id="flashMessages" class="flash-message">
       {% for msg in get_flashed_messages() %}
         <div class="flash-item">{{ msg }}</div>
@@ -39,7 +30,6 @@
     <div id="auth-success" class="flash-item success" hidden></div>
 
     <form id="auth-form" class="auth-form" autocomplete="on">
-      <!-- Full Name (shown only in Sign Up mode by JS) -->
       <div class="form-group" id="name-wrap" style="display:none;">
         <label for="full_name">Full Name</label>
         <input type="text" id="full_name" name="full_name" placeholder="Your full name" />
@@ -61,44 +51,28 @@
 
       <p class="toggle-text">
         <span id="togglePrompt">
-          {% if mode=='login' %}
-            Don’t have an account?
-          {% else %}
-            Already have an account?
-          {% endif %}
+          {% if mode=='login' %}Don’t have an account?{% else %}Already have an account?{% endif %}
         </span>
         <a href="#" id="switch-to-signup" class="toggle-link" {% if mode!='login' %}style="display:none;"{% endif %}>Sign Up</a>
         <a href="#" id="switch-to-signin" class="toggle-link" {% if mode=='login' %}style="display:none;"{% endif %}>Sign In</a>
       </p>
 
-      <p class="text-sm">
-        <a href="{{ url_for('forgot_password') }}">Forgot your password?</a>
-      </p>
+      <p class="text-sm"><a href="{{ url_for('forgot_password') }}">Forgot your password?</a></p>
 
       <div class="or-divider"><span>OR</span></div>
-
       <div class="social-buttons">
-        <button type="button" class="social-btn fb">
-          <img src="{{ url_for('static', filename='icons/facebook.svg') }}" alt="Facebook">
-        </button>
-        <button type="button" class="social-btn google">
-          <img src="{{ url_for('static', filename='icons/google.png') }}" alt="Google">
-        </button>
-        <button type="button" class="social-btn linkedin">
-          <img src="{{ url_for('static', filename='icons/linkedin.svg') }}" alt="LinkedIn">
-        </button>
-        <button type="button" class="social-btn apple">
-          <img src="{{ url_for('static', filename='icons/apple.svg') }}" alt="Apple">
-        </button>
+        <button type="button" class="social-btn fb"><img src="{{ url_for('static', filename='icons/facebook.svg') }}" alt="Facebook"></button>
+        <button type="button" class="social-btn google"><img src="{{ url_for('static', filename='icons/google.png') }}" alt="Google"></button>
+        <button type="button" class="social-btn linkedin"><img src="{{ url_for('static', filename='icons/linkedin.svg') }}" alt="LinkedIn"></button>
+        <button type="button" class="social-btn apple"><img src="{{ url_for('static', filename='icons/apple.svg') }}" alt="Apple"></button>
       </div>
     </form>
   </div>
 </section>
 {% endblock %}
 
-{# Keep ALL scripts in ONE block, in this strict order #}
 {% block extra_js %}
-  <!-- 1) Inject Supabase config BEFORE loading the SDK -->
+  <!-- 1) Inject config BEFORE SDK/account.js -->
   <script>
     (function () {
       const url = {{ (config.get('SUPABASE_URL') or current_app.config.get('SUPABASE_URL') or '')|tojson }};
@@ -107,45 +81,12 @@
       window.SUPABASE_URL = url;
       window.SUPABASE_ANON_KEY = key;
       window.POST_LOGIN_REDIRECT = postLogin;
-
-      if (!url || !key) {
-        console.warn("Supabase URL/ANON KEY missing in config. Auth will not initialize.");
-      }
     })();
   </script>
 
-  <!-- 2) Load the UMD build so window.supabase is guaranteed -->
+  <!-- 2) Supabase SDK (UMD => window.supabase). Use jsDelivr or host locally if needed -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 
-  <!-- 3) Guarded loader: wait for window.supabase, then load account.js -->
-  <script defer>
-    (function () {
-      const MAX_WAIT_MS = 5000;   // stop trying after 5s
-      const TICK_MS = 50;
-      const start = performance.now();
-
-      function loadScript(src) {
-        const s = document.createElement("script");
-        s.src = src;
-        s.defer = true;
-        document.head.appendChild(s);
-      }
-
-      (function waitForSupabase() {
-        if (typeof window.supabase === "object" && window.supabase.createClient) {
-          console.log("Supabase present:", typeof window.supabase);
-          loadScript("{{ url_for('static', filename='js/account.js') }}");
-        } else if (performance.now() - start < MAX_WAIT_MS) {
-          setTimeout(waitForSupabase, TICK_MS);
-        } else {
-          console.error("Supabase SDK did not initialize in time. Check CSP/CDN/network.");
-          const box = document.getElementById("auth-error");
-          if (box) {
-            box.hidden = false;
-            box.textContent = "We couldn’t load our authentication library. Please refresh or try another network.";
-          }
-        }
-      })();
-    })();
-  </script>
+  <!-- 3) Your auth code (it will self-wait for supabase if needed) -->
+  <script src="{{ url_for('static', filename='js/account.js') }}" defer></script>
 {% endblock %}
