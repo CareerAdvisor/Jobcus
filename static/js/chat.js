@@ -419,28 +419,34 @@ document.addEventListener("DOMContentLoaded", () => {
       let data = null;
       const currentModel = modelCtl.getSelectedModel();
 
-      try {
-        disableComposer(true);
-        // REPLACE WITH:
-        const payload = { message, model: currentModel };
-        data = await apiFetch('/api/ask', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
-
-      } catch (err) {
-        if (err?.kind === 'limit') {
-          aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || 'Free limit reached.')}</p><hr class="response-separator" />`;
+      // ensure the handler is async
+      sendButton.addEventListener("click", async () => {
+        // ... your pre-existing code up to `let finalReply = ""; let data = null; const currentModel = modelCtl.getSelectedModel();`
+      
+        try {
+          disableComposer(true);
+      
+          const payload = { message, model: currentModel };
+          data = await apiFetch("/api/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+      
+          finalReply = (data && typeof data.reply === "string")
+            ? data.reply
+            : "Sorry, I didn't get a response.";
+        } catch (err) {
+          if (err && err.kind === "limit") {
+            aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
+            return;
+          }
+          aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
           return;
+        } finally {
+          disableComposer(false);
+          input.focus();
         }
-        aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || 'Sorry, something went wrong.')}</p><hr class="response-separator" />`;
-        return;
-      } finally {
-        disableComposer(false);
-        input.focus();
-      }
 
       const copyId = `ai-${Date.now()}`;
       aiBlock.innerHTML = `
