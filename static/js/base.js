@@ -71,13 +71,26 @@ try {
 
 /* ─────────────────────────────────────────────────────────────
  * 0.3) Centralized API fetch (401 handling + JSON/HTML guard)
+ *      + CSRF header injection
  *      Use: const data = await apiFetch('/api/foo', { method:'POST', body: ... })
  * ───────────────────────────────────────────────────────────── */
+
+// CSRF cookie reader (Flask-WTF default cookie names vary; adjust if needed)
+function getCookie(name) {
+  const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\\]\\/+^])/g,'\\$1') + '=([^;]*)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
 window.apiFetch = async function apiFetch(url, options = {}) {
   const merged = {
     headers: { 'Accept': 'application/json', ...(options.headers || {}) },
     ...options
   };
+
+  // Inject CSRF header if a token is present
+  const csrf = getCookie('csrf_token') || getCookie('XSRF-TOKEN'); // adjust to your cookie name
+  if (csrf) merged.headers['X-CSRFToken'] = csrf;                  // Flask-WTF default header
+
   const resp = await fetch(url, merged);
   const contentType = resp.headers.get('content-type') || '';
 
@@ -108,6 +121,7 @@ window.showUpgradeBanner = function (text) {
 
 /* ─────────────────────────────────────────────────────────────
  * 2) User menu (avatar) & general UI toggles
+ *     + Chat sidebar open/close (a11y-safe: focus + inert)
  * ───────────────────────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", () => {
   // User menu
@@ -179,6 +193,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".dropdown-content.show")
         .forEach((el) => el.classList.remove("show"));
       toggleUserMenu(false);
+      // Also close chat sidebar on Escape
+      closeChatMenu();
     }
   });
 
@@ -186,6 +202,50 @@ document.addEventListener("DOMContentLoaded", () => {
   window.toggleMobileMenu = function toggleMobileMenu() {
     document.getElementById("mobileMenu")?.classList.toggle("show");
   };
+
+  // ── Chat sidebar (A11Y-friendly open/close) ─────────────────
+  const chatMenuToggle = document.getElementById("chatMenuToggle");
+  const chatMenu       = document.getElementById("chatSidebar");
+  const chatOverlay    = document.getElementById("chatOverlay");
+  const chatCloseBtn   = document.getElementById("chatSidebarClose");
+
+  function openChatMenu(){
+    if (!chatMenu) return;
+    // Remove inert first so it can receive focus
+    chatMenu.removeAttribute('inert');
+    chatMenu.classList.add("is-open");
+    chatMenu.setAttribute("aria-hidden","false");
+    if (chatOverlay) chatOverlay.hidden = false;
+    document.documentElement.style.overflow = "hidden";
+
+    // Move focus *into* the sidebar
+    (chatCloseBtn ||
+     chatMenu.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    )?.focus();
+  }
+
+  function closeChatMenu(){
+    if (!chatMenu) return;
+
+    // 1) Move focus OUT of the subtree before hiding it
+    chatMenuToggle?.focus();
+
+    // 2) Now hide + make unfocusable
+    chatMenu.classList.remove("is-open");
+    chatMenu.setAttribute("aria-hidden","true");
+    chatMenu.setAttribute('inert',''); // prevents focus and interaction
+    if (chatOverlay) chatOverlay.hidden = true;
+    document.documentElement.style.overflow = "";
+  }
+
+  // binders
+  chatMenuToggle?.addEventListener("click", openChatMenu);
+  chatOverlay?.addEventListener("click", closeChatMenu);
+  chatCloseBtn?.addEventListener("click", closeChatMenu);
+
+  // expose globally if other scripts need them
+  window.openChatMenu = openChatMenu;
+  window.closeChatMenu = closeChatMenu;
 });
 
 /* ─────────────────────────────────────────────────────────────
@@ -258,11 +318,11 @@ function setCookie(name, value, days) {
   d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${d.toUTCString()}; path=/; SameSite=Lax; Secure`;
 }
-function getCookie(name) {
+function getCookieConsent(name) {
   return document.cookie.split("; ").find((r) => r.startsWith(name + "="))?.split("=")[1] || null;
 }
 function readConsent() {
-  try { return JSON.parse(decodeURIComponent(getCookie(CONSENT_COOKIE) || "")) || null; }
+  try { return JSON.parse(decodeURIComponent(getCookieConsent(CONSENT_COOKIE) || "")) || null; }
   catch { return null; }
 }
 function writeConsent(obj) {
