@@ -93,19 +93,21 @@
 {% endblock %}
 
 {% block extra_js %}
-  <!-- Inject Supabase credentials and init Supabase (ESM) -->
+  <!-- Load Supabase module + initialize before anything else -->
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-    const supabase = createClient(
-      {{ SUPABASE_URL | tojson }},
-      {{ SUPABASE_ANON_KEY | tojson }}
-    );
+    const SUPABASE_URL = {{ SUPABASE_URL | tojson }};
+    const SUPABASE_ANON_KEY = {{ SUPABASE_ANON_KEY | tojson }};
 
-    window.supabase = supabase;
+    // Make sure it's globally available
+    window.SUPABASE_URL = SUPABASE_URL;
+    window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+    window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
 {% endblock %}
 
 {% block scripts %}
-  <script src="{{ url_for('static', filename='js/account.js') }}" defer></script>
+  <!-- Load after Supabase is available -->
+  <script src="{{ url_for('static', filename='js/account.js') }}" type="module"></script>
 {% endblock %}
