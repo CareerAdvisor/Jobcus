@@ -388,17 +388,15 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshCreditsPanel();
   maybeShowScrollIcon();
 
-  // chat.js — REPLACE your whole send handler with this
-  sendButton.addEventListener("click", async () => {
-    const input   = document.getElementById("userInput");
-    const chatbox = document.getElementById("chatbox");
-    const message = (input?.value || "").trim();
+  // ---- send handler (drop-in) ----
+  form.addEventListener("submit", async (evt) => {
+    evt.preventDefault();
+  
+    const message = (input.value || "").trim();
     if (!message) return;
   
-    // remove welcome banner if present
-    if (typeof removeWelcome === "function") removeWelcome();
+    removeWelcome?.();
   
-    // add the user bubble
     const userMsg = document.createElement("div");
     userMsg.className = "chat-entry user";
     userMsg.innerHTML = `
@@ -407,39 +405,34 @@ document.addEventListener("DOMContentLoaded", () => {
       </h2>
     `;
     chatbox.appendChild(userMsg);
+  
     saveMessage("user", message);
   
-    // reset input
     input.value = "";
-    if (typeof autoResize === "function") autoResize(input);
+    autoResize(input);
   
-    // prep AI block
     const aiBlock = document.createElement("div");
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
-    if (typeof scrollToAI === "function") scrollToAI(aiBlock);
+    scrollToAI(aiBlock);
   
     let finalReply = "";
-    let data = null;
-  
-    // pick model from your UI controller (keep your existing object)
     const currentModel = modelCtl.getSelectedModel();
   
     try {
       disableComposer(true);
   
+      // POST to your API; apiFetch is from base.js (adds CSRF + credentials)
       const payload = { message, model: currentModel };
-      data = await apiFetch("/api/ask", {
+      const data = await apiFetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
-      });
+      }); // must return { reply, modelUsed }
   
-      finalReply = (data && typeof data.reply === "string")
-        ? data.reply
-        : "Sorry, I didn't get a response.";
+      finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
     } catch (err) {
-      if (err && err.kind === "limit") {
+      if (err?.kind === "limit") {
         aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
         return;
       }
@@ -450,7 +443,6 @@ document.addEventListener("DOMContentLoaded", () => {
       input.focus();
     }
   
-    // render the AI answer, with a minimal typewriter and markdown support
     const copyId = `ai-${Date.now()}`;
     aiBlock.innerHTML = `
       <div id="${copyId}" class="markdown"></div>
@@ -470,7 +462,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (i < finalReply.length) {
         buffer += finalReply[i++];
         targetDiv.textContent = buffer;
-        if (typeof scrollToAI === "function") scrollToAI(aiBlock);
+        scrollToAI(aiBlock);
         setTimeout(typeWriter, 5);
       } else {
         if (window.marked && typeof window.marked.parse === "function") {
@@ -482,10 +474,11 @@ document.addEventListener("DOMContentLoaded", () => {
   
         const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
         localStorage.setItem("chatUsed", usedNow);
-        if (typeof refreshCreditsPanel === "function") refreshCreditsPanel();
-        if (typeof window.syncState === "function") window.syncState();
+        refreshCreditsPanel();
+        if (window.syncState) window.syncState();
   
-        if (typeof maybeShowScrollIcon === "function") maybeShowScrollIcon();
+        scrollToAI(aiBlock);
+        maybeShowScrollIcon();
       }
     })();
   });
