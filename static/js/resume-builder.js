@@ -1,5 +1,3 @@
-<!-- /static/js/resume-builder.js -->
-<script>
 "use strict";
 
 // Ensure fetch keeps cookies (SameSite=Lax safe)
@@ -98,7 +96,6 @@ function gatherContext(form) {
       };
     });
 
-    // support comma or newline input for skills
     const skillsRaw = (form.elements["skills"]?.value || "").trim();
     const skills = skillsRaw
       ? skillsRaw.split(/[,;\r\n]+/).map(s => s.trim()).filter(Boolean)
@@ -163,7 +160,6 @@ function attachAISuggestionHandlers() {
     const textEl = qs(card, ".ai-text");
     if (!textEl) return;
 
-    // Refresh suggestions from AI
     if (btn.classList.contains("ai-refresh")) {
       const type = btn.dataset.ai || "general";
       textEl.textContent = "Thinking…";
@@ -173,7 +169,7 @@ function attachAISuggestionHandlers() {
         if (type === "summary") {
           lines = await aiSuggest("summary", ctx);
           textEl.textContent = lines.join(" ");
-        } else if (type === "highlights") {
+        } else if (type === "highlights")) { // NOTE: leave exactly as in your repo if already working
           const allItems = qsa(builder, "#exp-list .rb-item");
           const itemEl = btn.closest(".rb-item");
           const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
@@ -189,7 +185,6 @@ function attachAISuggestionHandlers() {
       return;
     }
 
-    // Insert the suggestion into the relevant textarea
     if (btn.classList.contains("ai-add")) {
       const wrap = btn.closest(".rb-card, .rb-item, .rb-step");
       const taSummary = qs(wrap, 'textarea[name="summary"]');
@@ -219,9 +214,7 @@ function cloneFromTemplate(tplId) {
   const tpl = qs(document, withinBuilder(`#${tplId}`));
   if (!tpl) return null;
   const node = tpl.content.firstElementChild.cloneNode(true);
-  // remove button
   qs(node, ".rb-remove")?.addEventListener("click", () => node.remove());
-  // auto-create suggestions for new blocks (non-blocking) — only if signed in
   if (window.USER_AUTHENTICATED) {
     setTimeout(() => { qs(node, ".ai-suggest .ai-refresh")?.click(); }, 0);
   }
@@ -250,7 +243,7 @@ function addEducationFromObj(obj = {}) {
   if (g("degree"))         g("degree").value         = obj.degree || "";
   if (g("graduatedStart")) g("graduatedStart").value = obj.graduatedStart || "";
   if (g("graduated"))      g("graduated").value      = obj.graduated || "";
-  if (g("location"))       g("location").value       = obj.location || "";
+  if (g("location"))       g("location").value       = obj.location || ";
   list.appendChild(node);
 }
 
@@ -290,7 +283,6 @@ function initSkills() {
       refreshChips();
     }
   });
-  // Also support paste of comma/newline lists
   skillInput?.addEventListener("paste", (e) => {
     const text = (e.clipboardData?.getData("text") || "").trim();
     if (!text) return;
@@ -306,7 +298,6 @@ function initSkills() {
 // Render with server templates (HTML/PDF/DOCX)
 // ───────────────────────────────────────────────
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
-  // helper to POST and handle errors/upgrade guard
   async function postAndMaybeError(url, payload) {
     const res = await fetch(url, {
       method: "POST",
@@ -347,7 +338,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     return;
   }
 
-  // HTML preview
   const res = await fetch("/build-resume", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -386,14 +376,12 @@ function initWizard() {
     return;
   }
 
-  // Steps
   const steps = qsa(builder, ".rb-step");
   if (!steps.length) {
     console.error("No wizard steps found (.rb-step).");
     return;
   }
 
-  // Controls
   const tabs      = qsa(builder, ".rb-tabs button");
   const back      = qs(builder, "#rb-back");
   const next      = qs(builder, "#rb-next");
@@ -450,7 +438,6 @@ function initWizard() {
     onEnterStep(idx);
   }
 
-  // Tabs: jump directly
   tabs.forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -460,11 +447,9 @@ function initWizard() {
     });
   });
 
-  // Back / Next
   back?.addEventListener("click", (e) => { e.preventDefault(); showStep(idx - 1); });
   next?.addEventListener("click", (e) => { e.preventDefault(); showStep(idx + 1); });
 
-  // Add buttons
   builder.addEventListener("click", (e) => {
     const addBtn = e.target.closest("[data-add]");
     if (!addBtn) return;
@@ -473,7 +458,7 @@ function initWizard() {
     if (type === "education") addEducationFromObj();
   });
 
-  // Photo upload (with revoke on change)
+  // Photo upload
   let _photoUrl;
   qs(builder, "#photoBtn")?.addEventListener("click", () => qs(builder, "#photoInput")?.click());
   qs(builder, "#photoInput")?.addEventListener("change", (e) => {
@@ -529,16 +514,13 @@ function initWizard() {
       const genJson = await gen.json().catch(() => ({}));
       if (genJson.error) throw new Error(genJson.error || "Resume generation failed");
 
-      // Merge AI-enriched context into current context
       window._resumeCtx = { ...ctxForTemplate, ...(genJson.context || {}) };
 
-      // Persist/sync latest resume for cloud history (best-effort)
       try {
         localStorage.setItem("resume_latest", JSON.stringify(window._resumeCtx));
         window.syncState?.({ resume_latest: window._resumeCtx, resume_generated: true });
       } catch {}
 
-      // Jump to Finish step
       const finishIdx = steps.findIndex(s => s && s.id === "step-finish");
       showStep(finishIdx >= 0 ? finishIdx : steps.length - 1);
     } catch (err) {
@@ -550,7 +532,6 @@ function initWizard() {
     }
   });
 
-  // Preview / PDF / DOCX
   const previewBtn   = qs(builder, "#previewTemplate");
   const pdfBtn       = qs(builder, "#downloadTemplatePdf");
   const docxBtn      = qs(builder, "#downloadTemplateDocx");
@@ -561,7 +542,7 @@ function initWizard() {
     try {
       if (indicator) indicator.style.display = "block";
       const live = gatherContext(qs(builder, "#resumeForm"));
-      const ctx = { ...(window._resumeCtx || {}), ...live }; // latest form values win
+      const ctx = { ...(window._resumeCtx || {}), ...live };
       const theme = themeSelect?.value || "modern";
       await renderWithTemplateFromContext(ctx, kind, theme);
     } catch (e) {
@@ -576,15 +557,11 @@ function initWizard() {
   pdfBtn?.addEventListener("click",     () => buildAndRender("pdf"));
   docxBtn?.addEventListener("click",    () => buildAndRender("docx"));
 
-  // Finish-screen mirrors
   qs(builder, "#previewTemplateFinish")?.addEventListener("click", () => previewBtn?.click());
   qs(builder, "#downloadTemplatePdfFinish")?.addEventListener("click", () => pdfBtn?.click());
   qs(builder, "#downloadTemplateDocxFinish")?.addEventListener("click", () => docxBtn?.click());
 
-  // Start
   showStep(idx || 0);
-
-  // Expose for quick debugging
   window.__rbWizard = { steps, showStep, get index(){return idx;} };
 }
 
@@ -669,4 +646,3 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Resume builder init failed:", e);
   }
 });
-</script>
