@@ -84,7 +84,7 @@
                 <a class="ud-item" href="{{ url_for('dashboard') }}" role="menuitem">👤 {{ _name }}</a>
                 <a class="ud-item" href="{{ url_for('logout') }}" role="menuitem">📦 Log out</a>
               {% else %}
-                <a class="ud-item" href="{{ url_for('account') }}" role="menuitem">🔑 Sign up / Log in</a>
+                <a class="ud-item" href="{{ url_for('auth.account') }}" role="menuitem">🔑 Sign up / Log in</a>
               {% endif %}
             </div>
           </div>
