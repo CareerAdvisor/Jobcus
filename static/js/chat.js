@@ -440,6 +440,55 @@ document.addEventListener("DOMContentLoaded", () => {
   }).observe(chatbox, { childList: true, subtree: true });
 });
 
+// inside your submit handler, after you have `message`, `currentModel`, and `aiBlock`
+try {
+  disableComposer(true);
+
+  // simple intent: if the message starts with "jobs:" or "job:"
+  if (/^\s*jobs?:/i.test(message)) {
+    const query = message.replace(/^\s*jobs?:/i, "").trim() || message.trim();
+    const jobs = await apiFetch("/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query })
+    });
+
+    // render your jobs UI
+    displayJobs(jobs, aiBlock);
+
+    // optionally record an assistant message summary for history/credits
+    saveMessage("assistant", `Found ${Array.isArray(jobs) ? jobs.length : 0} jobs for “${query}”.`);
+    refreshCreditsPanel?.();
+    if (window.syncState) window.syncState();
+    return; // we're done; skip the AI text rendering below
+  }
+
+  // otherwise: normal AI chat
+  const data = await apiFetch("/api/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, model: currentModel })
+  }); // server returns { reply, modelUsed }
+
+  const finalReply = (data && data.reply)
+    ? String(data.reply)
+    : "Sorry, I didn't get a response.";
+
+  // ...proceed with your existing typewriter/markdown render using finalReply
+
+} catch (err) {
+  if (err?.kind === "limit") {
+    aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
+    return;
+  }
+  aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
+  return;
+} finally {
+  disableComposer(false);
+  input.focus();
+}
+
+
 // ──────────────────────────────────────────────────────────────
 // Optional job suggestions (kept from your original)
 // ──────────────────────────────────────────────────────────────
