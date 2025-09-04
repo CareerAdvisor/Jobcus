@@ -125,16 +125,14 @@ function initModelControls() {
 // Server call helper (tries /api/ask then falls back to /chat/ask)
 // also handles auth + JSON/HTML responses robustly
 // ──────────────────────────────────────────────────────────────
-async function sendMessage(payload) {
-  async function post(url) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload),
-    });
+// inside the submit handler, after you set currentModel
+  const payload = { message, model: currentModel };
+  const data = await apiFetch('/api/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
 
     // Handle auth redirects/401s clearly
     if (res.status === 401) {
