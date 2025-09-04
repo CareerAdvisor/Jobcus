@@ -4,7 +4,7 @@ from io import BytesIO
 from collections import Counter
 import re, json, base64, logging, requests
 from functools import wraps
-from helpers.auth import api_login_required
+from auth_utils import api_login_required, is_staff, is_superadmin, require_superadmin
 
 from flask import (
     Blueprint, Flask, request, jsonify, render_template, redirect,
@@ -223,22 +223,6 @@ def choose_model(requested: str | None) -> str:
     req = (requested or "").strip()
     return req if req in allowed else default
 
-def api_login_required(fn):
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        # replace with your auth check
-        user = getattr(request, "user", None) or getattr(request, "current_user", None)
-        is_authed = bool(user and getattr(user, "is_authenticated", True))
-
-        if is_authed:
-            return fn(*args, **kwargs)
-
-        if request.path.startswith("/api/"):
-            return jsonify(error="unauthorized", message="Sign in required"), 401
-
-        return redirect(url_for("account", next=request.path))
-    return wrapper
-    
 # --- Local fallbacks to remove services/* dependency -------------------------
 def get_or_bootstrap_user(supabase_admin, auth_id: str, email: str | None):
     """
