@@ -1233,11 +1233,23 @@ def ask():
 from flask import request, jsonify
 
 @app.route("/api/ask", methods=["POST"])
+@api_login_required
 def api_ask():
-    payload = request.get_json(silent=True) or {}
-    # TODO: do your chat/LLM logic here
-    answer = {"reply": "Hello from /api/ask"}
-    return jsonify(answer), 200
+    """
+    Chat endpoint used by chat.js. Must return JSON with { reply, modelUsed }.
+    """
+    data = request.get_json(force=True) or {}
+    message = (data.get("message") or "").strip()
+    model   = (data.get("model") or "gpt-4o-mini").strip()
+
+    if not message:
+        return jsonify(error="bad_request", message="message is required"), 400
+
+    # TODO: replace this echo with your real LLM call.
+    # Example echo so the UI renders something useful:
+    reply = f"You said: {message}"
+
+    return jsonify(reply=reply, modelUsed=model), 200
 
 @app.get("/api/credits")
 @login_required
