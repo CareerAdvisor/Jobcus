@@ -35,6 +35,7 @@ from supabase import create_client
 from abuse_guard import allow_free_use
 from services.users import get_or_bootstrap_user
 from services.ai import call_ai
+from resumes import resumes_bp
 
 # --- Environment & app setup ---
 load_dotenv()
