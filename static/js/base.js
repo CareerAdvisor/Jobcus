@@ -223,8 +223,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ─────────────────────────────────────────────────────────────
  * 4) Cookie Consent (banner + conditional analytics loading)
+ *     - CONSENT_COOKIE is defined once in cookie.js and read here.
  * ───────────────────────────────────────────────────────────── */
-const CONSENT_COOKIE = "jobcus_consent";
+const CONSENT_COOKIE = (window.JOBCUS && window.JOBCUS.CONSENT_COOKIE)
+  ? window.JOBCUS.CONSENT_COOKIE
+  : "jobcus_consent"; // fallback if cookie.js not loaded
 const CONSENT_TTL_DAYS = 180;
 
 function setCookie(name, value, days) {
