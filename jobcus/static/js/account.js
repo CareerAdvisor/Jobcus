@@ -9,17 +9,12 @@
   };
 })();
 
-// 2. Supabase Client Initialization
-function getSupabase() {
-  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
-  if (!window.supabase || typeof window.supabase.createClient !== "function") return null;
-
-  try {
-    return window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-  } catch (e) {
-    console.error("Supabase init failed:", e);
-    return null;
+// 2. Wait for Supabase to be injected
+async function waitForSupabase() {
+  while (typeof window.supabase === 'undefined') {
+    await new Promise(resolve => setTimeout(resolve, 50));
   }
+  return window.supabase;
 }
 
 // 3. Flash message setter
@@ -40,8 +35,8 @@ async function exchangeSession(token) {
 }
 
 // 5. DOMContentLoaded → Auth flow
-document.addEventListener("DOMContentLoaded", () => {
-  const sb = getSupabase();
+document.addEventListener("DOMContentLoaded", async () => {
+  const sb = await waitForSupabase();
   if (!sb) {
     console.warn("Supabase not available on account page; using fallback.");
     setFlash("Supabase not available. Please try again later.");
