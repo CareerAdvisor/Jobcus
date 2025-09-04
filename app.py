@@ -3,6 +3,7 @@ import traceback
 from io import BytesIO
 from collections import Counter
 import re, json, base64, logging, requests
+from functools import wraps
 
 from flask import (
     Blueprint, Flask, request, jsonify, render_template, redirect,
@@ -218,6 +219,23 @@ def choose_model(requested: str | None) -> str:
     default = allowed[0]
     req = (requested or "").strip()
     return req if req in allowed else default
+
+def api_login_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        # Replace this with your real user check
+        user_id = session.get('user_id')
+        is_xhr = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
+                 request.accept_mimetypes.best == 'application/json'
+
+        if not user_id:
+            # For API/XHR requests: return 401 JSON
+            if is_xhr or request.path.startswith('/api/'):
+                return jsonify(error='unauthorized'), 401
+            # For full-page navigation: redirect to login
+            return redirect(url_for('account', next=request.full_path))
+        return fn(*args, **kwargs)
+    return wrapper
 
 # --- Local fallbacks to remove services/* dependency -------------------------
 def get_or_bootstrap_user(supabase_admin, auth_id: str, email: str | None):
@@ -1275,6 +1293,7 @@ def get_jobs():
         return jsonify(remotive=[], adzuna=[], jsearch=[])
 
 @app.route("/api/salary")
+@api_login_required
 def get_salary_data():
     return jsonify(labels=JOB_TITLES, salaries=fetch_salary_data())
 
