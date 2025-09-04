@@ -223,17 +223,19 @@ def choose_model(requested: str | None) -> str:
 def api_login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        if getattr(request, "user", None):  # or however you check auth
+        # replace with your auth check
+        user = getattr(request, "user", None) or getattr(request, "current_user", None)
+        is_authed = bool(user and getattr(user, "is_authenticated", True))
+
+        if is_authed:
             return fn(*args, **kwargs)
 
-        # XHR/fetch? return 401 JSON
         if request.path.startswith("/api/"):
             return jsonify(error="unauthorized", message="Sign in required"), 401
 
-        # Full page: redirect to login
         return redirect(url_for("account", next=request.path))
     return wrapper
-
+    
 # --- Local fallbacks to remove services/* dependency -------------------------
 def get_or_bootstrap_user(supabase_admin, auth_id: str, email: str | None):
     """
