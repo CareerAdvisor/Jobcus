@@ -1,0 +1,115 @@
+<!-- templates/interview-coach.html -->
+{% extends "base.html" %}
+
+{% block title %}Interview Coach – Jobcus{% endblock %}
+
+{% block content %}
+<main id="interviewCoach" class="interview-container">
+
+  <!-- Hero -->
+  <section class="interview-hero-full" aria-label="Interview Coach">
+    <img
+      src="{{ url_for('static', filename='images/interview-coach.png') }}"
+      alt="Jobcus Interview Coach illustration"
+      loading="eager"
+      decoding="async"
+    >
+  </section>
+
+  <!-- Lead copy + role setup form -->
+  <section class="interview-form-section">
+    <p style="margin-bottom:16px;font-weight:500;color:#104879;">
+      Ace your interviews using Jobcus’ smart AI career coach, designed to simulate real scenarios.
+    </p>
+
+    <form id="interview-role-form" autocomplete="on" novalidate>
+      <label for="previousRole">Your Previous Role</label>
+      <input
+        type="text"
+        id="previousRole"
+        name="previousRole"
+        placeholder="e.g., Customer Support Rep"
+        required
+      />
+
+      <label for="targetRole">Target Role</label>
+      <input
+        type="text"
+        id="targetRole"
+        name="targetRole"
+        placeholder="e.g., UX Designer"
+        required
+      />
+
+      <label for="experience">Experience Level</label>
+      <select id="experience" name="experience" required>
+        <option value="">Select experience level</option>
+        <option value="Entry-level">Entry-level</option>
+        <option value="Mid-level">Mid-level</option>
+        <option value="Senior">Senior</option>
+      </select>
+
+      <button type="submit">🎤 Start Interview</button>
+    </form>
+  </section>
+
+  <!-- Live interview session (hidden until started) -->
+  <section class="interview-session" style="display:none;">
+    <div
+      id="ai-question"
+      class="ai-question-box"
+      role="status"
+      aria-live="polite"
+    >
+      Click Next to begin your interview.
+    </div>
+
+    <form id="user-response-form" style="display:none;">
+      <label class="sr-only" for="userAnswer">Your answer</label>
+      <textarea
+        id="userAnswer"
+        placeholder="Type your response..."
+        required
+        rows="5"
+      ></textarea>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+        <button id="next-question-btn" type="button">🎤 Next Question</button>
+        <button type="submit">Submit Answer</button>
+        <button id="toggle-history-btn" type="button">📜 Show History</button>
+      </div>
+    </form>
+
+    <!-- Collapsible Q&A history -->
+    <section class="interview-history">
+      <div
+        id="history-container"
+        class="history-box"
+        style="display:none;"
+        aria-live="polite"
+      ></div>
+    </section>
+
+    <!-- AI tip suggestions (when available) -->
+    <div
+      id="suggestions-box"
+      class="fallback-box"
+      style="display:none;"
+      aria-live="polite"
+    ></div>
+
+    <!-- Per-answer feedback -->
+    <div
+      id="feedback-box"
+      class="result-box"
+      style="display:none;"
+      aria-live="polite"
+    ></div>
+  </section>
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/interview-coach.js') }}" defer></script>
+{% endblock %}

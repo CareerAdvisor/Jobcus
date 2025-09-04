@@ -1,0 +1,119 @@
+{# templates/subscribe.html #}
+{% extends "base.html" %}
+{% block title %}Subscribe – Jobcus{% endblock %}
+{% block body_class %}account-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pricing.css') }}">
+  <style>
+    /* --- Layout & card --- */
+    .confirm-wrap{ max-width:640px; margin:22px auto; padding:0 12px; }
+    .confirm-card{
+      background:#fff; border:1px solid #e5e7eb; border-radius:18px; padding:18px;
+      box-shadow:0 8px 26px rgba(16,72,121,.08);
+    }
+
+    /* --- Raised banner block --- */
+    .confirm-banner{
+      background:#fff; border:1px solid #eef2f7; border-radius:16px;
+      padding:14px 16px; box-shadow:0 6px 18px rgba(16,72,121,.07);
+    }
+    .confirm-title{ margin:0 0 8px; font-size:34px; line-height:1.2; color:#0f355e; font-weight:800; }
+    .plan-line{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
+    .plan-name{ font-weight:800; color:#0f355e; font-size:22px; }
+    .plan-price{ font-weight:800; color:#0f355e; font-size:26px; }
+    .plan-price .currency{ font-weight:800; margin-right:4px; }
+    .plan-price .amount{ font-size:34px; font-weight:800; }
+    .plan-price .period{ font-size:14px; font-weight:500; color:#64748b; margin-left:6px; }
+    .plan-tagline{ margin-top:4px; color:#94a3b8; font-size:14px; }
+
+    /* --- Feature list with green ticks --- */
+    .confirm-list{ margin:16px 6px 0; padding:0; list-style:none; }
+    .confirm-list li{
+      position:relative; padding-left:26px; margin:10px 0; color:#0f2946;
+    }
+    .confirm-list li::before{
+      content:""; position:absolute; left:0; top:.6em; transform:translateY(-50%);
+      width:14px; height:14px; border-radius:50%;
+      background:#16a34a; box-shadow:0 0 0 3px #e8f7ee inset;
+    }
+
+    /* --- CTAs (full width, centered text) --- */
+    .confirm-cta{ margin-top:16px; display:grid; gap:10px; }
+    .confirm-cta .btn-primary{
+      width:100%; border-radius:14px; padding:12px 16px;
+      background:#104879; border:1px solid #104879; color:#fff; font-weight:700;
+    }
+    .confirm-cta .btn-primary:hover{ opacity:.95; }
+    .confirm-cta .btn-outline{
+      width:100%; border-radius:14px; padding:12px 16px;
+      background:#f6fbff; border:2px solid #104879; color:#104879; font-weight:700;
+    }
+
+    /* Push the card down below the fixed header and keep it centered */
+.confirm-wrap{
+  max-width:640px;
+  /* top margin = header height + extra breathing room */
+  margin: calc(var(--header-h, 60px) + 28px) auto 32px;
+  padding: 0 12px;
+}
+
+/* (Optional) If some pages don’t use .confirm-wrap, give all account pages a header offset */
+.account-page main{
+  padding-top: calc(var(--header-h, 60px) + 16px);
+}
+
+.confirm-wrap{
+  max-width:640px; padding: 0 12px; margin: 0 auto;
+  min-height: calc(100vh - var(--header-h, 60px) - 48px);
+  display:flex; align-items:center;
+}
+
+    /* --- Mobile tweaks --- */
+    @media (max-width:480px){
+      .confirm-title{ font-size:28px; }
+      .plan-name{ font-size:18px; }
+      .plan-price{ font-size:22px; }
+      .plan-price .amount{ font-size:28px; }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<section class="confirm-wrap">
+  <div class="confirm-card">
+
+    <div class="confirm-banner">
+      <h1 class="confirm-title">Confirm your plan</h1>
+
+      <div class="plan-line">
+        <div class="plan-name">{{ plan_data.title }}</div>
+        <div class="plan-price">
+          <span class="currency">£</span><span class="amount">{{ plan_data.amount|safe }}</span>
+          <span class="period">{{ plan_data.period }}</span>
+        </div>
+      </div>
+
+      {% if plan_data.tagline %}
+        <div class="plan-tagline">{{ plan_data.tagline }}</div>
+      {% endif %}
+    </div>
+
+    <ul class="confirm-list">
+      {% for item in plan_data.features %}
+        <li>{{ item|safe }}</li>
+      {% endfor %}
+    </ul>
+
+    <form method="POST" action="/subscribe" class="confirm-cta">
+      <input type="hidden" name="plan" value="{{ plan_data.code }}">
+      <button type="submit" class="btn btn-primary">
+        {% if plan_data.code == 'free' %}Activate Free Plan{% else %}Continue to secure checkout{% endif %}
+      </button>
+      <a class="btn btn-outline" href="{{ url_for('pricing') }}">Back to pricing</a>
+    </form>
+
+  </div>
+</section>
+{% endblock %}
