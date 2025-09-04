@@ -31,7 +31,7 @@ try {
       a[6] = (a[6] & 0x0f) | 0x40;
       a[8] = (a[8] & 0x3f) | 0x80;
       const b = [...a].map((x,i)=> (i===4||i===6||i===8||i===10 ? "-" : "") + x.toString(16).padStart(2,"0")).join("");
-      // b is hex pairs with dashes every 2 bytes; convert to canonical 8-4-4-4-12:
+      // Convert to canonical 8-4-4-4-12:
       return (
         b.slice(0,8) + "-" +
         b.slice(9,13) + "-" +
@@ -40,7 +40,7 @@ try {
         (b.slice(24,36).replace(/-/g,""))
       );
     }
-    // Fallback (not crypto-strong, but acceptable as last resort)
+    // Fallback
     return "xxxxxxxxyxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, c => {
       const r = Math.random() * 16 | 0, v = c === "x" ? r : (r & 0x3 | 0x8);
       return v.toString(16);
@@ -51,7 +51,6 @@ try {
     setCookie(NAME, id, ttlDays);
     window.DEVICE_ID = id; // optional: surface for debugging
   } else {
-    // expose for debugging if needed
     try {
       const val = document.cookie.split("; ").find(r => r.startsWith(NAME + "="))?.split("=")[1] || "";
       window.DEVICE_ID = decodeURIComponent(val);
@@ -69,6 +68,41 @@ try {
     return _fetch(input, init);
   };
 })();
+
+/* ─────────────────────────────────────────────────────────────
+ * 0.3) Centralized API fetch (401 handling + JSON/HTML guard)
+ *      Use: const data = await apiFetch('/api/foo', { method:'POST', body: ... })
+ * ───────────────────────────────────────────────────────────── */
+window.apiFetch = async function apiFetch(url, options = {}) {
+  const merged = {
+    headers: { 'Accept': 'application/json', ...(options.headers || {}) },
+    ...options
+  };
+
+  const resp = await fetch(url, merged);
+
+  // Prevent "Unexpected token '<'": inspect content type first
+  const contentType = resp.headers.get('content-type') || '';
+
+  if (!resp.ok) {
+    if (resp.status === 401) {
+      // Intentional redirect to login for SPA flows
+      window.location = '/account?next=' + encodeURIComponent(location.pathname);
+      throw new Error('Unauthorized');
+    }
+    // Helpful for debugging — capture first 200 chars
+    const text = await resp.text();
+    throw new Error(`Request failed ${resp.status}: ${text.slice(0, 200)}`);
+  }
+
+  // Parse JSON only when it *is* JSON
+  if (contentType.includes('application/json')) {
+    return resp.json();
+  } else {
+    // If endpoint returns text/blob, handle here as needed
+    return resp.text();
+  }
+};
 
 /* ─────────────────────────────────────────────────────────────
  * 1) Global upgrade banner helper
@@ -105,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleUserMenu();
   });
 
-  // Features submenu (any .dropbtn → toggle its next .dropdown-content)
+  // Features submenu
   document.querySelectorAll(".dropbtn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
