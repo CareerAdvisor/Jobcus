@@ -34,8 +34,10 @@ from limits import (
 from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
 from abuse_guard import allow_free_use
+
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
+from openai import OpenAI
 
 app = Flask(__name__)
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -1173,6 +1175,92 @@ def verify_token():
 # Ask
 # ----------------------------
 ask_bp = Blueprint("ask", __name__)
+
+# --- OpenAI (v1) ---
+_oai_client = None
+def _client():
+    global _oai_client
+    if _oai_client is None:
+        _oai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    return _oai_client
+
+CAREER_SYSTEM_PROMPT = (
+    "You are Jobcus Assistant — an expert career coach. "
+    "You help with: careers, job search, resumes, cover letters, interview prep, "
+    "compensation and negotiation, education programs, schools, job roles and duties, "
+    "career paths, upskilling, labor-market insights, and workplace advice. "
+    "Be clear, practical, and encouraging; structure answers with short sections or bullets; "
+    "when useful, include brief examples or templates. If a request is outside career/education, "
+    "politely steer the user back to career-relevant guidance."
+)
+
+def _first_name_fallback():
+    # Use the name “ThankGod” only if that’s actually the logged-in user’s first name;
+    # otherwise use the best available first name.
+    if getattr(current_user, "is_authenticated", False):
+        # try first piece of fullname, else the local-part of email, else 'there'
+        fn = (getattr(current_user, "fullname", "") or "").strip().split(" ")[0]
+        if not fn:
+            email = getattr(current_user, "email", "") or ""
+            fn = (email.split("@")[0] if "@" in email else "").strip()
+        return fn or "there"
+    return "there"
+
+def _chat_completion(model: str, user_msg: str, history=None) -> str:
+    """
+    Minimal OpenAI wrapper. `history` can be a list of {role, content}.
+    """
+    msgs = [{"role": "system", "content": CAREER_SYSTEM_PROMPT}]
+    if history:
+        # keep a small sliding window
+        for m in history[-6:]:
+            if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str):
+                msgs.append({"role": m["role"], "content": m["content"]})
+    msgs.append({"role": "user", "content": user_msg})
+
+    try:
+        resp = _client().chat.completions.create(
+            model=model or "gpt-4o-mini",
+            messages=msgs,
+            temperature=0.4,
+        )
+        return (resp.choices[0].message.content or "").strip()
+    except Exception:
+        # Log if you want: current_app.logger.exception("OpenAI error")
+        return "Sorry—I'm having trouble reaching the AI right now. Please try again."
+
+@app.post("/api/ask")
+@api_login_required
+def api_ask():
+    """
+    Chat endpoint used by chat.js. Returns JSON: { reply, modelUsed }.
+    """
+    data = request.get_json(silent=True) or {}
+    message = (data.get("message") or "").strip()
+    model   = (data.get("model")   or "gpt-4o-mini").strip()
+
+    # 1) First message in this session → greet and mark greeted
+    if not session.get("chat_greeted", False):
+        session["chat_greeted"] = True
+        name = _first_name_fallback()
+        # You asked specifically for this wording:
+        reply = f"Hello {name}, how can I assist you today!"
+        return jsonify(reply=reply, modelUsed=model), 200
+
+    # 2) Subsequent messages → call the AI with a career-coach system prompt
+    if not message:
+        return jsonify(error="bad_request", message="message is required"), 400
+
+    # optional: store short history in server session for extra context
+    hist = session.get("chat_hist", [])
+    ai_reply = _chat_completion(model=model, user_msg=message, history=hist)
+
+    # update history (trim to keep session small)
+    hist.append({"role": "user", "content": message})
+    hist.append({"role": "assistant", "content": ai_reply})
+    session["chat_hist"] = hist[-12:]
+
+    return jsonify(reply=ai_reply, modelUsed=model), 200
 
 @app.route("/api/ask", methods=["POST"])
 @api_login_required
