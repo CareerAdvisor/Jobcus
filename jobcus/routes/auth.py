@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, render_template, redirect, sessio
 from flask_login import login_user, logout_user, login_required
 from supabase import Client
 from gotrue.errors import AuthApiError
-from jobcus.models import User
+from jobcus.services.models import User
 
 auth_bp = Blueprint("auth", __name__)
 
