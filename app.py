@@ -4,6 +4,7 @@ from io import BytesIO
 from collections import Counter
 import re, json, base64, logging, requests
 from functools import wraps
+from helpers.auth import api_login_required
 
 from flask import (
     Blueprint, Flask, request, jsonify, render_template, redirect,
@@ -21,7 +22,7 @@ from dotenv import load_dotenv
 from extensions import login_manager, init_supabase, init_openai
 from typing import Optional
 from datetime import datetime, timedelta, timezone, date
-from auth_utils import require_superadmin, is_staff, is_superadmin
+from auth_utils import require_superadmin, is_staff, is_superadmin, api_login_required
 from limits import (
     check_and_increment,
     get_usage_count,
@@ -36,6 +37,8 @@ from abuse_guard import allow_free_use
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
 
+app = Flask(__name__)
+api_bp = Blueprint("api", __name__, url_prefix="/api")
 resumes_bp = None  # will set when found
 
 _here = pathlib.Path(__file__).resolve().parent
@@ -1187,53 +1190,6 @@ def verify_token():
 # ----------------------------
 ask_bp = Blueprint("ask", __name__)
 
-@ask_bp.post("/ask")
-def ask():
-    try:
-        supabase_admin = app.config["SUPABASE_ADMIN"]
-
-        payload = request.get_json(silent=True) or {}
-        message = (payload.get("message") or "").strip()
-        requested_model = (payload.get("model") or "").strip()
-        model = choose_model(requested_model)  # enforce plan model rules
-
-        if not message:
-            return jsonify(error="bad_request", message="Message is required."), 400
-
-        auth_id = current_user.id if getattr(current_user, "is_authenticated", False) else None
-        email   = current_user.email if getattr(current_user, "is_authenticated", False) else None
-
-        user_row = get_or_bootstrap_user(supabase_admin, auth_id, email) if auth_id else {"plan": "free"}
-        plan = (user_row.get("plan") or "free").lower()
-
-        # device/user scoped free guard
-        ok, guard = allow_free_use(auth_id or "anon", plan)
-        if not ok:
-            return jsonify(
-                error="too_many_free_accounts",
-                message=guard.get("message") or "You have reached the limit for the free version, upgrade to enjoy more features"
-            ), 429
-
-        subject = auth_id or request.remote_addr
-        allowed, info = check_and_increment(supabase_admin, subject, plan, "chat_messages")
-        if not allowed:
-            return jsonify(error="quota_exceeded", **info), 402
-
-        try:
-            reply = call_ai(model=model, prompt=message)
-        except Exception:
-            app.logger.exception("AI provider failed")
-            return jsonify(error="ai_error", message="AI provider error. Please try again."), 502
-
-        return jsonify(reply=reply, modelUsed=model)
-
-    except Exception:
-        app.logger.exception("Unhandled error in /ask")
-        return jsonify(error="server_error", message="Something went wrong on our side. Please try again."), 500
-
-# app.py
-from flask import request, jsonify
-
 @app.route("/api/ask", methods=["POST"])
 @api_login_required
 def api_ask():
@@ -1248,9 +1204,7 @@ def api_ask():
         return jsonify(error="bad_request", message="message is required"), 400
 
     # TODO: replace this echo with your real LLM call.
-    # Example echo so the UI renders something useful:
     reply = f"You said: {message}"
-
     return jsonify(reply=reply, modelUsed=model), 200
 
 @app.get("/api/credits")
