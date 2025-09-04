@@ -1,7 +1,4 @@
-// static/js/account.js
-
-// Use module scope
-console.log("account.js loaded");
+// static/js/account.js (Backend-Driven Authentication Version)
 
 // 1. Force fetch() to include credentials
 (() => {
@@ -12,41 +9,15 @@ console.log("account.js loaded");
   };
 })();
 
-// 2. Wait until Supabase is injected
-async function waitForSupabase() {
-  while (typeof window.supabase === 'undefined') {
-    await new Promise(resolve => setTimeout(resolve, 50));
-  }
-  return window.supabase;
-}
-
-// 3. Flash helper
+// 2. Flash message helper
 function setFlash(message) {
   const flashBox = document.getElementById("flashMessages");
   if (!flashBox) return;
   flashBox.innerHTML = message ? `<div class="flash-item">${message}</div>` : "";
 }
 
-// 4. Exchange access token with server
-async function exchangeSession(token) {
-  const res = await fetch("/auth/session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ access_token: token })
-  });
-  if (!res.ok) throw new Error("Session exchange failed");
-}
-
-// 5. Main logic
-document.addEventListener("DOMContentLoaded", async () => {
-  const sb = await waitForSupabase();
-  if (!sb) {
-    setFlash("Supabase not available. Please try again later.");
-    return;
-  }
-
-  console.log("Supabase ready:", sb);
-
+// 3. DOM ready logic
+window.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("accountForm");
   const modeInput = document.getElementById("mode");
   const nameGroup = document.getElementById("nameGroup");
@@ -93,38 +64,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     const fullname = document.getElementById("name")?.value.trim() || "";
 
     try {
-      if (mode === "login") {
-        const { data, error } = await sb.auth.signInWithPassword({ email, password });
-        if (error) throw new Error(error.message);
-        await exchangeSession(data.session.access_token);
-        location.href = "/dashboard";
-      } else {
-        const { data, error } = await sb.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: fullname },
-            emailRedirectTo: `${location.origin}/account`
-          }
-        });
-        if (error) throw new Error(error.message);
+      const response = await fetch("/account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, email, password, name: fullname })
+      });
 
-        await fetch("/auth/profile", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, fullname })
-        });
+      const data = await response.json();
 
-        if (data.session?.access_token) {
-          await exchangeSession(data.session.access_token);
-          location.href = "/dashboard";
-        } else {
-          setFlash("Check your email to confirm your account.");
+      if (!response.ok || data.success === false) {
+        if (data.code === 'user_exists') {
+          modeInput.value = 'login';
+          updateView();
+          document.getElementById('email').value = email;
+          setFlash(data.message || 'Account already exists. Please log in.');
+          return;
         }
+        if (data.code === 'email_not_confirmed' && data.redirect) {
+          window.location.assign(data.redirect);
+          return;
+        }
+        setFlash(data.message || 'Request failed. Please try again.');
+        return;
       }
+
+      if (data.redirect) {
+        window.location.assign(data.redirect);
+        return;
+      }
+
+      setFlash('Unexpected response. Please try again.');
     } catch (err) {
-      console.error(err);
-      setFlash(err.message || "Something went wrong.");
+      console.error("Auth error:", err);
+      setFlash(err.message || "Something went wrong. Please try again later.");
     }
   });
 });
