@@ -342,15 +342,15 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshCreditsPanel();
   maybeShowScrollIcon?.();
 
-  // ---- send handler ----
+  // ---- send handler (self-contained and async) ----
   form.addEventListener("submit", async (evt) => {
     evt.preventDefault();
-
+  
     const message = (input.value || "").trim();
     if (!message) return;
-
+  
     removeWelcome?.();
-
+  
     const userMsg = document.createElement("div");
     userMsg.className = "chat-entry user";
     userMsg.innerHTML = `
@@ -359,25 +359,30 @@ document.addEventListener("DOMContentLoaded", () => {
       </h2>
     `;
     chatbox.appendChild(userMsg);
-
+  
     saveMessage("user", message);
-
+  
     input.value = "";
-    autoResize?.(input);
-
+    autoResize(input);
+  
     const aiBlock = document.createElement("div");
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
-    scrollToAI?.(aiBlock);
-
+    scrollToAI(aiBlock);
+  
+    const currentModel = modelCtl.getSelectedModel();
     let finalReply = "";
-    const currentModel = modelCtl.getSelectedModel?.() || "gpt-4o-mini";
-
+  
     try {
-      disableComposer?.(true);
-
-      const payload = { message, model: currentModel };
-      const data = await sendMessageToAPI(payload); // { reply, modelUsed }
+      disableComposer(true);
+  
+      // single, clean call — NO stray awaits below this block
+      const data = await apiFetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, model: currentModel })
+      });
+  
       finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
     } catch (err) {
       if (err?.kind === "limit") {
@@ -387,46 +392,45 @@ document.addEventListener("DOMContentLoaded", () => {
       aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
       return;
     } finally {
-      disableComposer?.(false);
+      disableComposer(false);
       input.focus();
     }
-
+  
     const copyId = `ai-${Date.now()}`;
     aiBlock.innerHTML = `
       <div id="${copyId}" class="markdown"></div>
       <div class="response-footer">
         <span class="copy-wrapper">
-          <img src="/static/icons/copy.svg" class="copy-icon"
-               title="Copy" onclick="copyToClipboard('${copyId}')">
+          <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
           <span class="copy-text">Copy</span>
         </span>
       </div>
       <hr class="response-separator" />
     `;
     const targetDiv = document.getElementById(copyId);
-
+  
     let i = 0, buffer = "";
     (function typeWriter() {
       if (i < finalReply.length) {
         buffer += finalReply[i++];
         targetDiv.textContent = buffer;
-        scrollToAI?.(aiBlock);
+        scrollToAI(aiBlock);
         setTimeout(typeWriter, 5);
       } else {
-        if (window.marked && typeof window.marked.parse === "function") {
+        if (window.marked?.parse) {
           targetDiv.innerHTML = window.marked.parse(buffer);
         } else {
           targetDiv.textContent = buffer;
         }
         saveMessage("assistant", finalReply);
-
+  
         const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
         localStorage.setItem("chatUsed", usedNow);
-        refreshCreditsPanel();
+        refreshCreditsPanel?.();
         window.syncState?.();
-
-        scrollToAI?.(aiBlock);
-        maybeShowScrollIcon?.();
+  
+        scrollToAI(aiBlock);
+        maybeShowScrollIcon();
       }
     })();
   });
