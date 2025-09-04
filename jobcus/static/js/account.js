@@ -1,109 +1,130 @@
-// static/js/account.js
+/* static/js/account.js */
 
-// 1) Always send cookies with fetch (session, CSRF if any)
-;(function () {
-  const _fetch = window.fetch.bind(window);
+// 1. Force fetch() to include credentials
+(() => {
+  const nativeFetch = window.fetch;
   window.fetch = (input, init = {}) => {
     init.credentials = init.credentials || 'same-origin';
-    return _fetch(input, init);
+    return nativeFetch(input, init);
   };
 })();
 
-document.addEventListener('DOMContentLoaded', () => {
-  // 2) Grab elements
-  const form         = document.getElementById('accountForm');
-  const modeInput    = document.getElementById('mode');
-  const nameGroup    = document.getElementById('nameGroup');
-  const formTitle    = document.querySelector('.auth-title');
-  const subtitle     = document.querySelector('.auth-subtitle');
-  const submitBtn    = document.getElementById('submitButton');
-  const toggleLink   = document.getElementById('toggleMode');
-  const togglePrompt = document.getElementById('togglePrompt');
-  const flash        = document.getElementById('flashMessages');
+// 2. Initialize Supabase client
+function getSupabaseClient() {
+  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
+  if (!window.supabase || !window.supabase.createClient) return null;
 
-  // 3) UI swap login ↔ signup
+  try {
+    return window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  } catch (err) {
+    console.error('Failed to create Supabase client:', err);
+    return null;
+  }
+}
+
+// 3. Flash message
+function setFlash(message) {
+  const flashBox = document.getElementById("flashMessages");
+  if (!flashBox) return;
+  flashBox.innerHTML = message ? `<div class="flash-item">${message}</div>` : "";
+}
+
+// 4. Exchange token with server
+async function exchangeSession(token) {
+  const res = await fetch("/auth/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ access_token: token })
+  });
+  if (!res.ok) throw new Error("Session exchange failed");
+}
+
+// 5. DOM ready
+window.addEventListener("DOMContentLoaded", () => {
+  const sb = getSupabaseClient();
+  const form = document.getElementById("accountForm");
+  const modeInput = document.getElementById("mode");
+  const nameGroup = document.getElementById("nameGroup");
+  const submitBtn = document.getElementById("submitButton");
+  const toggleMode = document.getElementById("toggleMode");
+  const togglePrompt = document.getElementById("togglePrompt");
+  const formTitle = document.querySelector(".auth-title");
+  const subtitle = document.querySelector(".auth-subtitle");
+
   function updateView() {
-    const mode = (modeInput.value || 'signup').toLowerCase();
-    if (mode === 'login') {
-      nameGroup.style.display  = 'none';
-      formTitle.innerHTML      = 'Sign In to<br>Jobcus';
-      subtitle.textContent     = 'Good to see you again! Welcome back.';
-      submitBtn.textContent    = 'Sign In';
-      togglePrompt.textContent = 'Don’t have an account?';
-      toggleLink.textContent   = 'Sign Up';
+    const mode = modeInput.value;
+    if (mode === "login") {
+      nameGroup.style.display = "none";
+      submitBtn.textContent = "Sign In";
+      togglePrompt.textContent = "Don’t have an account?";
+      toggleMode.textContent = "Sign Up";
+      formTitle.innerHTML = "Sign In to<br>Jobcus";
+      subtitle.textContent = "Good to see you again! Welcome back.";
     } else {
-      nameGroup.style.display  = 'block';
-      formTitle.innerHTML      = 'Sign Up to<br>Jobcus';
-      subtitle.textContent     = 'Create a free account to get started.';
-      submitBtn.textContent    = 'Sign Up';
-      togglePrompt.textContent = 'Already have an account?';
-      toggleLink.textContent   = 'Sign In';
+      nameGroup.style.display = "block";
+      submitBtn.textContent = "Sign Up";
+      togglePrompt.textContent = "Already have an account?";
+      toggleMode.textContent = "Sign In";
+      formTitle.innerHTML = "Sign Up to<br>Jobcus";
+      subtitle.textContent = "Create a free account to get started.";
     }
-    if (flash) flash.innerHTML = '';
   }
 
-  // 4) Toggle click
-  toggleLink.addEventListener('click', (e) => {
+  toggleMode.addEventListener("click", e => {
     e.preventDefault();
-    modeInput.value = (modeInput.value === 'login' ? 'signup' : 'login');
+    modeInput.value = modeInput.value === "signup" ? "login" : "signup";
     updateView();
   });
 
-  // 5) Initialize
   updateView();
 
-  // 6) Submit via JSON to Flask /account
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener("submit", async e => {
     e.preventDefault();
-    if (flash) flash.textContent = '';
+    setFlash("");
 
-    const payload = {
-      mode:     (modeInput.value || 'signup').toLowerCase(),
-      email:    document.getElementById('email').value.trim(),
-      password: document.getElementById('password').value,
-      name:     document.getElementById('name')?.value.trim() || ''
-    };
+    const mode = modeInput.value;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const fullname = document.getElementById("name")?.value.trim() || "";
+
+    if (!sb) {
+      setFlash("Supabase not available. Please try again later.");
+      return;
+    }
 
     try {
-      const res = await fetch('/account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      if (mode === "login") {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(error.message);
+        await exchangeSession(data.session.access_token);
+        location.href = "/dashboard";
+      } else {
+        const { data, error } = await sb.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: fullname },
+            emailRedirectTo: `${location.origin}/account`
+          }
+        });
+        if (error) throw new Error(error.message);
 
-      let data = {};
-      try { data = await res.json(); } catch { data = {}; }
+        await fetch("/auth/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, fullname })
+        });
 
-      // Known server responses (from old_app.py)
-      if (!res.ok || data.success === false) {
-        if (data.code === 'user_exists') {
-          modeInput.value = 'login';
-          updateView();
-          document.getElementById('email').value = payload.email;
-          alert(data.message || 'Account already exists. Please log in.');
-          return;
+        if (data.session?.access_token) {
+          await exchangeSession(data.session.access_token);
+          location.href = "/dashboard";
+        } else {
+          setFlash("Check your email to confirm your account.");
         }
-        if (data.code === 'email_not_confirmed' && data.redirect) {
-          window.location.assign(data.redirect); // /check-email
-          return;
-        }
-        (flash || {}).textContent = data.message || 'Request failed. Please try again.';
-        return;
       }
-
-      if (data.redirect) {
-        // clear any previous anon data your app may store
-        localStorage.removeItem('resumeAnalysis');
-        localStorage.removeItem('resumeBase64');
-        localStorage.removeItem('dashboardVisited');
-        window.location.assign(data.redirect);
-        return;
-      }
-
-      (flash || {}).textContent = 'Unexpected response. Please try again.';
     } catch (err) {
-      console.error('Account request failed:', err);
-      (flash || {}).textContent = 'Server error. Please try again later.';
+      console.error(err);
+      setFlash(err.message || "Something went wrong.");
     }
   });
 });
