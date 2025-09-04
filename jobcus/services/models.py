@@ -3,11 +3,14 @@ from flask import current_app
 from flask_login import current_user, UserMixin
 
 class User(UserMixin):
-    def __init__(self, auth_id, email, fullname):
-        self.id = auth_id  # Flask-Login requires this as the primary user ID
+    def __init__(self, auth_id, email=None, fullname=None, role="user", plan="free", plan_status=None):
+        self.id = auth_id
         self.auth_id = auth_id
         self.email = email
         self.fullname = fullname
+        self.role = (role or "user").lower()
+        self.plan = (plan or "free").lower()
+        self.plan_status = plan_status
 
     def get_id(self):
         return self.auth_id
