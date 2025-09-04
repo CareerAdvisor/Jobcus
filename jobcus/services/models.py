@@ -1,6 +1,16 @@
 import os
 from flask import current_app
-from flask_login import current_user
+from flask_login import current_user, UserMixin
+
+class User(UserMixin):
+    def __init__(self, auth_id, email, fullname):
+        self.id = auth_id  # Flask-Login requires this as the primary user ID
+        self.auth_id = auth_id
+        self.email = email
+        self.fullname = fullname
+
+    def get_id(self):
+        return self.auth_id
 
 def _dedupe(seq):
     seen, out = set(), []
