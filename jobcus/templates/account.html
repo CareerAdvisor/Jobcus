@@ -93,17 +93,17 @@
 {% endblock %}
 
 {% block extra_js %}
-  <!-- Inject Supabase credentials into window -->
- <script type="module">
+  <!-- Inject Supabase credentials and init Supabase (ESM) -->
+  <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-  
+
     const supabase = createClient(
       {{ SUPABASE_URL | tojson }},
       {{ SUPABASE_ANON_KEY | tojson }}
     );
+
     window.supabase = supabase;
   </script>
-
 {% endblock %}
 
 {% block scripts %}
