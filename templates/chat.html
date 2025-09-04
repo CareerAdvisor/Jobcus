@@ -166,5 +166,7 @@
 
 {% block scripts %}
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="{{ url_for('static', filename='js/base.js') }}"></script>
   <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% endblock %}
+
