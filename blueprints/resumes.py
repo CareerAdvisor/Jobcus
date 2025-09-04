@@ -6,6 +6,7 @@ from flask_login import login_required, current_user
 
 from limits import feature_enabled, check_and_increment
 from abuse_guard import allow_free_use  # NEW: device/user-scoped guard
+from helpers.auth import api_login_required
 
 import docx
 from weasyprint import HTML, CSS
@@ -1057,7 +1058,7 @@ def build_cover_letter():
 
 # ---------- 3) AI resume analysis ----------
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
-@api_login_required   # <- return 401 JSON instead of 302 HTML for XHR
+@api_login_required
 def resume_analysis():
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
     plan = (getattr(current_user, "plan", "free") or "free").lower()
