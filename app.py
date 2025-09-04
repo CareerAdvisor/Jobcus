@@ -1179,13 +1179,15 @@ ask_bp = Blueprint("ask", __name__)
 def ask():
     data = request.get_json()
     message = data.get("message", "")
-    model = data.get("model", "default")
+    user = current_user.first_name if current_user.is_authenticated else "there"
 
-    # Call OpenAI / Anthropic / custom AI here
-    reply = run_model(model, message)
+    # 👇 Replace this with your actual AI integration
+    if not message.strip():
+        reply = f"Hello {user}, how can I assist you today!"
+    else:
+        reply = run_model("gpt-4", message)  # example AI call
 
-    return jsonify(reply=reply, modelUsed=model)
-
+    return jsonify(reply=reply, modelUsed="gpt-4")
 
 @app.get("/api/credits")
 @login_required
