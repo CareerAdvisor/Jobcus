@@ -78,30 +78,19 @@ window.apiFetch = async function apiFetch(url, options = {}) {
     headers: { 'Accept': 'application/json', ...(options.headers || {}) },
     ...options
   };
-
   const resp = await fetch(url, merged);
-
-  // Prevent "Unexpected token '<'": inspect content type first
   const contentType = resp.headers.get('content-type') || '';
 
   if (!resp.ok) {
     if (resp.status === 401) {
-      // Intentional redirect to login for SPA flows
       window.location = '/account?next=' + encodeURIComponent(location.pathname);
       throw new Error('Unauthorized');
     }
-    // Helpful for debugging — capture first 200 chars
     const text = await resp.text();
     throw new Error(`Request failed ${resp.status}: ${text.slice(0, 200)}`);
   }
 
-  // Parse JSON only when it *is* JSON
-  if (contentType.includes('application/json')) {
-    return resp.json();
-  } else {
-    // If endpoint returns text/blob, handle here as needed
-    return resp.text();
-  }
+  return contentType.includes('application/json') ? resp.json() : resp.text();
 };
 
 /* ─────────────────────────────────────────────────────────────
