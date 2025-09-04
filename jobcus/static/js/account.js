@@ -16,8 +16,8 @@ function setFlash(message) {
   flashBox.innerHTML = message ? `<div class="flash-item">${message}</div>` : "";
 }
 
-// 3. DOM ready logic
-window.addEventListener("DOMContentLoaded", () => {
+// 3. DOM ready + Backend-driven Auth (clean version)
+document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("accountForm");
   const modeInput = document.getElementById("mode");
   const nameGroup = document.getElementById("nameGroup");
@@ -46,57 +46,42 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  toggleMode.addEventListener("click", e => {
-    e.preventDefault();
-    modeInput.value = modeInput.value === "signup" ? "login" : "signup";
-    updateView();
-  });
-
   updateView();
 
-  form.addEventListener("submit", async e => {
+  // Toggle sign in / sign up view
+  toggleMode.addEventListener("click", (e) => {
+    e.preventDefault();
+    const newMode = modeInput.value === "login" ? "signup" : "login";
+    modeInput.value = newMode;
+    window.location.href = `/account?mode=${newMode}`;
+  });
+
+  // Form submission
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     setFlash("");
 
     const mode = modeInput.value;
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
-    const fullname = document.getElementById("name")?.value.trim() || "";
+    const name = document.getElementById("name")?.value.trim() || "";
 
     try {
       const response = await fetch("/account", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, email, password, name: fullname })
+        body: JSON.stringify({ mode, email, password, name }),
       });
 
       const data = await response.json();
-
-      if (!response.ok || data.success === false) {
-        if (data.code === 'user_exists') {
-          modeInput.value = 'login';
-          updateView();
-          document.getElementById('email').value = email;
-          setFlash(data.message || 'Account already exists. Please log in.');
-          return;
-        }
-        if (data.code === 'email_not_confirmed' && data.redirect) {
-          window.location.assign(data.redirect);
-          return;
-        }
-        setFlash(data.message || 'Request failed. Please try again.');
-        return;
+      if (data.success && data.redirect) {
+        window.location.href = data.redirect;
+      } else {
+        setFlash(data.message || "Login or signup failed. Please try again.");
       }
-
-      if (data.redirect) {
-        window.location.assign(data.redirect);
-        return;
-      }
-
-      setFlash('Unexpected response. Please try again.');
     } catch (err) {
       console.error("Auth error:", err);
-      setFlash(err.message || "Something went wrong. Please try again later.");
+      setFlash("Server error. Try again.");
     }
   });
 });
