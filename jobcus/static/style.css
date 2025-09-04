@@ -82,7 +82,7 @@ header {
 .hamburger div {
   width: 18px;
   height: 2px;
-  background-color: #333;
+  background: transparent;
 }
 
 .mobile-nav {
