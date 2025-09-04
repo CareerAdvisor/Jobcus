@@ -8,7 +8,7 @@ from jobcus.services import models
 auth_bp = Blueprint("auth", __name__, url_prefix="/account")
 User = models.User  # Adjusted from jobcus/services/models.py
 
-@auth_bp.route("", methods=["GET"])
+@auth_bp.route("", methods=["GET"], endpoint="account")
 def account():
     mode = request.args.get("mode", "login")
     return render_template("account.html", mode=mode)
