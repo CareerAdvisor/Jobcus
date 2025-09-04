@@ -1,4 +1,4 @@
-// static/js/resume-analyzer.js
+// /static/js/resume-analyzer.js
 
 // Keep cookies for SameSite/Lax on all fetches
 (function(){
@@ -7,6 +7,47 @@
     if (!("credentials" in init)) init.credentials = "same-origin";
     return _fetch(input, init);
   };
+})();
+
+/* ---------- QUICK FORM-DATA FLOW (optional page variant) ---------- */
+/* Binds to:
+ *   - Button:  #analyzeBtn
+ *   - Form:    #resumeForm (contains file/text fields)
+ * Calls /api/resume-analysis with FormData and guards 401.
+ */
+(function(){
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  if (!analyzeBtn) return;
+
+  analyzeBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    const form = document.getElementById('resumeForm'); // adjust to your form id if different
+    if (!form) { console.error('resumeForm not found'); return; }
+    const formData = new FormData(form);
+
+    const resp = await fetch('/api/resume-analysis', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text(); // useful for debugging
+      console.error('resume-analysis failed', resp.status, text);
+      if (resp.status === 401) {
+        window.location = '/account?next=' + encodeURIComponent(location.pathname);
+      }
+      return;
+    }
+
+    const data = await resp.json();
+    try {
+      // Expect a page-defined renderer
+      renderAnalysis?.(data);
+    } catch (err) {
+      console.error('renderAnalysis failed or missing:', err);
+    }
+  });
 })();
 
 /* ---------- Role <datalist> loader with small cache ---------- */
@@ -180,11 +221,12 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        if (res.status === 429 && (data?.error === "too_many_free_accounts" || data?.error === "quota_exceeded")) {
-          // New behavior parity with chat
+        if (res.status === 429 /* keep parity check if needed */) {
           showUpgradeBanner("You have reached the limit for the free version, upgrade to enjoy more features", card);
           return;
         }
+        let data = null;
+        try { data = JSON.parse(text); } catch {}
         if (!res.ok) {
           const msg = (data?.error || data?.message) || "Resume analysis failed. Please try again.";
           console.error("Resume analysis failed:", text);
@@ -220,14 +262,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===========================================
   // B) Legacy analyzer UI (still supported)
   // ===========================================
-  const analyzeBtn         = document.getElementById("analyze-btn");
+  const analyzeBtnLegacy   = document.getElementById("analyze-btn");
   const resumeText         = document.getElementById("resume-text");
   const resumeFile         = document.getElementById("resumeFile");
   const analyzingIndicator = document.getElementById("analyzingIndicator");
   const resultsWrap        = document.getElementById("analysisResults");
   const resultsSummary     = document.getElementById("analysisSummary");
 
-  if (analyzeBtn) {
+  if (analyzeBtnLegacy) {
     async function sendAnalysis(file) {
       let payload, carriedText = "";
 
@@ -302,7 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    analyzeBtn.addEventListener("click", () => {
+    analyzeBtnLegacy.addEventListener("click", () => {
       const file = resumeFile?.files?.[0] || null;
       sendAnalysis(file);
     });
