@@ -1,16 +1,30 @@
-
 // base.js – Navigation, user menu, etc.
 
+// === Mobile hamburger toggle (your new function)
 function toggleMobileMenu() {
-  const mobileMenu = document.getElementById("mobileMenu");
-  const hamburger = document.querySelector(".hamburger");
-  const expanded = hamburger.getAttribute("aria-expanded") === "true";
-  hamburger.setAttribute("aria-expanded", !expanded);
-  mobileMenu.classList.toggle("open");
+  const menu = document.getElementById("mobileMenu");
+  const isOpen = menu.getAttribute("data-open") === "true";
+
+  menu.setAttribute("data-open", !isOpen);
+  menu.style.display = !isOpen ? "block" : "none";
 }
 
-// Toggle user dropdown menu
+// Optional: close mobile menu when clicking outside
+document.addEventListener("click", function (e) {
+  const menu = document.getElementById("mobileMenu");
+  const burger = document.querySelector(".hamburger");
+
+  if (!menu || !burger) return;
+
+  if (!menu.contains(e.target) && !burger.contains(e.target)) {
+    menu.setAttribute("data-open", "false");
+    menu.style.display = "none";
+  }
+});
+
+// === Main DOM loaded logic
 document.addEventListener("DOMContentLoaded", function () {
+  // User dropdown
   const userBtn = document.getElementById("userMenuBtn");
   const userDropdown = document.getElementById("userDropdown");
 
@@ -21,7 +35,6 @@ document.addEventListener("DOMContentLoaded", function () {
       userDropdown.classList.toggle("show");
     });
 
-    // Close dropdown on outside click
     document.addEventListener("click", function (e) {
       if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
         userDropdown.classList.remove("show");
@@ -30,7 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Features menu dropdown (for mobile and desktop)
+  // Features dropdown (desktop & mobile)
   const featureToggles = document.querySelectorAll(".dropbtn");
   featureToggles.forEach(btn => {
     btn.addEventListener("click", function (e) {
@@ -40,13 +53,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Close any open dropdown when clicking elsewhere
+  // Close any open dropdowns on outside click
   document.addEventListener("click", function () {
     document.querySelectorAll(".dropdown-content.show").forEach(menu => {
       menu.classList.remove("show");
     });
   });
 
-  // Animate on scroll
+  // Animate On Scroll
   if (window.AOS) AOS.init({ once: true });
 });
