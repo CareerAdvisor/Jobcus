@@ -1,6 +1,11 @@
-// cookie.js
+// /static/js/cookie.js
 (function(){
-  const CONSENT_COOKIE = "jobcus_consent";
+  // Expose the cookie name exactly once via a global namespace
+  window.JOBCUS = window.JOBCUS || {};
+  if (!('CONSENT_COOKIE' in window.JOBCUS)) {
+    window.JOBCUS.CONSENT_COOKIE = 'jobcus_consent';
+  }
+  const CONSENT_COOKIE = window.JOBCUS.CONSENT_COOKIE;
   const CONSENT_TTL_DAYS = 180;
 
   function setCookie(name, value, days){
@@ -24,7 +29,7 @@
 
   function applyConsent(consent){
     window.dataLayer = window.dataLayer || [];
-    function gtag(){ dataLayer.push(arguments); }
+    function gtag(){ window.dataLayer.push(arguments); }
     gtag('consent', 'default', {
       ad_storage: 'denied',
       analytics_storage: 'denied',
@@ -36,7 +41,7 @@
       gtag('consent', 'update', { analytics_storage: 'granted' });
       (function(){
         var s=document.createElement('script');
-        s.async=1; s.src='https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX'; 
+        s.async=1; s.src='https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX';
         document.head.appendChild(s);
       }());
       gtag('js', new Date());
@@ -67,7 +72,7 @@
     applyConsent(saved);
   } else {
     show(banner);
-    if (dnt) { cbAnalytics.checked = false; cbMarketing.checked = false; }
+    if (dnt) { cbAnalytics && (cbAnalytics.checked = false); cbMarketing && (cbMarketing.checked = false); }
   }
 
   btnAccept?.addEventListener('click', () => {
@@ -80,7 +85,7 @@
   });
   btnCustomize?.addEventListener('click', () => { hide(banner); show(panel); });
   btnSave?.addEventListener('click', () => {
-    const consent = { necessary: true, analytics: cbAnalytics.checked, marketing: cbMarketing.checked, version: 1 };
+    const consent = { necessary: true, analytics: !!cbAnalytics?.checked, marketing: !!cbMarketing?.checked, version: 1 };
     writeConsent(consent); hide(panel); applyConsent(consent);
   });
 })();
