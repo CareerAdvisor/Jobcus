@@ -422,8 +422,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         disableComposer(true);
-        data = await sendMessage({ message, model: currentModel }); // { reply, modelUsed }
+        // REPLACE WITH:
+        const payload = { message, model: currentModel };
+        data = await apiFetch('/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
         finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
+
       } catch (err) {
         if (err?.kind === 'limit') {
           aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || 'Free limit reached.')}</p><hr class="response-separator" />`;
