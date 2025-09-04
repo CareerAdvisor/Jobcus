@@ -294,6 +294,13 @@
 #upgrade-banner:not(.show) { display: none; }
 #upgrade-banner.show { display: block; }
 
+/* Remove unwanted background on hamburger menu */
+.hamburger {
+  background: transparent !important;
+  border: none;
+  box-shadow: none;
+}
+
 @media (max-width: 480px) {
   .cc-banner { left: 12px; right: 12px; bottom: 12px; }
   .cc-panel { width: calc(100% - 24px); left: 12px; right: 12px; transform: none; }
