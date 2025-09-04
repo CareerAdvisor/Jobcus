@@ -7,9 +7,9 @@ from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, current_user
 from supabase import create_client
 
-# local extensions/helpers (adapt imports if needed)
-from .extensions import init_openai, login_manager  # uses your shared instance
-from .routes import register_routes
+# local extensions/helpers
+from .extensions import init_openai, login_manager
+from .routes import register_routes  # ✅ handles all blueprint registration
 
 def _env(name: str, *fallbacks: str) -> str | None:
     for k in (name, *fallbacks):
@@ -31,7 +31,7 @@ def create_app() -> Flask:
 
     # ---------- Supabase ----------
     sb_url  = _env("SUPABASE_URL")
-    sb_anon = _env("SUPABASE_ANON_KEY", "SUPABASE_KEY")  # support either var
+    sb_anon = _env("SUPABASE_ANON_KEY", "SUPABASE_KEY")
     sb_srv  = _env("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY")
 
     if not sb_url or not sb_anon:
@@ -39,12 +39,11 @@ def create_app() -> Flask:
     if not sb_srv:
         raise RuntimeError("Missing SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SERVICE_KEY)")
 
-    # Public client (mirrors front-end)
+    # Supabase clients
     app.config["SUPABASE"] = create_client(sb_url, sb_anon)
-    # Admin (service role) client for limits/auth/session/user ops
     app.config["SUPABASE_ADMIN"] = create_client(sb_url, sb_srv)
 
-    # Expose to templates for front-end Supabase (signup/login)
+    # For front-end JS use
     app.config["SUPABASE_URL"] = sb_url
     app.config["SUPABASE_ANON_KEY"] = sb_anon
 
@@ -56,7 +55,6 @@ def create_app() -> Flask:
     login_manager.init_app(app)
     login_manager.login_view = "account"
 
-    # JSON 401 for API-style paths; HTML redirect elsewhere
     @login_manager.unauthorized_handler
     def _unauth():
         apiish = request.path.startswith(("/api/", "/ask", "/build-", "/resume-"))
@@ -64,7 +62,6 @@ def create_app() -> Flask:
             return jsonify(error="login_required", message="Please sign in to continue."), 401
         return redirect(url_for("account", next=request.url))
 
-    # Optional: minimal user loader; keep if you don’t already define one elsewhere
     class User(UserMixin):
         def __init__(self, auth_id, email=None, fullname=None, role="user", plan="free", plan_status=None):
             self.id = auth_id
@@ -112,7 +109,6 @@ def create_app() -> Flask:
                 logging.exception("load_user failed")
                 return None
 
-    # Inject public Supabase config into all templates (for front-end JS)
     @app.context_processor
     def inject_supabase_public():
         return {
@@ -120,7 +116,7 @@ def create_app() -> Flask:
             "SUPABASE_ANON_KEY": app.config.get("SUPABASE_ANON_KEY", ""),
         }
 
-    # ---------- Blueprints ----------
+    # ---------- Register All Routes ----------
     register_routes(app)
 
     # Health check
