@@ -15,12 +15,21 @@ class User(UserMixin):
     def get_id(self):
         return self.auth_id
 
+    @property
+    def is_admin(self):
+        return self.role == "admin"
+
+    @property
+    def is_superadmin(self):
+        return self.role == "superadmin"
+
 def _dedupe(seq):
     seen, out = set(), []
     for m in seq:
         m = (m or "").strip()
         if m and m not in seen:
-            seen.add(m); out.append(m)
+            seen.add(m)
+            out.append(m)
     return out
 
 def _available_models():
@@ -34,7 +43,7 @@ def allowed_models_for_plan(plan: str) -> list[str]:
     plan = (plan or "free").lower()
     free_default = (os.getenv("FREE_MODEL", "gpt-4o-mini") or "gpt-4o-mini").strip()
     paid_default = (os.getenv("PAID_MODEL_DEFAULT", "gpt-4o-mini") or "gpt-4o-mini").strip()
-    paid_allow   = [s.strip() for s in (os.getenv("PAID_MODEL_ALLOW", "") or "").split(",") if s.strip()]
+    paid_allow = [s.strip() for s in (os.getenv("PAID_MODEL_ALLOW", "") or "").split(",") if s.strip()]
 
     out = [free_default] if plan == "free" else _dedupe([paid_default] + paid_allow)
 
