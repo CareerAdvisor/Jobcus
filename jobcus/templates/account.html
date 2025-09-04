@@ -95,9 +95,10 @@
 {% block extra_js %}
   <!-- Inject Supabase credentials into window -->
   <script>
-    window.SUPABASE_URL = {{ SUPABASE_URL | tojson }};
-    window.SUPABASE_ANON_KEY = {{ SUPABASE_ANON_KEY | tojson }};
-    window.__SUPABASE_MISSING__ = !window.SUPABASE_URL || !window.SUPABASE_ANON_KEY;
+    setTimeout(() => {
+    console.log("SUPABASE:", window.supabase);
+    console.log("SUPABASE TYPE:", typeof window.supabase?.createClient);
+  }, 2000);
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6" defer></script>
 
