@@ -32,7 +32,72 @@ from limits import (
 from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
 from abuse_guard import allow_free_use
-from resumes import resumes_bp  # ← your actual blueprint lives in resumes.py
+# --- Load resumes blueprint robustly ---
+import importlib, importlib.util, pathlib, sys, logging
+
+resumes_bp = None  # will set when found
+
+_here = pathlib.Path(__file__).resolve().parent
+
+def _import_from_spec(module_name: str, file_path: pathlib.Path):
+    spec = importlib.util.spec_from_file_location(module_name, str(file_path))
+    if not spec or not spec.loader:
+        return None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)  # type: ignore[attr-defined]
+    return mod
+
+try:
+    # Case A: a top-level resumes.py next to app.py
+    from resumes import resumes_bp as _rbp  # type: ignore
+    resumes_bp = _rbp
+except ModuleNotFoundError:
+    # Case B: import by file path if resumes.py is adjacent
+    _resumes_py = _here / "resumes.py"
+    if _resumes_py.exists():
+        mod = _import_from_spec("resumes", _resumes_py)
+        if mod and hasattr(mod, "resumes_bp"):
+            resumes_bp = getattr(mod, "resumes_bp")
+
+# Case C: common subfolders (e.g., blueprints/resumes.py)
+if resumes_bp is None:
+    for sub in ("blueprints", "backend", "server", "src", "app", "apps"):
+        cand = _here / sub / "resumes.py"
+        if cand.exists():
+            # try as a package import first if __init__.py exists
+            pkg_init = cand.parent / "__init__.py"
+            if pkg_init.exists():
+                # try `from blueprints.resumes import resumes_bp` style
+                pkg_name = cand.parent.name
+                try:
+                    mod = importlib.import_module(f"{pkg_name}.resumes")
+                    if hasattr(mod, "resumes_bp"):
+                        resumes_bp = getattr(mod, "resumes_bp")
+                        break
+                except Exception:
+                    pass
+            # fallback: import by file path
+            mod = _import_from_spec(f"{cand.parent.name}.resumes", cand)
+            if mod and hasattr(mod, "resumes_bp"):
+                resumes_bp = getattr(mod, "resumes_bp")
+                break
+
+# Case D: explicit package path if the folder is already on sys.path
+if resumes_bp is None:
+    for dotted in ("blueprints.resumes", "server.resumes", "backend.resumes", "src.resumes"):
+        try:
+            mod = importlib.import_module(dotted)
+            if hasattr(mod, "resumes_bp"):
+                resumes_bp = getattr(mod, "resumes_bp")
+                break
+        except Exception:
+            continue
+
+if resumes_bp is None:
+    logging.warning(
+        "resumes blueprint not found. If your blueprint lives at blueprints/resumes.py, "
+        "ensure that file exports `resumes_bp = Blueprint(...)` and that the folder is a package."
+    )
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -1378,7 +1443,12 @@ def get_interview_feedback():
         return jsonify(error="Error generating feedback"), 500
 
 # --- Register the resume blueprint last (after app/config exists) ---
-app.register_blueprint(resumes_bp)
+if resumes_bp is not None:
+    app.register_blueprint(resumes_bp)
+else:
+    # App still runs without the resumes routes
+    app.logger.warning("Skipping app.register_blueprint(resumes_bp): not found")
+
 
 # ---- Employer inquiry endpoints ----
 
