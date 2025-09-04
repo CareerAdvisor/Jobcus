@@ -223,18 +223,15 @@ def choose_model(requested: str | None) -> str:
 def api_login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        # Replace this with your real user check
-        user_id = session.get('user_id')
-        is_xhr = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or \
-                 request.accept_mimetypes.best == 'application/json'
+        if getattr(request, "user", None):  # or however you check auth
+            return fn(*args, **kwargs)
 
-        if not user_id:
-            # For API/XHR requests: return 401 JSON
-            if is_xhr or request.path.startswith('/api/'):
-                return jsonify(error='unauthorized'), 401
-            # For full-page navigation: redirect to login
-            return redirect(url_for('account', next=request.full_path))
-        return fn(*args, **kwargs)
+        # XHR/fetch? return 401 JSON
+        if request.path.startswith("/api/"):
+            return jsonify(error="unauthorized", message="Sign in required"), 401
+
+        # Full page: redirect to login
+        return redirect(url_for("account", next=request.path))
     return wrapper
 
 # --- Local fallbacks to remove services/* dependency -------------------------
