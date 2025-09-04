@@ -1057,7 +1057,7 @@ def build_cover_letter():
 
 # ---------- 3) AI resume analysis ----------
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
-@login_required
+@api_login_required   # <- return 401 JSON instead of 302 HTML for XHR
 def resume_analysis():
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
     plan = (getattr(current_user, "plan", "free") or "free").lower()
