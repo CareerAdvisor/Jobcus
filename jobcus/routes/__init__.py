@@ -14,30 +14,30 @@ def register_routes(app: Flask) -> None:
         except Exception:
             return None
 
-    interviews_bp = safe_import("interviews", "interviews_bp")
-    employer_bp   = safe_import("employer", "employer_bp")
-    state_bp      = safe_import("state", "state_bp")
-    insights_bp   = safe_import("insights", "insights_bp")
-    billing_bp    = safe_import("billing", "billing_bp")
-    admin_bp      = safe_import("admin", "admin_bp")
-    auth_bp       = safe_import("auth", "auth_bp")
-    auth_session_bp = safe_import("auth_session", "auth_session_bp")
+    interviews_bp    = safe_import("interviews", "interviews_bp")
+    employer_bp      = safe_import("employer", "employer_bp")
+    state_bp         = safe_import("state", "state_bp")
+    insights_bp      = safe_import("insights", "insights_bp")
+    billing_bp       = safe_import("billing", "billing_bp")
+    admin_bp         = safe_import("admin", "admin_bp")
+    auth_bp          = safe_import("auth", "auth_bp")
+    auth_session_bp  = safe_import("auth_session", "auth_session_bp")
+    api_bp           = safe_import("api", "api_bp")
 
     # Core blueprints
     app.register_blueprint(main_bp)
     app.register_blueprint(ask_bp)
     app.register_blueprint(resumes_bp)
 
-    if interviews_bp: app.register_blueprint(interviews_bp)
-    if employer_bp:   app.register_blueprint(employer_bp)
-    if state_bp:      app.register_blueprint(state_bp)
-    if insights_bp:   app.register_blueprint(insights_bp)
-    if billing_bp:    app.register_blueprint(billing_bp)
-    if admin_bp:      app.register_blueprint(admin_bp)
-    if auth_session_bp: app.register_blueprint(auth_session_bp)
+    if interviews_bp:     app.register_blueprint(interviews_bp)
+    if employer_bp:       app.register_blueprint(employer_bp)
+    if state_bp:          app.register_blueprint(state_bp)
+    if insights_bp:       app.register_blueprint(insights_bp)
+    if billing_bp:        app.register_blueprint(billing_bp)
+    if admin_bp:          app.register_blueprint(admin_bp)
+    if auth_session_bp:   app.register_blueprint(auth_session_bp)
+    if api_bp:            app.register_blueprint(api_bp)
 
-    # Register auth blueprint directly
-    from .auth import auth_bp
     if auth_bp:
         try:
             app.register_blueprint(auth_bp)
