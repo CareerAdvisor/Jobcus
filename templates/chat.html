@@ -165,10 +165,8 @@
 {% endblock %}
 
 {% block scripts %}
-  <!-- Core helpers (apiFetch, CSRF, fetch credentials, sidebar a11y, etc.) -->
-  <script src="{{ url_for('static', filename='js/base.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <!-- Chat logic that calls apiFetch('/api/ask', ...) -->
+  <!-- DO NOT include base.js here if it’s already in base.html -->
   <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% endblock %}
 
