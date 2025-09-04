@@ -1,6 +1,4 @@
-/* static/js/account.js */
-
-// 1. Force fetch() to include credentials
+// === 1. Force fetch() to include credentials
 (() => {
   const nativeFetch = window.fetch;
   window.fetch = (input, init = {}) => {
@@ -9,27 +7,27 @@
   };
 })();
 
-// 2. Initialize Supabase client
-function getSupabaseClient() {
+// === 2. Supabase client helper
+function getSupabase() {
   if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
-  if (!window.supabase || !window.supabase.createClient) return null;
+  if (!window.supabase || typeof window.supabase.createClient !== "function") return null;
 
   try {
     return window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-  } catch (err) {
-    console.error('Failed to create Supabase client:', err);
+  } catch (e) {
+    console.error("Supabase init failed:", e);
     return null;
   }
 }
 
-// 3. Flash message
+// === 3. Flash messaging
 function setFlash(message) {
   const flashBox = document.getElementById("flashMessages");
   if (!flashBox) return;
   flashBox.innerHTML = message ? `<div class="flash-item">${message}</div>` : "";
 }
 
-// 4. Exchange token with server
+// === 4. Exchange session with Flask backend
 async function exchangeSession(token) {
   const res = await fetch("/auth/session", {
     method: "POST",
@@ -39,9 +37,15 @@ async function exchangeSession(token) {
   if (!res.ok) throw new Error("Session exchange failed");
 }
 
-// 5. DOM ready
-window.addEventListener("DOMContentLoaded", () => {
-  const sb = getSupabaseClient();
+// === 5. DOM Ready
+document.addEventListener("DOMContentLoaded", () => {
+  const sb = getSupabase();
+  if (!sb) {
+    console.warn("Supabase not available on account page; using fallback.");
+    setFlash("Supabase not available. Please try again later.");
+    return;
+  }
+
   const form = document.getElementById("accountForm");
   const modeInput = document.getElementById("mode");
   const nameGroup = document.getElementById("nameGroup");
@@ -51,6 +55,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const formTitle = document.querySelector(".auth-title");
   const subtitle = document.querySelector(".auth-subtitle");
 
+  // --- Update form appearance based on mode ---
   function updateView() {
     const mode = modeInput.value;
     if (mode === "login") {
@@ -72,12 +77,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
   toggleMode.addEventListener("click", e => {
     e.preventDefault();
-    modeInput.value = modeInput.value === "signup" ? "login" : "signup";
+    modeInput.value = (modeInput.value === "login") ? "signup" : "login";
     updateView();
   });
 
-  updateView();
+  updateView(); // Initial state
 
+  // --- Submit form ---
   form.addEventListener("submit", async e => {
     e.preventDefault();
     setFlash("");
@@ -86,11 +92,6 @@ window.addEventListener("DOMContentLoaded", () => {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
     const fullname = document.getElementById("name")?.value.trim() || "";
-
-    if (!sb) {
-      setFlash("Supabase not available. Please try again later.");
-      return;
-    }
 
     try {
       if (mode === "login") {
@@ -109,6 +110,7 @@ window.addEventListener("DOMContentLoaded", () => {
         });
         if (error) throw new Error(error.message);
 
+        // Optional: add profile to server DB
         await fetch("/auth/profile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
