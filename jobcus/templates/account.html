@@ -10,7 +10,6 @@
 {% block content %}
 <section class="auth-wrapper">
   <div class="auth-card auth-card--blue">
-
     <h2 class="auth-title">
       {% if mode == 'login' %}
         Sign In to<br>Jobcus
@@ -100,8 +99,6 @@
     window.SUPABASE_ANON_KEY = {{ SUPABASE_ANON_KEY | tojson }};
     window.__SUPABASE_MISSING__ = !window.SUPABASE_URL || !window.SUPABASE_ANON_KEY;
   </script>
-
-  <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 {% endblock %}
 
