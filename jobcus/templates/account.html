@@ -94,13 +94,15 @@
 
 {% block extra_js %}
   <!-- Inject Supabase credentials into window -->
-  <script>
-    setTimeout(() => {
-    console.log("SUPABASE:", window.supabase);
-    console.log("SUPABASE TYPE:", typeof window.supabase?.createClient);
-  }, 2000);
+ <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+  
+    const supabase = createClient(
+      {{ SUPABASE_URL | tojson }},
+      {{ SUPABASE_ANON_KEY | tojson }}
+    );
+    window.supabase = supabase;
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6" defer></script>
 
 {% endblock %}
 
