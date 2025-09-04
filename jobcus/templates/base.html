@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,10 +7,18 @@
   <title>{% block title %}Jobcus{% endblock %}</title>
 
   {% if not for_pdf %}
+    <!-- Favicon & fonts -->
     <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <!-- iOS home screen icons -->
+    <link rel="apple-touch-icon" sizes="120x120" href="{{ url_for('static', filename='icons/apple-touch-icon-120x120.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/apple-touch-icon-180x180.png') }}">
+
+    <!-- Core CSS + AOS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}" />
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     {% block extra_css %}{% endblock %}
   {% endif %}
 </head>
@@ -19,54 +28,119 @@
 
     {% if not for_pdf %}
       <header class="site-header">
-        <div class="header-logo">
-          <a href="/"><img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus Logo" /></a>
+        <div class="header-left">
+          {% block header_icon %}{% endblock %}
         </div>
-        <nav class="desktop-nav">
+
+        <div class="header-logo">
+          <a href="/"><img src="{{ url_for('static', filename='jobcus-logo.png') }}" alt="Jobcus" /></a>
+        </div>
+
+        <div class="header-right">
+          <nav class="desktop-nav">
+            <a href="/resume-analyzer">Resume Analyzer</a>
+            <a href="/resume-builder">Resume Builder</a>
+            <a href="/interview-coach">Interview Coach</a>
+            <a href="/cover-letter">Cover Letter</a>
+            <div class="dropdown">
+              <button class="dropbtn" aria-haspopup="true" aria-expanded="false" aria-controls="featuresMenu">Features ▾</button>
+              <div class="dropdown-content" id="featuresMenu" role="menu">
+                <a href="/chat" role="menuitem">Jobcus AI</a>
+                <a href="/skill-gap" role="menuitem">Skill Gap Analysis</a>
+                <a href="/job-insights" role="menuitem">Job Insights</a>
+              </div>
+            </div>
+            <a href="/employers">Partner with Us</a>
+          </nav>
+
+          {% set _first = None %}
+          {% set _lasti = '' %}
+          {% set _name  = None %}
+          {% set _email = None %}
+          {% if current_user.is_authenticated %}
+            {% set _email = current_user.email %}
+            {% set _first = (current_user.first_name
+                             or (current_user.fullname.split(' ')[0] if current_user.fullname else _email.split('@')[0])) %}
+            {% set _lasti = (current_user.last_name[:1] if current_user.last_name
+                             else (current_user.fullname.split(' ')[1][:1] if (current_user.fullname and current_user.fullname.split(' ')|length>1) else '')) %}
+            {% set _name  = _first ~ ((' ' ~ current_user.last_name) if current_user.last_name else '') %}
+          {% endif %}
+          {% set _initials = ((_first[:1] ~ _lasti)|upper) if _first else '' %}
+
+          <div class="user-menu">
+            <button id="userMenuBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-controls="userDropdown">
+              {% if current_user.is_authenticated %}
+                <span class="avatar-circle">{{ _initials }}</span>
+              {% else %}
+                <img class="avatar-icon" src="{{ url_for('static', filename='icons/user.svg') }}" alt="Profile">
+              {% endif %}
+            </button>
+
+            <div id="userDropdown" class="user-dropdown" role="menu">
+              {% if current_user.is_authenticated %}
+                <div class="ud-email">{{ _email }}</div>
+                <hr class="ud-sep">
+                <a class="ud-item" href="{{ url_for('pricing') }}" role="menuitem">⬆️ Upgrade plan</a>
+                <a class="ud-item" href="{{ url_for('dashboard') }}" role="menuitem">👤 {{ _name }}</a>
+                <a class="ud-item" href="{{ url_for('logout') }}" role="menuitem">📦 Log out</a>
+              {% else %}
+                <a class="ud-item" href="{{ url_for('account') }}" role="menuitem">🔑 Sign up / Log in</a>
+              {% endif %}
+            </div>
+          </div>
+
+          <button class="hamburger" onclick="toggleMobileMenu()" aria-label="Open Menu" aria-controls="mobileMenu" aria-expanded="false">
+            <div></div><div></div><div></div>
+          </button>
+        </div>
+
+        <nav class="mobile-nav" id="mobileMenu" aria-label="Mobile Navigation">
           <a href="/resume-analyzer">Resume Analyzer</a>
           <a href="/resume-builder">Resume Builder</a>
           <a href="/interview-coach">Interview Coach</a>
           <a href="/cover-letter">Cover Letter</a>
-          <a href="/chat">Jobcus AI</a>
-          <a href="/skill-gap">Skill Gap</a>
-          <a href="/job-insights">Insights</a>
+          <div class="dropdown">
+            <button class="dropbtn" aria-haspopup="true" aria-expanded="false">Features ▾</button>
+            <div class="dropdown-content" role="menu">
+              <a href="/chat" role="menuitem">Jobcus AI</a>
+              <a href="/skill-gap" role="menuitem">Skill Gap Analysis</a>
+              <a href="/job-insights" role="menuitem">Job Insights</a>
+            </div>
+          </div>
           <a href="/employers">Partner with Us</a>
         </nav>
-
-        <div class="user-menu">
-          {% if current_user.is_authenticated %}
-            <a href="{{ url_for('dashboard') }}">👤 {{ current_user.fullname or current_user.email }}</a>
-            <a href="{{ url_for('logout') }}">Log out</a>
-          {% else %}
-            <a href="{{ url_for('auth.account') }}">Sign In / Sign Up</a>
-          {% endif %}
-        </div>
-
-        <button class="hamburger" onclick="toggleMobileMenu()">
-          <div></div><div></div><div></div>
-        </button>
       </header>
     {% endif %}
 
-    <main>
-      {% block content %}{% endblock %}
-    </main>
+    {% if not for_pdf %}
+      <div id="upgrade-banner" hidden class="upgrade-banner"></div>
+    {% endif %}
+
+    <main>{% block content %}{% endblock %}</main>
 
     {% if not for_pdf and (show_footer | default(true)) %}
       <footer class="footer-note-static">
         &copy; 2025 Jobcus – Your AI Career Advisor<br />
-        <a href="/privacy-policy" class="footer-link">Privacy Policy</a> |
-        <a href="/terms-of-service" class="footer-link">Terms of Service</a> |
+        <a href="/privacy-policy" class="footer-link">Privacy Policy</a>
+        &nbsp;|&nbsp;
+        <a href="/terms-of-service" class="footer-link">Terms of Service</a>
+        &nbsp;|&nbsp;
         <a href="/faq" class="footer-link">FAQs</a>
       </footer>
     {% endif %}
   </div>
 
+  {% if not for_pdf and body_class != 'chat-page' %}
+    <a href="/chat" class="chat-float-button" title="Chat with Jobcus">
+      <img src="{{ url_for('static', filename='icons/pencilchat.svg') }}" alt="Chat Icon" />
+    </a>
+  {% endif %}
+
   {% if not for_pdf %}
     <script>
-      window.SUPABASE_URL = {{ SUPABASE_URL | tojson }};
-      window.SUPABASE_ANON_KEY = {{ SUPABASE_ANON_KEY | tojson }};
+      window.USER_AUTHENTICATED = {{ 'true' if current_user.is_authenticated else 'false' }};
     </script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" defer></script>
     <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
     {% block scripts %}{% endblock %}
   {% endif %}
