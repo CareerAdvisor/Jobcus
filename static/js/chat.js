@@ -316,13 +316,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (chatOverlay) chatOverlay.hidden = false;
     document.documentElement.style.overflow = "hidden";
   }
-  function closeChatMenu(){
+  function closeChatMenu() {
     if (!chatMenu) return;
+    // Move focus to a safe element before hiding
+    document.getElementById("userInput")?.focus();
+  
     chatMenu.classList.remove("is-open");
-    chatMenu.setAttribute("aria-hidden","true");
+    chatMenu.setAttribute("aria-hidden", "true");
     if (chatOverlay) chatOverlay.hidden = true;
     document.documentElement.style.overflow = "";
   }
+
   window.closeChatMenu = closeChatMenu;
 
   chatMenuToggle?.addEventListener("click", openChatMenu);
