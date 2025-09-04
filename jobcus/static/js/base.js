@@ -1,6 +1,5 @@
-// base.js – Navigation, user menu, etc.
+// static/js/base.js – Navigation, dropdowns, hamburger menu, etc.
 
-// === Mobile hamburger toggle (your new function)
 function toggleMobileMenu() {
   const menu = document.getElementById("mobileMenu");
   const isOpen = menu.getAttribute("data-open") === "true";
@@ -22,9 +21,7 @@ document.addEventListener("click", function (e) {
   }
 });
 
-// === Main DOM loaded logic
 document.addEventListener("DOMContentLoaded", function () {
-  // User dropdown
   const userBtn = document.getElementById("userMenuBtn");
   const userDropdown = document.getElementById("userDropdown");
 
@@ -43,7 +40,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Features dropdown (desktop & mobile)
   const featureToggles = document.querySelectorAll(".dropbtn");
   featureToggles.forEach(btn => {
     btn.addEventListener("click", function (e) {
@@ -53,13 +49,11 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Close any open dropdowns on outside click
   document.addEventListener("click", function () {
     document.querySelectorAll(".dropdown-content.show").forEach(menu => {
       menu.classList.remove("show");
     });
   });
 
-  // Animate On Scroll
   if (window.AOS) AOS.init({ once: true });
 });
