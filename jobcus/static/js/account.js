@@ -1,5 +1,8 @@
 // static/js/account.js
 
+// Use module scope
+console.log("account.js loaded");
+
 // 1. Force fetch() to include credentials
 (() => {
   const nativeFetch = window.fetch;
@@ -9,7 +12,7 @@
   };
 })();
 
-// 2. Wait for Supabase to be injected
+// 2. Wait until Supabase is injected
 async function waitForSupabase() {
   while (typeof window.supabase === 'undefined') {
     await new Promise(resolve => setTimeout(resolve, 50));
@@ -17,14 +20,14 @@ async function waitForSupabase() {
   return window.supabase;
 }
 
-// 3. Flash message setter
+// 3. Flash helper
 function setFlash(message) {
   const flashBox = document.getElementById("flashMessages");
   if (!flashBox) return;
   flashBox.innerHTML = message ? `<div class="flash-item">${message}</div>` : "";
 }
 
-// 4. Exchange access_token with backend
+// 4. Exchange access token with server
 async function exchangeSession(token) {
   const res = await fetch("/auth/session", {
     method: "POST",
@@ -34,14 +37,15 @@ async function exchangeSession(token) {
   if (!res.ok) throw new Error("Session exchange failed");
 }
 
-// 5. DOMContentLoaded → Auth flow
+// 5. Main logic
 document.addEventListener("DOMContentLoaded", async () => {
   const sb = await waitForSupabase();
   if (!sb) {
-    console.warn("Supabase not available on account page; using fallback.");
     setFlash("Supabase not available. Please try again later.");
     return;
   }
+
+  console.log("Supabase ready:", sb);
 
   const form = document.getElementById("accountForm");
   const modeInput = document.getElementById("mode");
