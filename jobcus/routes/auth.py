@@ -6,9 +6,9 @@ from jobcus.services import models
 
 User = models.User
 
-auth_bp = Blueprint("auth", __name__)
+auth_bp = Blueprint("auth", __name__, url_prefix="/account")
 
-@auth_bp.route("/account", methods=["GET", "POST"])
+@auth_bp.route("/", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
         mode = request.args.get("mode", "signup")
