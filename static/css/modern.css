@@ -1,0 +1,101 @@
+/* =========================================================
+   Modern Theme (accent header band)
+   Depends on resume-base.css being loaded first.
+   ========================================================= */
+
+.resume.resume--modern{
+  --accent: #104879;
+  --accent-2: #1e6bb8;
+  --header-fg: #ffffff;
+  --header-bg: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+/* Header block with accent background */
+.resume.resume--modern .hero{
+  background: var(--header-bg);
+  color: var(--header-fg);
+  border-radius: 6px;
+  padding: 10mm 12mm;
+  margin: -2mm -2mm 8mm -2mm; /* screen-only bleed into .resume-page padding */
+}
+
+@media screen and (max-width: 768px){
+  .resume.resume--modern .hero{
+    padding: 8mm 9mm;
+    margin: -4mm -4mm 8mm -4mm;
+  }
+}
+
+/* PRINT: remove bleed + radius so nothing gets clipped */
+@media print{
+  .resume.resume--modern .hero{
+    margin: 0 0 8mm 0;   /* no negative margins in print */
+    padding: 10mm 12mm;  /* keep comfortable inner spacing */
+    border-radius: 0;    /* avoids corner clipping */
+  }
+}
+
+.resume.resume--modern .resume-name{ color: var(--header-fg); }
+.resume.resume--modern .resume-title{ color: rgba(255,255,255,.85); }
+.resume.resume--modern .resume-contact{
+  color: rgba(255,255,255,.85);
+  border-top: 1px solid rgba(255,255,255,.25);
+  padding-top: 3mm;
+}
+
+/* Section headings in accent color */
+.resume.resume--modern .section h2{
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+/* Dividers outside hero */
+.resume.resume--modern .rule{
+  background: var(--rule);
+  height: 1px;
+}
+
+/* ---------- Skills (2-column bullet list) ---------- */
+.resume.resume--modern .skills-section{ margin-bottom: 0; }
+.resume.resume--modern .skills-section + .section{ margin-top: 8px; }
+
+.resume.resume--modern .skills-list{
+  columns: 2;
+  column-gap: 24px;
+  list-style: disc outside;
+  padding-left: 1.15rem;
+  margin: 4px 0 0;
+}
+.resume.resume--modern .skills-list li{
+  break-inside: avoid;
+  margin: 2px 0;
+}
+
+/* ---------- Experience ---------- */
+.resume.resume--modern .item{ margin: 8px 0 12px; }
+.resume.resume--modern .item-title-line{ font-weight: 700; }
+.resume.resume--modern .item-dates{
+  color: #555;
+  font-size: .95em;
+  margin: 2px 0 6px;
+}
+.resume.resume--modern .bullets{
+  margin: 6px 0 0 1.15rem;
+  padding: 0;
+}
+
+/* ---------- Chips ---------- */
+.resume.resume--modern .chip{
+  border-color:#e2ebf6;
+  background:#f2f7fd;
+}
+
+/* Optional “card” sections */
+.resume.resume--modern .card{
+  border:1px solid #eaf0f7;
+  background:#fbfdff;
+  border-radius:6px;
+  padding:5mm;
+}
+.resume.resume--modern .card + .card{ margin-top: 4mm; }
