@@ -6,66 +6,50 @@ def register_routes(app: Flask) -> None:
     from .ask import ask_bp
     from .resumes import resumes_bp
 
-    try:
-        from .interviews import interviews_bp
-    except Exception:
-        interviews_bp = None
-    try:
-        from .employer import employer_bp
-    except Exception:
-        employer_bp = None
-    try:
-        from .state import state_bp
-    except Exception:
-        state_bp = None
-    try:
-        from .insights import insights_bp
-    except Exception:
-        insights_bp = None
+    # Optional blueprints
+    def safe_import(module_name, symbol):
+        try:
+            mod = __import__(f".{module_name}", globals(), locals(), [symbol])
+            return getattr(mod, symbol)
+        except Exception:
+            return None
 
-    try:
-        from .auth import auth_bp
-    except Exception:
-        auth_bp = None
+    interviews_bp = safe_import("interviews", "interviews_bp")
+    employer_bp   = safe_import("employer", "employer_bp")
+    state_bp      = safe_import("state", "state_bp")
+    insights_bp   = safe_import("insights", "insights_bp")
+    billing_bp    = safe_import("billing", "billing_bp")
+    admin_bp      = safe_import("admin", "admin_bp")
+    auth_bp       = safe_import("auth", "auth_bp")
+    auth_session_bp = safe_import("auth_session", "auth_session_bp")
 
-    try:
-        from .billing import billing_bp
-    except Exception:
-        billing_bp = None
-    try:
-        from .admin import admin_bp
-    except Exception:
-        admin_bp = None
-
-    try:
-        from .auth_session import auth_session_bp
-        app.register_blueprint(auth_session_bp)
-    except Exception:
-        pass
-
+    # Core blueprints
     app.register_blueprint(main_bp)
     app.register_blueprint(ask_bp)
     app.register_blueprint(resumes_bp)
 
-    if interviews_bp:
-        app.register_blueprint(interviews_bp)
-    if employer_bp:
-        app.register_blueprint(employer_bp)
-    if state_bp:
-        app.register_blueprint(state_bp)
-    if insights_bp:
-        app.register_blueprint(insights_bp)
-    if billing_bp:
-        app.register_blueprint(billing_bp)
-    if auth_bp:
-        app.register_blueprint(auth_bp)
-    if admin_bp:
-        app.register_blueprint(admin_bp)
+    if interviews_bp: app.register_blueprint(interviews_bp)
+    if employer_bp:   app.register_blueprint(employer_bp)
+    if state_bp:      app.register_blueprint(state_bp)
+    if insights_bp:   app.register_blueprint(insights_bp)
+    if billing_bp:    app.register_blueprint(billing_bp)
+    if admin_bp:      app.register_blueprint(admin_bp)
+    if auth_session_bp: app.register_blueprint(auth_session_bp)
 
+    if auth_bp:
+        try:
+            app.register_blueprint(auth_bp)
+        except ValueError as e:
+            # Prevent "already registered" error on reloads or testing
+            if "already registered" not in str(e):
+                raise
+
+    # -------- Alias helper --------
     def alias_endpoint(source_ep: str, rule: str, alias_ep: str):
         if source_ep in app.view_functions and alias_ep not in app.view_functions:
             app.add_url_rule(rule, endpoint=alias_ep, view_func=app.view_functions[source_ep])
 
+    # -------- Main routes --------
     alias_endpoint("main.index", "/", "index")
     alias_endpoint("main.chat", "/chat", "chat")
     alias_endpoint("main.pricing", "/pricing", "pricing")
@@ -82,7 +66,8 @@ def register_routes(app: Flask) -> None:
     alias_endpoint("main.terms_of_service", "/terms-of-service", "terms_of_service")
     alias_endpoint("main.admin_settings", "/admin/settings", "admin_settings")
 
-    if "account" not in app.view_functions:
+    # -------- Auth aliases --------
+    if auth_bp:
         alias_endpoint("auth.account", "/account", "account")
 
     if "login" not in app.view_functions:
@@ -111,7 +96,7 @@ def register_routes(app: Flask) -> None:
                 logout_user = None
 
             @app.get("/logout", endpoint="logout")
-            def _logout_shim():
+            def _logout_fallback():
                 try:
                     if logout_user:
                         logout_user()
