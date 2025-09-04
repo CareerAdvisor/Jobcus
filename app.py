@@ -1175,24 +1175,16 @@ def verify_token():
 ask_bp = Blueprint("ask", __name__)
 
 @app.route("/api/ask", methods=["POST"])
-def api_ask():
-    """
-    Chat endpoint used by chat.js. Must return JSON with { reply, modelUsed }.
-    Anonymous allowed; you already guard with allow_free_use() & quotas.
-    """
-    data = request.get_json(force=True) or {}
-    message = (data.get("message") or "").strip()
-    model   = (data.get("model") or "gpt-4o-mini").strip()
+@api_login_required
+def ask():
+    data = request.get_json()
+    message = data.get("message", "")
+    model = data.get("model", "default")
 
-    if not message:
-        return jsonify(error="bad_request", message="message is required"), 400
+    # Call OpenAI / Anthropic / custom AI here
+    reply = run_model(model, message)
 
-    # device/user scoped free guard you already have elsewhere:
-    # ok, guard = allow_free_use(auth_id or "anon", plan)
-    # ... quota checks ...
-    # real model call (or echo during dev)
-    reply = f"You said: {message}"
-    return jsonify(reply=reply, modelUsed=model), 200
+    return jsonify(reply=reply, modelUsed=model)
 
 
 @app.get("/api/credits")
