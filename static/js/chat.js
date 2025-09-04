@@ -122,66 +122,15 @@ function initModelControls() {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Server call helper (tries /api/ask then falls back to /chat/ask)
-// also handles auth + JSON/HTML responses robustly
+// Server call helper (POST to /api/ask and return JSON)
 // ──────────────────────────────────────────────────────────────
-// inside the submit handler, after you set currentModel
-  async function sendMessage(msg) {
-    const data = await apiFetch('/api/ask', { ... });
-  }
+async function sendMessageToAPI(payload) {
+  // apiFetch comes from base.js and already handles credentials + CSRF + 401s
+  return apiFetch('/api/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
-  });
-  const finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
-
-    // Handle auth redirects/401s clearly
-    if (res.status === 401) {
-      window.location = '/account?next=' + encodeURIComponent(location.pathname);
-      throw { kind: 'auth', message: 'Unauthorized' };
-    }
-
-    const ct = res.headers.get('content-type') || '';
-
-    if (!res.ok) {
-      // Helpful guard to avoid Unexpected token '<'
-      const text = await res.text();
-      // special-case limit/quota signaling
-      let data = null;
-      try { data = JSON.parse(text); } catch {}
-      if ((res.status === 402 && data?.error === 'quota_exceeded') ||
-          (res.status === 429 && (data?.error === 'too_many_free_accounts' || data?.error === 'quota_exceeded'))) {
-        showUpgradeBanner('You have reached the limit for the free version, upgrade to enjoy more features');
-        throw { kind: 'limit', message: data?.message || 'Free limit reached' };
-      }
-      throw { kind: 'server', message: (data?.message || data?.reply || `Request failed (${res.status})`) };
-    }
-
-    if (ct.includes('application/json')) {
-      return res.json();
-    } else {
-      // last-ditch parse if server mislabeled JSON
-      try { return JSON.parse(await res.text()); } catch { return null; }
-    }
-  }
-
-  // Your two requested snippets, combined:
-  // 1) Try '/api/ask'
-  //    await fetch('/api/ask', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-  // 2) If that 404s, fall back to '/chat/ask'
-  //    await fetch('/chat/ask', { ... });
-
-  try {
-    return await post('/api/ask');
-  } catch (e) {
-    // only fall back on not-found/misdirected endpoints
-    if (e?.kind === 'limit' || e?.kind === 'auth' || e?.kind === 'server') throw e; // real error
-    try {
-      return await post('/chat/ask');
-    } catch (e2) {
-      throw e2;
-    }
-  }
+  }); // expected: { reply, modelUsed }
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -354,6 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
     resetEl && (resetEl.textContent = q.reset);
   }
 
+  // Sidebar open/close
   const chatMenuToggle = document.getElementById("chatMenuToggle");
   const chatMenu       = document.getElementById("chatSidebar");
   const chatOverlay    = document.getElementById("chatOverlay");
@@ -386,17 +336,17 @@ document.addEventListener("DOMContentLoaded", () => {
   renderChat(getCurrent());
   renderHistory();
   refreshCreditsPanel();
-  maybeShowScrollIcon();
+  maybeShowScrollIcon?.();
 
-  // ---- send handler (drop-in) ----
+  // ---- send handler ----
   form.addEventListener("submit", async (evt) => {
     evt.preventDefault();
-  
+
     const message = (input.value || "").trim();
     if (!message) return;
-  
+
     removeWelcome?.();
-  
+
     const userMsg = document.createElement("div");
     userMsg.className = "chat-entry user";
     userMsg.innerHTML = `
@@ -405,31 +355,25 @@ document.addEventListener("DOMContentLoaded", () => {
       </h2>
     `;
     chatbox.appendChild(userMsg);
-  
+
     saveMessage("user", message);
-  
+
     input.value = "";
-    autoResize(input);
-  
+    autoResize?.(input);
+
     const aiBlock = document.createElement("div");
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
-    scrollToAI(aiBlock);
-  
+    scrollToAI?.(aiBlock);
+
     let finalReply = "";
-    const currentModel = modelCtl.getSelectedModel();
-  
+    const currentModel = modelCtl.getSelectedModel?.() || "gpt-4o-mini";
+
     try {
-      disableComposer(true);
-  
-      // POST to your API; apiFetch is from base.js (adds CSRF + credentials)
+      disableComposer?.(true);
+
       const payload = { message, model: currentModel };
-      const data = await apiFetch("/api/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      }); // must return { reply, modelUsed }
-  
+      const data = await sendMessageToAPI(payload); // { reply, modelUsed }
       finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
     } catch (err) {
       if (err?.kind === "limit") {
@@ -439,10 +383,10 @@ document.addEventListener("DOMContentLoaded", () => {
       aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
       return;
     } finally {
-      disableComposer(false);
+      disableComposer?.(false);
       input.focus();
     }
-  
+
     const copyId = `ai-${Date.now()}`;
     aiBlock.innerHTML = `
       <div id="${copyId}" class="markdown"></div>
@@ -456,13 +400,13 @@ document.addEventListener("DOMContentLoaded", () => {
       <hr class="response-separator" />
     `;
     const targetDiv = document.getElementById(copyId);
-  
+
     let i = 0, buffer = "";
     (function typeWriter() {
       if (i < finalReply.length) {
         buffer += finalReply[i++];
         targetDiv.textContent = buffer;
-        scrollToAI(aiBlock);
+        scrollToAI?.(aiBlock);
         setTimeout(typeWriter, 5);
       } else {
         if (window.marked && typeof window.marked.parse === "function") {
@@ -471,26 +415,26 @@ document.addEventListener("DOMContentLoaded", () => {
           targetDiv.textContent = buffer;
         }
         saveMessage("assistant", finalReply);
-  
+
         const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
         localStorage.setItem("chatUsed", usedNow);
         refreshCreditsPanel();
-        if (window.syncState) window.syncState();
-  
-        scrollToAI(aiBlock);
-        maybeShowScrollIcon();
+        window.syncState?.();
+
+        scrollToAI?.(aiBlock);
+        maybeShowScrollIcon?.();
       }
     })();
   });
 
-    const sendBtn = document.getElementById("sendButton");
-    sendBtn?.addEventListener("click", () => form.dispatchEvent(new Event("submit")));
+  const sendBtn = document.getElementById("sendButton");
+  sendBtn?.addEventListener("click", () => form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
 
-    new MutationObserver(() => {
-      const box = document.getElementById("chatbox");
-      if (box) box.scrollTop = box.scrollHeight;
-    }).observe(chatbox, { childList: true, subtree: true });
-  });
+  new MutationObserver(() => {
+    const box = document.getElementById("chatbox");
+    if (box) box.scrollTop = box.scrollHeight;
+  }).observe(chatbox, { childList: true, subtree: true });
+});
 
 // ──────────────────────────────────────────────────────────────
 // Optional job suggestions (kept from your original)
