@@ -6,7 +6,6 @@ from flask_login import login_required, current_user
 
 from limits import feature_enabled, check_and_increment
 from abuse_guard import allow_free_use  # NEW: device/user-scoped guard
-from helpers.auth import api_login_required
 from auth_utils import api_login_required
 
 import docx
