@@ -1,0 +1,40 @@
+<!-- skill-gap.html -->
+{% extends "base.html" %}
+
+{% block title %}Skill Gap Analysis – Jobcus{% endblock %}
+
+{% block content %}
+<div class="skill-gap-container">
+
+  <!-- Big Bold Header -->
+  <h1 class="skill-gap-title">Skill-Gap Analysis</h1>
+
+  <p class="skill-gap-intro">
+    Find out what skills you're missing for your dream job and how to close the gap. Powered by AI deep insight.
+  </p>
+
+  <section class="skill-gap-form">
+    <form id="skillGapForm">
+      <label for="goal">Career Goal</label>
+      <input type="text" name="goal" id="goal" placeholder="e.g., Data Analyst" required>
+
+      <label for="skills">Your Current Skills</label>
+      <textarea name="skills" id="skills" rows="4" placeholder="e.g., Excel, SQL" required></textarea>
+
+      <button type="submit">Analyze My Gap</button>
+    </form>
+  </section>
+
+  <section class="skill-gap-result">
+    <div id="gapResult" class="result-box show">
+      Result appears here...
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script type="module" src="{{ url_for('static', filename='js/skill-gap.js') }}"></script>
+{% endblock %}
