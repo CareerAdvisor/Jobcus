@@ -388,105 +388,107 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshCreditsPanel();
   maybeShowScrollIcon();
 
-  if (form && input && chatbox) {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const message = input.value.trim();
-      if (!message) return;
-
-      removeWelcome?.();
-
-      const userMsg = document.createElement("div");
-      userMsg.className = "chat-entry user";
-      userMsg.innerHTML = `
-        <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 .5rem;color:#104879;">
-          ${escapeHtml(message)}
-        </h2>
-      `;
-      chatbox.appendChild(userMsg);
-
-      saveMessage("user", message);
-
-      input.value = "";
-      autoResize(input);
-
-      const aiBlock = document.createElement("div");
-      aiBlock.className = "chat-entry ai-answer";
-      chatbox.appendChild(aiBlock);
-      scrollToAI(aiBlock);
-
-      let finalReply = "";
-      let data = null;
-      const currentModel = modelCtl.getSelectedModel();
-
-      // ensure the handler is async
-      sendButton.addEventListener("click", async () => {
-        // ... your pre-existing code up to `let finalReply = ""; let data = null; const currentModel = modelCtl.getSelectedModel();`
-      
-        try {
-          disableComposer(true);
-      
-          const payload = { message, model: currentModel };
-          data = await apiFetch("/api/ask", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-      
-          finalReply = (data && typeof data.reply === "string")
-            ? data.reply
-            : "Sorry, I didn't get a response.";
-        } catch (err) {
-          if (err && err.kind === "limit") {
-            aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
-            return;
-          }
-          aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
-          return;
-        } finally {
-          disableComposer(false);
-          input.focus();
-        }
-
-      const copyId = `ai-${Date.now()}`;
-      aiBlock.innerHTML = `
-        <div id="${copyId}" class="markdown"></div>
-        <div class="response-footer">
-          <span class="copy-wrapper">
-            <img src="/static/icons/copy.svg" class="copy-icon"
-                 title="Copy" onclick="copyToClipboard('${copyId}')">
-            <span class="copy-text">Copy</span>
-          </span>
-        </div>
-        <hr class="response-separator" />
-      `;
-      const targetDiv = document.getElementById(copyId);
-
-      let i = 0, buffer = "";
-      (function typeWriter() {
-        if (i < finalReply.length) {
-          buffer += finalReply[i++];
-          targetDiv.textContent = buffer;
-          scrollToAI(aiBlock);
-          setTimeout(typeWriter, 5);
+  // chat.js — REPLACE your whole send handler with this
+  sendButton.addEventListener("click", async () => {
+    const input   = document.getElementById("userInput");
+    const chatbox = document.getElementById("chatbox");
+    const message = (input?.value || "").trim();
+    if (!message) return;
+  
+    // remove welcome banner if present
+    if (typeof removeWelcome === "function") removeWelcome();
+  
+    // add the user bubble
+    const userMsg = document.createElement("div");
+    userMsg.className = "chat-entry user";
+    userMsg.innerHTML = `
+      <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 .5rem;color:#104879;">
+        ${escapeHtml(message)}
+      </h2>
+    `;
+    chatbox.appendChild(userMsg);
+    saveMessage("user", message);
+  
+    // reset input
+    input.value = "";
+    if (typeof autoResize === "function") autoResize(input);
+  
+    // prep AI block
+    const aiBlock = document.createElement("div");
+    aiBlock.className = "chat-entry ai-answer";
+    chatbox.appendChild(aiBlock);
+    if (typeof scrollToAI === "function") scrollToAI(aiBlock);
+  
+    let finalReply = "";
+    let data = null;
+  
+    // pick model from your UI controller (keep your existing object)
+    const currentModel = modelCtl.getSelectedModel();
+  
+    try {
+      disableComposer(true);
+  
+      const payload = { message, model: currentModel };
+      data = await apiFetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+  
+      finalReply = (data && typeof data.reply === "string")
+        ? data.reply
+        : "Sorry, I didn't get a response.";
+    } catch (err) {
+      if (err && err.kind === "limit") {
+        aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
+        return;
+      }
+      aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
+      return;
+    } finally {
+      disableComposer(false);
+      input.focus();
+    }
+  
+    // render the AI answer, with a minimal typewriter and markdown support
+    const copyId = `ai-${Date.now()}`;
+    aiBlock.innerHTML = `
+      <div id="${copyId}" class="markdown"></div>
+      <div class="response-footer">
+        <span class="copy-wrapper">
+          <img src="/static/icons/copy.svg" class="copy-icon"
+               title="Copy" onclick="copyToClipboard('${copyId}')">
+          <span class="copy-text">Copy</span>
+        </span>
+      </div>
+      <hr class="response-separator" />
+    `;
+    const targetDiv = document.getElementById(copyId);
+  
+    let i = 0, buffer = "";
+    (function typeWriter() {
+      if (i < finalReply.length) {
+        buffer += finalReply[i++];
+        targetDiv.textContent = buffer;
+        if (typeof scrollToAI === "function") scrollToAI(aiBlock);
+        setTimeout(typeWriter, 5);
+      } else {
+        if (window.marked && typeof window.marked.parse === "function") {
+          targetDiv.innerHTML = window.marked.parse(buffer);
         } else {
-          if (window.marked && typeof window.marked.parse === "function") {
-            targetDiv.innerHTML = window.marked.parse(buffer);
-          } else {
-            targetDiv.textContent = buffer;
-          }
-          saveMessage("assistant", finalReply);
-
-          const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
-          localStorage.setItem("chatUsed", usedNow);
-          refreshCreditsPanel();
-          if (window.syncState) window.syncState();
-
-          scrollToAI(aiBlock);
-          maybeShowScrollIcon();
+          targetDiv.textContent = buffer;
         }
-      })();
-    });
+        saveMessage("assistant", finalReply);
+  
+        const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
+        localStorage.setItem("chatUsed", usedNow);
+        if (typeof refreshCreditsPanel === "function") refreshCreditsPanel();
+        if (typeof window.syncState === "function") window.syncState();
+  
+        if (typeof maybeShowScrollIcon === "function") maybeShowScrollIcon();
+      }
+    })();
+  });
 
     const sendBtn = document.getElementById("sendButton");
     sendBtn?.addEventListener("click", () => form.dispatchEvent(new Event("submit")));
