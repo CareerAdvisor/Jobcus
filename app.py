@@ -1214,6 +1214,15 @@ def ask():
         app.logger.exception("Unhandled error in /ask")
         return jsonify(error="server_error", message="Something went wrong on our side. Please try again."), 500
 
+# app.py
+from flask import request, jsonify
+
+@app.route("/api/ask", methods=["POST"])
+def api_ask():
+    payload = request.get_json(silent=True) or {}
+    # TODO: do your chat/LLM logic here
+    answer = {"reply": "Hello from /api/ask"}
+    return jsonify(answer), 200
 
 @app.get("/api/credits")
 @login_required
