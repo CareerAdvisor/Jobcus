@@ -10,6 +10,7 @@
 {% block content %}
 <section class="auth-wrapper">
   <div class="auth-card auth-card--blue">
+
     <h2 class="auth-title">
       {% if mode == 'login' %}
         Sign In to<br>Jobcus
@@ -32,7 +33,7 @@
       {% endfor %}
     </div>
 
-    <form id="accountForm" class="auth-form" autocomplete="on">
+    <form id="accountForm" class="auth-form" method="POST" action="{{ url_for('auth.account') }}">
       <input type="hidden" name="mode" id="mode" value="{{ mode }}" />
 
       <div class="form-group" id="nameGroup">
@@ -92,22 +93,6 @@
 </section>
 {% endblock %}
 
-{% block extra_js %}
-  <!-- Load Supabase module + initialize before anything else -->
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-    const SUPABASE_URL = {{ SUPABASE_URL | tojson }};
-    const SUPABASE_ANON_KEY = {{ SUPABASE_ANON_KEY | tojson }};
-
-    // Make sure it's globally available
-    window.SUPABASE_URL = SUPABASE_URL;
-    window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
-    window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  </script>
-{% endblock %}
-
 {% block scripts %}
-  <!-- Load after Supabase is available -->
-  <script src="{{ url_for('static', filename='js/account.js') }}" type="module"></script>
+  <script src="{{ url_for('static', filename='js/account.js') }}" defer></script>
 {% endblock %}
