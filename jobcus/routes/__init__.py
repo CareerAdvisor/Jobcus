@@ -36,6 +36,8 @@ def register_routes(app: Flask) -> None:
     if admin_bp:      app.register_blueprint(admin_bp)
     if auth_session_bp: app.register_blueprint(auth_session_bp)
 
+    # Register auth blueprint directly
+    from .auth import auth_bp
     if auth_bp:
         try:
             app.register_blueprint(auth_bp)
