@@ -122,38 +122,67 @@ function initModelControls() {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Server call helper (handles limit + generic errors)
+// Server call helper (tries /api/ask then falls back to /chat/ask)
+// also handles auth + JSON/HTML responses robustly
 // ──────────────────────────────────────────────────────────────
 async function sendMessage(payload) {
-  const res = await fetch('/ask', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+  async function post(url) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+    });
 
-  let data = null;
-  const ct = res.headers.get('content-type') || '';
-  if (ct.includes('application/json')) {
-    data = await res.json().catch(() => null);
-  } else {
-    try { data = JSON.parse(await res.text()); } catch { /* ignore */ }
-  }
-
-  // New unified “free limit reached” handling:
-  // - 402 with quota_exceeded (legacy)
-  // - 429 with too_many_free_accounts (device/network guard)
-  // - 429 with quota_exceeded (some routes now use 429)
-  if (!res.ok) {
-    if ((res.status === 402 && data?.error === 'quota_exceeded') ||
-        (res.status === 429 && (data?.error === 'too_many_free_accounts' || data?.error === 'quota_exceeded'))) {
-      showUpgradeBanner('You have reached the limit for the free version, upgrade to enjoy more features');
-      throw { kind: 'limit', message: data?.message || 'Free limit reached' };
+    // Handle auth redirects/401s clearly
+    if (res.status === 401) {
+      window.location = '/account?next=' + encodeURIComponent(location.pathname);
+      throw { kind: 'auth', message: 'Unauthorized' };
     }
-    // Other errors
-    throw { kind: 'server', message: (data?.message || data?.reply || `Request failed (${res.status})`) };
+
+    const ct = res.headers.get('content-type') || '';
+
+    if (!res.ok) {
+      // Helpful guard to avoid Unexpected token '<'
+      const text = await res.text();
+      // special-case limit/quota signaling
+      let data = null;
+      try { data = JSON.parse(text); } catch {}
+      if ((res.status === 402 && data?.error === 'quota_exceeded') ||
+          (res.status === 429 && (data?.error === 'too_many_free_accounts' || data?.error === 'quota_exceeded'))) {
+        showUpgradeBanner('You have reached the limit for the free version, upgrade to enjoy more features');
+        throw { kind: 'limit', message: data?.message || 'Free limit reached' };
+      }
+      throw { kind: 'server', message: (data?.message || data?.reply || `Request failed (${res.status})`) };
+    }
+
+    if (ct.includes('application/json')) {
+      return res.json();
+    } else {
+      // last-ditch parse if server mislabeled JSON
+      try { return JSON.parse(await res.text()); } catch { return null; }
+    }
   }
 
-  return data; // { reply, modelUsed }
+  // Your two requested snippets, combined:
+  // 1) Try '/api/ask'
+  //    await fetch('/api/ask', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+  // 2) If that 404s, fall back to '/chat/ask'
+  //    await fetch('/chat/ask', { ... });
+
+  try {
+    return await post('/api/ask');
+  } catch (e) {
+    // only fall back on not-found/misdirected endpoints
+    if (e?.kind === 'limit' || e?.kind === 'auth' || e?.kind === 'server') throw e; // real error
+    try {
+      return await post('/chat/ask');
+    } catch (e2) {
+      throw e2;
+    }
+  }
 }
 
 // ──────────────────────────────────────────────────────────────
