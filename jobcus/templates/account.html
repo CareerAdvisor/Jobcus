@@ -33,10 +33,10 @@
       {% endfor %}
     </div>
 
-    <form id="accountForm" class="auth-form" method="POST" action="{{ url_for('account') }}">
+    <form id="accountForm" class="auth-form" method="POST" action="{{ url_for('auth.account') }}">
       <input type="hidden" name="mode" id="mode" value="{{ mode }}" />
 
-      <div class="form-group" id="nameGroup">
+      <div class="form-group" id="nameGroup" {% if mode == 'login' %}style="display:none"{% endif %}>
         <label for="name">Full Name</label>
         <input type="text" id="name" name="name" placeholder="Your full name" />
       </div>
