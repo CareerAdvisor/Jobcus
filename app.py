@@ -6,7 +6,7 @@ import re, json, base64, logging, requests
 
 from flask import (
     Blueprint, Flask, request, jsonify, render_template, redirect,
-    session, flash, url_for, current_app, make_response, current_app as app
+    session, flash, url_for, current_app, make_response, g, current_app as app
 )
 from flask_cors import CORS
 from flask_login import (
@@ -18,8 +18,7 @@ from dotenv import load_dotenv
 
 # Local modules
 from extensions import login_manager, init_supabase, init_openai
-from blueprints.resumes import resumes_bp  # your blueprint with all resume endpoints
-from typing import Optional  # Python 3.11 ok (pep 604 used below)
+from typing import Optional
 from datetime import datetime, timedelta, timezone, date
 from auth_utils import require_superadmin, is_staff, is_superadmin
 from limits import (
@@ -33,9 +32,7 @@ from limits import (
 from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
 from abuse_guard import allow_free_use
-from services.users import get_or_bootstrap_user
-from services.ai import call_ai
-from resumes import resumes_bp
+from resumes import resumes_bp  # ← your actual blueprint lives in resumes.py
 
 # --- Environment & app setup ---
 load_dotenv()
@@ -156,6 +153,52 @@ def choose_model(requested: str | None) -> str:
     default = allowed[0]
     req = (requested or "").strip()
     return req if req in allowed else default
+
+# --- Local fallbacks to remove services/* dependency -------------------------
+def get_or_bootstrap_user(supabase_admin, auth_id: str, email: str | None):
+    """
+    Fetch a user row by auth_id; create a minimal one on first login.
+    """
+    try:
+        res = (
+            supabase_admin
+            .table("users")
+            .select("*")
+            .eq("auth_id", auth_id)
+            .maybe_single()
+            .execute()
+        )
+        row = (res.data if isinstance(res.data, dict) else (res.data or None))
+        if row:
+            return row
+    except Exception:
+        current_app.logger.warning("get_or_bootstrap_user: select failed", exc_info=True)
+
+    payload = {
+        "auth_id": auth_id,
+        "email": email,
+        "plan": "free",
+        "plan_status": "active",
+    }
+    try:
+        ins = supabase_admin.table("users").insert(payload).execute()
+        if isinstance(ins.data, list) and ins.data:
+            return ins.data[0]
+    except Exception:
+        current_app.logger.warning("get_or_bootstrap_user: insert failed", exc_info=True)
+    return payload
+
+def call_ai(model: str, prompt: str) -> str:
+    """
+    Minimal wrapper around OpenAI Chat Completions (SDK v1.x).
+    """
+    client = current_app.config["OPENAI_CLIENT"]
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2,
+    )
+    return (resp.choices[0].message.content or "").strip()
 
 # --- User model ---
 class User(UserMixin):
@@ -1069,7 +1112,8 @@ def ask():
 
         payload = request.get_json(silent=True) or {}
         message = (payload.get("message") or "").strip()
-        model   = (payload.get("model") or "gpt-4o-mini").strip()
+        requested_model = (payload.get("model") or "").strip()
+        model = choose_model(requested_model)  # enforce plan model rules
 
         if not message:
             return jsonify(error="bad_request", message="Message is required."), 400
@@ -1080,7 +1124,8 @@ def ask():
         user_row = get_or_bootstrap_user(supabase_admin, auth_id, email) if auth_id else {"plan": "free"}
         plan = (user_row.get("plan") or "free").lower()
 
-        ok, guard = allow_free_use(request, user_id=auth_id, plan=plan)
+        # device/user scoped free guard
+        ok, guard = allow_free_use(auth_id or "anon", plan)
         if not ok:
             return jsonify(
                 error="too_many_free_accounts",
