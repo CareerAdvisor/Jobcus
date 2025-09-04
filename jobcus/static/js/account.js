@@ -1,4 +1,6 @@
-// === 1. Force fetch() to include credentials
+// static/js/account.js
+
+// 1. Force fetch() to include credentials
 (() => {
   const nativeFetch = window.fetch;
   window.fetch = (input, init = {}) => {
@@ -7,7 +9,7 @@
   };
 })();
 
-// === 2. Supabase client helper
+// 2. Supabase Client Initialization
 function getSupabase() {
   if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
   if (!window.supabase || typeof window.supabase.createClient !== "function") return null;
@@ -20,14 +22,14 @@ function getSupabase() {
   }
 }
 
-// === 3. Flash messaging
+// 3. Flash message setter
 function setFlash(message) {
   const flashBox = document.getElementById("flashMessages");
   if (!flashBox) return;
   flashBox.innerHTML = message ? `<div class="flash-item">${message}</div>` : "";
 }
 
-// === 4. Exchange session with Flask backend
+// 4. Exchange access_token with backend
 async function exchangeSession(token) {
   const res = await fetch("/auth/session", {
     method: "POST",
@@ -37,7 +39,7 @@ async function exchangeSession(token) {
   if (!res.ok) throw new Error("Session exchange failed");
 }
 
-// === 5. DOM Ready
+// 5. DOMContentLoaded → Auth flow
 document.addEventListener("DOMContentLoaded", () => {
   const sb = getSupabase();
   if (!sb) {
@@ -55,7 +57,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const formTitle = document.querySelector(".auth-title");
   const subtitle = document.querySelector(".auth-subtitle");
 
-  // --- Update form appearance based on mode ---
   function updateView() {
     const mode = modeInput.value;
     if (mode === "login") {
@@ -77,13 +78,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   toggleMode.addEventListener("click", e => {
     e.preventDefault();
-    modeInput.value = (modeInput.value === "login") ? "signup" : "login";
+    modeInput.value = modeInput.value === "signup" ? "login" : "signup";
     updateView();
   });
 
-  updateView(); // Initial state
+  updateView();
 
-  // --- Submit form ---
   form.addEventListener("submit", async e => {
     e.preventDefault();
     setFlash("");
@@ -110,7 +110,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         if (error) throw new Error(error.message);
 
-        // Optional: add profile to server DB
         await fetch("/auth/profile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
