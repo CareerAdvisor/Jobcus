@@ -126,8 +126,9 @@ function initModelControls() {
 // also handles auth + JSON/HTML responses robustly
 // ──────────────────────────────────────────────────────────────
 // inside the submit handler, after you set currentModel
-  const payload = { message, model: currentModel };
-  const data = await apiFetch('/api/ask', {
+  async function sendMessage(msg) {
+    const data = await apiFetch('/api/ask', { ... });
+  }
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
