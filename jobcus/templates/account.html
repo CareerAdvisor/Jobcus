@@ -33,7 +33,7 @@
       {% endfor %}
     </div>
 
-    <form id="accountForm" class="auth-form" method="POST" action="{{ url_for('auth.account') }}">
+    <form id="accountForm" class="auth-form" method="POST" action="{{ url_for('account') }}">
       <input type="hidden" name="mode" id="mode" value="{{ mode }}" />
 
       <div class="form-group" id="nameGroup">
@@ -69,7 +69,7 @@
       </p>
 
       <p class="text-sm">
-        <a href="{{ url_for('auth.forgot_password') }}">Forgot your password?</a>
+        <a href="{{ url_for('forgot_password') }}">Forgot your password?</a>
       </p>
 
       <div class="or-divider"><span>OR</span></div>
