@@ -7,7 +7,7 @@ from functools import wraps
 from auth_utils import api_login_required, is_staff, is_superadmin, require_superadmin
 
 from flask import (
-    Blueprint, Flask, request, jsonify, render_template, redirect,
+    Blueprint, flask, request, jsonify, render_template, redirect,
     session, flash, url_for, current_app, make_response, g, current_app as app
 )
 from flask_cors import CORS
@@ -1127,12 +1127,37 @@ def account():
 
     return jsonify(success=False, message="Unknown mode."), 400
 
+
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
-        # TODO: handle the submitted email (e.g., send reset email via your auth provider)
+        email = (request.form.get("email") or "").strip().lower()
+        if not email:
+            flash("Please enter your email address.", "error")
+            return render_template("forgot-password.html")
+
+        supabase = current_app.config.get("SUPABASE")
+        if not supabase:
+            current_app.logger.error("Supabase client not initialized")
+            flash("Server configuration error.", "error")
+            return render_template("forgot-password.html")
+
+        try:
+            # Where the email link should land after the user clicks it:
+            redirect_to = url_for("reset_password", _external=True)
+            # Ask Supabase to send the reset email
+            supabase.auth.reset_password_for_email(email, {"redirect_to": redirect_to})
+        except Exception as e:
+            current_app.logger.exception("Password reset request failed")
+            # We intentionally don’t reveal whether the email exists
+            flash("If that email exists, a reset link has been sent.", "success")
+            return redirect(url_for("account", mode="login"))
+
+        # Don’t reveal if the address is valid — standard security practice
         flash("If that email exists, a reset link has been sent.", "success")
-        return redirect(url_for("account"))
+        return redirect(url_for("account", mode="login"))
+
+    # GET → show the form
     return render_template("forgot-password.html")
 
 @app.route("/reset-password", methods=["GET", "POST"])
