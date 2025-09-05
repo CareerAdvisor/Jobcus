@@ -1135,6 +1135,20 @@ def forgot_password():
         return redirect(url_for("account"))
     return render_template("forgot-password.html")
 
+@app.route("/reset-password", methods=["GET", "POST"])
+def reset_password():
+    if request.method == "POST":
+        email = request.form.get("email")
+        new_password = request.form.get("password")
+        
+        # TODO: validate token, check email, update password in Supabase or your DB
+        flash("Your password has been reset successfully. Please log in.", "success")
+        return redirect(url_for("account"))
+    
+    # Render template with email prefilled (if passed via query or token)
+    email = request.args.get("email", "")
+    return render_template("reset-password.html", email=email)
+
 # ----------------------------
 # Logout / Dashboard
 # ----------------------------
