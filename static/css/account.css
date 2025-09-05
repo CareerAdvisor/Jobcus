@@ -211,3 +211,5 @@ body.account-page .auth-card{
   text-align: center;
 }
 
+/* If your CSS is scoped by body class, this covers that too */
+.account-page .account-container { display:flex; justify-content:center; align-items:center; min-height:100vh; }
