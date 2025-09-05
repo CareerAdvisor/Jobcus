@@ -1127,6 +1127,14 @@ def account():
 
     return jsonify(success=False, message="Unknown mode."), 400
 
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        # TODO: handle the submitted email (e.g., send reset email via your auth provider)
+        flash("If that email exists, a reset link has been sent.", "success")
+        return redirect(url_for("account"))
+    return render_template("forgot-password.html")
+
 # ----------------------------
 # Logout / Dashboard
 # ----------------------------
