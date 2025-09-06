@@ -7,8 +7,8 @@ from functools import wraps
 from auth_utils import api_login_required, is_staff, is_superadmin, require_superadmin
 
 from flask import (
-    Blueprint, flask, request, jsonify, render_template, redirect,
-    session, flash, url_for, current_app, make_response, g, current_app
+    Blueprint, Flask, request, jsonify, render_template, redirect,
+    session, flash, url_for, current_app, make_response, g
 )
 from flask_cors import CORS
 from flask_login import (
