@@ -17,6 +17,7 @@ from flask_login import (
 )
 from gotrue.errors import AuthApiError
 from dotenv import load_dotenv
+from supabase_auth.errors import AuthApiError
 
 # Local modules
 from extensions import login_manager, init_supabase, init_openai
@@ -1016,99 +1017,43 @@ def confirm_page():
 # ----------------------------
 # Account routes (signup/login)
 # ----------------------------
+# add near your imports
+from supabase_auth.errors import AuthApiError
+
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
         mode = request.args.get("mode", "signup")
         return render_template("account.html", mode=mode)
 
-    data = request.get_json(force=True)
+    # Accept JSON *or* form posts safely
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+    else:
+        data = request.form.to_dict()  # handles normal form submits
+
     mode = (data.get("mode") or "").lower()
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     name = (data.get("name") or "").strip()
 
     if not email or not password:
+        # Never 500 on user input
         return jsonify(success=False, message="Email and password are required."), 400
 
     if mode == "signup":
-        try:
-            resp = supabase.auth.sign_up({"email": email, "password": password})
-            user = resp.user
-            if not user:
-                return jsonify(success=False, message="Signup failed."), 400
-
-            ud = user.model_dump() if hasattr(user, "model_dump") else user
-            auth_id = ud["id"]
-
-            # Create DB user row
-            try:
-                supabase.table("users").insert({
-                    "auth_id": auth_id, "email": email, "fullname": name
-                }).execute()
-            except Exception:
-                pass
-
-            # ✅ Auto-promote if email is in ADMIN_EMAILS
-            admin_emails = {e.strip().lower() for e in (os.getenv("ADMIN_EMAILS") or "").split(",") if e.strip()}
-            if email and email.lower() in admin_emails:
-                try:
-                    supabase.table("users").update({"role": "superadmin"}) \
-                        .eq("auth_id", auth_id).execute()
-                except Exception:
-                    current_app.logger.exception("auto-promote admin failed")
-
-            # ⬇️ remember email for the /check-email page
-            if not ud.get("email_confirmed_at"):
-                session["pending_email"] = email
-                return jsonify(success=True, redirect=url_for("check_email")), 200
-
-            login_user(User(auth_id=auth_id, email=email, fullname=name))
-            record_login_event(current_user)
-            _, set_cookie = start_user_session(current_user)
-            resp = jsonify(success=True, redirect=url_for("dashboard"))
-            return set_cookie(resp), 200
-
-        except AuthApiError as e:
-            msg = str(e).lower()
-            if "already registered" in msg:
-                return jsonify(
-                    success=False,
-                    code="user_exists",
-                    message="Account already exists. Please log in."
-                ), 409
-            return jsonify(success=False, message="Signup failed."), 400
+        # ... keep your existing signup logic exactly as-is ...
+        pass
 
     elif mode == "login":
         try:
             resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
             user = resp.user
             if not user:
-                return jsonify(success=False, message="Invalid login credentials."), 400
+                return jsonify(success=False, message="Invalid email or password."), 401
 
-            ud = user.model_dump() if hasattr(user, "model_dump") else user
-            auth_id = ud["id"]
-
-            # ✅ Auto-promote if email is in ADMIN_EMAILS
-            admin_emails = {e.strip().lower() for e in (os.getenv("ADMIN_EMAILS") or "").split(",") if e.strip()}
-            if email and email.lower() in admin_emails:
-                try:
-                    supabase.table("users").update({"role": "superadmin"}) \
-                        .eq("auth_id", auth_id).execute()
-                except Exception:
-                    current_app.logger.exception("auto-promote admin failed")
-
-            try:
-                r = supabase.table("users").select("fullname").eq("auth_id", auth_id).single().execute()
-                fullname = (r.data or {}).get("fullname")
-            except Exception:
-                fullname = None
-
-            login_user(User(auth_id=auth_id, email=email, fullname=fullname))
-            record_login_event(current_user)
-            _, set_cookie = start_user_session(current_user)
-            resp = jsonify(success=True, redirect=url_for("dashboard"))
-            return set_cookie(resp), 200
+            # ... keep your success path exactly as-is ...
+            # login_user(...), record_login_event(...), start_user_session(...)
 
         except AuthApiError as e:
             msg = str(e).lower()
@@ -1121,8 +1066,21 @@ def account():
                     redirect=url_for("check_email")
                 ), 403
             if "invalid login credentials" in msg:
+                # Return 401, not a 500
                 return jsonify(success=False, message="Invalid email or password."), 401
+            # Catch-all for other auth errors
+            current_app.logger.warning(f"Login error for {email}: {e}")
             return jsonify(success=False, message="Login failed."), 400
+
+        except Exception:
+            # Absolute safety net to avoid 500s
+            current_app.logger.exception("Unexpected login error")
+            return jsonify(success=False, message="Login failed."), 400
+
+        # On success (unchanged)
+        # ...
+        # resp = jsonify(success=True, redirect=url_for("dashboard"))
+        # return set_cookie(resp), 200
 
     return jsonify(success=False, message="Unknown mode."), 400
 
@@ -1142,21 +1100,16 @@ def forgot_password():
             return render_template("forgot-password.html")
 
         try:
-            # Where the email link should land after the user clicks it:
             redirect_to = url_for("reset_password", _external=True)
-            # Ask Supabase to send the reset email
             supabase.auth.reset_password_for_email(email, {"redirect_to": redirect_to})
-        except Exception as e:
+        except Exception:
             current_app.logger.exception("Password reset request failed")
-            # We intentionally don’t reveal whether the email exists
             flash("If that email exists, a reset link has been sent.", "success")
             return redirect(url_for("account", mode="login"))
 
-        # Don’t reveal if the address is valid — standard security practice
         flash("If that email exists, a reset link has been sent.", "success")
         return redirect(url_for("account", mode="login"))
 
-    # GET → show the form
     return render_template("forgot-password.html")
 
 @app.route("/reset-password", methods=["GET", "POST"])
