@@ -8,7 +8,7 @@ from auth_utils import api_login_required, is_staff, is_superadmin, require_supe
 
 from flask import (
     Blueprint, flask, request, jsonify, render_template, redirect,
-    session, flash, url_for, current_app, make_response, g, current_app as app
+    session, flash, url_for, current_app, make_response, g, current_app
 )
 from flask_cors import CORS
 from flask_login import (
@@ -39,7 +39,6 @@ from abuse_guard import allow_free_use
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
 
-app = Flask(__name__)
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 resumes_bp = None  # will set when found
 
