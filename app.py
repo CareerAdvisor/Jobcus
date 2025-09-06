@@ -1017,72 +1017,140 @@ def confirm_page():
 # ----------------------------
 # Account routes (signup/login)
 # ----------------------------
-# add near your imports
-from supabase_auth.errors import AuthApiError
-
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
+        # Keep your current GET -> render
         mode = request.args.get("mode", "signup")
         return render_template("account.html", mode=mode)
 
-    # Accept JSON *or* form posts safely
-    if request.is_json:
-        data = request.get_json(silent=True) or {}
-    else:
-        data = request.form.to_dict()  # handles normal form submits
+    # ---- Robust input parsing (JSON OR form) ----
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        data = {}
+    # Fallback to form fields if JSON was empty or missing
+    if not data:
+        data = request.form.to_dict() if request.form else {}
 
-    mode = (data.get("mode") or "").lower()
-    email = (data.get("email") or "").strip().lower()
-    password = data.get("password") or ""
-    name = (data.get("name") or "").strip()
+    # Tolerant field extraction
+    mode = (data.get("mode") or request.args.get("mode") or "login").lower()
+    email = (data.get("email") or request.form.get("email") or "").strip().lower()
+    password = (data.get("password") or request.form.get("password") or "")
+    name = (data.get("name") or request.form.get("name") or "").strip()
+
+    # Basic validation
+    if mode not in ("login", "signup"):
+        mode = "login"  # be forgiving; default to login
 
     if not email or not password:
-        # Never 500 on user input
         return jsonify(success=False, message="Email and password are required."), 400
 
     if mode == "signup":
-        # ... keep your existing signup logic exactly as-is ...
-        pass
-
-    elif mode == "login":
+        # ---- keep your existing signup logic EXACTLY as you had it ----
+        # (create user via supabase.auth.sign_up, insert DB row, auto-promote admin, etc.)
+        # return the same JSON responses you already return
         try:
-            resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
+            resp = supabase.auth.sign_up({"email": email, "password": password})
             user = resp.user
             if not user:
-                return jsonify(success=False, message="Invalid email or password."), 401
+                return jsonify(success=False, message="Signup failed."), 400
 
-            # ... keep your success path exactly as-is ...
-            # login_user(...), record_login_event(...), start_user_session(...)
+            ud = user.model_dump() if hasattr(user, "model_dump") else user
+            auth_id = ud["id"]
+
+            # Create DB user row (best-effort)
+            try:
+                supabase.table("users").insert({
+                    "auth_id": auth_id, "email": email, "fullname": name
+                }).execute()
+            except Exception:
+                pass
+
+            # Auto-promote if in ADMIN_EMAILS (unchanged)
+            admin_emails = {e.strip().lower() for e in (os.getenv("ADMIN_EMAILS") or "").split(",") if e.strip()}
+            if email and email.lower() in admin_emails:
+                try:
+                    supabase.table("users").update({"role": "superadmin"}) \
+                        .eq("auth_id", auth_id).execute()
+                except Exception:
+                    current_app.logger.exception("auto-promote admin failed")
+
+            # If not confirmed yet, send to check email (unchanged)
+            if not ud.get("email_confirmed_at"):
+                session["pending_email"] = email
+                return jsonify(success=True, redirect=url_for("check_email")), 200
+
+            # Success path (unchanged)
+            login_user(User(auth_id=auth_id, email=email, fullname=name))
+            record_login_event(current_user)
+            _, set_cookie = start_user_session(current_user)
+            resp = jsonify(success=True, redirect=url_for("dashboard"))
+            return set_cookie(resp), 200
 
         except AuthApiError as e:
             msg = str(e).lower()
-            if "email not confirmed" in msg or "not confirmed" in msg:
-                session["pending_email"] = email
+            if "already registered" in msg:
                 return jsonify(
                     success=False,
-                    code="email_not_confirmed",
-                    message="Please confirm your email to continue.",
-                    redirect=url_for("check_email")
-                ), 403
-            if "invalid login credentials" in msg:
-                # Return 401, not a 500
-                return jsonify(success=False, message="Invalid email or password."), 401
-            # Catch-all for other auth errors
-            current_app.logger.warning(f"Login error for {email}: {e}")
-            return jsonify(success=False, message="Login failed."), 400
-
+                    code="user_exists",
+                    message="Account already exists. Please log in."
+                ), 409
+            current_app.logger.warning(f"Signup error for {email}: {e}")
+            return jsonify(success=False, message="Signup failed."), 400
         except Exception:
-            # Absolute safety net to avoid 500s
-            current_app.logger.exception("Unexpected login error")
-            return jsonify(success=False, message="Login failed."), 400
+            current_app.logger.exception("Unexpected signup error")
+            return jsonify(success=False, message="Signup failed."), 400
 
-        # On success (unchanged)
-        # ...
-        # resp = jsonify(success=True, redirect=url_for("dashboard"))
-        # return set_cookie(resp), 200
+    # mode == "login"
+    try:
+        resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        user = resp.user
+        if not user:
+            return jsonify(success=False, message="Invalid email or password."), 401
 
-    return jsonify(success=False, message="Unknown mode."), 400
+        ud = user.model_dump() if hasattr(user, "model_dump") else user
+        auth_id = ud["id"]
+
+        # Auto-promote admin (unchanged)
+        admin_emails = {e.strip().lower() for e in (os.getenv("ADMIN_EMAILS") or "").split(",") if e.strip()}
+        if email and email.lower() in admin_emails:
+            try:
+                supabase.table("users").update({"role": "superadmin"}) \
+                    .eq("auth_id", auth_id).execute()
+            except Exception:
+                current_app.logger.exception("auto-promote admin failed")
+
+        # Optional fullname fetch (unchanged)
+        try:
+            r = supabase.table("users").select("fullname").eq("auth_id", auth_id).single().execute()
+            fullname = (r.data or {}).get("fullname")
+        except Exception:
+            fullname = None
+
+        # Success path (unchanged)
+        login_user(User(auth_id=auth_id, email=email, fullname=fullname))
+        record_login_event(current_user)
+        _, set_cookie = start_user_session(current_user)
+        resp = jsonify(success=True, redirect=url_for("dashboard"))
+        return set_cookie(resp), 200
+
+    except AuthApiError as e:
+        msg = str(e).lower()
+        if "email not confirmed" in msg or "not confirmed" in msg:
+            session["pending_email"] = email
+            return jsonify(
+                success=False,
+                code="email_not_confirmed",
+                message="Please confirm your email to continue.",
+                redirect=url_for("check_email")
+            ), 403
+        if "invalid login credentials" in msg:
+            return jsonify(success=False, message="Invalid email or password."), 401
+        current_app.logger.warning(f"Login error for {email}: {e}")
+        return jsonify(success=False, message="Login failed."), 400
+    except Exception:
+        current_app.logger.exception("Unexpected login error")
+        return jsonify(success=False, message="Login failed."), 400
 
 
 @app.route("/forgot-password", methods=["GET", "POST"])
