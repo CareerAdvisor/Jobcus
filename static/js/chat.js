@@ -12,7 +12,7 @@
 })();
 
 // ──────────────────────────────────────────────────────────────
-// Small utilities (kept from your original, with a couple helpers)
+// Small utilities (now also exposed on window for inline handlers)
 // ──────────────────────────────────────────────────────────────
 function removeWelcome() {
   const banner = document.getElementById("welcomeBanner");
@@ -23,6 +23,7 @@ function insertSuggestion(text) {
   if (!input) return;
   input.value = text;
   input.focus();
+  window.autoResize?.(input);
 }
 function autoResize(textarea) {
   if (!textarea) return;
@@ -83,6 +84,15 @@ function disableComposer(disabled) {
   if (input)  input.disabled  = !!disabled;
   if (sendBtn) sendBtn.style.opacity = disabled ? "0.5" : "";
 }
+
+// Expose functions used by inline HTML handlers
+window.insertSuggestion = insertSuggestion;
+window.copyToClipboard  = copyToClipboard;
+window.autoResize       = autoResize;
+window.sharePage        = sharePage;
+window.handleMic        = handleMic;
+window.handleAttach     = handleAttach;
+window.removeWelcome    = removeWelcome;
 
 // ──────────────────────────────────────────────────────────────
 function initModelControls() {
@@ -148,6 +158,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatbox = document.getElementById("chatbox");
   const form    = document.getElementById("chat-form");
   const input   = document.getElementById("userInput");
+
+  // Keep textarea autosizing in sync
+  input?.addEventListener("input", () => window.autoResize?.(input));
+  // Initial size if prefilled
+  window.autoResize?.(input);
 
   const escapeHtml = (s='') => s
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -303,39 +318,18 @@ document.addEventListener("DOMContentLoaded", () => {
     resetEl && (resetEl.textContent = q.reset);
   }
 
-  // Sidebar open/close
+  // Sidebar open/close (use functions exposed by base.js)
   const chatMenuToggle = document.getElementById("chatMenuToggle");
-  const chatMenu       = document.getElementById("chatSidebar");
   const chatOverlay    = document.getElementById("chatOverlay");
   const chatCloseBtn   = document.getElementById("chatSidebarClose");
 
-  function openChatMenu(){
-    if (!chatMenu) return;
-    chatMenu.classList.add("is-open");
-    chatMenu.setAttribute("aria-hidden","false");
-    if (chatOverlay) chatOverlay.hidden = false;
-    document.documentElement.style.overflow = "hidden";
-  }
-  function closeChatMenu() {
-    if (!chatMenu) return;
-    // Move focus to a safe element before hiding
-    document.getElementById("userInput")?.focus();
-  
-    chatMenu.classList.remove("is-open");
-    chatMenu.setAttribute("aria-hidden", "true");
-    if (chatOverlay) chatOverlay.hidden = true;
-    document.documentElement.style.overflow = "";
-  }
+  chatMenuToggle?.addEventListener("click", window.openChatMenu);
+  chatOverlay?.addEventListener("click", window.closeChatMenu);
+  chatCloseBtn?.addEventListener("click", window.closeChatMenu);
+  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") window.closeChatMenu?.(); });
 
-  window.closeChatMenu = closeChatMenu;
-
-  chatMenuToggle?.addEventListener("click", openChatMenu);
-  chatOverlay?.addEventListener("click", closeChatMenu);
-  chatCloseBtn?.addEventListener("click", closeChatMenu);
-  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeChatMenu(); });
-
-  document.getElementById("newChatBtn")?.addEventListener("click", () => { clearChat(); closeChatMenu(); });
-  document.getElementById("clearChatBtn")?.addEventListener("click", () => { clearChat(); closeChatMenu(); });
+  document.getElementById("newChatBtn")?.addEventListener("click", () => { clearChat(); window.closeChatMenu?.(); });
+  document.getElementById("clearChatBtn")?.addEventListener("click", () => { clearChat(); window.closeChatMenu?.(); });
 
   renderChat(getCurrent());
   renderHistory();
@@ -343,14 +337,14 @@ document.addEventListener("DOMContentLoaded", () => {
   maybeShowScrollIcon?.();
 
   // ---- send handler (self-contained and async) ----
-  form.addEventListener("submit", async (evt) => {
+  form?.addEventListener("submit", async (evt) => {
     evt.preventDefault();
-  
-    const message = (input.value || "").trim();
+
+    const message = (input?.value || "").trim();
     if (!message) return;
-  
+
     removeWelcome?.();
-  
+
     const userMsg = document.createElement("div");
     userMsg.className = "chat-entry user";
     userMsg.innerHTML = `
@@ -359,30 +353,47 @@ document.addEventListener("DOMContentLoaded", () => {
       </h2>
     `;
     chatbox.appendChild(userMsg);
-  
+
     saveMessage("user", message);
-  
-    input.value = "";
-    autoResize(input);
-  
+
+    if (input) {
+      input.value = "";
+      autoResize(input);
+    }
+
     const aiBlock = document.createElement("div");
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
     scrollToAI(aiBlock);
-  
+
     const currentModel = modelCtl.getSelectedModel();
     let finalReply = "";
-  
+
     try {
       disableComposer(true);
-  
-      // single, clean call — NO stray awaits below this block
+
+      // Jobs quick-intent
+      if (/^\s*jobs?:/i.test(message)) {
+        const query = message.replace(/^\s*jobs?:/i, "").trim() || message.trim();
+        const jobs = await apiFetch("/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query })
+        });
+        displayJobs(jobs, aiBlock);
+        saveMessage("assistant", `Found ${Array.isArray(jobs) ? jobs.length : 0} jobs for “${query}”.`);
+        refreshCreditsPanel?.();
+        window.syncState?.();
+        return;
+      }
+
+      // Normal AI chat
       const data = await apiFetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, model: currentModel })
       });
-  
+
       finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
     } catch (err) {
       if (err?.kind === "limit") {
@@ -393,9 +404,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     } finally {
       disableComposer(false);
-      input.focus();
+      input?.focus();
     }
-  
+
     const copyId = `ai-${Date.now()}`;
     aiBlock.innerHTML = `
       <div id="${copyId}" class="markdown"></div>
@@ -408,7 +419,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <hr class="response-separator" />
     `;
     const targetDiv = document.getElementById(copyId);
-  
+
     let i = 0, buffer = "";
     (function typeWriter() {
       if (i < finalReply.length) {
@@ -423,12 +434,12 @@ document.addEventListener("DOMContentLoaded", () => {
           targetDiv.textContent = buffer;
         }
         saveMessage("assistant", finalReply);
-  
+
         const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
         localStorage.setItem("chatUsed", usedNow);
         refreshCreditsPanel?.();
         window.syncState?.();
-  
+
         scrollToAI(aiBlock);
         maybeShowScrollIcon();
       }
@@ -436,62 +447,16 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const sendBtn = document.getElementById("sendButton");
-  sendBtn?.addEventListener("click", () => form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+  sendBtn?.addEventListener("click", () => {
+    // Trigger the form submit programmatically
+    form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
 
   new MutationObserver(() => {
     const box = document.getElementById("chatbox");
     if (box) box.scrollTop = box.scrollHeight;
   }).observe(chatbox, { childList: true, subtree: true });
 });
-
-// inside your submit handler, after you have `message`, `currentModel`, and `aiBlock`
-try {
-  disableComposer(true);
-
-  // simple intent: if the message starts with "jobs:" or "job:"
-  if (/^\s*jobs?:/i.test(message)) {
-    const query = message.replace(/^\s*jobs?:/i, "").trim() || message.trim();
-    const jobs = await apiFetch("/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query })
-    });
-
-    // render your jobs UI
-    displayJobs(jobs, aiBlock);
-
-    // optionally record an assistant message summary for history/credits
-    saveMessage("assistant", `Found ${Array.isArray(jobs) ? jobs.length : 0} jobs for “${query}”.`);
-    refreshCreditsPanel?.();
-    if (window.syncState) window.syncState();
-    return; // we're done; skip the AI text rendering below
-  }
-
-  // otherwise: normal AI chat
-  const data = await apiFetch("/api/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, model: currentModel })
-  }); // server returns { reply, modelUsed }
-
-  const finalReply = (data && data.reply)
-    ? String(data.reply)
-    : "Sorry, I didn't get a response.";
-
-  // ...proceed with your existing typewriter/markdown render using finalReply
-
-} catch (err) {
-  if (err?.kind === "limit") {
-    aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
-    return;
-  }
-  aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
-  return;
-} finally {
-  disableComposer(false);
-  input.focus();
-}
-
 
 // ──────────────────────────────────────────────────────────────
 // Optional job suggestions (kept from your original)
@@ -512,7 +477,7 @@ async function fetchJobs(query, aiBlock) {
 function displayJobs(data, aiBlock) {
   const jobsContainer = document.createElement("div");
   jobsContainer.className = "job-listings";
-  const allJobs = [...(data.remotive || []), ...(data.adzuna || []), ...(data.jsearch || [])];
+  const allJobs = [...(data?.remotive || []), ...(data?.adzuna || []), ...(data?.jsearch || [])];
   if (!allJobs.length) return;
   const heading = document.createElement("p");
   heading.innerHTML = `<strong>Here are some job opportunities that match your interest:</strong>`;
