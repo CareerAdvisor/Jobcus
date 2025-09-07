@@ -112,6 +112,10 @@ load_dotenv()
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
+app.config["SUPABASE_URL"] = os.getenv("SUPABASE_URL")           # PUBLIC
+app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY")  # PUBLIC
+# You can continue storing the actual client in app.config["SUPABASE"]
+
 # Session cookie hardening
 app.config.update(
     SESSION_COOKIE_SECURE=True,
