@@ -108,7 +108,6 @@ if resumes_bp is None:
 # --- Environment & app setup ---
 load_dotenv()
 
-def create_app():
     app = Flask(__name__, static_folder="static", static_url_path="/static")
     app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
@@ -1584,7 +1583,6 @@ else:
     # App still runs without the resumes routes
     app.logger.warning("Skipping app.register_blueprint(resumes_bp): not found")
 
-    return app
 
 # ---- Employer inquiry endpoints ----
 
