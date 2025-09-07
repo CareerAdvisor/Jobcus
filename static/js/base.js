@@ -11,6 +11,15 @@ try {
 } catch { /* ignore */ }
 
 /* ─────────────────────────────────────────────────────────────
+ * 0.05) Tiny global helpers needed by inline HTML on any page
+ * ───────────────────────────────────────────────────────────── */
+window.autoResize = window.autoResize || function (ta) {
+  if (!ta) return;
+  ta.style.height = "auto";
+  ta.style.height = ta.scrollHeight + "px";
+};
+
+/* ─────────────────────────────────────────────────────────────
  * 0.1) Ensure a persistent device identifier for abuse guard
  *      - Matches backend: abuse_guard._device_id() looks for "jobcus_device"
  * ───────────────────────────────────────────────────────────── */
@@ -78,7 +87,7 @@ try {
 // CSRF cookie reader (Flask-WTF default cookie names vary; adjust if needed)
 function getCookie(name) {
   const m = document.cookie.match(
-    new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g,'\\$1') + '=([^;]*)')
+    new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\\]\\/+^])/g,'\\$1') + '=([^;]*)')
   );
   return m ? decodeURIComponent(m[1]) : null;
 }
@@ -196,7 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .forEach((el) => el.classList.remove("show"));
       toggleUserMenu(false);
       // Also close chat sidebar on Escape
-      closeChatMenu();
+      window.closeChatMenu?.();
     }
   });
 
@@ -245,7 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
   chatOverlay?.addEventListener("click", closeChatMenu);
   chatCloseBtn?.addEventListener("click", closeChatMenu);
 
-  // expose globally if other scripts need them
+  // expose globally if other scripts (chat.js) need them
   window.openChatMenu = openChatMenu;
   window.closeChatMenu = closeChatMenu;
 });
