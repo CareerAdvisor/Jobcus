@@ -123,8 +123,6 @@ def create_app():
             "SUPABASE_ANON_KEY": current_app.config.get("SUPABASE_ANON_KEY"),
         }
 
-    return app
-
 # Session cookie hardening
 app.config.update(
     SESSION_COOKIE_SECURE=True,
@@ -1586,6 +1584,8 @@ else:
     # App still runs without the resumes routes
     app.logger.warning("Skipping app.register_blueprint(resumes_bp): not found")
 
+    return app
+
 
 # ---- Employer inquiry endpoints ----
 
@@ -1670,6 +1670,8 @@ Required Qualifications, Preferred Skills, and How to Apply.
     except Exception:
         current_app.logger.exception("Employer submission error")
         return jsonify(success=False, message="Server error generating job post."), 500
+
+app = create_app()
 
 # --- Entrypoint ---
 if __name__ == "__main__":
