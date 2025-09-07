@@ -66,6 +66,13 @@ function maybeShowScrollIcon() {
     chatboxEl.scrollHeight > chatboxEl.clientHeight + 20 ? "block" : "none";
 }
 
+// NEW: always snap the chat view to the latest message
+function scrollToBottom() {
+  const box = document.getElementById("chatbox");
+  if (!box) return;
+  box.scrollTop = box.scrollHeight;
+}
+
 // Minimal helpers your old code referenced
 function showUpgradeBanner(msg) {
   let b = document.getElementById("upgradeBanner");
@@ -160,7 +167,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const input   = document.getElementById("userInput");
 
   // Keep textarea autosizing in sync
-  input?.addEventListener("input", () => window.autoResize?.(input));
+  input?.addEventListener("input", () => {
+    window.autoResize?.(input);
+    scrollToBottom();
+  });
   // Initial size if prefilled
   window.autoResize?.(input);
 
@@ -197,6 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chatbox.innerHTML = "";
     if (!messages.length){
       renderWelcome();
+      scrollToBottom();
       return;
     }
     messages.forEach(msg => {
@@ -230,6 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       chatbox.appendChild(div);
     });
+    scrollToBottom();
   }
 
   function renderHistory(){
@@ -248,7 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.target.closest(".delete")) return;
         setCurrent(h.messages || []);
         renderChat(getCurrent());
-        try { closeSidebar(); } catch {}
+        try { closeChatMenu?.(); } catch {}
       });
       li.querySelector(".delete").addEventListener("click", (e) => {
         e.stopPropagation();
@@ -318,63 +330,24 @@ document.addEventListener("DOMContentLoaded", () => {
     resetEl && (resetEl.textContent = q.reset);
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // Sidebar open/close — LOCAL controller (no base.js dependency)
-  // ──────────────────────────────────────────────────────────────
+  // Sidebar open/close (use functions exposed by base.js)
   const chatMenuToggle = document.getElementById("chatMenuToggle");
   const chatOverlay    = document.getElementById("chatOverlay");
   const chatCloseBtn   = document.getElementById("chatSidebarClose");
-  const sidebar        = document.getElementById("chatSidebar");
 
-  // Ensure it's closed & inert on load if not already open
-  if (sidebar && !sidebar.classList.contains("is-open")) {
-    sidebar.setAttribute("inert", "");
-    sidebar.setAttribute("aria-hidden", "true");
-  }
+  chatMenuToggle?.addEventListener("click", window.openChatMenu);
+  chatOverlay?.addEventListener("click", window.closeChatMenu);
+  chatCloseBtn?.addEventListener("click", window.closeChatMenu);
+  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") window.closeChatMenu?.(); });
 
-  function openSidebar() {
-    if (!sidebar) return;
-    sidebar.removeAttribute("inert");
-    sidebar.setAttribute("aria-hidden", "false");
-    sidebar.classList.add("is-open");
-
-    // move focus into the sidebar (close button is a safe first target)
-    (chatCloseBtn ||
-      sidebar.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
-    )?.focus();
-  }
-
-  function closeSidebar() {
-    if (!sidebar) return;
-
-    // Move focus OUT to a safe element outside the sidebar *before* hiding it
-    document.getElementById("userInput")?.focus();
-
-    sidebar.setAttribute("inert", "");
-    sidebar.setAttribute("aria-hidden", "true");
-    sidebar.classList.remove("is-open");
-  }
-
-  // Bind events to local open/close
-  chatMenuToggle?.addEventListener("click", openSidebar);
-  chatOverlay?.addEventListener("click", closeSidebar);
-  chatCloseBtn?.addEventListener("click", closeSidebar);
-  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeSidebar(); });
-
-  // Buttons inside sidebar that should also close it
-  document.getElementById("newChatBtn")?.addEventListener("click", () => { clearChat(); closeSidebar(); });
-  document.getElementById("clearChatBtn")?.addEventListener("click", () => { clearChat(); closeSidebar(); });
-
-  // Expose closeSidebar if needed elsewhere
-  window.closeSidebar = closeSidebar;
-  window.openSidebar  = openSidebar;
-
-  // ──────────────────────────────────────────────────────────────
+  document.getElementById("newChatBtn")?.addEventListener("click", () => { clearChat(); window.closeChatMenu?.(); });
+  document.getElementById("clearChatBtn")?.addEventListener("click", () => { clearChat(); window.closeChatMenu?.(); });
 
   renderChat(getCurrent());
   renderHistory();
   refreshCreditsPanel();
   maybeShowScrollIcon?.();
+  scrollToBottom();
 
   // ---- send handler (self-contained and async) ----
   form?.addEventListener("submit", async (evt) => {
@@ -393,6 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </h2>
     `;
     chatbox.appendChild(userMsg);
+    scrollToBottom();
 
     saveMessage("user", message);
 
@@ -405,6 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
     scrollToAI(aiBlock);
+    scrollToBottom();
 
     const currentModel = modelCtl.getSelectedModel();
     let finalReply = "";
@@ -424,6 +399,7 @@ document.addEventListener("DOMContentLoaded", () => {
         saveMessage("assistant", `Found ${Array.isArray(jobs) ? jobs.length : 0} jobs for “${query}”.`);
         refreshCreditsPanel?.();
         window.syncState?.();
+        scrollToBottom();
         return;
       }
 
@@ -438,9 +414,11 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       if (err?.kind === "limit") {
         aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
+        scrollToBottom();
         return;
       }
       aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
+      scrollToBottom();
       return;
     } finally {
       disableComposer(false);
@@ -459,6 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <hr class="response-separator" />
     `;
     const targetDiv = document.getElementById(copyId);
+    scrollToBottom();
 
     let i = 0, buffer = "";
     (function typeWriter() {
@@ -466,6 +445,7 @@ document.addEventListener("DOMContentLoaded", () => {
         buffer += finalReply[i++];
         targetDiv.textContent = buffer;
         scrollToAI(aiBlock);
+        scrollToBottom();
         setTimeout(typeWriter, 5);
       } else {
         if (window.marked?.parse) {
@@ -481,6 +461,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.syncState?.();
 
         scrollToAI(aiBlock);
+        scrollToBottom();
         maybeShowScrollIcon();
       }
     })();
@@ -492,10 +473,14 @@ document.addEventListener("DOMContentLoaded", () => {
     form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
 
+  // If DOM changes inside chatbox (e.g., images/markdown), keep view at bottom
   new MutationObserver(() => {
     const box = document.getElementById("chatbox");
     if (box) box.scrollTop = box.scrollHeight;
   }).observe(chatbox, { childList: true, subtree: true });
+
+  // Keep bottom on resize
+  window.addEventListener("resize", scrollToBottom);
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -534,4 +519,5 @@ function displayJobs(data, aiBlock) {
     jobsContainer.appendChild(jobCard);
   });
   aiBlock.appendChild(jobsContainer);
+  scrollToBottom();
 }
