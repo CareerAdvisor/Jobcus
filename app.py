@@ -1653,8 +1653,6 @@ Required Qualifications, Preferred Skills, and How to Apply.
         current_app.logger.exception("Employer submission error")
         return jsonify(success=False, message="Server error generating job post."), 500
 
-app = create_app()
-
 # --- Entrypoint ---
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
