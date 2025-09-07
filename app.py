@@ -1333,21 +1333,6 @@ def api_ask():
 
     return jsonify(reply=ai_reply, modelUsed=model), 200
 
-@app.route("/api/ask", methods=["POST"])
-@api_login_required
-def ask():
-    data = request.get_json()
-    message = data.get("message", "")
-    user = current_user.first_name if current_user.is_authenticated else "there"
-
-    # 👇 Replace this with your actual AI integration
-    if not message.strip():
-        reply = f"Hello {user}, how can I assist you today!"
-    else:
-        reply = run_model("gpt-4", message)  # example AI call
-
-    return jsonify(reply=reply, modelUsed="gpt-4")
-
 @app.get("/api/credits")
 @login_required
 def api_credits():
