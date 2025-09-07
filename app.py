@@ -108,13 +108,22 @@ if resumes_bp is None:
 # --- Environment & app setup ---
 load_dotenv()
 
-# NOTE: make static path explicit to avoid zero-byte responses in prod
-app = Flask(__name__, static_folder="static", static_url_path="/static")
-app.secret_key = os.getenv("SECRET_KEY", "supersecret")
+def create_app():
+    app = Flask(__name__, static_folder="static", static_url_path="/static")
+    app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
-app.config["SUPABASE_URL"] = os.getenv("SUPABASE_URL")           # PUBLIC
-app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY")  # PUBLIC
-# You can continue storing the actual client in app.config["SUPABASE"]
+    # Public Supabase values from env
+    app.config["SUPABASE_URL"] = os.getenv("SUPABASE_URL")
+    app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY")
+
+    @app.context_processor
+    def inject_supabase_public():
+        return {
+            "SUPABASE_URL": current_app.config.get("SUPABASE_URL"),
+            "SUPABASE_ANON_KEY": current_app.config.get("SUPABASE_ANON_KEY"),
+        }
+
+    return app
 
 # Session cookie hardening
 app.config.update(
