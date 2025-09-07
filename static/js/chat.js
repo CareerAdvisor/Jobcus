@@ -248,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.target.closest(".delete")) return;
         setCurrent(h.messages || []);
         renderChat(getCurrent());
-        try { closeChatMenu?.(); } catch {}
+        try { closeSidebar(); } catch {}
       });
       li.querySelector(".delete").addEventListener("click", (e) => {
         e.stopPropagation();
@@ -318,18 +318,58 @@ document.addEventListener("DOMContentLoaded", () => {
     resetEl && (resetEl.textContent = q.reset);
   }
 
-  // Sidebar open/close (use functions exposed by base.js)
+  // ──────────────────────────────────────────────────────────────
+  // Sidebar open/close — LOCAL controller (no base.js dependency)
+  // ──────────────────────────────────────────────────────────────
   const chatMenuToggle = document.getElementById("chatMenuToggle");
   const chatOverlay    = document.getElementById("chatOverlay");
   const chatCloseBtn   = document.getElementById("chatSidebarClose");
+  const sidebar        = document.getElementById("chatSidebar");
 
-  chatMenuToggle?.addEventListener("click", window.openChatMenu);
-  chatOverlay?.addEventListener("click", window.closeChatMenu);
-  chatCloseBtn?.addEventListener("click", window.closeChatMenu);
-  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") window.closeChatMenu?.(); });
+  // Ensure it's closed & inert on load if not already open
+  if (sidebar && !sidebar.classList.contains("is-open")) {
+    sidebar.setAttribute("inert", "");
+    sidebar.setAttribute("aria-hidden", "true");
+  }
 
-  document.getElementById("newChatBtn")?.addEventListener("click", () => { clearChat(); window.closeChatMenu?.(); });
-  document.getElementById("clearChatBtn")?.addEventListener("click", () => { clearChat(); window.closeChatMenu?.(); });
+  function openSidebar() {
+    if (!sidebar) return;
+    sidebar.removeAttribute("inert");
+    sidebar.setAttribute("aria-hidden", "false");
+    sidebar.classList.add("is-open");
+
+    // move focus into the sidebar (close button is a safe first target)
+    (chatCloseBtn ||
+      sidebar.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    )?.focus();
+  }
+
+  function closeSidebar() {
+    if (!sidebar) return;
+
+    // Move focus OUT to a safe element outside the sidebar *before* hiding it
+    document.getElementById("userInput")?.focus();
+
+    sidebar.setAttribute("inert", "");
+    sidebar.setAttribute("aria-hidden", "true");
+    sidebar.classList.remove("is-open");
+  }
+
+  // Bind events to local open/close
+  chatMenuToggle?.addEventListener("click", openSidebar);
+  chatOverlay?.addEventListener("click", closeSidebar);
+  chatCloseBtn?.addEventListener("click", closeSidebar);
+  document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeSidebar(); });
+
+  // Buttons inside sidebar that should also close it
+  document.getElementById("newChatBtn")?.addEventListener("click", () => { clearChat(); closeSidebar(); });
+  document.getElementById("clearChatBtn")?.addEventListener("click", () => { clearChat(); closeSidebar(); });
+
+  // Expose closeSidebar if needed elsewhere
+  window.closeSidebar = closeSidebar;
+  window.openSidebar  = openSidebar;
+
+  // ──────────────────────────────────────────────────────────────
 
   renderChat(getCurrent());
   renderHistory();
