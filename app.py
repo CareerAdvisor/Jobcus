@@ -108,20 +108,11 @@ if resumes_bp is None:
 # --- Environment & app setup ---
 load_dotenv()
 
-def create_app():
-    app = Flask(__name__, static_folder="static", static_url_path="/static")
-    app.secret_key = os.getenv("SECRET_KEY", "supersecret")
+app = Flask(__name__, static_folder="static", static_url_path="/static")
+app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
-    # Public Supabase values from env
-    app.config["SUPABASE_URL"] = os.getenv("SUPABASE_URL")
-    app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY")
-
-    @app.context_processor
-    def inject_supabase_public():
-        return {
-            "SUPABASE_URL": current_app.config.get("SUPABASE_URL"),
-            "SUPABASE_ANON_KEY": current_app.config.get("SUPABASE_ANON_KEY"),
-        }
+app.config["SUPABASE_URL"] = os.getenv("SUPABASE_URL")
+app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY")
 
 # Session cookie hardening
 app.config.update(
@@ -1583,8 +1574,6 @@ if resumes_bp is not None:
 else:
     # App still runs without the resumes routes
     app.logger.warning("Skipping app.register_blueprint(resumes_bp): not found")
-
-    return app
 
 
 # ---- Employer inquiry endpoints ----
