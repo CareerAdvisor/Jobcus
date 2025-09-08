@@ -908,6 +908,43 @@ def ai_suggest():
         )
         return jsonify({"text": text, "list": [], "suggestions": []})
 
+
+@resumes_bp.route("/api/skill-gap", methods=["POST"])
+@login_required
+def skill_gap():
+    data = request.get_json(force=True) or {}
+    goal   = (data.get("goal") or "").strip()
+    skills = (data.get("skills") or "").strip()
+
+    if not goal or not skills:
+        return jsonify(error="Missing fields", message="Please provide both career goal and current skills."), 400
+
+    prompt = f"""
+You are a career advisor. The user’s career goal is: {goal}.
+Their current skills are: {skills}.
+List the missing skills, certifications, and experiences they should acquire to reach the goal.
+Return in plain text with short, clear bullet points.
+    """.strip()
+
+    try:
+        client = current_app.config.get("OPENAI_CLIENT")
+        if not client:
+            # fallback if no AI client
+            return jsonify(result="⚠️ AI service unavailable. Please try again later."), 503
+
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4,
+            max_tokens=400
+        )
+        reply = (resp.choices[0].message.content or "").strip()
+        return jsonify(result=reply), 200
+    except Exception as e:
+        current_app.logger.exception("Skill gap analysis failed")
+        return jsonify(error="ai_error", message=str(e)), 500
+  
+
     # ---- Compact context for resume prompts ----
     def compact_context(c):
         parts = []
