@@ -52,6 +52,7 @@
     throw new Error(msg);
   }
 
+  // ---------- cover-letter context for preview/PDF ----------
   function gatherContext(form) {
     const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
     const baseTone = (form.tone?.value || "professional").trim();
@@ -117,27 +118,7 @@
     return t.trim();
   }
 
-  async function aiSuggestCoverLetter(ctx) {
-    const field = document.getElementById("ai-cl")?.dataset?.field || "coverletter";
-    const res = await fetch("/ai/suggest", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ field, context: ctx })
-    });
-
-    await handleCommonErrors(res);
-
-    const json = await res.json().catch(() => ({}));
-    if (json.error) throw new Error(json.error || "AI suggest failed");
-
-    const raw =
-      json.text ||
-      (Array.isArray(json.suggestions) ? json.suggestions.join("\n\n")
-       : (Array.isArray(json.list) ? json.list.join("\n\n") : ""));
-
-    return sanitizeDraft(raw || "");
-  }
-
+  // ---------- PREVIEW / PDF ----------
   async function renderLetter(ctx, format = "html") {
     const res = await fetch("/build-cover-letter", {
       method: "POST",
@@ -186,7 +167,7 @@
     }
   }
 
-  // Optional: prefill from analyzer handoff (if present)
+  // ---------- OPTIONAL prefill ----------
   function maybePrefillFromSeed(form) {
     try {
       const raw = localStorage.getItem("coverLetterSeed");
@@ -196,10 +177,61 @@
       if (seed.lastName  && form.lastName)  form.lastName.value  = seed.lastName;
       if (seed.role      && form.role)      form.role.value      = seed.role;
       if (seed.company   && form.company)   form.company.value   = seed.company;
-      // contact line, if provided by your analyzer
       if (seed.contact   && form.contact)   form.contact.value   = seed.contact;
     } catch {}
   }
+
+  // ------------------------------------------------------------------
+  // >>> YOUR INSERTED AI BITS (calls /ai/cover-letter) <<<
+  // ------------------------------------------------------------------
+
+  // Build a minimal context from the form (for the AI endpoint)
+  function gatherCLContext(form) {
+    const get = (n) => (form?.elements?.[n]?.value || "").trim();
+    const sender = {
+      first_name: get("firstName"),
+      last_name:  get("lastName"),
+      email:      get("senderEmail"),
+      phone:      get("senderPhone"),
+      address1:   get("senderAddress1"),
+      city:       get("senderCity"),
+      postcode:   get("senderPostcode"),
+      date:       get("letterDate"),
+    };
+    const recipient = {
+      name:    get("recipient") || "Hiring Manager",
+      company: get("company"),
+      address1:get("companyAddress1"),
+      city:    get("companyCity"),
+      postcode:get("companyPostcode"),
+      role:    get("role"),
+    };
+    return {
+      tone: get("tone") || "professional",
+      job_url: get("jobUrl"),
+      sender,
+      recipient
+    };
+  }
+
+  // Call your backend to get a draft
+  async function aiSuggestCoverLetter_min(ctx) {
+    const res = await fetch("/ai/cover-letter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(ctx)
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(text || `Cover-letter AI failed (${res.status})`);
+    }
+    const json = await res.json().catch(() => ({}));
+    if (!json.draft) throw new Error("No draft returned.");
+    return json.draft;
+  }
+
+  // ------------------------------------------------------------------
 
   document.addEventListener("DOMContentLoaded", () => {
     const form   = document.getElementById("clForm");
@@ -209,6 +241,7 @@
     // Prefill if analyzer passed a seed
     if (form) maybePrefillFromSeed(form);
 
+    // AI handlers (refresh / insert)
     aiCard?.addEventListener("click", async (e) => {
       const btn = e.target.closest(".ai-refresh, .ai-add");
       if (!btn) return;
@@ -218,12 +251,13 @@
           btn.disabled = true;
           const el = getAiTextEl();
           if (el) el.textContent = "Thinking…";
-          const ctx = gatherContext(form);
-          const draft = await aiSuggestCoverLetter(ctx);
-          if (el) el.textContent = draft || "No draft yet.";
+          const ctx = gatherCLContext(form);
+          const draft = await aiSuggestCoverLetter_min(ctx);      // <— uses /ai/cover-letter
+          if (el) el.textContent = sanitizeDraft(draft) || "No draft yet.";
         } catch (err) {
           const el = getAiTextEl();
           if (el) el.textContent = err.message || "AI failed.";
+          console.error("cover-letter AI error:", err);
         } finally {
           btn.disabled = false;
         }
@@ -236,6 +270,7 @@
       }
     });
 
+    // Preview / Download
     document.getElementById("cl-preview")?.addEventListener("click", async () => {
       try { await renderLetter(gatherContext(form), "html"); }
       catch (e) { alert(e.message || "Preview failed"); }
