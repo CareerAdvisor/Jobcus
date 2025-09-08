@@ -124,8 +124,9 @@ def inject_supabase_public():
 
 # Session cookie hardening
 app.config.update(
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_SAMESITE="Lax",
+  SESSION_COOKIE_SAMESITE="Lax",
+  SESSION_COOKIE_SECURE=True,
+  SESSION_PERMANENT=False,  # reduce churn
 )
 
 CORS(app)
