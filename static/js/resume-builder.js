@@ -169,7 +169,7 @@ function attachAISuggestionHandlers() {
         if (type === "summary") {
           lines = await aiSuggest("summary", ctx);
           textEl.textContent = lines.join(" ");
-        } else if (type === "highlights")) { // NOTE: leave exactly as in your repo if already working
+        } else if (type === "highlights") { // NOTE: leave exactly as in your repo if already working
           const allItems = qsa(builder, "#exp-list .rb-item");
           const itemEl = btn.closest(".rb-item");
           const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
@@ -243,7 +243,7 @@ function addEducationFromObj(obj = {}) {
   if (g("degree"))         g("degree").value         = obj.degree || "";
   if (g("graduatedStart")) g("graduatedStart").value = obj.graduatedStart || "";
   if (g("graduated"))      g("graduated").value      = obj.graduated || "";
-  if (g("location"))       g("location").value       = obj.location || ";
+  if (g("location"))       g("location").value       = obj.location || "";
   list.appendChild(node);
 }
 
