@@ -155,6 +155,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Init model UI/logic first
   const modelCtl = initModelControls();
 
+  // 0) Server-backed conversation id (created on first send)
+  let conversationId = localStorage.getItem("chat:conversationId") || null;
+
   // Storage keys
   const STORAGE = {
     current: "jobcus:chat:current",   // [{role:'user'|'assistant', content:'...'}]
@@ -298,6 +301,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
       setCurrent([]);
+      localStorage.removeItem("chat:conversationId");
+      conversationId = null;
       renderChat([]);
       renderHistory();
     } finally {
@@ -405,10 +410,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Normal AI chat
       const data = await apiFetch("/api/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, model: currentModel })
-      });
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
+    });
+    
+    // Save conv id after first reply
+    if (data.conversation_id && data.conversation_id !== conversationId) {
+      conversationId = data.conversation_id;
+      localStorage.setItem("chat:conversationId", conversationId);
+    }
 
       finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
     } catch (err) {
