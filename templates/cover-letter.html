@@ -253,5 +253,15 @@
   {% if not letter_only %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}">
     <script defer src="{{ url_for('static', filename='js/cover-letter.js') }}"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const wrap  = document.getElementById("clPreviewWrap");
+        const frame = document.getElementById("clPreview");
+        document.getElementById("cl-preview")?.addEventListener("click", () => {
+          wrap.style.display = "block";
+          frame.src = "/cover-letter?letter_only=1";
+        });
+      });
+    </script>
   {% endif %}
 {% endblock %}
