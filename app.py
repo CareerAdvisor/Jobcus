@@ -467,6 +467,13 @@ def end_current_session(redirect_endpoint="account"):
     return resp
 
 @app.before_request
+def _auth_wall():
+    p = request.path or ""
+    # Always allow static and health checks through
+    if p.startswith("/static/") or p == "/healthz":
+        return
+        
+@app.before_request
 def enforce_single_active_session():
     if not current_user.is_authenticated:
         return
