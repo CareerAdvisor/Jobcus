@@ -1303,35 +1303,71 @@ def _chat_completion(model: str, user_msg: str, history=None) -> str:
 @app.post("/api/ask")
 @api_login_required
 def api_ask():
-    """
-    Chat endpoint used by chat.js. Returns JSON: { reply, modelUsed }.
-    """
     data = request.get_json(silent=True) or {}
     message = (data.get("message") or "").strip()
     model   = (data.get("model")   or "gpt-4o-mini").strip()
+    conv_id = data.get("conversation_id")  # may be None on first message
 
-    # 1) First message in this session → greet and mark greeted
-    if not session.get("chat_greeted", False):
-        session["chat_greeted"] = True
-        name = _first_name_fallback()
-        # You asked specifically for this wording:
-        reply = f"Hello {name}, how can I assist you today!"
-        return jsonify(reply=reply, modelUsed=model), 200
-
-    # 2) Subsequent messages → call the AI with a career-coach system prompt
     if not message:
         return jsonify(error="bad_request", message="message is required"), 400
 
-    # optional: store short history in server session for extra context
-    hist = session.get("chat_hist", [])
-    ai_reply = _chat_completion(model=model, user_msg=message, history=hist)
+    auth_id = current_user.id  # your User.id = auth_id
 
-    # update history (trim to keep session small)
-    hist.append({"role": "user", "content": message})
-    hist.append({"role": "assistant", "content": ai_reply})
-    session["chat_hist"] = hist[-12:]
+    # 1) Ensure conversation
+    if not conv_id:
+        # Optional: try to title from first user message (truncate)
+        title = (message[:60] + "…") if len(message) > 60 else message
+        row = supabase_admin.table("conversations").insert({
+            "auth_id": auth_id,
+            "title": title or "Conversation",
+        }).execute()
+        conv_id = row.data[0]["id"]
 
-    return jsonify(reply=ai_reply, modelUsed=model), 200
+    # 2) Persist user message
+    supabase_admin.table("conversation_messages").insert({
+        "conversation_id": conv_id,
+        "role": "user",
+        "content": message
+    }).execute()
+
+    # 3) (Optional) fetch a short context window from DB
+    # Keep it small to control token cost
+    ctx = supabase_admin.table("conversation_messages")\
+        .select("role,content")\
+        .eq("conversation_id", conv_id)\
+        .order("created_at", desc=True)\
+        .limit(8).execute().data or []
+    history = list(reversed(ctx))  # oldest first
+
+    # 4) Call model
+    ai_reply = _chat_completion(model=model, user_msg=message, history=history)
+
+    # 5) Persist assistant message
+    supabase_admin.table("conversation_messages").insert({
+        "conversation_id": conv_id,
+        "role": "assistant",
+        "content": ai_reply
+    }).execute()
+
+    return jsonify(reply=ai_reply, modelUsed=model, conversation_id=conv_id), 200
+
+@app.get("/api/conversations")
+@api_login_required
+def list_conversations():
+    rows = supabase_admin.table("conversations")\
+        .select("id,title,created_at")\
+        .eq("auth_id", current_user.id)\
+        .order("created_at", desc=True).execute().data or []
+    return jsonify(rows)
+
+@app.get("/api/conversations/<uuid:conv_id>/messages")
+@api_login_required
+def list_messages(conv_id):
+    rows = supabase_admin.table("conversation_messages")\
+        .select("id,role,content,created_at")\
+        .eq("conversation_id", str(conv_id))\
+        .order("created_at", asc=True).execute().data or []
+    return jsonify(rows)
 
 @app.route("/api/ask", methods=["POST"])
 @api_login_required
