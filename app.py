@@ -1487,6 +1487,51 @@ def cover_letter():
         sender={}, recipient={}, draft=""
     )
 
+ai_bp = Blueprint("ai", __name__)
+
+@ai_bp.route("/ai/cover-letter", methods=["POST"])
+@login_required  # or your @api_login_required
+def ai_cover_letter():
+    data = request.get_json(silent=True) or {}
+    tone = (data.get("tone") or "professional").strip()
+
+    sender = data.get("sender") or {}
+    recipient = data.get("recipient") or {}
+
+    prompt = f"""
+Write a {tone} cover letter body (4–6 paragraphs max).
+Sender:
+- Name: {sender.get('first_name','')} {sender.get('last_name','')}
+- Email: {sender.get('email','')}
+- Phone: {sender.get('phone','')}
+- Location: {sender.get('address1','')} {sender.get('city','')} {sender.get('postcode','')}
+
+Recipient:
+- Name/Team: {recipient.get('name','Hiring Manager')}
+- Company: {recipient.get('company','')}
+- Location: {recipient.get('address1','')} {recipient.get('city','')} {recipient.get('postcode','')}
+- Role: {recipient.get('role','')}
+
+Return only the letter body text (no greeting/closing signatures).
+    """.strip()
+
+    try:
+        # Replace with your helper that calls OpenAI (or equivalent)
+        draft = _chat_completion(
+            model="gpt-4o-mini",
+            user_msg=prompt,
+            history=[]
+        )
+    except Exception as e:
+        current_app.logger.exception("cover-letter AI failed")
+        return jsonify(error="ai_error", message=str(e)), 500
+
+    return jsonify(draft=draft), 200
+
+# after app = Flask(__name__)
+app.register_blueprint(ai_bp)
+
+
 # ----------------------------
 # Skill Gap & Interview Coach
 # ----------------------------
