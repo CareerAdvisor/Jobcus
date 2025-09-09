@@ -32,3 +32,6 @@
 .ai-response h2 { font-size: 1.25rem; font-weight: 700; margin: .6rem 0; }
 .ai-response strong { font-weight: 700; }
 
+.ai-response { max-width:100%; overflow-wrap:anywhere; word-break:break-word; }
+.ai-response pre, .ai-response code { white-space:pre-wrap; word-break:break-word; max-width:100%; overflow-x:auto; }
+.ai-response h2, .ai-response h3 { font-weight:700; margin:.5rem 0; }
