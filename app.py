@@ -1561,34 +1561,53 @@ def skill_gap_api():
         current_app.logger.warning("skill-gap: quota check failed", exc_info=True)
         # continue without failing the request
 
-    # Build prompt & call OpenAI (soft-fail if missing)
+    # Build prompt (Markdown output) & call OpenAI (soft-fail if missing)
     prompt = f"""
 You are a concise career advisor.
 Target role/goal: {goal}
-Current skills (comma/newline separated): {skills}
+Current skills: {skills}
 
-1) Key gaps grouped by:
-   - Core skills
-   - Tools/platforms
-   - Certifications
-   - Projects/experience
-2) For each, give 3–6 short, concrete actions or learning paths.
-Return plain text (markdown bullets ok). Keep it practical.
+Return the result in **Markdown format** with:
+- A clear header "Skill Gap Analysis"
+- Bold section titles for each group (Core Skills, Tools & Platforms, Certifications, Projects/Experience)
+- Bullet points under each section
+- Short, practical learning steps
+
+Example format:
+
+## Skill Gap Analysis
+
+**Core Skills**
+- Bullet 1
+- Bullet 2
+
+**Tools & Platforms**
+- Bullet 1
+- Bullet 2
+
+**Certifications**
+- Bullet 1
+- Bullet 2
+
+**Projects / Experience**
+- Bullet 1
+- Bullet 2
 """.strip()
 
     client = current_app.config.get("OPENAI_CLIENT")
     if not client:
         # Fallback text so the page still works
         fallback = (
-            "Core skills to develop:\n"
+            "## Skill Gap Analysis\n\n"
+            "**Core Skills**\n"
             "- Identify 5 core skills from recent job posts; plan 6 weeks of practice.\n"
             "- Take an intermediate course; build weekly mini-projects.\n\n"
-            "Tools & platforms:\n"
+            "**Tools & Platforms**\n"
             "- Pick 1–2 tools used in most listings; complete their quickstarts.\n"
             "- Rebuild a small portfolio project end-to-end with those tools.\n\n"
-            "Certifications:\n"
+            "**Certifications**\n"
             "- Choose one entry/intermediate cert; schedule it 6–8 weeks out.\n\n"
-            "Projects / experience:\n"
+            "**Projects / Experience**\n"
             "- Build 2–3 scoped projects mirroring job tasks; publish with clear READMEs.\n"
             "- Write a one-page case study (problem → approach → result) for each."
         )
