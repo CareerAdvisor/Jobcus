@@ -1,0 +1,33 @@
+/* Keep AI output readable and non-overflowing */
+.ai-response {
+  max-width: 100%;
+  overflow-wrap: anywhere;     /* breaks long words/URLs */
+  word-break: break-word;
+}
+
+.ai-response p,
+.ai-response ul,
+.ai-response ol,
+.ai-response li,
+.ai-response h1,
+.ai-response h2,
+.ai-response h3,
+.ai-response h4 {
+  max-width: 100%;
+}
+
+.ai-response pre,
+.ai-response code {
+  white-space: pre-wrap;       /* wrap code blocks too */
+  word-break: break-word;
+  max-width: 100%;
+  overflow-x: auto;            /* allow horizontal scroll if needed */
+}
+
+/* Optional: nicer bullets spacing */
+.ai-response ul { padding-left: 1.2rem; margin: .4rem 0 .8rem; }
+.ai-response li { margin: .2rem 0; }
+
+/* Optional: header style */
+.ai-response h2 { font-size: 1.25rem; font-weight: 700; margin: .6rem 0; }
+.ai-response strong { font-weight: 700; }
