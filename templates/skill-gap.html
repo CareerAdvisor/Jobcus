@@ -3,6 +3,10 @@
 
 {% block title %}Skill Gap Analysis – Jobcus{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/skill-gap.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="skill-gap-container">
 
@@ -36,6 +40,5 @@
 
 {% block scripts %}
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/skill-gap.css') }}">
     <script src="{{ url_for('static', filename='js/skill-gap.js') }}"></script>
 {% endblock %}
