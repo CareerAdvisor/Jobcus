@@ -1629,123 +1629,217 @@ Example format:
 
 
 # Require login + quota for interview endpoints so pricing is enforced
+def _quota_check(feature_key: str):
+    """Small helper to keep quota code tidy and safe."""
+    try:
+      supabase_admin = current_app.config.get("SUPABASE_ADMIN")
+      plan = (getattr(current_user, "plan", "free") or "free").lower()
+      if supabase_admin:
+          from limits import check_and_increment
+          ok, info = check_and_increment(supabase_admin, current_user.id, plan, feature_key)
+          if not ok:
+              info.setdefault("error", "quota_exceeded")
+              return False, info
+      return True, None
+    except Exception:
+      current_app.logger.warning("quota check failed for %s", feature_key, exc_info=True)
+      # If quota infra is down, don't hard-fail: let the request continue
+      return True, None
+
+def _need_client():
+    client = current_app.config.get("OPENAI_CLIENT")
+    if not client:
+        return None, (jsonify(error="ai_unavailable",
+                              message="AI is temporarily unavailable. Please try again later."), 503)
+    return client, None
+
+
 @app.route("/api/interview", methods=["POST"])
 @login_required
 def interview_coach_api():
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+    # Quota
+    allowed, info = _quota_check("interview_coach")
     if not allowed:
-        info.setdefault("error", "quota_exceeded")
         return jsonify(info), 402
 
+    # Parse input safely
     try:
-        data = request.get_json(force=True)
-        role = (data.get("role","") or "").strip()
-        exp  = (data.get("experience","") or "").strip()
-        if not role or not exp:
-            return jsonify(error="Missing role or experience"), 400
+        data = request.get_json(force=True) or {}
+    except Exception:
+        current_app.logger.exception("interview: invalid JSON")
+        return jsonify(error="bad_request", message="Invalid JSON body"), 400
 
-        prompt = f"""
+    role = (data.get("role") or "").strip()
+    exp  = (data.get("experience") or "").strip()
+    if not role or not exp:
+        return jsonify(error="bad_request", message="Missing role or experience"), 400
+
+    client, err = _need_client()
+    if err:
+        return err
+
+    # Markdown-shaped prompt for “coach pack” (Q&A samples)
+    prompt = f"""
 You are a concise interview coach.
 
 Role: {role}
-Candidate experience: {exp}
+Candidate seniority: {exp}
 
-Return the result in **Markdown format** with:
-- A clear H2 header "Interview Coach"
-- Bold subsection titles
-- Short bullet points (concise, practical)
-- Where useful, 1–2 **STAR** samples
+Return the result in **Markdown** with:
+- Header: "## Interview Coach"
+- **Bold** subsection titles
+- Bullet points (short, practical)
+- At least **3 Q&A samples** (question + compact model answer)
 
 Sections:
 1) **Likely Questions** — 6–10 bullets
-2) **Sample STAR Answers** — 2–3 bullets (each one line: Situation, Task, Action, Result)
-3) **Follow-ups You Can Ask** — 4–6 bullets
-4) **Tips** — 5–7 bullets
+2) **Sample Q&A** — at least 3 bullets; each: “**Q:** …  **A:** …”
+3) **Tips** — 5–7 bullets
 
-No tables. Keep it punchy. Plain Markdown only.
+Keep each line short. Avoid tables. Plain Markdown only.
 """.strip()
 
+    try:
         resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role":"user","content": prompt}],
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.5,
-            max_tokens=900
+            max_tokens=900,
         )
-        md = (resp.choices[0].message.content or "").strip()
-        return jsonify(result=md), 200
-
+        out = (resp.choices[0].message.content or "").strip()
+        return jsonify(result=out), 200
     except Exception:
         logging.exception("Interview coach error")
-        return jsonify(error="Server error"), 500
+        return jsonify(error="server_error", message="Unable to generate interview guide."), 500
+
 
 @app.route("/api/interview/question", methods=["POST"])
 @login_required
 def get_interview_question():
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+    # Quota
+    allowed, info = _quota_check("interview_coach")
     if not allowed:
-        info.setdefault("error", "quota_exceeded")
         return jsonify(info), 402
 
+    # Parse input
     try:
-        data     = request.get_json(force=True)
-        prev     = data.get("previousRole","").strip()
-        target   = data.get("targetRole","").strip()
-        exp      = data.get("experience","").strip()
-        if not prev or not target or not exp:
-            return jsonify(error="Missing inputs"), 400
+        data   = request.get_json(force=True) or {}
+    except Exception:
+        current_app.logger.exception("interview/question: invalid JSON")
+        return jsonify(error="bad_request", message="Invalid JSON body"), 400
 
-        msgs = [
-            {"role":"system","content":"You are a virtual interview coach. Ask one job-specific question."},
-            {"role":"user","content":f"Was {prev}, applying for {target}. Experience: {exp}."}
-        ]
-        resp = client.chat.completions.create(model="gpt-4o", messages=msgs, temperature=0.7)
-        return jsonify(question=resp.choices[0].message.content)
+    prev   = (data.get("previousRole") or "").strip()
+    target = (data.get("targetRole") or "").strip()
+    exp    = (data.get("experience") or "").strip()
+    if not prev or not target or not exp:
+        return jsonify(error="bad_request", message="Missing inputs"), 400
+
+    client, err = _need_client()
+    if err:
+        return err
+
+    prompt = f"""
+You are a virtual interview coach.
+Ask exactly **one** job-specific interview question (no preface, no follow-up, one sentence).
+
+Candidate previous role: {prev}
+Target role: {target}
+Seniority: {exp}
+""".strip()
+
+    try:
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.6,
+            max_tokens=120,
+        )
+        question = (resp.choices[0].message.content or "").strip()
+        # Strip markdown fences if any creep in
+        question = question.replace("```", "").strip()
+        return jsonify(question=question), 200
     except Exception:
         logging.exception("Interview question error")
-        return jsonify(error="Unable to generate question"), 500
+        return jsonify(error="server_error", message="Unable to generate question."), 500
+
 
 @app.route("/api/interview/feedback", methods=["POST"])
 @login_required
 def get_interview_feedback():
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
+    # Quota
+    allowed, info = _quota_check("interview_coach")
     if not allowed:
-        info.setdefault("error", "quota_exceeded")
         return jsonify(info), 402
 
+    # Parse input
     try:
-        data     = request.get_json(force=True)
-        question = (data.get("question") or "").strip()
-        answer   = (data.get("answer") or "").strip()
-        if not question or not answer:
-            return jsonify(error="Missing inputs"), 400
+        data = request.get_json(force=True) or {}
+    except Exception:
+        current_app.logger.exception("interview/feedback: invalid JSON")
+        return jsonify(error="bad_request", message="Invalid JSON body"), 400
 
-        prompt = f"""
-You are an interview coach. Give feedback in **Markdown**:
-- Start with **Feedback** (3–6 bullets)
-- Then **Stronger Answer (Concise)**: one short paragraph or a tight bullet in STAR style
-- Then **Fallback Suggestions**: 2–4 bullets
+    question = (data.get("question") or "").strip()
+    answer   = (data.get("answer") or "").strip()
+    prev     = (data.get("previousRole") or "").strip()
+    target   = (data.get("targetRole") or "").strip()
+    exp      = (data.get("experience") or "").strip()
 
-Question: {question}
-Candidate answer: {answer}
+    if not question or not answer:
+        return jsonify(error="bad_request", message="Missing question or answer"), 400
+
+    client, err = _need_client()
+    if err:
+        return err
+
+    # Ask for Markdown so the front-end can render nicely (bullets, bold)
+    prompt = f"""
+You are an interview coach. Provide structured feedback in **Markdown**.
+
+Context:
+- Previous role: {prev or "N/A"}
+- Target role: {target or "N/A"}
+- Seniority: {exp or "N/A"}
+
+**Question**
+{question}
+
+**Candidate Answer**
+{answer}
+
+Return:
+- **Feedback** (bulleted, concise; mention strengths + specific improvements)
+- **Fallback Suggestions** (2–4 short bullets the candidate can say if stuck)
+Plain Markdown only; no tables.
 """.strip()
 
+    try:
         resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role":"user","content": prompt}],
-            temperature=0.6,
-            max_tokens=700
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5,
+            max_tokens=600,
         )
-        md = (resp.choices[0].message.content or "").strip()
+        content = (resp.choices[0].message.content or "").strip()
 
-        # If you still want a separate “fallbacks” array, you can parse; otherwise just return markdown.
-        return jsonify(feedback=md), 200
+        # Return the whole Markdown; front-end will render with marked.js
+        # Also try to extract quick fallback bullets as a convenience:
+        fallbacks = []
+        try:
+            # naive split on header line if present
+            parts = content.split("\n")
+            i = next((k for k, ln in enumerate(parts) if "fallback" in ln.lower()), None)
+            if i is not None:
+                for ln in parts[i+1:]:
+                    if ln.lstrip().startswith(("-", "•", "*")):
+                        fallbacks.append(ln.lstrip("-•* ").strip())
+        except Exception:
+            pass
 
+        return jsonify(feedback=content, fallbacks=fallbacks), 200
     except Exception:
         logging.exception("Interview feedback error")
-        return jsonify(error="Error generating feedback"), 500
+        return jsonify(error="server_error", message="Error generating feedback."), 500
+        
 
 # --- Register the resume blueprint last (after app/config exists) ---
 if resumes_bp is not None:
