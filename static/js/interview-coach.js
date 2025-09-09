@@ -209,12 +209,12 @@ document.addEventListener("DOMContentLoaded", () => {
           experience,
         });
 
-        // Feedback (escaped, but keep formatting in <pre>)
+        // Feedback (Markdown if available; fallback to <pre>)
         if (data?.feedback) {
-          setLive(
-            feedbackBox,
-            `<div class="ai-response"><pre>${escapeHtml(data.feedback)}</pre></div>`
-          );
+          const html = (window.marked?.parse)
+            ? `<div class="ai-response">${window.marked.parse(String(data.feedback))}</div>`
+            : `<div class="ai-response"><pre>${escapeHtml(String(data.feedback))}</pre></div>`;
+          setLive(feedbackBox, html);
         } else {
           setLive(feedbackBox, "<em>No feedback returned.</em>");
         }
