@@ -1,0 +1,19 @@
+.ai-response h2, .ai-response h3 {
+  font-weight: 700;
+  color: #104879;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.ai-response strong {
+  color: #104879;
+}
+
+.ai-response ul {
+  margin-left: 1.2em;
+  list-style-type: disc;
+}
+
+.ai-response li {
+  margin: 0.4em 0;
+}
