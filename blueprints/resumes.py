@@ -909,39 +909,78 @@ def ai_suggest():
         return jsonify({"text": text, "list": [], "suggestions": []})
 
 
-@resumes_bp.route("/api/skill-gap", methods=["POST"])
+@resumes_bp.route("/skill-gap", methods=["POST"])
 @login_required
 def skill_gap():
-    data = request.get_json(force=True) or {}
+    try:
+        data = request.get_json(force=True) or {}
+    except Exception:
+        current_app.logger.exception("skill-gap: bad JSON")
+        return jsonify(error="bad_request", message="Invalid JSON body"), 400
+
     goal   = (data.get("goal") or "").strip()
     skills = (data.get("skills") or "").strip()
-
     if not goal or not skills:
-        return jsonify(error="Missing fields", message="Please provide both career goal and current skills."), 400
+        return jsonify(error="missing_fields",
+                       message="Please provide both career goal and current skills."), 400
+
+    # Optional: quota control similar to your other endpoints
+    try:
+        supabase_admin = current_app.config.get("SUPABASE_ADMIN")
+        plan = (getattr(current_user, "plan", "free") or "free").lower()
+        if supabase_admin:
+            from limits import check_and_increment
+            allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
+            if not allowed:
+                info.setdefault("error", "quota_exceeded")
+                return jsonify(info), 402
+    except Exception:
+        # Never kill the request for quota logic errors
+        current_app.logger.warning("skill-gap: quota check failed", exc_info=True)
 
     prompt = f"""
-You are a career advisor. The user’s career goal is: {goal}.
-Their current skills are: {skills}.
-List the missing skills, certifications, and experiences they should acquire to reach the goal.
-Return in plain text with short, clear bullet points.
-    """.strip()
+You are a concise career advisor.
+Target role/goal: {goal}
+Current skills (comma or newline separated): {skills}
+
+1) List the most important missing skills, grouped by:
+   - Core technical/domain skills
+   - Tools/platforms/frameworks
+   - Certifications/credentials
+   - Projects/experience to build
+2) For each group, give 3–6 bullet points with short, concrete actions or learning paths.
+Return plain text (markdown bullets ok). Keep it crisp and practical.
+""".strip()
+
+    client = current_app.config.get("OPENAI_CLIENT")
+    if not client:
+        # Safe fallback so the route never 500s if OpenAI isn’t configured
+        fallback = (
+            "Core skills to develop:\n"
+            "- Identify the top 5 skills in recent job posts for your goal and start a 6-week plan.\n"
+            "- Take an intermediate course and practice with small weekly projects.\n\n"
+            "Tools & platforms:\n"
+            "- Pick 1–2 tools used in most listings and follow their official quickstarts.\n"
+            "- Recreate a portfolio project with those tools end-to-end.\n\n"
+            "Certifications:\n"
+            "- Shortlist one entry/intermediate cert relevant to the role; schedule it 6–8 weeks out.\n\n"
+            "Projects / experience:\n"
+            "- Build 2–3 small, scoped projects that mirror job tasks; publish on GitHub with READMEs.\n"
+            "- Write a one-page case study (problem → approach → result) for each."
+        )
+        return jsonify(result=fallback, aiUsed=False), 200
 
     try:
-        client = current_app.config.get("OPENAI_CLIENT")
-        if not client:
-            # fallback if no AI client
-            return jsonify(result="⚠️ AI service unavailable. Please try again later."), 503
-
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,
-            max_tokens=400
+            max_tokens=600,
         )
         reply = (resp.choices[0].message.content or "").strip()
-        return jsonify(result=reply), 200
+        return jsonify(result=reply, aiUsed=True), 200
     except Exception as e:
-        current_app.logger.exception("Skill gap analysis failed")
+        current_app.logger.exception("skill-gap: AI call failed")
         return jsonify(error="ai_error", message=str(e)), 500
   
 
