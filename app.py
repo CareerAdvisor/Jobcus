@@ -1633,7 +1633,6 @@ Example format:
 @login_required
 def interview_coach_api():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
-
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "interview_coach")
     if not allowed:
         info.setdefault("error", "quota_exceeded")
@@ -1641,17 +1640,41 @@ def interview_coach_api():
 
     try:
         data = request.get_json(force=True)
-        role = data.get("role","").strip()
-        exp  = data.get("experience","").strip()
+        role = (data.get("role","") or "").strip()
+        exp  = (data.get("experience","") or "").strip()
         if not role or not exp:
             return jsonify(error="Missing role or experience"), 400
 
-        msgs = [
-            {"role":"system","content":"You are an AI Interview Coach. Provide at least 3 Q&A samples."},
-            {"role":"user","content":f"Role: {role}. Experience: {exp}."}
-        ]
-        resp = client.chat.completions.create(model="gpt-4o", messages=msgs, temperature=0.7)
-        return jsonify(result=resp.choices[0].message.content)
+        prompt = f"""
+You are a concise interview coach.
+
+Role: {role}
+Candidate experience: {exp}
+
+Return the result in **Markdown format** with:
+- A clear H2 header "Interview Coach"
+- Bold subsection titles
+- Short bullet points (concise, practical)
+- Where useful, 1–2 **STAR** samples
+
+Sections:
+1) **Likely Questions** — 6–10 bullets
+2) **Sample STAR Answers** — 2–3 bullets (each one line: Situation, Task, Action, Result)
+3) **Follow-ups You Can Ask** — 4–6 bullets
+4) **Tips** — 5–7 bullets
+
+No tables. Keep it punchy. Plain Markdown only.
+""".strip()
+
+        resp = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role":"user","content": prompt}],
+            temperature=0.5,
+            max_tokens=900
+        )
+        md = (resp.choices[0].message.content or "").strip()
+        return jsonify(result=md), 200
+
     except Exception:
         logging.exception("Interview coach error")
         return jsonify(error="Server error"), 500
@@ -1694,21 +1717,32 @@ def get_interview_feedback():
 
     try:
         data     = request.get_json(force=True)
-        question = data.get("question","")
-        answer   = data.get("answer","")
-        msgs = [
-            {"role":"system","content":"You are an interview coach. Give feedback and 2–3 fallback suggestions."},
-            {"role":"user","content":f"Q: {question}\nA: {answer}"}
-        ]
-        resp = client.chat.completions.create(model="gpt-4o", messages=msgs, temperature=0.7)
-        content = resp.choices[0].message.content.strip()
-        parts = content.split("Fallback Suggestions:")
-        feedback = parts[0].strip()
-        tips = parts[1].split("\n") if len(parts) > 1 else []
-        return jsonify(
-            feedback=feedback,
-            fallbacks=[t.lstrip("-• ").strip() for t in tips if t.strip()]
+        question = (data.get("question") or "").strip()
+        answer   = (data.get("answer") or "").strip()
+        if not question or not answer:
+            return jsonify(error="Missing inputs"), 400
+
+        prompt = f"""
+You are an interview coach. Give feedback in **Markdown**:
+- Start with **Feedback** (3–6 bullets)
+- Then **Stronger Answer (Concise)**: one short paragraph or a tight bullet in STAR style
+- Then **Fallback Suggestions**: 2–4 bullets
+
+Question: {question}
+Candidate answer: {answer}
+""".strip()
+
+        resp = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role":"user","content": prompt}],
+            temperature=0.6,
+            max_tokens=700
         )
+        md = (resp.choices[0].message.content or "").strip()
+
+        # If you still want a separate “fallbacks” array, you can parse; otherwise just return markdown.
+        return jsonify(feedback=md), 200
+
     except Exception:
         logging.exception("Interview feedback error")
         return jsonify(error="Error generating feedback"), 500
