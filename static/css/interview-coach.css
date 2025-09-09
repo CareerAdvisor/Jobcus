@@ -1,10 +1,27 @@
-/* Keep AI output readable and non-overflowing */
+/* ====== Interview Coach & AI Response Styling ====== */
+
+/* Keep the whole coach output constrained */
+#interviewCoachResult,
+#feedback-box,
+#suggestions-box,
+#history-container {
+  max-width: 900px;        /* desktop cap */
+  width: 100%;             /* never exceed container */
+  margin: 0 auto;          /* center on desktop */
+  box-sizing: border-box;
+}
+
+/* Generic AI output wrapper */
 .ai-response {
   max-width: 100%;
-  overflow-wrap: anywhere;     /* breaks long words/URLs */
+  width: 100%;
+  line-height: 1.55;
+  overflow: hidden;         /* prevent spill-out */
+  overflow-wrap: anywhere;  /* break long words/URLs */
   word-break: break-word;
 }
 
+/* Paragraphs, lists, headers inside AI responses */
 .ai-response p,
 .ai-response ul,
 .ai-response ol,
@@ -14,24 +31,56 @@
 .ai-response h3,
 .ai-response h4 {
   max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
+/* Code & pre blocks (Markdown fallback) */
 .ai-response pre,
-.ai-response code {
-  white-space: pre-wrap;       /* wrap code blocks too */
+.ai-response code,
+.ai-response pre code {
+  white-space: pre-wrap;    /* wrap long lines */
   word-break: break-word;
   max-width: 100%;
-  overflow-x: auto;            /* allow horizontal scroll if needed */
+  overflow-x: auto;         /* scroll if needed */
 }
 
 /* Optional: nicer bullets spacing */
-.ai-response ul { padding-left: 1.2rem; margin: .4rem 0 .8rem; }
-.ai-response li { margin: .2rem 0; }
+.ai-response ul { 
+  padding-left: 1.2rem; 
+  margin: 0.4rem 0 0.8rem; 
+}
+.ai-response li { margin: 0.2rem 0; }
 
-/* Optional: header style */
-.ai-response h2 { font-size: 1.25rem; font-weight: 700; margin: .6rem 0; }
+/* Optional: header styles */
+.ai-response h2, 
+.ai-response h3 {
+  font-weight: 700; 
+  margin: 0.5rem 0; 
+}
+.ai-response h2 { font-size: 1.25rem; }
 .ai-response strong { font-weight: 700; }
 
-.ai-response { max-width:100%; overflow-wrap:anywhere; word-break:break-word; }
-.ai-response pre, .ai-response code { white-space:pre-wrap; word-break:break-word; max-width:100%; overflow-x:auto; }
-.ai-response h2, .ai-response h3 { font-weight:700; margin:.5rem 0; }
+/* Images inside AI output */
+.ai-response img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* History entries */
+.history-entry {
+  max-width: 900px;
+  margin: 16px auto;
+}
+
+/* Mobile polish */
+@media (max-width: 640px) {
+  #interviewCoachResult,
+  #feedback-box,
+  #suggestions-box,
+  #history-container,
+  .history-entry {
+    padding: 12px;
+    max-width: 100%;
+  }
+}
