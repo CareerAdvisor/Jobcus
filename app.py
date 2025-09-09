@@ -1535,61 +1535,78 @@ app.register_blueprint(ai_bp)
 @app.route("/api/skill-gap", methods=["POST"])
 @login_required
 def skill_gap_api():
+    # Parse input early
     try:
-        plan = (getattr(current_user, "plan", "free") or "free").lower()
-
-        # Get deps from config (avoid NameError)
-        supabase_admin = current_app.config.get("SUPABASE_ADMIN")
-        client = current_app.config.get("OPENAI_CLIENT")
-
-        if not supabase_admin:
-            current_app.logger.error("SUPABASE_ADMIN is not configured")
-            return jsonify(error="server_config", message="Supabase admin client missing"), 500
-
-        # Optional: if you want to allow page to work without AI during config
-        if not client:
-            return jsonify(error="ai_unavailable",
-                           message="AI is temporarily unavailable. Please try again later."), 503
-
-        # Enforce quota
-        from limits import check_and_increment  # if not already imported at top
-        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
-        if not allowed:
-            info.setdefault("error", "quota_exceeded")
-            return jsonify(info), 402
-
         data = request.get_json(force=True) or {}
-        goal   = (data.get("goal") or "").strip()
-        skills = (data.get("skills") or "").strip()
-        if not goal or not skills:
-            return jsonify(error="bad_request", message="Missing required input"), 400
+    except Exception:
+        current_app.logger.exception("skill-gap: invalid JSON")
+        return jsonify(error="bad_request", message="Invalid JSON body"), 400
 
-        messages = [
-            {"role": "system", "content":
-                "You are a helpful AI assistant that performs skill gap analysis.\n"
-                "The user will provide their career goal and current skills.\n"
-                "Your job is to:\n"
-                "1) Identify missing skills.\n"
-                "2) Suggest learning resources for each missing skill.\n"
-                "Return a concise list with a short learning plan."},
-            {"role": "user", "content":
-                f"My goal is to become a {goal}. My current skills include: {skills}.\n"
-                "What skills am I missing, and how can I bridge the gap?"}
-        ]
+    goal   = (data.get("goal") or "").strip()
+    skills = (data.get("skills") or "").strip()
+    if not goal or not skills:
+        return jsonify(error="bad_request", message="Please provide both career goal and current skills."), 400
 
+    # Quota (safe)
+    try:
+        supabase_admin = current_app.config.get("SUPABASE_ADMIN")
+        plan = (getattr(current_user, "plan", "free") or "free").lower()
+        if supabase_admin:
+            from limits import check_and_increment
+            ok, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
+            if not ok:
+                info.setdefault("error", "quota_exceeded")
+                return jsonify(info), 402
+    except Exception:
+        current_app.logger.warning("skill-gap: quota check failed", exc_info=True)
+        # continue without failing the request
+
+    # Build prompt & call OpenAI (soft-fail if missing)
+    prompt = f"""
+You are a concise career advisor.
+Target role/goal: {goal}
+Current skills (comma/newline separated): {skills}
+
+1) Key gaps grouped by:
+   - Core skills
+   - Tools/platforms
+   - Certifications
+   - Projects/experience
+2) For each, give 3–6 short, concrete actions or learning paths.
+Return plain text (markdown bullets ok). Keep it practical.
+""".strip()
+
+    client = current_app.config.get("OPENAI_CLIENT")
+    if not client:
+        # Fallback text so the page still works
+        fallback = (
+            "Core skills to develop:\n"
+            "- Identify 5 core skills from recent job posts; plan 6 weeks of practice.\n"
+            "- Take an intermediate course; build weekly mini-projects.\n\n"
+            "Tools & platforms:\n"
+            "- Pick 1–2 tools used in most listings; complete their quickstarts.\n"
+            "- Rebuild a small portfolio project end-to-end with those tools.\n\n"
+            "Certifications:\n"
+            "- Choose one entry/intermediate cert; schedule it 6–8 weeks out.\n\n"
+            "Projects / experience:\n"
+            "- Build 2–3 scoped projects mirroring job tasks; publish with clear READMEs.\n"
+            "- Write a one-page case study (problem → approach → result) for each."
+        )
+        return jsonify(result=fallback, aiUsed=False), 200
+
+    try:
         resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-            temperature=0.6
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4,
+            max_tokens=600,
         )
         reply = (resp.choices[0].message.content or "").strip()
-
-        return jsonify(result=reply), 200
-
+        return jsonify(result=reply, aiUsed=True), 200
     except Exception as e:
-        logging.exception("Skill Gap Error")
-        # Return a JSON error so your front-end can show a friendly message
-        return jsonify(error="server_error", message="Something went wrong while analyzing skills."), 500
+        current_app.logger.exception("skill-gap: OpenAI call failed")
+        # Return JSON (not an HTML error page)
+        return jsonify(error="ai_error", message=str(e)), 502
 
 
 # Require login + quota for interview endpoints so pricing is enforced
