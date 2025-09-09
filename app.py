@@ -1532,54 +1532,65 @@ Return only the letter body text (no greeting/closing signatures).
 app.register_blueprint(ai_bp)
 
 
-# ----------------------------
-# Skill Gap & Interview Coach
-# ----------------------------
 @app.route("/api/skill-gap", methods=["POST"])
 @login_required
 def skill_gap_api():
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-
-    # Enforce quota for skill_gap
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
-    if not allowed:
-        info.setdefault("error", "quota_exceeded")
-        return jsonify(info), 402
-
     try:
-        data = request.get_json(force=True) or {}
-        goal = (data.get("goal") or "").strip()
-        skills = (data.get("skills") or "").strip()
+        plan = (getattr(current_user, "plan", "free") or "free").lower()
 
+        # Get deps from config (avoid NameError)
+        supabase_admin = current_app.config.get("SUPABASE_ADMIN")
+        client = current_app.config.get("OPENAI_CLIENT")
+
+        if not supabase_admin:
+            current_app.logger.error("SUPABASE_ADMIN is not configured")
+            return jsonify(error="server_config", message="Supabase admin client missing"), 500
+
+        # Optional: if you want to allow page to work without AI during config
+        if not client:
+            return jsonify(error="ai_unavailable",
+                           message="AI is temporarily unavailable. Please try again later."), 503
+
+        # Enforce quota
+        from limits import check_and_increment  # if not already imported at top
+        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
+        if not allowed:
+            info.setdefault("error", "quota_exceeded")
+            return jsonify(info), 402
+
+        data = request.get_json(force=True) or {}
+        goal   = (data.get("goal") or "").strip()
+        skills = (data.get("skills") or "").strip()
         if not goal or not skills:
-            return jsonify({"error": "Missing required input"}), 400
+            return jsonify(error="bad_request", message="Missing required input"), 400
 
         messages = [
             {"role": "system", "content":
                 "You are a helpful AI assistant that performs skill gap analysis.\n"
                 "The user will provide their career goal and current skills.\n"
                 "Your job is to:\n"
-                "1. Identify the missing skills.\n"
-                "2. Suggest learning resources for each missing skill.\n"
-                "Format the result as a list of missing skills and a short learning plan."
-            },
+                "1) Identify missing skills.\n"
+                "2) Suggest learning resources for each missing skill.\n"
+                "Return a concise list with a short learning plan."},
             {"role": "user", "content":
                 f"My goal is to become a {goal}. My current skills include: {skills}.\n"
-                "What skills am I missing, and how can I bridge the gap?"
-            }
+                "What skills am I missing, and how can I bridge the gap?"}
         ]
 
-        response = client.chat.completions.create(
+        resp = client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
             temperature=0.6
         )
-        reply = response.choices[0].message.content
-        return jsonify({"result": reply})
+        reply = (resp.choices[0].message.content or "").strip()
 
-    except Exception:
+        return jsonify(result=reply), 200
+
+    except Exception as e:
         logging.exception("Skill Gap Error")
-        return jsonify({"error": "Server error"}), 500
+        # Return a JSON error so your front-end can show a friendly message
+        return jsonify(error="server_error", message="Something went wrong while analyzing skills."), 500
+
 
 # Require login + quota for interview endpoints so pricing is enforced
 @app.route("/api/interview", methods=["POST"])
