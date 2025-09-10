@@ -1588,7 +1588,7 @@ def skill_gap_api():
             ok, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
             if not ok:
                 info.setdefault("error", "quota_exceeded")
-                info.setdefault("message", "You’ve reached your plan limit for this feature.")
+                info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
                 return jsonify(info), 402
 
     except Exception:
@@ -1695,7 +1695,7 @@ def interview_coach_api():
     allowed, info = _quota_check("interview_coach")
     if not allowed:
         info.setdefault("error", "quota_exceeded")
-        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
+        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
         return jsonify(info), 402
 
     # Parse input safely
@@ -1756,7 +1756,7 @@ def get_interview_question():
     allowed, info = _quota_check("interview_coach")
     if not allowed:
         info.setdefault("error", "quota_exceeded")
-        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
+        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
         return jsonify(info), 402
 
     # Parse input
@@ -1808,7 +1808,7 @@ def get_interview_feedback():
     allowed, info = _quota_check("interview_coach")
     if not allowed:
         info.setdefault("error", "quota_exceeded")
-        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
+        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
         return jsonify(info), 402
 
     # Parse input
