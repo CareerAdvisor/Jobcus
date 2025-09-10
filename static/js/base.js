@@ -128,16 +128,21 @@ window.apiFetch = async function apiFetch(url, options = {}) {
  *    - Used by feature pages when server returns 402/429
  * ───────────────────────────────────────────────────────────── */
 window.showUpgradeBanner ||= (msg) => {
-  // try to mount a site-wide banner area
   let host = document.querySelector("#upgrade-banner-host") || document.body;
   let el = document.querySelector("#upgrade-banner");
   if (!el) {
     el = document.createElement("div");
     el.id = "upgrade-banner";
-    el.style.cssText = "position:sticky;top:0;z-index:1000;margin:0;padding:12px 16px;background:#fff3cd;border-bottom:1px solid #ffeeba;color:#856404;font:14px/1.3 system-ui";
+    el.style.cssText =
+      "position:sticky;top:0;z-index:1000;margin:0;padding:12px 16px;background:#fff3cd;" +
+      "border-bottom:1px solid #ffeeba;color:#856404;font:14px/1.3 system-ui;display:flex;" +
+      "align-items:center;gap:12px;justify-content:space-between";
     host.prepend(el);
   }
-  el.textContent = msg || "You have reached the limit for the free version, upgrade to enjoy more features";
+  const text = msg || "You have reached the limit for the free version, upgrade to enjoy more features";
+  el.innerHTML =
+    `<span>${text}</span>` +
+    `<a href="/pricing.html" style="color:#664d03;text-decoration:underline;font-weight:600">Upgrade now →</a>`;
 };
 
 /* ─────────────────────────────────────────────────────────────
