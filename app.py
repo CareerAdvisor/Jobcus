@@ -1675,7 +1675,11 @@ def _quota_check(feature_key: str):
           from limits import check_and_increment
           ok, info = check_and_increment(supabase_admin, current_user.id, plan, feature_key)
           if not ok:
+              PRICING_URL = "https://www.jobcus.com/pricing"
               info.setdefault("error", "quota_exceeded")
+              info.setdefault("message", "You’ve reached your plan limit for this feature.")
+              info.setdefault("message_html", f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>')
+              info.setdefault("pricing_url", PRICING_URL)
               return False, info
       return True, None
     except Exception:
