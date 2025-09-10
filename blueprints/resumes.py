@@ -1004,61 +1004,78 @@ def ai_suggest():
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 @login_required
 def build_cover_letter():
-    # Quota enforcement (keep this first)
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-    supabase_admin = current_app.config["SUPABASE_ADMIN"]
+    import datetime, json
 
-    allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "cover_letter")
+    def _safe_json(data: dict, status: int = 200):
+        """Return JSON even if 'data' contains datetimes/etc."""
+        def _default(o):
+            if isinstance(o, (datetime.date, datetime.datetime)):
+                return o.isoformat()
+            return str(o)
+        return current_app.response_class(
+            json.dumps(data or {}, default=_default),
+            mimetype="application/json",
+            status=status,
+        )
+
+    # Quota enforcement (keep this at the top!)
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    supabase_admin = current_app.config.get("SUPABASE_ADMIN")
+
+    try:
+        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "cover_letter")
+    except Exception as e:
+        # Never 500 because of rate-limit infra; just allow and log
+        current_app.logger.warning("check_and_increment failed; allowing once: %s", e, exc_info=True)
+        allowed, info = True, {}
+
     if not allowed:
         PRICING_URL = "https://www.jobcus.com/pricing"
-        info.setdefault("error", "upgrade_required")
-        info.setdefault("message", "You’ve reached your plan limit for this feature.")
-        info.setdefault("message_html", f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>')
-        info.setdefault("pricing_url", PRICING_URL)
-        return jsonify(info), 402
+        # Normalize the payload so the frontend can rely on it
+        payload = dict(info or {})
+        payload.setdefault("error", "quota_exceeded")
+        payload.setdefault("message", "You’ve reached your plan limit for this feature.")
+        payload.setdefault(
+            "message_html",
+            f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>'
+        )
+        payload.setdefault("pricing_url", PRICING_URL)
+        return _safe_json(payload, status=402)
 
+    # -------- parse request --------
     try:
         data = request.get_json(force=True) or {}
     except Exception:
         current_app.logger.exception("build-cover-letter: bad JSON")
-        return jsonify(error="Invalid JSON body"), 400
+        return _safe_json({"error": "Invalid JSON body"}, 400)
 
-    fmt         = (data.get("format") or "html").lower()
-    letter_only = bool(data.get("letter_only")) or (fmt == "pdf")
+    fmt = (data.get("format") or "html").lower()
 
-    # Inputs
-    name      = data.get("name", "")
-    title     = data.get("title", "")
-    contact   = data.get("contact", "")
-    sender    = data.get("sender") or {}
-    recipient = data.get("recipient") or {}
-    draft     = (data.get("coverLetter", {}).get("draft") or "").strip()
-
-    # Choose template
-    # - Use your existing builder page for full UI
-    # - Reuse cover-letter-print.html for preview/PDF (letter-only)
-    template = "cover-letter.html"
-    if letter_only:
-        template = "cover-letter-print.html"
-
+    # -------- render HTML (letter-only for preview/PDF) --------
     try:
+        name      = data.get("name", "")
+        title     = data.get("title", "")
+        contact   = data.get("contact", "")
+        sender    = data.get("sender") or {}
+        recipient = data.get("recipient") or {}
+        cl        = data.get("coverLetter") or {}
+        draft     = (cl.get("draft") or "").strip()
+
         html = render_template(
-            template,
+            "cover-letter.html",
             name=name, title=title, contact=contact,
-            sender=sender, recipient=recipient,
-            draft=draft,            # in case cover-letter.html needs it
-            cover_body=draft,       # what cover-letter-print.html expects
-            letter_only=letter_only,
+            sender=sender, recipient=recipient, draft=draft,
+            letter_only=(fmt == "pdf" or bool(data.get("letter_only"))),
             for_pdf=(fmt == "pdf"),
         )
     except Exception:
         current_app.logger.exception("build-cover-letter: template render failed")
-        return jsonify(error="Template error (see logs for details)"), 500
+        return _safe_json({"error": "Template error (see logs for details)"}, 500)
 
     if fmt == "pdf":
         try:
             pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf(
-                stylesheets=[CSS(string="@page{size:A4;margin:22mm 18mm}")]
+                stylesheets=[CSS(string="@page{size:A4;margin:0.75in}")]
             )
             return send_file(BytesIO(pdf_bytes),
                              mimetype="application/pdf",
@@ -1066,9 +1083,8 @@ def build_cover_letter():
                              download_name="cover-letter.pdf")
         except Exception:
             current_app.logger.exception("build-cover-letter: PDF generation failed")
-            return jsonify(error="PDF generation failed (see logs)"), 500
+            return _safe_json({"error": "PDF generation failed (see logs)"}, 500)
 
-    # HTML preview
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
