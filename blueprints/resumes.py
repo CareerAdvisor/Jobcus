@@ -1007,10 +1007,11 @@ def build_cover_letter():
     # Quota enforcement
     plan = (getattr(current_user, "plan", "free") or "free").lower()
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
+    # resumes.py -> build_cover_letter()
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "cover_letter")
     if not allowed:
-        # NEW: standardize for the frontend banner handler
         info.setdefault("error", "quota_exceeded")
+        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
         return jsonify(info), 402
 
     try:
