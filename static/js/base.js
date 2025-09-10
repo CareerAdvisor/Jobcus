@@ -127,19 +127,17 @@ window.apiFetch = async function apiFetch(url, options = {}) {
  *    - Creates a sticky banner at the top if not present
  *    - Used by feature pages when server returns 402/429
  * ───────────────────────────────────────────────────────────── */
-window.showUpgradeBanner ||= (msgOrHtml) => {
+window.showUpgradeBanner = function (htmlOrText) {
   let host = document.querySelector("#upgrade-banner-host") || document.body;
   let el = document.querySelector("#upgrade-banner");
   if (!el) {
     el = document.createElement("div");
     el.id = "upgrade-banner";
-    el.style.cssText =
-      "position:sticky;top:0;z-index:1000;margin:0;padding:12px 16px;background:#fff3cd;" +
-      "border-bottom:1px solid #ffeeba;color:#856404;font:14px/1.3 system-ui";
+    el.style.cssText = "position:sticky;top:0;z-index:1000;margin:0;padding:12px 16px;background:#fff3cd;border-bottom:1px solid #ffeeba;color:#856404;font:14px/1.3 system-ui";
     host.prepend(el);
   }
-  // Default includes a link if nothing provided
-  el.innerHTML = msgOrHtml || 'You have reached the limit for the free version — <a href="/pricing">upgrade to enjoy more features</a>.';
+  // IMPORTANT: allow HTML so <a href=...> renders
+  el.innerHTML = htmlOrText || "You’ve reached your plan limit. <a href=\"/pricing\">Upgrade now →</a>";
 };
 
 /* ─────────────────────────────────────────────────────────────
