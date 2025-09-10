@@ -16,36 +16,45 @@
       .replace(/'/g, "&#39;");
   }
 
+  // Centralized error handler — handle upgrade BEFORE generic 401/403
   async function handleCommonErrors(res) {
     if (res.ok) return null;
+
     const ct = res.headers.get("content-type") || "";
     let body = null;
-    try { body = ct.includes("application/json") ? await res.json() : { message: await res.text() }; }
-    catch { body = null; }
+    let rawText = "";
+    try {
+      if (ct.includes("application/json")) {
+        body = await res.json();
+      } else {
+        rawText = await res.text();
+      }
+    } catch { body = null; }
 
-    // Login required vs upgrade required
+    // ---- Upgrade / quota exceeded FIRST (covers 402 or 403 with upgrade_required) ----
+    if (res.status === 402 || (body?.error === "upgrade_required")) {
+      const html = body?.message_html;
+      const text = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
+      window.showUpgradeBanner?.(html || text);  // sticky banner supports HTML links
+      throw new Error(text);
+    }
+
+    // ---- Auth required (true 401/403 without upgrade flag) ----
     if (res.status === 401 || res.status === 403) {
       const msg = (body && body.message) || "Please sign up or log in to use this feature.";
       window.showUpgradeBanner?.(msg);
-      // Optional: keep redirect if you want, but you’ll still see the message
       setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
       throw new Error(msg);
     }
 
-    if (res.status === 402 || (res.status === 403 && body && body.error === "upgrade_required")) {
-      const msgHtml = body?.message_html || null;
-      const msg     = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
-      window.showUpgradeBanner?.(msgHtml || msg);   // sticky banner supports HTML
-      throw new Error(msg);
-    }
-
+    // Abuse guard (network/device)
     if (res.status === 429 && body && (body.error === "too_many_free_accounts" || body.error === "device_limit")) {
       const msg = (body && body.message) || "Too many free accounts detected from your network/device.";
       window.showUpgradeBanner?.(msg);
       throw new Error(msg);
     }
 
-    const msg = (body && body.message) || "Request failed (" + res.status + ")";
+    const msg = (body && body.message) || `Request failed (${res.status})`;
     throw new Error(msg);
   }
 
