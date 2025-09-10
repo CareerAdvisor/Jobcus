@@ -1,3 +1,4 @@
+<script>
 (function () {
   // Always send cookies with fetch (SameSite=Lax)
   const _fetch = window.fetch.bind(window);
@@ -6,7 +7,7 @@
     return _fetch(input, init);
   };
 
-  // Simple escaper
+  // Simple escaper + strip tags helper
   function escapeHtml(s = "") {
     return String(s)
       .replace(/&/g, "&amp;")
@@ -15,39 +16,52 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
+  function stripTags(s = "") {
+    return String(s).replace(/<[^>]*>/g, "").trim();
+  }
 
   // Centralized server-response handling (auth/limits/abuse)
   async function handleCommonErrors(res) {
     if (res.ok) return null;
-    const ct = res.headers.get("content-type") || "";
-    let body = null;
-    try { body = ct.includes("application/json") ? await res.json() : { message: await res.text() }; }
-    catch { body = null; }
 
-    // Auth
-    if (res.status === 401 || res.status === 403) {
-      const msg = body?.message || "Please sign in to continue.";
-      window.showUpgradeBanner?.(msg);
-      setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
-      throw new Error(msg);
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    let msg = `Request failed (${res.status})`;
+
+    try {
+      if (ct.includes("application/json")) {
+        const j = await res.json();
+        msg = j?.message || j?.error || msg;
+
+        // Auth
+        if (res.status === 401 || res.status === 403) {
+          const authMsg = msg || "Please sign up or log in to use this feature.";
+          window.showUpgradeBanner?.(authMsg);
+          setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
+          throw new Error(authMsg);
+        }
+
+        // Plan limits / feature gating
+        if (res.status === 402 || j?.error === "upgrade_required") {
+          const up = msg || "You’ve reached your plan limit. Upgrade to continue.";
+          window.showUpgradeBanner?.(up);
+          throw new Error(up);
+        }
+
+        // Abuse guard
+        if (res.status === 429 && (j?.error === "too_many_free_accounts" || j?.error === "device_limit")) {
+          const ab = msg || "Too many free accounts detected from your network/device.";
+          window.showUpgradeBanner?.(ab);
+          throw new Error(ab);
+        }
+      } else {
+        // Likely HTML error page — don't surface markup
+        await res.text().catch(() => {});
+        // Fall through to generic msg below
+      }
+    } catch {
+      /* ignore parse errors */
     }
-
-    // Plan limits / feature gating
-    if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
-      const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
-      window.showUpgradeBanner?.(msg);
-      throw new Error(msg);
-    }
-
-    // Abuse guard
-    if (res.status === 429 && body?.error === "too_many_free_accounts") {
-      const msg = body?.message || "Too many free accounts detected from your network/device.";
-      window.showUpgradeBanner?.(msg);
-      throw new Error(msg);
-    }
-
-    const msg = body?.message || `Request failed (${res.status})`;
-    throw new Error(msg);
+    throw new Error(stripTags(msg));
   }
 
   // ---------- cover-letter context for preview/PDF ----------
@@ -64,7 +78,6 @@
       jobUrl: form.jobUrl?.value || "",
       tone: toneAugmented,
 
-      // Applicant (sender)
       sender: {
         name,
         address1: form.senderAddress1?.value || "",
@@ -75,7 +88,6 @@
         date: form.letterDate?.value || new Date().toISOString().slice(0,10)
       },
 
-      // Recruiter / company (recipient)
       recipient: {
         name: form.recipient?.value || "Hiring Manager",
         company: form.company?.value || "",
@@ -99,28 +111,21 @@
   function sanitizeDraft(text) {
     if (!text) return text;
     let t = String(text).trim();
-
-    // Drop greeting if present
-    t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, "");
-
-    // Drop sign-off if present
-    t = t.replace(/\n+\s*(yours\s+sincerely|sincerely|kind\s+regards|best\s+regards|regards)[\s\S]*$/i, "");
-
-    // Normalize excessive blank lines
-    t = t.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
-
-    // Cap at 3 paragraphs
+    t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, ""); // drop greeting
+    t = t.replace(/\n+\s*(yours\s+sincerely|sincerely|kind\s+regards|best\s+regards|regards)[\s\S]*$/i, ""); // drop sign-off
+    t = t.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim(); // normalize
     const paras = t.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-    t = paras.slice(0, 3).join("\n\n");
-
-    return t.trim();
+    return paras.slice(0, 3).join("\n\n").trim(); // max 3 paras
   }
 
   // ---------- PREVIEW / PDF ----------
   async function renderLetter(ctx, format = "html") {
     const res = await fetch("/build-cover-letter", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": format === "pdf" ? "application/pdf" : "text/html,application/json"
+      },
       body: JSON.stringify({
         format,            // "html" for preview, "pdf" for download
         letter_only: true, // ensure letter-only view for preview/download
@@ -131,14 +136,23 @@
     });
 
     if (!res.ok) {
-      await handleCommonErrors(res);
+      await handleCommonErrors(res); // throws with a clean message
     }
 
     if (format === "pdf") {
-      const ct = res.headers.get("content-type") || "";
+      const ct = (res.headers.get("content-type") || "").toLowerCase();
       if (!ct.includes("application/pdf")) {
-        const maybeText = await res.text().catch(() => "");
-        throw new Error(maybeText || "PDF generation failed.");
+        // Try to extract any JSON/text message but do not surface raw HTML
+        let msg = "PDF generation failed.";
+        try {
+          if (ct.includes("application/json")) {
+            const j = await res.json();
+            msg = j?.message || j?.error || msg;
+          } else {
+            await res.text(); // discard HTML
+          }
+        } catch {}
+        throw new Error(stripTags(msg));
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -149,19 +163,27 @@
     }
 
     // HTML preview
-    const ct = res.headers.get("content-type") || "";
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
     if (!ct.includes("text/html")) {
-      const body = ct.includes("application/json") ? await res.json().catch(() => ({})) : { message: await res.text().catch(() => "") };
-      const msg = body?.message || "Preview failed.";
+      let msg = "Preview failed.";
+      try {
+        if (ct.includes("application/json")) {
+          const j = await res.json().catch(() => ({}));
+          msg = j?.message || j?.error || msg;
+        } else {
+          await res.text(); // discard HTML
+        }
+      } catch {}
       window.showUpgradeBanner?.(msg);
-      throw new Error(msg);
+      throw new Error(stripTags(msg));
     }
+
     const html = await res.text();
     const wrap  = document.getElementById("clPreviewWrap");
     const frame = document.getElementById("clPreview");
     if (wrap && frame) {
       wrap.style.display = "block";
-      frame.srcdoc = html;
+      frame.srcdoc = html; // ✅ inject letter-only HTML (no full page duplication)
     }
   }
 
@@ -180,10 +202,8 @@
   }
 
   // ------------------------------------------------------------------
-  // >>> YOUR INSERTED AI BITS (calls /ai/cover-letter) <<<
+  // AI: /ai/cover-letter
   // ------------------------------------------------------------------
-
-  // Build a minimal context from the form (for the AI endpoint)
   function gatherCLContext(form) {
     const get = (n) => (form?.elements?.[n]?.value || "").trim();
     const sender = {
@@ -212,7 +232,6 @@
     };
   }
 
-  // Call your backend to get a draft
   async function aiSuggestCoverLetter(ctx) {
     const res = await fetch("/ai/cover-letter", {
       method: "POST",
@@ -223,15 +242,12 @@
       credentials: "same-origin",
       body: JSON.stringify(ctx)
     });
-  
     await handleCommonErrors(res);
-  
-    const json = await res.json().catch(()=> ({}));
+    const json = await res.json().catch(() => ({}));
     if (!json.draft) throw new Error("No draft returned.");
     return sanitizeDraft(json.draft);
   }
-  
-  // ✅ Place this directly after the function above
+
   // Legacy alias so old handlers keep working
   window.aiSuggestCoverLetter_min = async function(ctx) {
     return aiSuggestCoverLetter(ctx);
@@ -244,7 +260,6 @@
     const aiCard = document.getElementById("ai-cl");
     const getAiTextEl = () => aiCard?.querySelector(".ai-text");
 
-    // Prefill if analyzer passed a seed
     if (form) maybePrefillFromSeed(form);
 
     // AI handlers (refresh / insert)
@@ -258,7 +273,7 @@
           const el = getAiTextEl();
           if (el) el.textContent = "Thinking…";
           const ctx = gatherCLContext(form);
-          const draft = await aiSuggestCoverLetter_min(ctx);      // <— uses /ai/cover-letter
+          const draft = await aiSuggestCoverLetter_min(ctx);
           if (el) el.textContent = sanitizeDraft(draft) || "No draft yet.";
         } catch (err) {
           const el = getAiTextEl();
@@ -279,12 +294,13 @@
     // Preview / Download
     document.getElementById("cl-preview")?.addEventListener("click", async () => {
       try { await renderLetter(gatherContext(form), "html"); }
-      catch (e) { alert(e.message || "Preview failed"); }
+      catch (e) { alert(stripTags(e.message) || "Preview failed"); }
     });
 
     document.getElementById("cl-download")?.addEventListener("click", async () => {
       try { await renderLetter(gatherContext(form), "pdf"); }
-      catch (e) { alert(e.message || "PDF failed"); }
+      catch (e) { alert(stripTags(e.message) || "PDF failed"); }
     });
   });
 })();
+</script>
