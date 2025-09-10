@@ -28,12 +28,28 @@ const PRICING_URL = "/pricing.html"; // if your Flask route is /pricing use "/pr
 // Centralized server-response handling for plan/auth/abuse messages
 async function handleCommonErrors(res) {
   if (res.ok) return null;
+
   const ct = res.headers.get("content-type") || "";
   let body = null;
-  try { body = ct.includes("application/json") ? await res.json() : { message: await res.text() }; }
-  catch { body = null; }
+  try {
+    body = ct.includes("application/json") ? await res.json()
+                                           : { message: await res.text() };
+  } catch {
+    body = null;
+  }
 
-  // Auth required
+  const PRICING_URL = "/pricing.html"; // or "/pricing" if routed in Flask
+
+  // 🔁 PRIORITIZE UPGRADE FIRST
+  if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
+    const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
+    // sticky banner + redirect to pricing
+    window.showUpgradeBanner?.(body?.message_html || msg);
+    setTimeout(() => { window.location.href = PRICING_URL; }, 800);
+    throw new Error(msg);
+  }
+
+  // Then handle auth-required 401/403
   if (res.status === 401 || res.status === 403) {
     const msg = body?.message || "Please sign in to continue.";
     window.showUpgradeBanner?.(msg);
@@ -41,16 +57,8 @@ async function handleCommonErrors(res) {
     throw new Error(msg);
   }
 
-  // Plan limits / feature gating  ➜ SHOW BANNER + REDIRECT TO PRICING
-  if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
-    const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
-    window.showUpgradeBanner?.(msg);
-    setTimeout(() => { window.location.href = PRICING_URL; }, 1000);
-    throw new Error(msg);
-  }
-
-  // Abuse guard (free misuse)
-  if (res.status === 429 && body?.error === "too_many_free_accounts") {
+  // Abuse guard
+  if (res.status === 429 && (body?.error === "too_many_free_accounts" || body?.error === "device_limit")) {
     const msg = body?.message || "Too many free accounts detected from your network/device.";
     window.showUpgradeBanner?.(msg);
     throw new Error(msg);
