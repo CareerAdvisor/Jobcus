@@ -127,7 +127,6 @@ window.apiFetch = async function apiFetch(url, options = {}) {
  *    - Creates a sticky banner at the top if not present
  *    - Used by feature pages when server returns 402/429
  * ───────────────────────────────────────────────────────────── */
-// base.js — global sticky banner
 window.showUpgradeBanner ||= (msgOrHtml) => {
   let host = document.querySelector("#upgrade-banner-host") || document.body;
   let el = document.querySelector("#upgrade-banner");
@@ -136,12 +135,11 @@ window.showUpgradeBanner ||= (msgOrHtml) => {
     el.id = "upgrade-banner";
     el.style.cssText =
       "position:sticky;top:0;z-index:1000;margin:0;padding:12px 16px;background:#fff3cd;" +
-      "border-bottom:1px solid #ffeeba;color:#856404;font:14px/1.3 system-ui;display:flex;" +
-      "align-items:center;gap:12px;justify-content:space-between";
+      "border-bottom:1px solid #ffeeba;color:#856404;font:14px/1.3 system-ui";
     host.prepend(el);
   }
-  const fallback = 'You have reached the limit for the free version — <a href="/pricing">upgrade to enjoy more features</a>.';
-  el.innerHTML = msgOrHtml || fallback; // ← note: innerHTML on purpose
+  // Default includes a link if nothing provided
+  el.innerHTML = msgOrHtml || 'You have reached the limit for the free version — <a href="/pricing">upgrade to enjoy more features</a>.';
 };
 
 /* ─────────────────────────────────────────────────────────────
