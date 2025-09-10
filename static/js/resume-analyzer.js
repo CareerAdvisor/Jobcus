@@ -205,11 +205,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const text = await res.text();
 
-        // NEW: handle device/IP abuse guard from backend
+        // ⇩⇩⇩ INSERTED: parse JSON once + 402 handler with banner/inline CTA ⇩⇩⇩
+        let data = null;
+        try { data = JSON.parse(text); } catch {}
+
+        // NEW: 402 ➜ show upgrade banner and inline banner (warn)
+        if (res.status === 402) {
+          const msg = (data?.message || "You’ve reached your plan limit for this feature.");
+          window.showUpgradeBanner?.(msg);
+          showInlineBanner(card, msg, "warn");
+          return;
+        }
+        // ⇧⇧⇧ END INSERT ⇧⇧⇧
+
+        // Handle device/IP abuse guard from backend (429)
         if (res.status === 429) {
-          let data;
-          try { data = JSON.parse(text); } catch { data = null; }
-          // Big global banner (from base.js) + local inline hint
           window.showUpgradeBanner?.(
             data?.message || 'You have reached the limit for the free version, upgrade to enjoy more features'
           );
@@ -221,18 +231,14 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        if (res.status === 429 /* keep parity check if needed */) {
-          showUpgradeBanner("You have reached the limit for the free version, upgrade to enjoy more features", card);
-          return;
-        }
-        let data = null;
-        try { data = JSON.parse(text); } catch {}
+        // CHANGE: prefer message over error when failing
         if (!res.ok) {
-          const msg = (data?.error || data?.message) || "Resume analysis failed. Please try again.";
+          const msg = (data?.message || data?.error) || "Resume analysis failed. Please try again.";
           console.error("Resume analysis failed:", text);
           showInlineBanner(card, msg, "error");
           return;
         }
+
         if (!data) {
           console.error("Invalid JSON from /api/resume-analysis:", text);
           showInlineBanner(card, "Unexpected server response.", "error");
@@ -304,16 +310,22 @@ document.addEventListener("DOMContentLoaded", () => {
           window.location.href = "/account?mode=login";
           return;
         }
+
+        // ⇩⇩⇩ INSERTED: 402 ➜ banner + alert + return ⇩⇩⇩
         if (res.status === 402) {
-          alert((data?.message || "You’ve reached your resume analysis limit. Upgrade to continue."));
+          const msg = (data?.message || "You’ve reached your plan limit for this feature.");
+          window.showUpgradeBanner?.(msg);
+          alert(msg);
           return;
         }
+        // ⇧⇧⇧ END INSERT ⇧⇧⇧
+
         if (res.status === 429 && (data?.error === "too_many_free_accounts" || data?.error === "quota_exceeded")) {
           alert("You have reached the limit for the free version, upgrade to enjoy more features");
           return;
         }
         if (!res.ok) {
-          const msg = (data?.error || data?.message) || "Analysis failed. Try again.";
+          const msg = (data?.message || data?.error) || "Analysis failed. Try again.";
           console.error("Resume analysis failed:", text);
           alert(msg);
           return;
