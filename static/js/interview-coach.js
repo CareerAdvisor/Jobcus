@@ -39,6 +39,7 @@ async function handleCommonErrors(res) {
   if (res.status === 401 || res.status === 403) {
     const msg = body?.message || 
       "Please **sign up or log in** to use this feature.";
+    // optional: kick to login
     window.showUpgradeBanner?.(msg);
     setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
     throw new Error(msg);
