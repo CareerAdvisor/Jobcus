@@ -1004,13 +1004,14 @@ def ai_suggest():
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 @login_required
 def build_cover_letter():
+    # Quota enforcement (keep this first)
     plan = (getattr(current_user, "plan", "free") or "free").lower()
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
 
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "cover_letter")
     if not allowed:
         PRICING_URL = "https://www.jobcus.com/pricing"
-        info.setdefault("error", "quota_exceeded")
+        info.setdefault("error", "upgrade_required")
         info.setdefault("message", "You’ve reached your plan limit for this feature.")
         info.setdefault("message_html", f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>')
         info.setdefault("pricing_url", PRICING_URL)
@@ -1019,43 +1020,55 @@ def build_cover_letter():
     try:
         data = request.get_json(force=True) or {}
     except Exception:
+        current_app.logger.exception("build-cover-letter: bad JSON")
         return jsonify(error="Invalid JSON body"), 400
 
-    fmt   = (data.get("format") or "html").lower()
-    name  = data.get("name", "")
-    title = data.get("title", "")
-    contact = data.get("contact", "")
-    sender   = data.get("sender") or {}
-    recipient= data.get("recipient") or {}
-    cl       = data.get("coverLetter") or {}
-    draft    = (cl.get("draft") or "").strip()
+    fmt         = (data.get("format") or "html").lower()
+    letter_only = bool(data.get("letter_only")) or (fmt == "pdf")
+
+    # Inputs
+    name      = data.get("name", "")
+    title     = data.get("title", "")
+    contact   = data.get("contact", "")
+    sender    = data.get("sender") or {}
+    recipient = data.get("recipient") or {}
+    draft     = (data.get("coverLetter", {}).get("draft") or "").strip()
+
+    # Choose template
+    # - Use your existing builder page for full UI
+    # - Reuse cover-letter-print.html for preview/PDF (letter-only)
+    template = "cover-letter.html"
+    if letter_only:
+        template = "cover-letter-print.html"
 
     try:
-        # IMPORTANT: use a letter-only template here
         html = render_template(
-            "letters/cover-letter-letter.html",
+            template,
             name=name, title=title, contact=contact,
-            sender=sender, recipient=recipient, draft=draft,
+            sender=sender, recipient=recipient,
+            draft=draft,            # in case cover-letter.html needs it
+            cover_body=draft,       # what cover-letter-print.html expects
+            letter_only=letter_only,
             for_pdf=(fmt == "pdf"),
         )
     except Exception:
-        current_app.logger.exception("cover-letter render error")
-        return jsonify(error="Template error. Please try again."), 500
+        current_app.logger.exception("build-cover-letter: template render failed")
+        return jsonify(error="Template error (see logs for details)"), 500
 
     if fmt == "pdf":
         try:
             pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf(
-                stylesheets=[CSS(string="@page{size:A4;margin:0.75in}")]
+                stylesheets=[CSS(string="@page{size:A4;margin:22mm 18mm}")]
             )
             return send_file(BytesIO(pdf_bytes),
                              mimetype="application/pdf",
                              as_attachment=True,
                              download_name="cover-letter.pdf")
         except Exception:
-            current_app.logger.exception("cover-letter PDF error")
-            return jsonify(error="PDF generation failed"), 500
+            current_app.logger.exception("build-cover-letter: PDF generation failed")
+            return jsonify(error="PDF generation failed (see logs)"), 500
 
-    # success → letter-only HTML
+    # HTML preview
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
