@@ -1,3 +1,4 @@
+// /static/js/cover-letter.js
 (function () {
   // Always send cookies with fetch (SameSite=Lax)
   const _fetch = window.fetch.bind(window);
@@ -22,38 +23,33 @@
   // Centralized server-response handling (auth/limits/abuse)
   async function handleCommonErrors(res) {
     if (res.ok) return null;
-  
+
     const ct = (res.headers.get("content-type") || "").toLowerCase();
-    let msg = `Request failed (${res.status})`, j = null;
-  
+    let msg = `Request failed (${res.status})`;
+
     try {
       if (ct.includes("application/json")) {
-        j = await res.json();
-        // 401 / 403 ➜ login flow (unchanged)
+        const j = await res.json();
+        msg = j?.message || j?.error || msg;
+
+        // Auth
         if (res.status === 401 || res.status === 403) {
-          const authMsg = j?.message || "Please sign up or log in to use this feature.";
+          const authMsg = msg || "Please sign up or log in to use this feature.";
           window.showUpgradeBanner?.(authMsg);
           setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
           throw new Error(authMsg);
         }
-        // 402 ➜ show upgrade banner with HTML if available
+
+        // Plan limits / feature gating — prefer HTML for sticky banner
         if (res.status === 402 || j?.error === "upgrade_required") {
-          const up = j?.message_html || j?.message || "You’ve reached your plan limit. Upgrade to continue.";
+          const up = j?.message_html || msg || "You’ve reached your plan limit. Upgrade to continue.";
           window.showUpgradeBanner?.(up);
           throw new Error(j?.message || "Upgrade required");
         }
-        // 429 guard (unchanged) …
-        msg = j?.message || j?.error || msg;
-      } else {
-        await res.text().catch(() => {});
-      }
-    } catch {}
-    throw new Error(stripTags(msg));
-  }
 
         // Abuse guard
         if (res.status === 429 && (j?.error === "too_many_free_accounts" || j?.error === "device_limit")) {
-          const ab = msg || "Too many free accounts detected from your network/device.";
+          const ab = j?.message || "Too many free accounts detected from your network/device.";
           window.showUpgradeBanner?.(ab);
           throw new Error(ab);
         }
@@ -116,6 +112,7 @@
     if (!text) return text;
     let t = String(text).trim();
     t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, ""); // drop greeting
+    // ✅ keep this regex on ONE line
     t = t.replace(/\n+\s*(yours\s+sincerely|sincerely|kind\s+regards|best\s+regards|regards)[\s\S]*$/i, ""); // drop sign-off
     t = t.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim(); // normalize
     const paras = t.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
@@ -138,11 +135,11 @@
         coverLetter: ctx.coverLetter
       })
     });
-  
+
     if (!res.ok) {
       await handleCommonErrors(res); // throws with a clean message
     }
-  
+
     if (format === "pdf") {
       const ct = (res.headers.get("content-type") || "").toLowerCase();
       if (!ct.includes("application/pdf")) {
@@ -164,7 +161,7 @@
       URL.revokeObjectURL(url);
       return;
     }
-  
+
     // HTML preview
     const ct = (res.headers.get("content-type") || "").toLowerCase();
     if (!ct.includes("text/html")) {
@@ -180,16 +177,15 @@
       window.showUpgradeBanner?.(msg);
       throw new Error(stripTags(msg));
     }
-  
+
     const html = await res.text();
     const wrap  = document.getElementById("clPreviewWrap");
     const frame = document.getElementById("clPreview");
     if (wrap && frame) {
       wrap.style.display = "block";
-      frame.srcdoc = html;
+      frame.srcdoc = html; // inject letter-only HTML
     }
   }
-
 
   // ---------- OPTIONAL prefill ----------
   function maybePrefillFromSeed(form) {
