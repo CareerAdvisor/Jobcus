@@ -219,6 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("mobileMenu")?.classList.toggle("show");
   };
 
+
   // ── Chat sidebar (A11Y-friendly open/close) ─────────────────
   const chatMenuToggle = document.getElementById("chatMenuToggle");
   const chatMenu       = document.getElementById("chatSidebar");
