@@ -1004,7 +1004,6 @@ def ai_suggest():
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 @login_required
 def build_cover_letter():
-    # Quota enforcement (keep this at the top!)
     plan = (getattr(current_user, "plan", "free") or "free").lower()
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
 
@@ -1020,29 +1019,28 @@ def build_cover_letter():
     try:
         data = request.get_json(force=True) or {}
     except Exception:
-        current_app.logger.exception("build-cover-letter: bad JSON")
         return jsonify(error="Invalid JSON body"), 400
 
-    fmt = (data.get("format") or "html").lower()
-    try:
-        name     = data.get("name", "")
-        title    = data.get("title", "")
-        contact  = data.get("contact", "")
-        sender   = data.get("sender") or {}
-        recipient= data.get("recipient") or {}
-        cl       = data.get("coverLetter") or {}
-        draft    = (cl.get("draft") or "").strip()
+    fmt   = (data.get("format") or "html").lower()
+    name  = data.get("name", "")
+    title = data.get("title", "")
+    contact = data.get("contact", "")
+    sender   = data.get("sender") or {}
+    recipient= data.get("recipient") or {}
+    cl       = data.get("coverLetter") or {}
+    draft    = (cl.get("draft") or "").strip()
 
+    try:
+        # IMPORTANT: use a letter-only template here
         html = render_template(
-            "cover-letter.html",
+            "letters/cover-letter-letter.html",
             name=name, title=title, contact=contact,
             sender=sender, recipient=recipient, draft=draft,
-            letter_only=(fmt == "pdf" or bool(data.get("letter_only"))),
             for_pdf=(fmt == "pdf"),
         )
     except Exception:
-        current_app.logger.exception("build-cover-letter: template render failed")
-        return jsonify(error="Template error (see logs for details)"), 500
+        current_app.logger.exception("cover-letter render error")
+        return jsonify(error="Template error. Please try again."), 500
 
     if fmt == "pdf":
         try:
@@ -1054,9 +1052,10 @@ def build_cover_letter():
                              as_attachment=True,
                              download_name="cover-letter.pdf")
         except Exception:
-            current_app.logger.exception("build-cover-letter: PDF generation failed")
-            return jsonify(error="PDF generation failed (see logs)"), 500
+            current_app.logger.exception("cover-letter PDF error")
+            return jsonify(error="PDF generation failed"), 500
 
+    # success → letter-only HTML
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
