@@ -238,15 +238,19 @@ document.addEventListener("DOMContentLoaded", () => {
           );
         }
 
-        // Save to history
+        // Save to history (only update content; DON'T show it)
         history.push({
           question: currentQuestion,
           answer,
           feedback: data?.feedback || "",
           tips,
         });
-        renderHistory();               // <- will write into #historyContent and show #history-container
-        ensureVisible(feedbackBox);
+
+        // === Inserted as requested ===
+        renderHistory();                  // updates innerHTML only
+        // DO NOT: historyContainer.style.display = "block";
+        suggestionsBox.style.display = "block";  // show tips
+        feedbackBox.style.display = "block";     // show feedback
 
         try {
           window.syncState?.({
@@ -264,12 +268,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Render the Q&A history panel (Markdown → HTML) and show the container
+  // Render the Q&A history panel (Markdown → HTML) but DO NOT change its visibility
   function renderHistory() {
     if (!historyContainer || !historyContent) return;
     if (!history.length) {
       historyContent.innerHTML = "<p>No history yet.</p>";
-      historyContainer.style.display = "block"; // ensure visible even when empty
       return;
     }
 
@@ -293,20 +296,16 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }).join("");
 
-    // === The snippet you asked to insert ===
-    // assuming you have HTML from marked.js:
+    // Update content only
     document.getElementById('historyContent').innerHTML = entriesHtml;
-    // and then show the container:
-    document.getElementById('history-container').style.display = 'block';
   }
 
-  // Toggle history visibility
+  // Toggle history visibility (the ONLY place that shows/hides it)
   if (toggleHistoryBtn && historyContainer) {
     toggleHistoryBtn.addEventListener("click", () => {
       const isVisible = historyContainer.style.display === "block";
       historyContainer.style.display = isVisible ? "none" : "block";
       toggleHistoryBtn.textContent = isVisible ? "📜 Show History" : "🙈 Hide History";
-      if (!isVisible) ensureVisible(historyContainer);
     });
   }
 
