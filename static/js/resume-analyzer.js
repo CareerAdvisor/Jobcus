@@ -218,8 +218,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const pricing = data?.pricing_url || "/pricing";
         const msgHtml = data?.message_html || `${escapeHtml(msgText)} <a href="${pricing}">Upgrade now →</a>`;
       
-        // Show sticky banner with a clickable link
-        window.showUpgradeBanner?.(msgHtml);
+        window.showUpgradeBanner?.(msgHtml);  // sticky banner (clickable)
+        alert(msgText);                        // keep the legacy alert
       
         // Inline (card) banner stays plain text, then append a link element
         showInlineBanner(card, msgText, "warn");
