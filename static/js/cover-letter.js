@@ -224,7 +224,7 @@
       body: JSON.stringify(ctx)
     });
     await handleCommonErrors(res);
-    const json = await res.json().catch(() => ({}));
+    const json = await res.json().catch(()=> ({}));
     if (!json.draft) throw new Error("No draft returned.");
     return sanitizeDraft(json.draft);
   }
