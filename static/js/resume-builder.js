@@ -21,9 +21,9 @@ const escapeHtml = (s="") =>
   s.replace(/&/g,"&amp;").replace(/</g,"&lt;")
    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
-// Put near the top of resume-builder.js:
-const PRICING_URL = "/pricing.html"; // if your Flask route is /pricing use "/pricing"
-                                     // otherwise keep the static "/pricing.html"
+// ✅ Single source of truth for Pricing URL (no .html)
+//    If base.js sets window.PRICING_URL, use it; otherwise default to /pricing
+const PRICING_URL = (window.PRICING_URL || "/pricing");
 
 // Centralized server-response handling for plan/auth/abuse messages
 async function handleCommonErrors(res) {
@@ -37,8 +37,6 @@ async function handleCommonErrors(res) {
   } catch {
     body = null;
   }
-
-  const PRICING_URL = "/pricing.html"; // or "/pricing" if routed in Flask
 
   // 🔁 PRIORITIZE UPGRADE FIRST
   if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
@@ -182,7 +180,7 @@ function attachAISuggestionHandlers() {
         if (type === "summary") {
           lines = await aiSuggest("summary", ctx);
           textEl.textContent = lines.join(" ");
-        } else if (type === "highlights") { // NOTE: leave exactly as in your repo if already working
+        } else if (type === "highlights") {
           const allItems = qsa(builder, "#exp-list .rb-item");
           const itemEl = btn.closest(".rb-item");
           const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
@@ -240,7 +238,7 @@ function addExperienceFromObj(obj = {}) {
   const g = (n) => qs(node, `[name="${n}"]`);
   if (g("role"))     g("role").value     = obj.role || "";
   if (g("company"))  g("company").value  = obj.company || "";
-  if (g("start"))    g("start").value    = obj.start || "";
+  if (g("start"))    g("start").value    = obj.start || ""
   if (g("end"))      g("end").value      = obj.end || "";
   if (g("location")) g("location").value = obj.location || "";
   const bullets = g("bullets");
@@ -312,13 +310,13 @@ function initSkills() {
 // ───────────────────────────────────────────────
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
 
-  // ⬇️ REPLACE the existing helper with this one
+  // JSON POST helper for this module (uses same error path)
   async function postAndMaybeError(url, payload) {
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Accept": "application/json"   // ✅ ensure JSON on errors (e.g., 403/402)
+        "Accept": "application/json"   // ensure JSON on errors (e.g., 403/402)
       },
       body: JSON.stringify(payload)
     });
