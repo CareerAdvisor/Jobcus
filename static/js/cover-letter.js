@@ -7,7 +7,7 @@
     return _fetch(input, init);
   };
 
-  // Simple escaper + strip tags helper
+  // Tiny helpers
   function escapeHtml(s = "") {
     return String(s)
       .replace(/&/g, "&amp;")
@@ -16,58 +16,80 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
-  function stripTags(s = "") {
-    return String(s).replace(/<[^>]*>/g, "").trim();
-  }
+  function stripTags(s = "") { return String(s).replace(/<[^>]*>/g, "").trim(); }
 
-  // Centralized server-response handling (auth/limits/abuse)
+  // Use global pricing URL if base.js set it; otherwise default
+  const PRICING_URL = (window.PRICING_URL || "/pricing");
+
+  // ─────────────────────────────────────────────────────────────
+  // Centralized error handling (auth/limits/abuse → banner/redirect)
+  // ─────────────────────────────────────────────────────────────
   async function handleCommonErrors(res) {
     if (res.ok) return null;
 
     const ct = (res.headers.get("content-type") || "").toLowerCase();
-    let msg = `Request failed (${res.status})`;
-
+    let body = null, text = "";
     try {
       if (ct.includes("application/json")) {
-        const j = await res.json();
-        msg = j?.message || j?.error || msg;
-
-        // Auth
-        if (res.status === 401 || res.status === 403) {
-          const authMsg = msg || "Please sign up or log in to use this feature.";
-          window.showUpgradeBanner?.(authMsg);
-          setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
-          throw new Error(authMsg);
-        }
-
-        // Plan limits / feature gating — prefer HTML for sticky banner
-        if (res.status === 402 || j?.error === "upgrade_required") {
-          const up = j?.message_html || msg || "You’ve reached your plan limit. Upgrade to continue.";
-          window.showUpgradeBanner?.(up);
-          throw new Error(j?.message || "Upgrade required");
-        }
-
-        // Abuse guard
-        if (res.status === 429 && (j?.error === "too_many_free_accounts" || j?.error === "device_limit")) {
-          const ab = j?.message || "Too many free accounts detected from your network/device.";
-          window.showUpgradeBanner?.(ab);
-          throw new Error(ab);
-        }
+        body = await res.json();
       } else {
-        // Likely HTML error page — don't surface markup
-        await res.text().catch(() => {});
+        text = await res.text();
       }
     } catch { /* ignore parse errors */ }
 
-    throw new Error(stripTags(msg));
+    const msg = (body && (body.message || body.error)) || stripTags(text) || `Request failed (${res.status})`;
+
+    // 402: upgrade required / quota exceeded
+    if (res.status === 402 || (body && (body.error === "upgrade_required" || body.error === "quota_exceeded"))) {
+      const html = body?.message_html || `You’ve reached your plan limit. <a href="${PRICING_URL}">Upgrade now →</a>`;
+      window.showUpgradeBanner?.(html);
+      setTimeout(() => { window.location.href = PRICING_URL; }, 800);
+      throw new Error(body?.message || "Upgrade required");
+    }
+
+    // 401/403: auth required
+    if (res.status === 401 || res.status === 403) {
+      const authMsg = body?.message || "Please sign up or log in to use this feature.";
+      window.showUpgradeBanner?.(authMsg);
+      setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
+      throw new Error(authMsg);
+    }
+
+    // 429: abuse/device guard
+    if (res.status === 429 && (body?.error === "too_many_free_accounts" || body?.error === "device_limit")) {
+      const ab = body?.message || "Too many free accounts detected from your network/device.";
+      window.showUpgradeBanner?.(ab);
+      throw new Error(ab);
+    }
+
+    // 5xx or anything else: show a friendly banner; do NOT inject any preview
+    window.showUpgradeBanner?.(escapeHtml(msg));
+    throw new Error(msg);
   }
 
-  // ---------- cover-letter context for preview/PDF ----------
+  // ─────────────────────────────────────────────────────────────
+  // Shared POST helper (uses banner-first error handling)
+  // ─────────────────────────────────────────────────────────────
+  async function postAndMaybeError(url, payload, accept = "application/json") {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": accept
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) await handleCommonErrors(res);
+    return res;
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // cover-letter context for preview/PDF
+  // ─────────────────────────────────────────────────────────────
   function gatherContext(form) {
     const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
     const baseTone = (form.tone?.value || "professional").trim();
     const toneAugmented = `${baseTone}; human-like and natural; concise; maximum 3 short paragraphs`;
-
     return {
       name,
       contact: form.contact?.value || "",
@@ -75,7 +97,6 @@
       role: form.role?.value || "",
       jobUrl: form.jobUrl?.value || "",
       tone: toneAugmented,
-
       sender: {
         name,
         address1: form.senderAddress1?.value || "",
@@ -85,7 +106,6 @@
         phone: form.senderPhone?.value || "",
         date: form.letterDate?.value || new Date().toISOString().slice(0,10)
       },
-
       recipient: {
         name: form.recipient?.value || "Hiring Manager",
         company: form.company?.value || "",
@@ -93,7 +113,6 @@
         city: form.companyCity?.value || "",
         postcode: form.companyPostcode?.value || ""
       },
-
       coverLetter: {
         manager: form.recipient?.value || "Hiring Manager",
         company: form.company?.value || "",
@@ -116,79 +135,60 @@
     return paras.slice(0, 3).join("\n\n").trim(); // max 3 paras
   }
 
-  // ---------- (Optional) helper kept for parity ----------
-  const PRICING_URL = (window.PRICING_URL || "/pricing");
-  async function postAndMaybeError(url, payload) {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"  // forces JSON on 4xx/5xx
-      },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) await handleCommonErrors(res);
-    return res;
-  }
-
-  // ---------- INSERTED SNIPPET #1: Preview ----------
+  // ─────────────────────────────────────────────────────────────
+  // PREVIEW (HTML) — success-only injection, no alerts
+  // ─────────────────────────────────────────────────────────────
   async function previewLetter(payload) {
-    // cover-letter.js — preview
-    const res = await fetch("/build-cover-letter", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "text/html,application/json"   // HTML on success, JSON on errors
-      },
-      body: JSON.stringify({ format: "html", letter_only: true, ...payload })
-    });
-    await handleCommonErrors(res); // shows sticky banner w/ pricing link on 402
-    const ct = res.headers.get("content-type") || "";
-    if (!ct.includes("text/html")) throw new Error("Unexpected response.");
-    const html = await res.text();
-
-    // inject ONLY on success
-    document.getElementById("clPreviewWrap")?.style && (document.getElementById("clPreviewWrap").style.display = "block");
-    const frame = document.getElementById("clPreview"); // your preview iframe
-    if (frame) frame.srcdoc = html;
-  }
-
-  // ---------- INSERTED SNIPPET #2: Download PDF ----------
-  async function downloadLetterPDF(payload) {
-    // cover-letter.js — download PDF
-    const res = await fetch("/build-cover-letter", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/pdf,application/json"
-      },
-      body: JSON.stringify({ format: "pdf", letter_only: true, ...payload })
-    });
-    await handleCommonErrors(res);
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "cover-letter.pdf"; a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ---------- OPTIONAL prefill ----------
-  function maybePrefillFromSeed(form) {
     try {
-      const raw = localStorage.getItem("coverLetterSeed");
-      if (!raw) return;
-      const seed = JSON.parse(raw);
-      if (seed.firstName && form.firstName) form.firstName.value = seed.firstName;
-      if (seed.lastName  && form.lastName)  form.lastName.value  = seed.lastName;
-      if (seed.role      && form.role)      form.role.value      = seed.role;
-      if (seed.company   && form.company)   form.company.value   = seed.company;
-      if (seed.contact   && form.contact)   form.contact.value   = seed.contact;
-    } catch {}
+      const res = await postAndMaybeError(
+        "/build-cover-letter",
+        { format: "html", letter_only: true, ...payload },
+        "text/html,application/json"
+      );
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("text/html")) throw new Error("Unexpected response.");
+      const html = await res.text();
+
+      // Inject ONLY on success
+      const wrap  = document.getElementById("clPreviewWrap");
+      const frame = document.getElementById("clPreview") || document.getElementById("letterPreview");
+      if (wrap) wrap.style.display = "block";
+      if (frame) frame.srcdoc = html;
+    } catch (err) {
+      // handleCommonErrors already showed a banner/redirect when appropriate
+      console.warn("Cover letter preview error:", err);
+    }
   }
 
-  // ------------------------------------------------------------------
+  // ─────────────────────────────────────────────────────────────
+  // DOWNLOAD (PDF) — plan gating handled via handleCommonErrors
+  // ─────────────────────────────────────────────────────────────
+  async function downloadLetterPDF(payload) {
+    try {
+      const res = await postAndMaybeError(
+        "/build-cover-letter",
+        { format: "pdf", letter_only: true, ...payload },
+        "application/pdf,application/json"
+      );
+      const ct = (res.headers.get("content-type") || "").toLowerCase();
+      if (!ct.includes("application/pdf")) {
+        // If we get here with non-PDF, treat as error to avoid bogus download
+        const txt = await res.text().catch(() => "");
+        throw new Error(stripTags(txt) || "PDF generation failed.");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "cover-letter.pdf"; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.warn("Cover letter PDF error:", err);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // AI: /ai/cover-letter
-  // ------------------------------------------------------------------
+  // ─────────────────────────────────────────────────────────────
   function gatherCLContext(form) {
     const get = (n) => (form?.elements?.[n]?.value || "").trim();
     const sender = {
@@ -238,14 +238,28 @@
     return aiSuggestCoverLetter(ctx);
   };
 
-  // ------------------------------------------------------------------
-
+  // ─────────────────────────────────────────────────────────────
+  // Boot
+  // ─────────────────────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
     const form   = document.getElementById("clForm");
     const aiCard = document.getElementById("ai-cl");
     const getAiTextEl = () => aiCard?.querySelector(".ai-text");
 
-    if (form) maybePrefillFromSeed(form);
+    // Optional prefill from local seed
+    (function maybePrefillFromSeed() {
+      if (!form) return;
+      try {
+        const raw = localStorage.getItem("coverLetterSeed");
+        if (!raw) return;
+        const seed = JSON.parse(raw);
+        if (seed.firstName && form.firstName) form.firstName.value = seed.firstName;
+        if (seed.lastName  && form.lastName)  form.lastName.value  = seed.lastName;
+        if (seed.role      && form.role)      form.role.value      = seed.role;
+        if (seed.company   && form.company)   form.company.value   = seed.company;
+        if (seed.contact   && form.contact)   form.contact.value   = seed.contact;
+      } catch {}
+    })();
 
     // AI handlers (refresh / insert)
     aiCard?.addEventListener("click", async (e) => {
@@ -276,15 +290,15 @@
       }
     });
 
-    // Preview / Download (use the inserted helpers)
+    // Preview / Download buttons
     document.getElementById("cl-preview")?.addEventListener("click", async () => {
       try { await previewLetter(gatherContext(form)); }
-      catch (e) { alert(stripTags(e.message) || "Preview failed"); }
+      catch { /* banner already shown by handler; keep silent */ }
     });
 
     document.getElementById("cl-download")?.addEventListener("click", async () => {
       try { await downloadLetterPDF(gatherContext(form)); }
-      catch (e) { alert(stripTags(e.message) || "PDF failed"); }
+      catch { /* banner already shown by handler; keep silent */ }
     });
   });
 })();
