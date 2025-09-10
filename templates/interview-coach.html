@@ -91,7 +91,12 @@
         class="history-box"
         style="display:none;"
         aria-live="polite"
-      ></div>
+      >
+        <!-- Responsive history panel wrapper (prevents horizontal overflow) -->
+        <div id="historyPanel" class="history-panel">
+          <div id="historyContent" class="ai-response"><!-- feedback markdown injected here --></div>
+        </div>
+      </div>
     </section>
 
     <!-- AI tip suggestions (when available) -->
