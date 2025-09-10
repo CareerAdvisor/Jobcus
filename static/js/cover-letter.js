@@ -57,9 +57,8 @@
         // Likely HTML error page — don't surface markup
         await res.text().catch(() => {});
       }
-    } catch {
-      /* ignore parse errors */
-    }
+    } catch { /* ignore parse errors */ }
+
     throw new Error(stripTags(msg));
   }
 
@@ -117,9 +116,8 @@
     return paras.slice(0, 3).join("\n\n").trim(); // max 3 paras
   }
 
-  // ---------- Helper you asked to add ----------
+  // ---------- (Optional) helper kept for parity ----------
   const PRICING_URL = (window.PRICING_URL || "/pricing");
-
   async function postAndMaybeError(url, payload) {
     const res = await fetch(url, {
       method: "POST",
@@ -133,69 +131,45 @@
     return res;
   }
 
-  // Preview helper that uses postAndMaybeError
+  // ---------- INSERTED SNIPPET #1: Preview ----------
   async function previewLetter(payload) {
-    try {
-      const res = await postAndMaybeError("/build-cover-letter", { format: "html", ...payload });
-      const ct = res.headers.get("content-type") || "";
-      if (!ct.includes("text/html")) throw new Error("Unexpected response.");
-      const html = await res.text();
-
-      // Inject into your preview iframe/box ONLY on success
-      const wrap  = document.getElementById("clPreviewWrap");
-      const frame = document.getElementById("clPreview") || document.getElementById("letterPreview");
-      if (wrap) wrap.style.display = "block";
-      if (frame) frame.srcdoc = html;
-    } catch (err) {
-      // Friendly error (handleCommonErrors already showed banner for 402)
-      alert(err.message || "Cover letter preview failed.");
-    }
-  }
-
-  // ---------- PREVIEW / PDF (keep existing for PDF path) ----------
-  async function renderLetter(ctx, format = "html") {
+    // cover-letter.js — preview
     const res = await fetch("/build-cover-letter", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Accept": format === "pdf" ? "application/pdf" : "text/html,application/json"
+        "Accept": "text/html,application/json"   // HTML on success, JSON on errors
       },
-      body: JSON.stringify({
-        format,            // "html" for preview, "pdf" for download
-        letter_only: true, // ensure letter-only view for preview/download
-        sender: ctx.sender,
-        recipient: ctx.recipient,
-        coverLetter: ctx.coverLetter
-      })
+      body: JSON.stringify({ format: "html", letter_only: true, ...payload })
     });
+    await handleCommonErrors(res); // shows sticky banner w/ pricing link on 402
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("text/html")) throw new Error("Unexpected response.");
+    const html = await res.text();
 
-    if (!res.ok) {
-      await handleCommonErrors(res); // throws with a clean message
-    }
+    // inject ONLY on success
+    document.getElementById("clPreviewWrap")?.style && (document.getElementById("clPreviewWrap").style.display = "block");
+    const frame = document.getElementById("clPreview"); // your preview iframe
+    if (frame) frame.srcdoc = html;
+  }
 
-    if (format === "pdf") {
-      const ct = (res.headers.get("content-type") || "").toLowerCase();
-      if (!ct.includes("application/pdf")) {
-        let msg = "PDF generation failed.";
-        try {
-          if (ct.includes("application/json")) {
-            const j = await res.json();
-            msg = j?.message || j?.error || msg;
-          } else {
-            await res.text(); // discard HTML
-          }
-        } catch {}
-        throw new Error(stripTags(msg));
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "cover-letter.pdf"; a.click();
-      URL.revokeObjectURL(url);
-      return;
-    }
-
-    // (HTML preview handled by previewLetter now)
+  // ---------- INSERTED SNIPPET #2: Download PDF ----------
+  async function downloadLetterPDF(payload) {
+    // cover-letter.js — download PDF
+    const res = await fetch("/build-cover-letter", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/pdf,application/json"
+      },
+      body: JSON.stringify({ format: "pdf", letter_only: true, ...payload })
+    });
+    await handleCommonErrors(res);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "cover-letter.pdf"; a.click();
+    URL.revokeObjectURL(url);
   }
 
   // ---------- OPTIONAL prefill ----------
@@ -302,14 +276,14 @@
       }
     });
 
-    // Preview / Download
+    // Preview / Download (use the inserted helpers)
     document.getElementById("cl-preview")?.addEventListener("click", async () => {
-      try { await previewLetter(gatherContext(form)); }   // <-- use the new helper
+      try { await previewLetter(gatherContext(form)); }
       catch (e) { alert(stripTags(e.message) || "Preview failed"); }
     });
 
     document.getElementById("cl-download")?.addEventListener("click", async () => {
-      try { await renderLetter(gatherContext(form), "pdf"); } // keep existing PDF path
+      try { await downloadLetterPDF(gatherContext(form)); }
       catch (e) { alert(stripTags(e.message) || "PDF failed"); }
     });
   });
