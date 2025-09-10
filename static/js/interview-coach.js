@@ -51,9 +51,10 @@ async function handleCommonErrors(res) {
   }
 
   // Plan limits / feature gating
-  if (res.status === 402 || (bodyJson && bodyJson.error === "upgrade_required")) {
-    const msg = (bodyJson && bodyJson.message) || "You’ve reached your plan limit. Upgrade to continue.";
-    window.showUpgradeBanner?.(msg);
+  if (res.status === 402 || (res.status === 403 && body && body.error === "upgrade_required")) {
+    const msgHtml = body?.message_html || null;
+    const msg     = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
+    window.showUpgradeBanner?.(msgHtml || msg);   // sticky banner supports HTML
     throw new Error(msg);
   }
 
