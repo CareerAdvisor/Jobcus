@@ -213,20 +213,20 @@
   }
 
   // Call your backend to get a draft
-  async function aiSuggestCoverLetter_min(ctx) {
+  async function aiSuggestCoverLetter(ctx) {
     const res = await fetch("/ai/cover-letter", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
       credentials: "same-origin",
       body: JSON.stringify(ctx)
     });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(text || `Cover-letter AI failed (${res.status})`);
-    }
+    await handleCommonErrors(res);
     const json = await res.json().catch(() => ({}));
     if (!json.draft) throw new Error("No draft returned.");
-    return json.draft;
+    return sanitizeDraft(json.draft);
   }
 
   // ------------------------------------------------------------------
