@@ -208,14 +208,32 @@ document.addEventListener("DOMContentLoaded", () => {
         // ⇩⇩⇩ INSERTED: parse JSON once + 402 handler with banner/inline CTA ⇩⇩⇩
         let data = null;
         try { data = JSON.parse(text); } catch {}
-
-        // NEW: 402 ➜ show upgrade banner and inline banner (warn)
+        
+        // Prefer HTML for the global sticky banner, fall back to text
         if (res.status === 402) {
-          const msg = (data?.message || "You’ve reached your plan limit for this feature.");
-          window.showUpgradeBanner?.(msg);
-          showInlineBanner(card, msg, "warn");
+          const msgText = (data?.message || "You’ve reached your plan limit for this feature.");
+          const msgHtml = data?.message_html || null;
+        
+          window.showUpgradeBanner?.(msgHtml || msgText); // sticky banner with link
+          alert(msgText);                                  // keep simple alert for legacy flow
+          
+          // Inline banner is plain text; add a clickable link if provided
+          showInlineBanner(card, msgText, "warn");
+          if (data?.pricing_url) {
+            const b = card?.querySelector(".inline-banner");
+            if (b) {
+              const a = document.createElement("a");
+              a.href = data.pricing_url;               // e.g. https://www.jobcus.com/pricing
+              a.textContent = " Upgrade now →";
+              a.style.marginLeft = "8px";
+              a.style.textDecoration = "underline";
+              a.style.color = "#664d03";
+              b.appendChild(a);
+            }
+          }
           return;
         }
+
         // ⇧⇧⇧ END INSERT ⇧⇧⇧
 
         // Handle device/IP abuse guard from backend (429)
