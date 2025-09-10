@@ -205,34 +205,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const text = await res.text();
 
-        // ⇩⇩⇩ INSERTED: parse JSON once + 402 handler with banner/inline CTA ⇩⇩⇩
-        let data = null;
-        try { data = JSON.parse(text); } catch {}
-        
-        // Prefer HTML for the global sticky banner, fall back to text
-        if (res.status === 402) {
-          const msgText = (data?.message || "You’ve reached your plan limit for this feature.");
-          const msgHtml = data?.message_html || null;
-        
-          window.showUpgradeBanner?.(msgHtml || msgText); // sticky banner with link
-          alert(msgText);                                  // keep simple alert for legacy flow
-          
-          // Inline banner is plain text; add a clickable link if provided
-          showInlineBanner(card, msgText, "warn");
-          if (data?.pricing_url) {
-            const b = card?.querySelector(".inline-banner");
-            if (b) {
-              const a = document.createElement("a");
-              a.href = data.pricing_url;               // e.g. https://www.jobcus.com/pricing
-              a.textContent = " Upgrade now →";
-              a.style.marginLeft = "8px";
-              a.style.textDecoration = "underline";
-              a.style.color = "#664d03";
-              b.appendChild(a);
-            }
-          }
-          return;
+       // helper (put near the top of the file once)
+      function escapeHtml(s=""){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+      
+      // … inside the click handler, after reading `text`:
+      let data = null;
+      try { data = JSON.parse(text); } catch {}
+      
+      if (res.status === 402) {
+        const msgText = data?.message || "You’ve reached your plan limit for this feature.";
+        const pricing = data?.pricing_url || "/pricing";
+        const msgHtml = data?.message_html || `${escapeHtml(msgText)} <a href="${pricing}">Upgrade now →</a>`;
+      
+        // Show sticky banner with a clickable link
+        window.showUpgradeBanner?.(msgHtml);
+      
+        // Inline (card) banner stays plain text, then append a link element
+        showInlineBanner(card, msgText, "warn");
+        const b = card?.querySelector(".inline-banner");
+        if (b) {
+          const a = document.createElement("a");
+          a.href = pricing;
+          a.textContent = " Upgrade now →";
+          a.style.marginLeft = "8px";
+          a.style.textDecoration = "underline";
+          a.style.color = "#664d03";
+          b.appendChild(a);
         }
+        return;
+      }
 
         // ⇧⇧⇧ END INSERT ⇧⇧⇧
 
