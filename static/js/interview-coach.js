@@ -123,18 +123,19 @@ document.addEventListener("DOMContentLoaded", () => {
   async function getNextQuestion() {
     if (asking) return;
     asking = true;
-
+  
     // Reset UI areas
-    if (feedbackBox) { feedbackBox.style.display = "none"; setLive(feedbackBox, ""); }
-    if (suggestionsBox) { suggestionsBox.style.display = "none"; setLive(suggestionsBox, ""); }
+    if (feedbackBox) { feedbackBox.style.display = "none"; feedbackBox.innerHTML = ""; }
+    if (suggestionsBox) { suggestionsBox.style.display = "none"; suggestionsBox.innerHTML = ""; }
     if (answerInput) answerInput.value = "";
-
+  
     // Loading state
-    setLive(questionBox, "<em>🤖 Generating a new interview question...</em>");
-    questionBox?.setAttribute("aria-busy", "true");
+    setLive(questionBox, '<em>🤖 Generating a new interview question...</em>');
+    if (questionBox) questionBox.setAttribute("aria-busy", "true");
     setBusy(nextBtn, true);
-
+  
     try {
+      // Call with explicit Accept so server returns JSON on 401/403
       const res = await fetch("/api/interview/question", {
         method: "POST",
         headers: {
@@ -143,27 +144,26 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: JSON.stringify({ previousRole, targetRole, experience })
       });
-      
-      await handleCommonErrors(res);
-      const data = await res.json();
-      
-      currentQuestion = data?.question || "⚠️ No question returned.";
-      setLive(questionBox, `<strong>🗨️ ${escapeHtml(currentQuestion)}</strong>`);
-
-      // best-effort telemetry
-      try { window.syncState?.({ interview_last_q: currentQuestion }); } catch {}
-      
-  } catch (err) {
-    console.error("Question fetch error:", err);
-    const msg = err?.message || "Error fetching interview question.";
-    setLive(questionBox, `❌ ${escapeHtml(msg)}`);
-  }
-
+  
+      await handleCommonErrors(res);  // will throw with a friendly message on auth/plan errors
+  
+      const data = await res.json().catch(() => ({}));
+      currentQuestion = (data && data.question)
+        ? data.question
+        : "Please sign up or log in to use this feature.";
+  
+      setLive(questionBox, '<strong>🗨️ ' + escapeHtml(currentQuestion) + '</strong>');
+  
+      try { window.syncState?.({ interview_last_q: currentQuestion }); } catch (e) { /* no-op */ }
+    } catch (err) {
+      console.error("Question fetch error:", err);
+      const msg = (err && err.message) ? err.message : "Error fetching interview question.";
+      setLive(questionBox, "⚠️ " + escapeHtml(msg));
     } finally {
-      questionBox?.setAttribute("aria-busy", "false");
+      if (questionBox) questionBox.setAttribute("aria-busy", "false");
       setBusy(nextBtn, false);
       ensureVisible(questionBox);
-      answerInput?.focus();
+      if (answerInput) answerInput.focus();
       asking = false;
     }
   }
