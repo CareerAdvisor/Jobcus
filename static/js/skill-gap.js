@@ -35,9 +35,8 @@
   
     // If it’s an API AUTH error, show a friendly message and DO NOT pass HTML through
     if (res.status === 401 || res.status === 403) {
-      const msg =
-        (bodyJson && bodyJson.message) ||
-        "Please log in to use this feature.";
+      const msg = body?.message || 
+        "Please **sign up or log in** to use this feature.";
       // optional: kick to login
       window.showUpgradeBanner?.(msg);
       setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
