@@ -19,63 +19,58 @@ function escapeHtml(s = "") {
     .replace(/'/g, "&#39;");
 }
 
-// Centralized error handling consistent with other pages
+// Centralized error handling (auth/limits/abuse) — prefers message_html for the sticky banner
 async function handleCommonErrors(res) {
   if (res.ok) return null;
 
   const ct = (res.headers.get("content-type") || "").toLowerCase();
-  let bodyText = "";
-  let bodyJson = null;
-
+  let body = null;
+  let text = "";
   try {
     if (ct.includes("application/json")) {
-      bodyJson = await res.json();
+      body = await res.json();
     } else {
-      bodyText = await res.text();
+      text = await res.text();
     }
-  } catch {}
+  } catch { /* best effort */ }
 
-  // If it’s an API auth error, show a friendly message and DO NOT pass HTML through
+  // discard raw HTML pages
+  if (text && /<html/i.test(text)) text = "";
+
+  // Auth required
   if (res.status === 401 || res.status === 403) {
-    const msg = body?.message || 
-      "Please **sign up or log in** to use this feature.";
-    // optional: kick to login
+    const msg = (body && body.message) || "Please sign up or log in to use this feature.";
     window.showUpgradeBanner?.(msg);
     setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
     throw new Error(msg);
   }
 
-  // Don’t surface raw HTML to the user
-  if (bodyText && /<html/i.test(bodyText)) {
-    bodyText = ""; // discard noisy HTML
-  }
-
-  // Plan limits / feature gating
-  if (res.status === 402 || (res.status === 403 && body && body.error === "upgrade_required")) {
-    const msgHtml = body?.message_html || null;
-    const msg     = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
-    window.showUpgradeBanner?.(msgHtml || msg);   // sticky banner supports HTML
+  // Plan limits / feature gating — show linked banner if available
+  if (res.status === 402 || (body && body.error === "upgrade_required")) {
+    const html = body?.message_html;
+    const msg  = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
+    window.showUpgradeBanner?.(html || msg); // sticky banner supports HTML links
     throw new Error(msg);
   }
 
-  // Abuse guard (network/device)
-  if (res.status === 429 && bodyJson && bodyJson.error === "too_many_free_accounts") {
-    const msg = bodyJson.message || "Too many free accounts detected from your network/device.";
+  // Abuse guard
+  if (res.status === 429 && body && body.error === "too_many_free_accounts") {
+    const msg = body.message || "Too many free accounts detected from your network/device.";
     window.showUpgradeBanner?.(msg);
     throw new Error(msg);
   }
 
-  const msg = (bodyJson && (bodyJson.message || bodyJson.error)) || bodyText || `Request failed (${res.status})`;
-  throw new Error(msg);
+  const fallback = (body && (body.message || body.error)) || text || `Request failed (${res.status})`;
+  throw new Error(fallback);
 }
 
-// In apiPost (shared helper) – add Accept
+// Shared POST helper (adds Accept + runs common error handler)
 async function apiPost(url, payload) {
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Accept": "application/json"     // <-- add this
+      "Accept": "application/json"
     },
     body: JSON.stringify(payload),
   });
@@ -97,8 +92,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const feedbackBox      = document.getElementById("feedback-box");
   const suggestionsBox   = document.getElementById("suggestions-box");
   const nextBtn          = document.getElementById("next-question-btn");
+
+  // history UI
   const historyContainer = document.getElementById("history-container");
+  const historyPanel     = document.getElementById("historyPanel");
+  const historyContent   = document.getElementById("historyContent");
   const toggleHistoryBtn = document.getElementById("toggle-history-btn");
+
   const sessionSection   = document.querySelector(".interview-session");
 
   let currentQuestion = "";
@@ -124,19 +124,19 @@ document.addEventListener("DOMContentLoaded", () => {
   async function getNextQuestion() {
     if (asking) return;
     asking = true;
-  
-    // Reset UI areas
+
+    // Reset UI
     if (feedbackBox) { feedbackBox.style.display = "none"; feedbackBox.innerHTML = ""; }
     if (suggestionsBox) { suggestionsBox.style.display = "none"; suggestionsBox.innerHTML = ""; }
     if (answerInput) answerInput.value = "";
-  
+
     // Loading state
     setLive(questionBox, '<em>🤖 Generating a new interview question...</em>');
     if (questionBox) questionBox.setAttribute("aria-busy", "true");
     setBusy(nextBtn, true);
-  
+
     try {
-      // Call with explicit Accept so server returns JSON on 401/403
+      // Explicit Accept so errors come back as JSON
       const res = await fetch("/api/interview/question", {
         method: "POST",
         headers: {
@@ -145,17 +145,16 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: JSON.stringify({ previousRole, targetRole, experience })
       });
-  
-      await handleCommonErrors(res);  // will throw with a friendly message on auth/plan errors
-  
+
+      await handleCommonErrors(res);
+
       const data = await res.json().catch(() => ({}));
       currentQuestion = (data && data.question)
         ? data.question
         : "Please sign up or log in to use this feature.";
-  
+
       setLive(questionBox, '<strong>🗨️ ' + escapeHtml(currentQuestion) + '</strong>');
-  
-      try { window.syncState?.({ interview_last_q: currentQuestion }); } catch (e) { /* no-op */ }
+      try { window.syncState?.({ interview_last_q: currentQuestion }); } catch {}
     } catch (err) {
       console.error("Question fetch error:", err);
       const msg = (err && err.message) ? err.message : "Error fetching interview question.";
@@ -246,10 +245,9 @@ document.addEventListener("DOMContentLoaded", () => {
           feedback: data?.feedback || "",
           tips,
         });
-        renderHistory();
+        renderHistory();               // <- will write into #historyContent and show #history-container
         ensureVisible(feedbackBox);
 
-        // best-effort telemetry
         try {
           window.syncState?.({
             interview_qas: history.length,
@@ -266,31 +264,40 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Render the Q&A history panel
+  // Render the Q&A history panel (Markdown → HTML) and show the container
   function renderHistory() {
-    if (!historyContainer) return;
+    if (!historyContainer || !historyContent) return;
     if (!history.length) {
-      historyContainer.innerHTML = "<p>No history yet.</p>";
+      historyContent.innerHTML = "<p>No history yet.</p>";
+      historyContainer.style.display = "block"; // ensure visible even when empty
       return;
     }
-    historyContainer.innerHTML = history
-      .map((entry, idx) => {
-        const tipsHtml = entry.tips?.length
-          ? `<p><strong>Tips:</strong><ul>${entry.tips
-              .map(t => `<li>${escapeHtml(t)}</li>`).join("")}</ul></p>`
-          : "";
-        return `
-          <div class="history-entry">
-            <h4>Question ${idx + 1}</h4>
-            <p><strong>Q:</strong> ${escapeHtml(entry.question)}</p>
-            <p><strong>Your Answer:</strong> ${escapeHtml(entry.answer)}</p>
-            <p><strong>Feedback:</strong></p>
-            <pre>${escapeHtml(entry.feedback)}</pre>
-            ${tipsHtml}
-          </div>
-        `;
-      })
-      .join("");
+
+    const entriesHtml = history.map((entry, idx) => {
+      const feedbackHtml = (window.marked?.parse)
+        ? window.marked.parse(String(entry.feedback || ""))
+        : `<pre>${escapeHtml(String(entry.feedback || ""))}</pre>`;
+      const tipsHtml = entry.tips?.length
+        ? `<p><strong>Tips:</strong></p><ul>${entry.tips.map(t => `<li>${escapeHtml(t)}</li>`).join("")}</ul>`
+        : "";
+
+      return `
+        <div class="history-entry">
+          <h4>Question ${idx + 1}</h4>
+          <p><strong>Q:</strong> ${escapeHtml(entry.question)}</p>
+          <p><strong>Your Answer:</strong> ${escapeHtml(entry.answer)}</p>
+          <p><strong>Feedback:</strong></p>
+          <div class="ai-response">${feedbackHtml}</div>
+          ${tipsHtml}
+        </div>
+      `;
+    }).join("");
+
+    // === The snippet you asked to insert ===
+    // assuming you have HTML from marked.js:
+    document.getElementById('historyContent').innerHTML = entriesHtml;
+    // and then show the container:
+    document.getElementById('history-container').style.display = 'block';
   }
 
   // Toggle history visibility
