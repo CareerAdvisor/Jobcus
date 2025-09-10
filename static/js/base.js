@@ -86,10 +86,15 @@ window.autoResize = window.autoResize || function (ta) {
 
 // CSRF cookie reader (Flask-WTF default cookie names vary; adjust if needed)
 function getCookie(name) {
-  const m = document.cookie.match(
-    new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\\]\\/+^])/g, '\\$1') + '=([^;]*)')
-  );
-  return m ? decodeURIComponent(m[1]) : null;
+  const prefix = name + "=";
+  const parts = (document.cookie || "").split(";");
+  for (let p of parts) {
+    p = p.trim();
+    if (p.startsWith(prefix)) {
+      return decodeURIComponent(p.slice(prefix.length));
+    }
+  }
+  return null;
 }
 
 window.apiFetch = async function apiFetch(url, options = {}) {
@@ -99,10 +104,10 @@ window.apiFetch = async function apiFetch(url, options = {}) {
   };
 
   // Inject CSRF header if a token is present
-  const csrf = getCookie('csrf_token') || getCookie('XSRF-TOKEN'); // adjust to your cookie name
-  if (csrf) merged.headers['X-CSRFToken'] = csrf;                  // Flask-WTF default header
+  const csrf = getCookie('csrf_token') || getCookie('XSRF-TOKEN');
+  if (csrf) merged.headers['X-CSRFToken'] = csrf;
 
-  const resp = await fetch(url, merged); // your global wrapper already sets credentials=same-origin
+  const resp = await fetch(url, merged);
   const contentType = resp.headers.get('content-type') || '';
 
   if (!resp.ok) {
