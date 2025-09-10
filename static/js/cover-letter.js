@@ -56,7 +56,6 @@
       } else {
         // Likely HTML error page — don't surface markup
         await res.text().catch(() => {});
-        // Fall through to generic msg below
       }
     } catch {
       /* ignore parse errors */
@@ -112,14 +111,48 @@
     if (!text) return text;
     let t = String(text).trim();
     t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, ""); // drop greeting
-    // ✅ keep this regex on ONE line
     t = t.replace(/\n+\s*(yours\s+sincerely|sincerely|kind\s+regards|best\s+regards|regards)[\s\S]*$/i, ""); // drop sign-off
     t = t.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim(); // normalize
     const paras = t.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
     return paras.slice(0, 3).join("\n\n").trim(); // max 3 paras
   }
 
-  // ---------- PREVIEW / PDF ----------
+  // ---------- Helper you asked to add ----------
+  const PRICING_URL = (window.PRICING_URL || "/pricing");
+
+  async function postAndMaybeError(url, payload) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"  // forces JSON on 4xx/5xx
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) await handleCommonErrors(res);
+    return res;
+  }
+
+  // Preview helper that uses postAndMaybeError
+  async function previewLetter(payload) {
+    try {
+      const res = await postAndMaybeError("/build-cover-letter", { format: "html", ...payload });
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("text/html")) throw new Error("Unexpected response.");
+      const html = await res.text();
+
+      // Inject into your preview iframe/box ONLY on success
+      const wrap  = document.getElementById("clPreviewWrap");
+      const frame = document.getElementById("clPreview") || document.getElementById("letterPreview");
+      if (wrap) wrap.style.display = "block";
+      if (frame) frame.srcdoc = html;
+    } catch (err) {
+      // Friendly error (handleCommonErrors already showed banner for 402)
+      alert(err.message || "Cover letter preview failed.");
+    }
+  }
+
+  // ---------- PREVIEW / PDF (keep existing for PDF path) ----------
   async function renderLetter(ctx, format = "html") {
     const res = await fetch("/build-cover-letter", {
       method: "POST",
@@ -162,29 +195,7 @@
       return;
     }
 
-    // HTML preview
-    const ct = (res.headers.get("content-type") || "").toLowerCase();
-    if (!ct.includes("text/html")) {
-      let msg = "Preview failed.";
-      try {
-        if (ct.includes("application/json")) {
-          const j = await res.json().catch(() => ({}));
-          msg = j?.message || j?.error || msg;
-        } else {
-          await res.text(); // discard HTML
-        }
-      } catch {}
-      window.showUpgradeBanner?.(msg);
-      throw new Error(stripTags(msg));
-    }
-
-    const html = await res.text();
-    const wrap  = document.getElementById("clPreviewWrap");
-    const frame = document.getElementById("clPreview");
-    if (wrap && frame) {
-      wrap.style.display = "block";
-      frame.srcdoc = html; // inject letter-only HTML
-    }
+    // (HTML preview handled by previewLetter now)
   }
 
   // ---------- OPTIONAL prefill ----------
@@ -293,12 +304,12 @@
 
     // Preview / Download
     document.getElementById("cl-preview")?.addEventListener("click", async () => {
-      try { await renderLetter(gatherContext(form), "html"); }
+      try { await previewLetter(gatherContext(form)); }   // <-- use the new helper
       catch (e) { alert(stripTags(e.message) || "Preview failed"); }
     });
 
     document.getElementById("cl-download")?.addEventListener("click", async () => {
-      try { await renderLetter(gatherContext(form), "pdf"); }
+      try { await renderLetter(gatherContext(form), "pdf"); } // keep existing PDF path
       catch (e) { alert(stripTags(e.message) || "PDF failed"); }
     });
   });
