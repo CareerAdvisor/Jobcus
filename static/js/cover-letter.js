@@ -138,15 +138,14 @@
         coverLetter: ctx.coverLetter
       })
     });
-
+  
     if (!res.ok) {
       await handleCommonErrors(res); // throws with a clean message
     }
-
+  
     if (format === "pdf") {
       const ct = (res.headers.get("content-type") || "").toLowerCase();
       if (!ct.includes("application/pdf")) {
-        // Try to extract any JSON/text message but do not surface raw HTML
         let msg = "PDF generation failed.";
         try {
           if (ct.includes("application/json")) {
@@ -165,7 +164,7 @@
       URL.revokeObjectURL(url);
       return;
     }
-
+  
     // HTML preview
     const ct = (res.headers.get("content-type") || "").toLowerCase();
     if (!ct.includes("text/html")) {
@@ -181,15 +180,16 @@
       window.showUpgradeBanner?.(msg);
       throw new Error(stripTags(msg));
     }
-
+  
     const html = await res.text();
     const wrap  = document.getElementById("clPreviewWrap");
     const frame = document.getElementById("clPreview");
     if (wrap && frame) {
       wrap.style.display = "block";
-      frame.srcdoc = html; // ✅ inject letter-only HTML (no full page duplication)
+      frame.srcdoc = html;
     }
   }
+
 
   // ---------- OPTIONAL prefill ----------
   function maybePrefillFromSeed(form) {
