@@ -68,21 +68,19 @@ async function handleCommonErrors(res) {
   throw new Error(msg);
 }
 
-// Shared API helper (POST JSON + shared error branches)
+// In apiPost (shared helper) – add Accept
 async function apiPost(url, payload) {
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"     // <-- add this
+    },
     body: JSON.stringify(payload),
   });
-
   await handleCommonErrors(res);
-
-  // prefer JSON; tolerate empty/text
   const ct = res.headers.get("content-type") || "";
-  if (ct.includes("application/json")) {
-    return (await res.json().catch(() => ({}))) || {};
-  }
+  if (ct.includes("application/json")) return (await res.json().catch(() => ({}))) || {};
   const txt = await res.text().catch(() => "");
   try { return JSON.parse(txt); } catch { return { message: txt || null }; }
 }
@@ -154,9 +152,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // best-effort telemetry
       try { window.syncState?.({ interview_last_q: currentQuestion }); } catch {}
-    } catch (err) {
-      console.error("Question fetch error:", err);
-      setLive(questionBox, "⚠️ Error fetching interview question.");
+      
+  } catch (err) {
+    console.error("Question fetch error:", err);
+    const msg = err?.message || "Error fetching interview question.";
+    setLive(questionBox, `❌ ${escapeHtml(msg)}`);
+  }
+
     } finally {
       questionBox?.setAttribute("aria-busy", "false");
       setBusy(nextBtn, false);
