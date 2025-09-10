@@ -87,7 +87,7 @@ window.autoResize = window.autoResize || function (ta) {
 // CSRF cookie reader (Flask-WTF default cookie names vary; adjust if needed)
 function getCookie(name) {
   const m = document.cookie.match(
-    new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)')
+    new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\\]\\/+^])/g, '\\$1') + '=([^;]*)')
   );
   return m ? decodeURIComponent(m[1]) : null;
 }
@@ -118,16 +118,21 @@ window.apiFetch = async function apiFetch(url, options = {}) {
 };
 
 /* ─────────────────────────────────────────────────────────────
- * 1) Global upgrade banner helper
+ * 1) Global upgrade banner helper (sticky polyfill)
+ *    - Creates a sticky banner at the top if not present
+ *    - Used by feature pages when server returns 402/429
  * ───────────────────────────────────────────────────────────── */
-window.showUpgradeBanner = function (text) {
-  const el = document.getElementById("upgrade-banner");
-  if (el) {
-    el.textContent = text || "You’ve reached your plan limit. Upgrade to continue.";
-    el.hidden = false;
-  } else {
-    alert(text || "You’ve reached your plan limit. Upgrade to continue.");
+window.showUpgradeBanner ||= (msg) => {
+  // try to mount a site-wide banner area
+  let host = document.querySelector("#upgrade-banner-host") || document.body;
+  let el = document.querySelector("#upgrade-banner");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "upgrade-banner";
+    el.style.cssText = "position:sticky;top:0;z-index:1000;margin:0;padding:12px 16px;background:#fff3cd;border-bottom:1px solid #ffeeba;color:#856404;font:14px/1.3 system-ui";
+    host.prepend(el);
   }
+  el.textContent = msg || "You have reached the limit for the free version, upgrade to enjoy more features";
 };
 
 /* ─────────────────────────────────────────────────────────────
