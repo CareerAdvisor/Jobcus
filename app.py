@@ -1589,8 +1589,8 @@ def skill_gap_api():
             if not ok:
                 PRICING_URL = "https://www.jobcus.com/pricing"
                 info.setdefault("error", "quota_exceeded")
-                info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
-                info.setdefault("message_html", f'You have reached the limit for the free version — <a href="{PRICING_URL}">upgrade to enjoy more features</a>.')
+                info.setdefault("message", "You’ve reached your plan limit for this feature.")
+                info.setdefault("message_html", f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>')
                 info.setdefault("pricing_url", PRICING_URL)
                 return jsonify(info), 402
 
@@ -1699,8 +1699,8 @@ def interview_coach_api():
     if not allowed:
         PRICING_URL = "https://www.jobcus.com/pricing"
         info.setdefault("error", "quota_exceeded")
-        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
-        info.setdefault("message_html", f'You have reached the limit for the free version — <a href="{PRICING_URL}">upgrade to enjoy more features</a>.')
+        info.setdefault("message", "You’ve reached your plan limit for this feature.")
+        info.setdefault("message_html", f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>')
         info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
 
@@ -1763,8 +1763,8 @@ def get_interview_question():
     if not allowed:
         PRICING_URL = "https://www.jobcus.com/pricing"
         info.setdefault("error", "quota_exceeded")
-        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
-        info.setdefault("message_html", f'You have reached the limit for the free version — <a href="{PRICING_URL}">upgrade to enjoy more features</a>.')
+        info.setdefault("message", "You’ve reached your plan limit for this feature.")
+        info.setdefault("message_html", f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>')
         info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
 
@@ -1818,10 +1818,11 @@ def get_interview_feedback():
     if not allowed:
         PRICING_URL = "https://www.jobcus.com/pricing"
         info.setdefault("error", "quota_exceeded")
-        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
-        info.setdefault("message_html", f'You have reached the limit for the free version — <a href="{PRICING_URL}">upgrade to enjoy more features</a>.')
+        info.setdefault("message", "You’ve reached your plan limit for this feature.")
+        info.setdefault("message_html", f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>')
         info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
+
 
     # Parse input
     try:
