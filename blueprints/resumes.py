@@ -1004,16 +1004,19 @@ def ai_suggest():
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 @login_required
 def build_cover_letter():
-    # Quota enforcement
+    # Quota enforcement (keep this at the top!)
     plan = (getattr(current_user, "plan", "free") or "free").lower()
     supabase_admin = current_app.config["SUPABASE_ADMIN"]
-    # resumes.py -> build_cover_letter()
+
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "cover_letter")
     if not allowed:
         PRICING_URL = "https://www.jobcus.com/pricing"
         info.setdefault("error", "quota_exceeded")
-        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
-        info.setdefault("message_html", f'You have reached the limit for the free version — <a href="{PRICING_URL}">upgrade to enjoy more features</a>.')
+        info.setdefault("message", "You’ve reached your plan limit for this feature.")
+        info.setdefault(
+            "message_html",
+            f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>'
+        )
         info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
 
@@ -1082,8 +1085,8 @@ def resume_analysis():
         # wherever you `return jsonify(info), 402` after _quota_check(...)
         PRICING_URL = "https://www.jobcus.com/pricing"
         info.setdefault("error", "quota_exceeded")
-        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
-        info.setdefault("message_html", f'You have reached the limit for the free version — <a href="{PRICING_URL}">upgrade to enjoy more features</a>.')
+        info.setdefault("message", "You’ve reached your plan limit for this feature.")
+        info.setdefault("message_html", f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>')
         info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
 
