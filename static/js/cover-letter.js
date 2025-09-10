@@ -1,4 +1,3 @@
-<script>
 (function () {
   // Always send cookies with fetch (SameSite=Lax)
   const _fetch = window.fetch.bind(window);
@@ -303,4 +302,3 @@
     });
   });
 })();
-</script>
