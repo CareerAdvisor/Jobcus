@@ -1585,12 +1585,10 @@ def skill_gap_api():
         supabase_admin = current_app.config.get("SUPABASE_ADMIN")
         plan = (getattr(current_user, "plan", "free") or "free").lower()
         if supabase_admin:
-            from limits import check_and_increment
-            allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
-            if not allowed:
-                # wherever you `return jsonify(info), 402` after _quota_check(...)
+            ok, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
+            if not ok:
                 info.setdefault("error", "quota_exceeded")
-                info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
+                info.setdefault("message", "You’ve reached your plan limit for this feature.")
                 return jsonify(info), 402
 
     except Exception:
