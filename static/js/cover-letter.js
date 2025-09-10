@@ -22,29 +22,34 @@
   // Centralized server-response handling (auth/limits/abuse)
   async function handleCommonErrors(res) {
     if (res.ok) return null;
-
+  
     const ct = (res.headers.get("content-type") || "").toLowerCase();
-    let msg = `Request failed (${res.status})`;
-
+    let msg = `Request failed (${res.status})`, j = null;
+  
     try {
       if (ct.includes("application/json")) {
-        const j = await res.json();
-        msg = j?.message || j?.error || msg;
-
-        // Auth
+        j = await res.json();
+        // 401 / 403 ➜ login flow (unchanged)
         if (res.status === 401 || res.status === 403) {
-          const authMsg = msg || "Please sign up or log in to use this feature.";
+          const authMsg = j?.message || "Please sign up or log in to use this feature.";
           window.showUpgradeBanner?.(authMsg);
           setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
           throw new Error(authMsg);
         }
-
-        // Plan limits / feature gating
+        // 402 ➜ show upgrade banner with HTML if available
         if (res.status === 402 || j?.error === "upgrade_required") {
-          const up = msg || "You’ve reached your plan limit. Upgrade to continue.";
+          const up = j?.message_html || j?.message || "You’ve reached your plan limit. Upgrade to continue.";
           window.showUpgradeBanner?.(up);
-          throw new Error(up);
+          throw new Error(j?.message || "Upgrade required");
         }
+        // 429 guard (unchanged) …
+        msg = j?.message || j?.error || msg;
+      } else {
+        await res.text().catch(() => {});
+      }
+    } catch {}
+    throw new Error(stripTags(msg));
+  }
 
         // Abuse guard
         if (res.status === 429 && (j?.error === "too_many_free_accounts" || j?.error === "device_limit")) {
