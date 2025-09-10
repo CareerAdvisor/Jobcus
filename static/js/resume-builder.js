@@ -311,10 +311,15 @@ function initSkills() {
 // Render with server templates (HTML/PDF/DOCX)
 // ───────────────────────────────────────────────
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
+
+  // ⬇️ REPLACE the existing helper with this one
   async function postAndMaybeError(url, payload) {
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"   // ✅ ensure JSON on errors (e.g., 403/402)
+      },
       body: JSON.stringify(payload)
     });
     if (!res.ok) {
