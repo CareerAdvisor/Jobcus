@@ -27,32 +27,39 @@ def _normalize_feature(feature: str) -> str:
     return _FEATURE_ALIASES.get(f, f)
 
 
+# limits.py  (PLAN_QUOTAS)  ← add these lines
 PLAN_QUOTAS = {
     "free": {
         "chat_messages":   Quota("total", 15),
         "resume_analyzer": Quota("month", 3),
         "cover_letter":    Quota("month", 2),
         "skill_gap":       Quota("month", 1),
-        # (optional) if you later decide to meter interview_coach or resume_builder,
-        # add them here; otherwise they'll default to unlimited for the period.
+        "interview_coach": Quota("month", 1),   # NEW
+        "resume_builder":  Quota("month", 1),   # NEW (if you want it metered)
     },
     "weekly": {
         "chat_messages":   Quota("week", 200),
         "resume_analyzer": Quota("week", 10),
         "cover_letter":    Quota("week", 5),
         "skill_gap":       Quota("week", None),
+        "interview_coach": Quota("week", None),   # NEW (or set a number)
+        "resume_builder":  Quota("week", None),   # NEW (or set a number)
     },
     "standard": {
         "chat_messages":   Quota("month", 800),
         "resume_analyzer": Quota("month", 50),
         "cover_letter":    Quota("month", 20),
         "skill_gap":       Quota("month", None),
+        "interview_coach": Quota("month", None),  # NEW
+        "resume_builder":  Quota("month", None),  # NEW
     },
     "premium": {
         "chat_messages":   Quota("year", 12000),
         "resume_analyzer": Quota("month", None),
         "cover_letter":    Quota("month", None),
         "skill_gap":       Quota("month", None),
+        "interview_coach": Quota("month", None),  # NEW
+        "resume_builder":  Quota("month", None),  # NEW
     },
 }
 
