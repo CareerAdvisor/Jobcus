@@ -13,7 +13,7 @@ from flask import (
 from flask_cors import CORS
 from flask_login import (
     login_user, logout_user, current_user,
-    login_required, user_logged_in, UserMixin
+    login_required, user_logged_in, LoginManager, UserMixin
 )
 from gotrue.errors import AuthApiError
 from dotenv import load_dotenv
@@ -152,9 +152,10 @@ supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 app.config["SUPABASE_ADMIN"] = supabase_admin
 
 # --- Flask-Login init ---
-login_manager.init_app(app)
-login_manager.login_view = "account"
 login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "account"  # or your login route endpoint
+login_manager.login_message = "Please sign up or log in to use this feature."
 
 # --- Constants for Job Insights ---
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
@@ -511,6 +512,24 @@ def enforce_single_active_session():
     except Exception:
         current_app.logger.exception("session check failed")
         return end_current_session()
+
+# --- Error Handler ---#
+def _wants_json():
+    return "application/json" in (request.headers.get("Accept") or "")
+
+@app.errorhandler(401)
+def _eh_401(e):
+    if _wants_json():
+        return jsonify(error="auth_required",
+                       message="Please sign up or log in to use this feature."), 401
+    return e
+
+@app.errorhandler(403)
+def _eh_403(e):
+    if _wants_json():
+        return jsonify(error="forbidden",
+                       message="Please sign up or log in to use this feature."), 403
+    return e
 
 # --- IP abuse heuristic (legacy; UNUSED now) ---
 def too_many_free_accounts_from_ip(ip_hash, window_days=7, threshold=3):
