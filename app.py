@@ -1586,10 +1586,13 @@ def skill_gap_api():
         plan = (getattr(current_user, "plan", "free") or "free").lower()
         if supabase_admin:
             from limits import check_and_increment
-            ok, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
-            if not ok:
+            allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
+            if not allowed:
+                # wherever you `return jsonify(info), 402` after _quota_check(...)
                 info.setdefault("error", "quota_exceeded")
+                info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
                 return jsonify(info), 402
+
     except Exception:
         current_app.logger.warning("skill-gap: quota check failed", exc_info=True)
         # continue without failing the request
@@ -1693,6 +1696,8 @@ def interview_coach_api():
     # Quota
     allowed, info = _quota_check("interview_coach")
     if not allowed:
+        info.setdefault("error", "quota_exceeded")
+        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
         return jsonify(info), 402
 
     # Parse input safely
@@ -1752,6 +1757,8 @@ def get_interview_question():
     # Quota
     allowed, info = _quota_check("interview_coach")
     if not allowed:
+        info.setdefault("error", "quota_exceeded")
+        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
         return jsonify(info), 402
 
     # Parse input
@@ -1802,6 +1809,8 @@ def get_interview_feedback():
     # Quota
     allowed, info = _quota_check("interview_coach")
     if not allowed:
+        info.setdefault("error", "quota_exceeded")
+        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
         return jsonify(info), 402
 
     # Parse input
