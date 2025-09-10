@@ -1076,9 +1076,11 @@ def resume_analysis():
     # FIX: align quota key with limits/UI: resume_analyzer
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "resume_analyzer")
     if not allowed:
-        info["message"] = info.get("message") or "You’ve reached your resume analyses limit. Upgrade to continue."
-        info.setdefault("error", "quota_exceeded")  # NEW: for frontend banner
+        # wherever you `return jsonify(info), 402` after _quota_check(...)
+        info.setdefault("error", "quota_exceeded")
+        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
         return jsonify(info), 402
+
 
     """
     ATS scoring model (100 pts) + penalties, aligned to industry best practice.
