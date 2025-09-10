@@ -21,6 +21,10 @@ const escapeHtml = (s="") =>
   s.replace(/&/g,"&amp;").replace(/</g,"&lt;")
    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
+// Put near the top of resume-builder.js:
+const PRICING_URL = "/pricing.html"; // if your Flask route is /pricing use "/pricing"
+                                     // otherwise keep the static "/pricing.html"
+
 // Centralized server-response handling for plan/auth/abuse messages
 async function handleCommonErrors(res) {
   if (res.ok) return null;
@@ -37,10 +41,11 @@ async function handleCommonErrors(res) {
     throw new Error(msg);
   }
 
-  // Plan limits / feature gating
+  // Plan limits / feature gating  ➜ SHOW BANNER + REDIRECT TO PRICING
   if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
     const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
     window.showUpgradeBanner?.(msg);
+    setTimeout(() => { window.location.href = PRICING_URL; }, 1000);
     throw new Error(msg);
   }
 
