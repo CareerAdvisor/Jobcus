@@ -37,10 +37,8 @@ async function handleCommonErrors(res) {
 
   // If it’s an API auth error, show a friendly message and DO NOT pass HTML through
   if (res.status === 401 || res.status === 403) {
-    const msg =
-      (bodyJson && bodyJson.message) ||
-      "Please log in to use this feature.";
-    // optional: kick to login
+    const msg = body?.message || 
+      "Please **sign up or log in** to use this feature.";
     window.showUpgradeBanner?.(msg);
     setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
     throw new Error(msg);
@@ -138,13 +136,19 @@ document.addEventListener("DOMContentLoaded", () => {
     setBusy(nextBtn, true);
 
     try {
-      const data = await apiPost("/api/interview/question", {
-        previousRole,
-        targetRole,
-        experience,
+      const res = await fetch("/api/interview/question", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({ previousRole, targetRole, experience })
       });
-
-      currentQuestion = data?.question || "Sorry, no question returned.";
+      
+      await handleCommonErrors(res);
+      const data = await res.json();
+      
+      currentQuestion = data?.question || "⚠️ No question returned.";
       setLive(questionBox, `<strong>🗨️ ${escapeHtml(currentQuestion)}</strong>`);
 
       // best-effort telemetry
