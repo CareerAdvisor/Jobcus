@@ -1011,7 +1011,7 @@ def build_cover_letter():
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "cover_letter")
     if not allowed:
         info.setdefault("error", "quota_exceeded")
-        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
+        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
         return jsonify(info), 402
 
     try:
@@ -1078,7 +1078,7 @@ def resume_analysis():
     if not allowed:
         # wherever you `return jsonify(info), 402` after _quota_check(...)
         info.setdefault("error", "quota_exceeded")
-        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features")
+        info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
         return jsonify(info), 402
 
 
