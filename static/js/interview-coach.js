@@ -23,49 +23,49 @@ function escapeHtml(s = "") {
 async function handleCommonErrors(res) {
   if (res.ok) return null;
 
-  const ct = res.headers.get("content-type") || "";
-  let data = null;
+  const ct = (res.headers.get("content-type") || "").toLowerCase();
+  let bodyText = "";
+  let bodyJson = null;
+
   try {
     if (ct.includes("application/json")) {
-      data = await res.json();
+      bodyJson = await res.json();
     } else {
-      const txt = await res.text();
-      data = txt ? { message: txt } : null;
+      bodyText = await res.text();
     }
-  } catch {
-    data = null;
-  }
+  } catch {}
 
-  const msg =
-    data?.message ||
-    data?.error ||
-    `Request failed (${res.status})`;
-
-  // Auth required
+  // If it’s an API auth error, show a friendly message and DO NOT pass HTML through
   if (res.status === 401 || res.status === 403) {
-    // Distinguish upgrade_required vs auth
-    if (data?.error === "upgrade_required") {
-      window.showUpgradeBanner?.(msg || "This feature requires a paid plan.");
-      throw new Error(msg);
-    }
-    // default to login flow
-    window.showUpgradeBanner?.(msg || "Please sign in to continue.");
+    const msg =
+      (bodyJson && bodyJson.message) ||
+      "Please log in to use this feature.";
+    // optional: kick to login
+    window.showUpgradeBanner?.(msg);
     setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
     throw new Error(msg);
   }
 
-  // Plan limits
-  if (res.status === 402 || data?.error === "upgrade_required") {
-    window.showUpgradeBanner?.(msg || "You’ve reached your plan limit. Upgrade to continue.");
+  // Don’t surface raw HTML to the user
+  if (bodyText && /<html/i.test(bodyText)) {
+    bodyText = ""; // discard noisy HTML
+  }
+
+  // Plan limits / feature gating
+  if (res.status === 402 || (bodyJson && bodyJson.error === "upgrade_required")) {
+    const msg = (bodyJson && bodyJson.message) || "You’ve reached your plan limit. Upgrade to continue.";
+    window.showUpgradeBanner?.(msg);
     throw new Error(msg);
   }
 
   // Abuse guard (network/device)
-  if (res.status === 429 && (data?.error === "too_many_free_accounts" || data?.error === "device_limit")) {
-    window.showUpgradeBanner?.(msg || "Too many free accounts detected from your network/device.");
+  if (res.status === 429 && bodyJson && bodyJson.error === "too_many_free_accounts") {
+    const msg = bodyJson.message || "Too many free accounts detected from your network/device.";
+    window.showUpgradeBanner?.(msg);
     throw new Error(msg);
   }
 
+  const msg = (bodyJson && (bodyJson.message || bodyJson.error)) || bodyText || `Request failed (${res.status})`;
   throw new Error(msg);
 }
 
