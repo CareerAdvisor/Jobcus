@@ -84,3 +84,70 @@
     max-width: 100%;
   }
 }
+
+/* History / feedback container stays within the viewport */
+#historyPanel,
+.history-panel,
+.feedback-history,
+.history-content {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden; /* never bleed off-screen */
+}
+
+/* Markdown body (what you render with marked.js) */
+#historyPanel .ai-response,
+.history-panel .ai-response,
+.feedback-history .ai-response,
+.history-content .ai-response {
+  max-width: 100%;
+  overflow-wrap: anywhere; /* break long words/URLs first */
+  word-break: break-word;  /* older fallback */
+  white-space: normal;     /* reset any inherited pre formatting */
+}
+
+/* Code blocks: preserve newlines but wrap long lines */
+#historyPanel .ai-response pre,
+.history-panel .ai-response pre,
+.feedback-history .ai-response pre,
+.history-content .ai-response pre,
+#historyPanel .ai-response code,
+.history-panel .ai-response code,
+.feedback-history .ai-response code,
+.history-content .ai-response code {
+  white-space: pre-wrap;   /* keep line breaks */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+/* Images and tables scale to container width */
+#historyPanel .ai-response img,
+.history-panel .ai-response img,
+.feedback-history .ai-response img,
+.history-content .ai-response img {
+  max-width: 100%;
+  height: auto;
+}
+
+#historyPanel .ai-response table,
+.history-panel .ai-response table,
+.feedback-history .ai-response table,
+.history-content .ai-response table {
+  display: block;          /* allow horizontal scroll if needed */
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optional: keep blockquotes/content boxes from nudging width */
+#historyPanel .ai-response blockquote,
+.history-panel .ai-response blockquote,
+.feedback-history .ai-response blockquote,
+.history-content .ai-response blockquote {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
