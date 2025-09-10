@@ -20,36 +20,53 @@
   // Centralized server-response handling (auth/limits/abuse)
   async function handleCommonErrors(res) {
     if (res.ok) return null;
-    const ct = res.headers.get("content-type") || "";
-    let body = null;
-    try { body = ct.includes("application/json") ? await res.json() : { message: await res.text() }; }
-    catch { body = null; }
-
-    // Auth
+  
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    let bodyText = "";
+    let bodyJson = null;
+  
+    try {
+      if (ct.includes("application/json")) {
+        bodyJson = await res.json();
+      } else {
+        bodyText = await res.text();
+      }
+    } catch {}
+  
+    // If it’s an API AUTH error, show a friendly message and DO NOT pass HTML through
     if (res.status === 401 || res.status === 403) {
-      const msg = body?.message || "Please sign in to continue.";
+      const msg =
+        (bodyJson && bodyJson.message) ||
+        "Please log in to use this feature.";
+      // optional: kick to login
       window.showUpgradeBanner?.(msg);
       setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
       throw new Error(msg);
     }
-
+  
+    // Don’t surface raw HTML to the user
+    if (bodyText && /<html/i.test(bodyText)) {
+      bodyText = ""; // discard noisy HTML
+    }
+  
     // Plan limits / feature gating
-    if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
-      const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
+    if (res.status === 402 || (bodyJson && bodyJson.error === "upgrade_required")) {
+      const msg = (bodyJson && bodyJson.message) || "You’ve reached your plan limit. Upgrade to continue.";
       window.showUpgradeBanner?.(msg);
       throw new Error(msg);
     }
 
     // Abuse guard (free network/device)
-    if (res.status === 429 && body?.error === "too_many_free_accounts") {
-      const msg = body?.message || "Too many free accounts detected from your network/device.";
+    if (res.status === 429 && bodyJson && bodyJson.error === "too_many_free_accounts") {
+      const msg = bodyJson.message || "Too many free accounts detected from your network/device.";
       window.showUpgradeBanner?.(msg);
       throw new Error(msg);
     }
-
-    const msg = body?.message || `Request failed (${res.status})`;
+  
+    const msg = (bodyJson && (bodyJson.message || bodyJson.error)) || bodyText || `Request failed (${res.status})`;
     throw new Error(msg);
   }
+
 
   document.addEventListener("DOMContentLoaded", () => {
     const form       = document.getElementById("skillGapForm");
