@@ -76,12 +76,14 @@
       void resultBox.offsetWidth; // Force reflow
       resultBox.classList.add("show");
 
-      try {
-        const res = await fetch("/api/skill-gap", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ goal, skills })
-        });
+      const res = await fetch("/api/skill-gap", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"      // <— add this
+        },
+        body: JSON.stringify({ goal, skills })
+      });
 
         await handleCommonErrors(res);
 
