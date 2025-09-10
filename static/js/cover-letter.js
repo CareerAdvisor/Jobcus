@@ -223,11 +223,19 @@
       credentials: "same-origin",
       body: JSON.stringify(ctx)
     });
+  
     await handleCommonErrors(res);
+  
     const json = await res.json().catch(()=> ({}));
     if (!json.draft) throw new Error("No draft returned.");
     return sanitizeDraft(json.draft);
   }
+  
+  // ✅ Place this directly after the function above
+  // Legacy alias so old handlers keep working
+  window.aiSuggestCoverLetter_min = async function(ctx) {
+    return aiSuggestCoverLetter(ctx);
+  };
 
   // ------------------------------------------------------------------
 
