@@ -1823,7 +1823,6 @@ def get_interview_feedback():
         info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
 
-
     # Parse input
     try:
         data = request.get_json(force=True) or {}
