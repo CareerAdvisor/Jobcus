@@ -154,6 +154,7 @@ app.config["SUPABASE_ADMIN"] = supabase_admin
 # --- Flask-Login init ---
 login_manager.init_app(app)
 login_manager.login_view = "account"
+login_manager = LoginManager()
 
 # --- Constants for Job Insights ---
 REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
@@ -373,6 +374,15 @@ def get_user_resume_text(user_id: str) -> Optional[str]:
         current_app.logger.exception("get_user_resume_text error")
         return None
 
+@login_manager.unauthorized_handler
+def _unauthorized():
+    # JSON for API routes
+    if (request.path or "").startswith("/api/"):
+        return jsonify(error="auth_required",
+                       message="Please log in to use this feature."), 401
+    # normal redirect for web pages
+    return redirect(url_for("account", next=request.url))
+
 def log_login_event():
     try:
         supabase.table("login_events").insert({
@@ -469,9 +479,13 @@ def end_current_session(redirect_endpoint="account"):
 @app.before_request
 def _auth_wall():
     p = request.path or ""
-    # Always allow static and health checks through
+    # allow static & health
     if p.startswith("/static/") or p == "/healthz":
         return
+    # if user not authenticated on API: return JSON (don’t redirect HTML)
+    if p.startswith("/api/") and not current_user.is_authenticated:
+        return jsonify(error="auth_required",
+                       message="Please log in to use this feature."), 401
         
 @app.before_request
 def enforce_single_active_session():
