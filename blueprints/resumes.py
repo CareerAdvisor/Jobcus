@@ -1013,10 +1013,7 @@ def build_cover_letter():
         PRICING_URL = "https://www.jobcus.com/pricing"
         info.setdefault("error", "quota_exceeded")
         info.setdefault("message", "You’ve reached your plan limit for this feature.")
-        info.setdefault(
-            "message_html",
-            f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>'
-        )
+        info.setdefault("message_html", f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>')
         info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
 
@@ -1082,7 +1079,6 @@ def resume_analysis():
     # FIX: align quota key with limits/UI: resume_analyzer
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "resume_analyzer")
     if not allowed:
-        # wherever you `return jsonify(info), 402` after _quota_check(...)
         PRICING_URL = "https://www.jobcus.com/pricing"
         info.setdefault("error", "quota_exceeded")
         info.setdefault("message", "You’ve reached your plan limit for this feature.")
