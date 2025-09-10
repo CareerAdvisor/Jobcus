@@ -1587,8 +1587,11 @@ def skill_gap_api():
         if supabase_admin:
             ok, info = check_and_increment(supabase_admin, current_user.id, plan, "skill_gap")
             if not ok:
+                PRICING_URL = "https://www.jobcus.com/pricing"
                 info.setdefault("error", "quota_exceeded")
                 info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
+                info.setdefault("message_html", f'You have reached the limit for the free version — <a href="{PRICING_URL}">upgrade to enjoy more features</a>.')
+                info.setdefault("pricing_url", PRICING_URL)
                 return jsonify(info), 402
 
     except Exception:
@@ -1694,8 +1697,11 @@ def interview_coach_api():
     # Quota
     allowed, info = _quota_check("interview_coach")
     if not allowed:
+        PRICING_URL = "https://www.jobcus.com/pricing"
         info.setdefault("error", "quota_exceeded")
         info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
+        info.setdefault("message_html", f'You have reached the limit for the free version — <a href="{PRICING_URL}">upgrade to enjoy more features</a>.')
+        info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
 
     # Parse input safely
@@ -1755,8 +1761,11 @@ def get_interview_question():
     # Quota
     allowed, info = _quota_check("interview_coach")
     if not allowed:
+        PRICING_URL = "https://www.jobcus.com/pricing"
         info.setdefault("error", "quota_exceeded")
         info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
+        info.setdefault("message_html", f'You have reached the limit for the free version — <a href="{PRICING_URL}">upgrade to enjoy more features</a>.')
+        info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
 
     # Parse input
@@ -1807,8 +1816,11 @@ def get_interview_feedback():
     # Quota
     allowed, info = _quota_check("interview_coach")
     if not allowed:
+        PRICING_URL = "https://www.jobcus.com/pricing"
         info.setdefault("error", "quota_exceeded")
         info.setdefault("message", "You have reached the limit for the free version, upgrade to enjoy more features.")
+        info.setdefault("message_html", f'You have reached the limit for the free version — <a href="{PRICING_URL}">upgrade to enjoy more features</a>.')
+        info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
 
     # Parse input
