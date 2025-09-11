@@ -3899,20 +3899,20 @@ button {
   .cc-actions{ justify-content:flex-end; }
 }
 
-/* Bottom-docked upgrade banner shown across the app */
+/* Dock the upgrade banner at the bottom everywhere */
 .upgrade-banner, #upgrade-banner, .jb-upgrade-banner {
   position: fixed !important;
-  left: 50%;
-  transform: translateX(-50%);
-  right: auto;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  right: auto !important;
   top: auto !important;
   bottom: calc(14px + env(safe-area-inset-bottom)) !important;
-  z-index: 9999;
-  margin: 0 !important;
+  z-index: 9999 !important;
 
-  /* nice default look (tweak as you like) */
+  /* optional look */
   max-width: 720px;
   width: calc(100% - 24px);
+  margin: 0 !important;
   padding: 10px 14px;
   background: #fff8e1;
   border: 1px solid #ffe08a;
@@ -3920,5 +3920,9 @@ button {
   box-shadow: 0 6px 24px rgba(0,0,0,.12);
 }
 
-/* optional: keep content above the banner when it’s visible */
+/* Keep page content from hiding under it */
 body.has-upgrade-banner { padding-bottom: 84px; }
+
+/* If a banner ever ends up inside a header/container, force it to behave */
+header .upgrade-banner,
+nav .upgrade-banner { position: fixed !important; }
