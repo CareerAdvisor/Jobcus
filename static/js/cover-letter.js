@@ -18,6 +18,19 @@
   }
   function stripTags(s = "") { return String(s).replace(/<[^>]*>/g, "").trim(); }
 
+  // Optional inline banner (Analyzer-style)
+  function showInlineBanner(container, msg) {
+    if (!container) return;
+    let b = container.querySelector(".inline-banner");
+    if (!b) {
+      b = document.createElement("div");
+      b.className = "inline-banner";
+      b.style.cssText = "margin-top:10px;padding:10px 12px;border-radius:6px;font-size:14px;background:#fff3cd;color:#856404;border:1px solid #ffeeba";
+      container.appendChild(b);
+    }
+    b.innerHTML = msg; // we control content
+  }
+
   // Use global pricing URL if base.js set it; otherwise default
   const PRICING_URL = (window.PRICING_URL || "/pricing");
 
@@ -30,12 +43,9 @@
     const ct = (res.headers.get("content-type") || "").toLowerCase();
     let body = null, text = "";
     try {
-      if (ct.includes("application/json")) {
-        body = await res.json();
-      } else {
-        text = await res.text();
-      }
-    } catch { /* ignore parse errors */ }
+      if (ct.includes("application/json")) body = await res.json();
+      else text = await res.text();
+    } catch {}
 
     const msg = (body && (body.message || body.error)) || stripTags(text) || `Request failed (${res.status})`;
 
@@ -62,14 +72,12 @@
       throw new Error(ab);
     }
 
-    // 5xx or anything else: show a friendly banner; do NOT inject any preview
+    // 5xx or anything else: friendly banner
     window.showUpgradeBanner?.(escapeHtml(msg));
     throw new Error(msg);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Shared POST helper (uses banner-first error handling)
-  // ─────────────────────────────────────────────────────────────
+  // Shared POST helper
   async function postAndMaybeError(url, payload, accept = "application/json") {
     const res = await fetch(url, {
       method: "POST",
@@ -83,9 +91,7 @@
     return res;
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // cover-letter context for preview/PDF
-  // ─────────────────────────────────────────────────────────────
+  // Context used for preview/pdf
   function gatherContext(form) {
     const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
     const baseTone = (form.tone?.value || "professional").trim();
@@ -124,20 +130,18 @@
     };
   }
 
-  // Keep only the body (no greeting/closing), cap to 3 paragraphs, normalize spacing
+  // Normalize AI text
   function sanitizeDraft(text) {
     if (!text) return text;
     let t = String(text).trim();
-    t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, ""); // drop greeting
-    t = t.replace(/\n+\s*(yours\s+sincerely|sincerely|kind\s+regards|best\s+regards|regards)[\s\S]*$/i, ""); // drop sign-off
-    t = t.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim(); // normalize
+    t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, "");
+    t = t.replace(/\n+\s*(yours\s+sincerely|sincerely|kind\s+regards|best\s+regards|regards)[\s\S]*$/i, "");
+    t = t.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
     const paras = t.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-    return paras.slice(0, 3).join("\n\n").trim(); // max 3 paras
+    return paras.slice(0, 3).join("\n\n").trim();
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // PREVIEW (HTML) — success-only injection, clear any old banner
-  // ─────────────────────────────────────────────────────────────
+  // PREVIEW (free)
   async function previewLetter(payload) {
     try {
       const res = await postAndMaybeError(
@@ -149,23 +153,18 @@
       if (!ct.includes("text/html")) throw new Error("Unexpected response.");
       const html = await res.text();
 
-      // Inject ONLY on success
       const wrap  = document.getElementById("clPreviewWrap");
       const frame = document.getElementById("clPreview") || document.getElementById("letterPreview");
       if (wrap) wrap.style.display = "block";
       if (frame) frame.srcdoc = html;
 
-      // Clear any previous upgrade banner on success
-      window.hideUpgradeBanner?.();
+      window.hideUpgradeBanner?.(); // success → clear any old banner
     } catch (err) {
-      // handleCommonErrors already showed a banner/redirect when appropriate
       console.warn("Cover letter preview error:", err);
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // AI: /ai/cover-letter
-  // ─────────────────────────────────────────────────────────────
+  // AI helpers
   function gatherCLContext(form) {
     const get = (n) => (form?.elements?.[n]?.value || "").trim();
     const sender = {
@@ -186,21 +185,12 @@
       postcode:get("companyPostcode"),
       role:    get("role"),
     };
-    return {
-      tone: get("tone") || "professional",
-      job_url: get("jobUrl"),
-      sender,
-      recipient
-    };
+    return { tone: get("tone") || "professional", job_url: get("jobUrl"), sender, recipient };
   }
-
   async function aiSuggestCoverLetter(ctx) {
     const res = await fetch("/ai/cover-letter", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
       credentials: "same-origin",
       body: JSON.stringify(ctx)
     });
@@ -209,15 +199,9 @@
     if (!json.draft) throw new Error("No draft returned.");
     return sanitizeDraft(json.draft);
   }
+  window.aiSuggestCoverLetter_min = async function(ctx){ return aiSuggestCoverLetter(ctx); };
 
-  // Legacy alias so old handlers keep working
-  window.aiSuggestCoverLetter_min = async function(ctx) {
-    return aiSuggestCoverLetter(ctx);
-  };
-
-  // ─────────────────────────────────────────────────────────────
-  // Variants: build N alternative drafts (client-side loop)
-  // ─────────────────────────────────────────────────────────────
+  // Multiple variants (optional button #ai-show-variants)
   async function aiSuggestVariants(n = 3) {
     const form = document.getElementById("clForm");
     const ctx  = gatherCLContext(form);
@@ -232,14 +216,14 @@
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Boot
+  // Boot & UI bindings
   // ─────────────────────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
     const form   = document.getElementById("clForm");
     const aiCard = document.getElementById("ai-cl");
     const getAiTextEl = () => aiCard?.querySelector(".ai-text");
 
-    // Optional prefill from local seed
+    // Optional prefill
     (function maybePrefillFromSeed() {
       if (!form) return;
       try {
@@ -254,7 +238,7 @@
       } catch {}
     })();
 
-    // AI handlers (refresh / insert)
+    // AI refresh / add
     aiCard?.addEventListener("click", async (e) => {
       const btn = e.target.closest(".ai-refresh, .ai-add");
       if (!btn) return;
@@ -283,7 +267,7 @@
       }
     });
 
-    // Variants button (optional UI with id="ai-show-variants")
+    // Variants button (optional)
     document.getElementById("ai-show-variants")?.addEventListener("click", async () => {
       const box = document.querySelector("#ai-cl .ai-text");
       if (!box) return;
@@ -295,13 +279,13 @@
       ).join("<hr>");
     });
 
-    // Preview button (free)
+    // Preview (free)
     document.getElementById("cl-preview")?.addEventListener("click", async () => {
       try { await previewLetter(gatherContext(form)); }
-      catch { /* banner already shown by handler; keep silent */ }
+      catch {}
     });
 
-    // DOWNLOAD (gated like resume-builder)
+    // DOWNLOAD (gated like Analyzer/Builder)
     document.getElementById("cl-download")?.addEventListener("click", async () => {
       if (!form) return;
       const payload = gatherContext(form);
@@ -311,34 +295,39 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            // Ask for PDF on success, JSON on errors – exactly like resume-builder
+            // PDF on success, JSON (or anything) on errors
             "Accept": "application/pdf,application/json"
           },
           body: JSON.stringify({ format: "pdf", letter_only: true, ...payload })
         });
 
-        // Handle the gating like resume-builder
+        // Gating + banners
         if (!res.ok) {
+          let j = null;
           const ct = res.headers.get("content-type") || "";
           if (ct.includes("application/json")) {
-            const j = await res.json().catch(() => ({}));
-            // 403/upgrade_required -> banner + (optional) alert, no redirect
-            if (res.status === 403 && (j.error === "upgrade_required")) {
-              const html = j.message_html || `File downloads are available on Standard and Premium. <a href="${PRICING_URL}">Upgrade now →</a>`;
-              window.showUpgradeBanner?.(html);
-              alert(j.message || "File downloads are available on Standard and Premium.");
-              return;
-            }
-            // Other errors: show a friendly banner
-            window.showUpgradeBanner?.(j.message || j.error || "Download failed.");
-            return;
-          } else {
-            window.showUpgradeBanner?.("Download failed.");
+            try { j = await res.json(); } catch {}
+          }
+          // Treat 403/upgrade_required OR 402 as plan gating
+          if (res.status === 403 && j?.error === "upgrade_required" || res.status === 402) {
+            const html = (j?.message_html) ||
+              `File downloads are available on Standard and Premium. <a href="${PRICING_URL}">Upgrade now →</a>`;
+            window.showUpgradeBanner?.(html);
+            alert(j?.message || "File downloads are available on Standard and Premium.");
+
+            // Optional inline banner like Analyzer (append a link too)
+            const container =
+              document.getElementById("cl-download")?.closest(".card, .rb-card, .actions, form, #clForm") || document.getElementById("clForm");
+            showInlineBanner(container, html);
             return;
           }
+
+          // Any other error → friendly banner
+          window.showUpgradeBanner?.(j?.message || j?.error || "Download failed.");
+          return;
         }
 
-        // Success -> stream file
+        // Success → stream file
         const blob = await res.blob();
         const url  = URL.createObjectURL(blob);
         const a = document.createElement("a");
