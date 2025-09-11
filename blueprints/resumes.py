@@ -1007,10 +1007,11 @@ def build_cover_letter():
     HTML preview is free; PDF download is gated (Standard/Premium).
     Normalizes the body into `cover_body` so templates always receive it.
     """
-    # Parse JSON safely
     data = request.get_json(force=True, silent=True) or {}
+
     fmt = (data.get("format") or "html").lower()
-    letter_only = str(data.get("letter_only")).lower() in ("1", "true", "yes", "on")
+    # Default to letter-only when requesting HTML (prevents page-in-page)
+    letter_only = str(data.get("letter_only", fmt == "html")).lower() in ("1","true","yes","on")
 
     # Gate ONLY real downloads (PDF), like resume-builder
     if fmt == "pdf":
@@ -1038,39 +1039,25 @@ def build_cover_letter():
         or ""
     )
 
-    # Build context for templates (also pass `draft` for back-compat)
-    ctx = {
-        **data,
-        "cover_body": cover_body,
-        "draft": cover_body,
-    }
+    ctx = {**data, "cover_body": cover_body, "draft": cover_body}
 
-    # Choose template: minimal letter-only for preview/pdf to avoid page-in-page
-    template = "cover-letter-print.html" if letter_only else "cover-letter.html"
+    # Choose template: letter-only for preview/pdf (avoids page-in-page)
+    template = "cover-letter-print.html" if (letter_only or fmt == "pdf") else "cover-letter.html"
 
-    # HTML preview (free)
     if fmt == "html":
-        try:
-            html = render_template(template, **ctx, for_pdf=False, letter_only=letter_only)
-            return html, 200, {"Content-Type": "text/html; charset=utf-8"}
-        except Exception:
-            current_app.logger.exception("build-cover-letter: template render failed")
-            return jsonify(error="Template error (see logs for details)"), 500
+        html = render_template(template, **ctx, for_pdf=False, letter_only=letter_only)
+        return html, 200, {"Content-Type": "text/html; charset=utf-8"}
 
     # PDF (paid)
-    try:
-        html = render_template("cover-letter-print.html", **ctx, for_pdf=True, letter_only=True)
-        pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf(
-            stylesheets=[CSS(string="@page { size: A4; margin: 0.75in; }")]
-        )
-        return Response(
-            pdf_bytes,
-            mimetype="application/pdf",
-            headers={"Content-Disposition": 'attachment; filename="cover-letter.pdf"'},
-        )
-    except Exception:
-        current_app.logger.exception("build-cover-letter: PDF generation failed")
-        return jsonify(error="PDF generation failed (see logs)"), 500
+    html = render_template("cover-letter-print.html", **ctx, for_pdf=True, letter_only=True)
+    pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf(
+        stylesheets=[CSS(string="@page { size: A4; margin: 0.75in; }")]
+    )
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="cover-letter.pdf"'},
+    )
 
 # ---------- 3) AI resume analysis ----------
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
