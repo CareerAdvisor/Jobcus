@@ -1004,73 +1004,56 @@ def ai_suggest():
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 @login_required
 def build_cover_letter():
-    import datetime, json
-
-    def _safe_json(data: dict, status: int = 200):
-        """Return JSON even if 'data' contains datetimes/etc."""
-        def _default(o):
-            if isinstance(o, (datetime.date, datetime.datetime)):
-                return o.isoformat()
-            return str(o)
-        return current_app.response_class(
-            json.dumps(data or {}, default=_default),
-            mimetype="application/json",
-            status=status,
-        )
-
-    # Quota enforcement (keep this at the top!)
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-    supabase_admin = current_app.config.get("SUPABASE_ADMIN")
-
-    try:
-        allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "cover_letter")
-    except Exception as e:
-        # Never 500 because of rate-limit infra; just allow and log
-        current_app.logger.warning("check_and_increment failed; allowing once: %s", e, exc_info=True)
-        allowed, info = True, {}
-
-    if not allowed:
-        PRICING_URL = "https://www.jobcus.com/pricing"
-        # Normalize the payload so the frontend can rely on it
-        payload = dict(info or {})
-        payload.setdefault("error", "quota_exceeded")
-        payload.setdefault("message", "You’ve reached your plan limit for this feature.")
-        payload.setdefault(
-            "message_html",
-            f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>'
-        )
-        payload.setdefault("pricing_url", PRICING_URL)
-        return _safe_json(payload, status=402)
-
-    # -------- parse request --------
+    # Accept JSON safely
     try:
         data = request.get_json(force=True) or {}
     except Exception:
         current_app.logger.exception("build-cover-letter: bad JSON")
-        return _safe_json({"error": "Invalid JSON body"}, 400)
+        return jsonify(error="Invalid JSON body"), 400
 
-    fmt = (data.get("format") or "html").lower()
+    fmt         = (data.get("format") or "html").lower()
+    letter_only = bool(data.get("letter_only"))
+    PRICING_URL = "https://www.jobcus.com/pricing"
 
-    # -------- render HTML (letter-only for preview/PDF) --------
+    # ✅ Match Resume Builder behavior:
+    # - Allow HTML preview for everyone
+    # - Gate ONLY the file download with plan check
+    if fmt == "pdf":
+        plan = (getattr(current_user, "plan", "free") or "free").lower()
+        if not feature_enabled(plan, "downloads"):
+            return jsonify(
+                error="upgrade_required",
+                message="File downloads are available on Standard and Premium.",
+                message_html=f'File downloads are available on Standard and Premium. <a href="{PRICING_URL}">Upgrade now →</a>',
+                pricing_url=PRICING_URL
+            ), 403  # ← same as resume-builder
+
+    # ----- build context & render -----
+    name     = data.get("name", "")
+    title    = data.get("title", "")
+    contact  = data.get("contact", "")
+    sender   = data.get("sender") or {}
+    recipient= data.get("recipient") or {}
+    cl       = data.get("coverLetter") or {}
+    draft    = (cl.get("draft") or "").strip()
+
+    # Use your existing templates:
+    # - Normal page: cover-letter.html
+    # - Letter-only page (for preview/pdf): cover-letter-print.html
+    template = "cover-letter.html"
+    if letter_only:
+        template = "cover-letter-print.html"
+
     try:
-        name      = data.get("name", "")
-        title     = data.get("title", "")
-        contact   = data.get("contact", "")
-        sender    = data.get("sender") or {}
-        recipient = data.get("recipient") or {}
-        cl        = data.get("coverLetter") or {}
-        draft     = (cl.get("draft") or "").strip()
-
         html = render_template(
-            "cover-letter.html",
+            template,
             name=name, title=title, contact=contact,
             sender=sender, recipient=recipient, draft=draft,
-            letter_only=(fmt == "pdf" or bool(data.get("letter_only"))),
-            for_pdf=(fmt == "pdf"),
+            letter_only=letter_only, for_pdf=(fmt == "pdf")
         )
     except Exception:
         current_app.logger.exception("build-cover-letter: template render failed")
-        return _safe_json({"error": "Template error (see logs for details)"}, 500)
+        return jsonify(error="Template error (see logs for details)"), 500
 
     if fmt == "pdf":
         try:
@@ -1083,8 +1066,9 @@ def build_cover_letter():
                              download_name="cover-letter.pdf")
         except Exception:
             current_app.logger.exception("build-cover-letter: PDF generation failed")
-            return _safe_json({"error": "PDF generation failed (see logs)"}, 500)
+            return jsonify(error="PDF generation failed (see logs)"), 500
 
+    # default: HTML preview
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
