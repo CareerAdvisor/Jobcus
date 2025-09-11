@@ -18,7 +18,7 @@
   }
   function stripTags(s = "") { return String(s).replace(/<[^>]*>/g, "").trim(); }
 
-  // Analyzer-style inline banner (optional)
+  // Optional inline banner (like analyzer card)
   function showInlineBanner(container, html) {
     if (!container) return;
     let b = container.querySelector(".inline-banner");
@@ -28,7 +28,7 @@
       b.style.cssText = "margin-top:10px;padding:10px 12px;border-radius:6px;font-size:14px;background:#fff3cd;color:#856404;border:1px solid #ffeeba";
       container.appendChild(b);
     }
-    b.innerHTML = html; // controlled content
+    b.innerHTML = html;
   }
 
   const PRICING_URL = (window.PRICING_URL || "/pricing");
@@ -76,7 +76,7 @@
       throw new Error(ab);
     }
 
-    // 5xx / other
+    // 5xx / other: show banner; do NOT inject preview
     window.showUpgradeBanner?.(escapeHtml(msg));
     throw new Error(msg);
   }
@@ -92,7 +92,7 @@
     return res;
   }
 
-  // Grab the body/draft textarea robustly (works if name != "body")
+  // Grab the body/draft textarea robustly (works if name/id varies)
   function readDraftFromForm(form) {
     const el =
       form?.querySelector('textarea[name="body"], textarea[name="draft"], textarea[name="cover_body"], #body, #letterBody') || null;
@@ -149,15 +149,15 @@
     return paras.slice(0, 3).join("\n\n").trim();
   }
 
-  // PREVIEW (free) — success-only injection
+  // PREVIEW (free) — success-only injection, with "full-page" guard
   async function previewLetter(payload) {
     try {
-      // Make sure draft is present for both back-end shapes
+      // Ensure draft present for both backend shapes
       const draft = sanitizeDraft(payload?.coverLetter?.draft || "");
       const enriched = {
         ...payload,
         coverLetter: { ...(payload.coverLetter || {}), draft },
-        cover_body: draft,               // <-- duplicate for older route/templates
+        cover_body: draft,               // duplicate for older route/templates
       };
 
       const res = await postAndMaybeError(
@@ -168,6 +168,13 @@
       const ct = res.headers.get("content-type") || "";
       if (!ct.includes("text/html")) throw new Error("Unexpected response.");
       const html = await res.text();
+
+      // Guard: if server accidentally returned the full builder page, don't inject
+      if (/<form[^>]+id=["']clForm["']/i.test(html) || /cover-letter\.js/i.test(html)) {
+        console.error("Letter-only misroute: server returned the full builder page.");
+        window.showUpgradeBanner?.("Preview temporarily unavailable. Please try again.");
+        return; // do NOT inject the page into itself
+      }
 
       const wrap  = document.getElementById("clPreviewWrap");
       const frame = document.getElementById("clPreview") || document.getElementById("letterPreview");
@@ -236,7 +243,7 @@
     const aiCard = document.getElementById("ai-cl");
     const getAiTextEl = () => aiCard?.querySelector(".ai-text");
 
-    // Prefill
+    // Prefill (optional)
     (function maybePrefillFromSeed() {
       if (!form) return;
       try {
@@ -251,12 +258,12 @@
       } catch {}
     })();
 
-    // AI handlers
+    // AI handlers (robust to structure)
     aiCard?.addEventListener("click", async (e) => {
-      const btn = e.target.closest(".ai-refresh, .ai-add");
+      const btn = e.target.closest(".ai-refresh, .ai-add, [data-ai='refresh'], [data-ai='add']");
       if (!btn) return;
 
-      if (btn.classList.contains("ai-refresh")) {
+      if (btn.classList.contains("ai-refresh") || btn.dataset.ai === "refresh") {
         try {
           btn.disabled = true;
           const el = getAiTextEl();
@@ -271,7 +278,7 @@
         } finally { btn.disabled = false; }
       }
 
-      if (btn.classList.contains("ai-add")) {
+      if (btn.classList.contains("ai-add") || btn.dataset.ai === "add") {
         const el = getAiTextEl();
         const draft = el ? el.textContent.trim() : "";
         const bodyEl =
@@ -281,4 +288,65 @@
     });
 
     // Variants button (optional)
-    document.getElementById("ai-show-varia
+    document.getElementById("ai-show-variants")?.addEventListener("click", async () => {
+      const box = document.querySelector("#ai-cl .ai-text");
+      if (!box) return;
+      box.textContent = "Generating options…";
+      const drafts = await aiSuggestVariants(3);
+      if (!drafts.length) { box.textContent = "No suggestions."; return; }
+      box.innerHTML = drafts.map((d, i) =>
+        `<div class="option"><strong>Option ${i+1}</strong><br>${escapeHtml(d).replace(/\n/g,"<br>")}</div>`
+      ).join("<hr>");
+    });
+
+    // Preview (free)
+    document.getElementById("cl-preview")?.addEventListener("click", async () => {
+      try { await previewLetter(gatherContext(form)); } catch {}
+    });
+
+    // DOWNLOAD (gated like Analyzer/Builder)
+    document.getElementById("cl-download")?.addEventListener("click", async () => {
+      if (!form) return;
+      const ctx = gatherContext(form);
+      const draft = sanitizeDraft(ctx?.coverLetter?.draft || "");
+      const payload = { format: "pdf", letter_only: true, ...ctx, coverLetter: {...ctx.coverLetter, draft}, cover_body: draft };
+
+      try {
+        const res = await fetch("/build-cover-letter", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/pdf,application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          let j = null;
+          const ct = res.headers.get("content-type") || "";
+          if (ct.includes("application/json")) { try { j = await res.json(); } catch {} }
+
+          if ((res.status === 403 && j?.error === "upgrade_required") || res.status === 402) {
+            const html = (j?.message_html) ||
+              `File downloads are available on Standard and Premium. <a href="${PRICING_URL}">Upgrade now →</a>`;
+            window.showUpgradeBanner?.(html);
+            alert(j?.message || "File downloads are available on Standard and Premium.");
+            const container =
+              document.getElementById("cl-download")?.closest(".card, .rb-card, .actions, form, #clForm") || document.getElementById("clForm");
+            showInlineBanner(container, html);
+            return;
+          }
+
+          window.showUpgradeBanner?.(j?.message || j?.error || "Download failed.");
+          return;
+        }
+
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "cover-letter.pdf"; a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error("Cover-letter PDF error:", err);
+        window.showUpgradeBanner?.(err.message || "Download failed.");
+      }
+    });
+  });
+})();
