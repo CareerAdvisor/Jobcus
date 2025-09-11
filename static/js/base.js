@@ -123,47 +123,58 @@ window.apiFetch = async function apiFetch(url, options = {}) {
 };
 
 /* ─────────────────────────────────────────────────────────────
- * 1) Global upgrade banner helper (sticky polyfill)
- *    - Creates a sticky banner at the top if not present
- *    - Used by feature pages when server returns 402/429
+ * 1) Centered Upgrade Modal (replaces old sticky banner)
+ *    Exposes: window.showUpgradeBanner(html), window.hideUpgradeBanner()
  * ───────────────────────────────────────────────────────────── */
-// base.js — canonical bottom banner
-window.showUpgradeBanner = function (html) {
-  let el = document.getElementById('upgrade-banner');
+// base.js — centered upgrade modal (drop-in)
+(function () {
+  function ensureModal() {
+    let layer = document.getElementById("upgrade-layer");
+    if (!layer) {
+      layer = document.createElement("div");
+      layer.id = "upgrade-layer";
+      layer.innerHTML = `
+        <div class="upgrade-backdrop" data-upgrade-dismiss></div>
+        <div id="upgrade-banner" class="upgrade-modal" role="dialog" aria-modal="true" aria-label="Upgrade required">
+          <button class="upgrade-close" type="button" aria-label="Close" data-upgrade-dismiss>×</button>
+          <div class="upgrade-body"></div>
+        </div>
+      `;
+      document.body.appendChild(layer);
 
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'upgrade-banner';
-    el.className = 'upgrade-banner';
-    // Always attach to <body>, never inside header/containers
-    document.body.appendChild(el);
-  } else if (el.parentNode !== document.body) {
-    // Move it out of any header/wrapper that might force "top" styles
-    document.body.appendChild(el);
+      // Close handlers
+      layer.addEventListener("click", (e) => {
+        if (e.target.matches("[data-upgrade-dismiss]")) window.hideUpgradeBanner();
+      });
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") window.hideUpgradeBanner();
+      });
+    }
+    return layer;
   }
 
-  // Clear any legacy inline styles that were pinning it to the top
-  el.style.cssText = '';
+  window.showUpgradeBanner = function (html) {
+    const layer = ensureModal();
+    const modal = layer.querySelector("#upgrade-banner");
+    const body  = layer.querySelector(".upgrade-body");
 
-  // Minimal safe inline fallback (CSS below will also style it)
-  el.style.position = 'fixed';
-  el.style.left = '50%';
-  el.style.transform = 'translateX(-50%)';
-  el.style.bottom = '14px';
-  el.style.top = 'auto';
-  el.style.zIndex = '9999';
-  el.style.display = 'block';
+    // reset any legacy inline positioning
+    modal.style.cssText = "";
 
-  el.innerHTML = html;
-  document.body.classList.add('has-upgrade-banner');
-};
+    body.innerHTML = html || "Upgrade required.";
+    layer.style.display = "block";
+    document.body.classList.add("has-upgrade-banner");
 
-window.hideUpgradeBanner = function () {
-  const el = document.getElementById('upgrade-banner');
-  if (el) el.style.display = 'none';
-  document.body.classList.remove('has-upgrade-banner');
-};
+    // focus close for a11y
+    setTimeout(() => modal.querySelector(".upgrade-close")?.focus(), 0);
+  };
 
+  window.hideUpgradeBanner = function () {
+    const layer = document.getElementById("upgrade-layer");
+    if (layer) layer.style.display = "none";
+    document.body.classList.remove("has-upgrade-banner");
+  };
+})();
 
 /* ─────────────────────────────────────────────────────────────
  * 2) User menu (avatar) & general UI toggles
