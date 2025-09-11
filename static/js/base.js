@@ -127,17 +127,35 @@ window.apiFetch = async function apiFetch(url, options = {}) {
  *    - Creates a sticky banner at the top if not present
  *    - Used by feature pages when server returns 402/429
  * ───────────────────────────────────────────────────────────── */
+// base.js — canonical bottom banner
 window.showUpgradeBanner = function (html) {
   let el = document.getElementById('upgrade-banner');
+
   if (!el) {
     el = document.createElement('div');
     el.id = 'upgrade-banner';
     el.className = 'upgrade-banner';
+    // Always attach to <body>, never inside header/containers
+    document.body.appendChild(el);
+  } else if (el.parentNode !== document.body) {
+    // Move it out of any header/wrapper that might force "top" styles
     document.body.appendChild(el);
   }
-  el.innerHTML = html;
+
+  // Clear any legacy inline styles that were pinning it to the top
+  el.style.cssText = '';
+
+  // Minimal safe inline fallback (CSS below will also style it)
+  el.style.position = 'fixed';
+  el.style.left = '50%';
+  el.style.transform = 'translateX(-50%)';
+  el.style.bottom = '14px';
+  el.style.top = 'auto';
+  el.style.zIndex = '9999';
   el.style.display = 'block';
-  document.body.classList.add('has-upgrade-banner'); // adds bottom padding
+
+  el.innerHTML = html;
+  document.body.classList.add('has-upgrade-banner');
 };
 
 window.hideUpgradeBanner = function () {
@@ -145,6 +163,7 @@ window.hideUpgradeBanner = function () {
   if (el) el.style.display = 'none';
   document.body.classList.remove('has-upgrade-banner');
 };
+
 
 /* ─────────────────────────────────────────────────────────────
  * 2) User menu (avatar) & general UI toggles
