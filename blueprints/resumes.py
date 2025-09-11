@@ -1,7 +1,7 @@
 import base64, re, json, logging, os
 from io import BytesIO
 
-from flask import Blueprint, request, jsonify, current_app, make_response, send_file, render_template
+from flask import Blueprint, request, jsonify, current_app, make_response, send_file, render_template, Response
 from flask_login import login_required, current_user
 
 from limits import feature_enabled, check_and_increment
@@ -589,7 +589,6 @@ def _detect_unnecessary_sections(resume_text: str):
     found = []
     if re.search(r"(?i)^\s*references\b", resume_text, re.M): found.append("References")
     if re.search(r"(?i)^\s*objective\b",  resume_text, re.M): found.append("Objective")
-    if re.search(r"(?i)^\s*(hobbies|interests)\b", resume_text, re.M): found.append("Hobbies/Interests")
     return found
 
 def _penalties(resume_text: str, roles: list, hard_fail: bool):
@@ -1004,74 +1003,74 @@ def ai_suggest():
 @resumes_bp.route("/build-cover-letter", methods=["POST"])
 @login_required
 def build_cover_letter():
-    # Accept JSON safely
-    try:
-        data = request.get_json(force=True) or {}
-    except Exception:
-        current_app.logger.exception("build-cover-letter: bad JSON")
-        return jsonify(error="Invalid JSON body"), 400
+    """
+    HTML preview is free; PDF download is gated (Standard/Premium).
+    Normalizes the body into `cover_body` so templates always receive it.
+    """
+    # Parse JSON safely
+    data = request.get_json(force=True, silent=True) or {}
+    fmt = (data.get("format") or "html").lower()
+    letter_only = str(data.get("letter_only")).lower() in ("1", "true", "yes", "on")
 
-    fmt         = (data.get("format") or "html").lower()
-    letter_only = bool(data.get("letter_only"))
-    PRICING_URL = "https://www.jobcus.com/pricing"
-
-    # ✅ Match Resume Builder behavior:
-    # - Allow HTML preview for everyone
-    # - Gate ONLY the file download with plan check
+    # Gate ONLY real downloads (PDF), like resume-builder
     if fmt == "pdf":
         plan = (getattr(current_user, "plan", "free") or "free").lower()
         if not feature_enabled(plan, "downloads"):
-            return jsonify(
-                error="upgrade_required",
-                message="File downloads are available on Standard and Premium.",
-                message_html=f'File downloads are available on Standard and Premium. <a href="{PRICING_URL}">Upgrade now →</a>',
-                pricing_url=PRICING_URL
-            ), 403  # ← same as resume-builder
+            pricing_url = "/pricing"
+            return (
+                jsonify(
+                    error="upgrade_required",
+                    message="File downloads are available on Standard and Premium.",
+                    message_html=f'File downloads are available on Standard and Premium. <a href="{pricing_url}">Upgrade now →</a>',
+                    pricing_url=pricing_url,
+                ),
+                403,
+            )
 
-    # ----- build context & render -----
-    name     = data.get("name", "")
-    title    = data.get("title", "")
-    contact  = data.get("contact", "")
-    sender   = data.get("sender") or {}
-    recipient= data.get("recipient") or {}
-    cl       = data.get("coverLetter") or {}
-    draft    = (cl.get("draft") or "").strip()
+    # Normalize the body so templates always get `cover_body`
+    cl = data.get("coverLetter") or {}
+    cover_body = (
+        data.get("cover_body")
+        or data.get("draft")
+        or cl.get("draft")
+        or cl.get("text")
+        or data.get("body")
+        or ""
+    )
 
-    # Use your existing templates:
-    # - Normal page: cover-letter.html
-    # - Letter-only page (for preview/pdf): cover-letter-print.html
-    template = "cover-letter.html"
-    if letter_only:
-        template = "cover-letter-print.html"
+    # Build context for templates (also pass `draft` for back-compat)
+    ctx = {
+        **data,
+        "cover_body": cover_body,
+        "draft": cover_body,
+    }
 
+    # Choose template: minimal letter-only for preview/pdf to avoid page-in-page
+    template = "cover-letter-print.html" if letter_only else "cover-letter.html"
+
+    # HTML preview (free)
+    if fmt == "html":
+        try:
+            html = render_template(template, **ctx, for_pdf=False, letter_only=letter_only)
+            return html, 200, {"Content-Type": "text/html; charset=utf-8"}
+        except Exception:
+            current_app.logger.exception("build-cover-letter: template render failed")
+            return jsonify(error="Template error (see logs for details)"), 500
+
+    # PDF (paid)
     try:
-        html = render_template(
-            template,
-            name=name, title=title, contact=contact,
-            sender=sender, recipient=recipient, draft=draft,
-            letter_only=letter_only, for_pdf=(fmt == "pdf")
+        html = render_template("cover-letter-print.html", **ctx, for_pdf=True, letter_only=True)
+        pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf(
+            stylesheets=[CSS(string="@page { size: A4; margin: 0.75in; }")]
+        )
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": 'attachment; filename="cover-letter.pdf"'},
         )
     except Exception:
-        current_app.logger.exception("build-cover-letter: template render failed")
-        return jsonify(error="Template error (see logs for details)"), 500
-
-    if fmt == "pdf":
-        try:
-            pdf_bytes = HTML(string=html, base_url=current_app.root_path).write_pdf(
-                stylesheets=[CSS(string="@page{size:A4;margin:0.75in}")]
-            )
-            return send_file(BytesIO(pdf_bytes),
-                             mimetype="application/pdf",
-                             as_attachment=True,
-                             download_name="cover-letter.pdf")
-        except Exception:
-            current_app.logger.exception("build-cover-letter: PDF generation failed")
-            return jsonify(error="PDF generation failed (see logs)"), 500
-
-    # default: HTML preview
-    resp = make_response(html)
-    resp.headers["Content-Type"] = "text/html; charset=utf-8"
-    return resp
+        current_app.logger.exception("build-cover-letter: PDF generation failed")
+        return jsonify(error="PDF generation failed (see logs)"), 500
 
 # ---------- 3) AI resume analysis ----------
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
