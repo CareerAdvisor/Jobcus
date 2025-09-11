@@ -127,17 +127,23 @@ window.apiFetch = async function apiFetch(url, options = {}) {
  *    - Creates a sticky banner at the top if not present
  *    - Used by feature pages when server returns 402/429
  * ───────────────────────────────────────────────────────────── */
-window.showUpgradeBanner = function (htmlOrText) {
-  let host = document.querySelector("#upgrade-banner-host") || document.body;
-  let el = document.querySelector("#upgrade-banner");
+window.showUpgradeBanner = function (html) {
+  let el = document.getElementById('upgrade-banner');
   if (!el) {
-    el = document.createElement("div");
-    el.id = "upgrade-banner";
-    el.style.cssText = "position:sticky;top:0;z-index:1000;margin:0;padding:12px 16px;background:#fff3cd;border-bottom:1px solid #ffeeba;color:#856404;font:14px/1.3 system-ui";
-    host.prepend(el);
+    el = document.createElement('div');
+    el.id = 'upgrade-banner';
+    el.className = 'upgrade-banner';
+    document.body.appendChild(el);
   }
-  // IMPORTANT: allow HTML so <a href=...> renders
-  el.innerHTML = htmlOrText || "You’ve reached your plan limit. <a href=\"/pricing\">Upgrade now →</a>";
+  el.innerHTML = html;
+  el.style.display = 'block';
+  document.body.classList.add('has-upgrade-banner'); // adds bottom padding
+};
+
+window.hideUpgradeBanner = function () {
+  const el = document.getElementById('upgrade-banner');
+  if (el) el.style.display = 'none';
+  document.body.classList.remove('has-upgrade-banner');
 };
 
 /* ─────────────────────────────────────────────────────────────
