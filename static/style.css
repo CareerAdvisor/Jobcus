@@ -3898,3 +3898,27 @@ button {
   .cc-inner{ flex-direction:column; align-items:stretch; }
   .cc-actions{ justify-content:flex-end; }
 }
+
+/* Bottom-docked upgrade banner shown across the app */
+.upgrade-banner, #upgrade-banner, .jb-upgrade-banner {
+  position: fixed !important;
+  left: 50%;
+  transform: translateX(-50%);
+  right: auto;
+  top: auto !important;
+  bottom: calc(14px + env(safe-area-inset-bottom)) !important;
+  z-index: 9999;
+  margin: 0 !important;
+
+  /* nice default look (tweak as you like) */
+  max-width: 720px;
+  width: calc(100% - 24px);
+  padding: 10px 14px;
+  background: #fff8e1;
+  border: 1px solid #ffe08a;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.12);
+}
+
+/* optional: keep content above the banner when it’s visible */
+body.has-upgrade-banner { padding-bottom: 84px; }
