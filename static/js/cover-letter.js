@@ -136,7 +136,7 @@
   }
 
   // ─────────────────────────────────────────────────────────────
-  // PREVIEW (HTML) — success-only injection, no alerts
+  // PREVIEW (HTML) — success-only injection, clear any old banner
   // ─────────────────────────────────────────────────────────────
   async function previewLetter(payload) {
     try {
@@ -154,35 +154,12 @@
       const frame = document.getElementById("clPreview") || document.getElementById("letterPreview");
       if (wrap) wrap.style.display = "block";
       if (frame) frame.srcdoc = html;
+
+      // Clear any previous upgrade banner on success
+      window.hideUpgradeBanner?.();
     } catch (err) {
       // handleCommonErrors already showed a banner/redirect when appropriate
       console.warn("Cover letter preview error:", err);
-    }
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // DOWNLOAD (PDF) — plan gating handled via handleCommonErrors
-  // ─────────────────────────────────────────────────────────────
-  async function downloadLetterPDF(payload) {
-    try {
-      const res = await postAndMaybeError(
-        "/build-cover-letter",
-        { format: "pdf", letter_only: true, ...payload },
-        "application/pdf,application/json"
-      );
-      const ct = (res.headers.get("content-type") || "").toLowerCase();
-      if (!ct.includes("application/pdf")) {
-        // If we get here with non-PDF, treat as error to avoid bogus download
-        const txt = await res.text().catch(() => "");
-        throw new Error(stripTags(txt) || "PDF generation failed.");
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "cover-letter.pdf"; a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.warn("Cover letter PDF error:", err);
     }
   }
 
@@ -239,6 +216,22 @@
   };
 
   // ─────────────────────────────────────────────────────────────
+  // Variants: build N alternative drafts (client-side loop)
+  // ─────────────────────────────────────────────────────────────
+  async function aiSuggestVariants(n = 3) {
+    const form = document.getElementById("clForm");
+    const ctx  = gatherCLContext(form);
+    const variants = [];
+    for (let i = 0; i < n; i++) {
+      try {
+        const draft = await aiSuggestCoverLetter_min(ctx);
+        if (draft) variants.push(draft);
+      } catch {}
+    }
+    return variants;
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // Boot
   // ─────────────────────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
@@ -290,15 +283,71 @@
       }
     });
 
-    // Preview / Download buttons
+    // Variants button (optional UI with id="ai-show-variants")
+    document.getElementById("ai-show-variants")?.addEventListener("click", async () => {
+      const box = document.querySelector("#ai-cl .ai-text");
+      if (!box) return;
+      box.textContent = "Generating options…";
+      const drafts = await aiSuggestVariants(3);
+      if (!drafts.length) { box.textContent = "No suggestions."; return; }
+      box.innerHTML = drafts.map((d, i) =>
+        `<div class="option"><strong>Option ${i+1}</strong><br>${escapeHtml(d).replace(/\n/g,"<br>")}</div>`
+      ).join("<hr>");
+    });
+
+    // Preview button (free)
     document.getElementById("cl-preview")?.addEventListener("click", async () => {
       try { await previewLetter(gatherContext(form)); }
       catch { /* banner already shown by handler; keep silent */ }
     });
 
+    // DOWNLOAD (gated like resume-builder)
     document.getElementById("cl-download")?.addEventListener("click", async () => {
-      try { await downloadLetterPDF(gatherContext(form)); }
-      catch { /* banner already shown by handler; keep silent */ }
+      if (!form) return;
+      const payload = gatherContext(form);
+
+      try {
+        const res = await fetch("/build-cover-letter", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Ask for PDF on success, JSON on errors – exactly like resume-builder
+            "Accept": "application/pdf,application/json"
+          },
+          body: JSON.stringify({ format: "pdf", letter_only: true, ...payload })
+        });
+
+        // Handle the gating like resume-builder
+        if (!res.ok) {
+          const ct = res.headers.get("content-type") || "";
+          if (ct.includes("application/json")) {
+            const j = await res.json().catch(() => ({}));
+            // 403/upgrade_required -> banner + (optional) alert, no redirect
+            if (res.status === 403 && (j.error === "upgrade_required")) {
+              const html = j.message_html || `File downloads are available on Standard and Premium. <a href="${PRICING_URL}">Upgrade now →</a>`;
+              window.showUpgradeBanner?.(html);
+              alert(j.message || "File downloads are available on Standard and Premium.");
+              return;
+            }
+            // Other errors: show a friendly banner
+            window.showUpgradeBanner?.(j.message || j.error || "Download failed.");
+            return;
+          } else {
+            window.showUpgradeBanner?.("Download failed.");
+            return;
+          }
+        }
+
+        // Success -> stream file
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "cover-letter.pdf"; a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error("Cover-letter PDF error:", err);
+        window.showUpgradeBanner?.(err.message || "Download failed.");
+      }
     });
   });
 })();
