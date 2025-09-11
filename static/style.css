@@ -3899,30 +3899,58 @@ button {
   .cc-actions{ justify-content:flex-end; }
 }
 
-/* Dock the upgrade banner at the bottom everywhere */
-.upgrade-banner, #upgrade-banner, .jb-upgrade-banner {
-  position: fixed !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  right: auto !important;
-  top: auto !important;
-  bottom: calc(14px + env(safe-area-inset-bottom)) !important;
-  z-index: 9999 !important;
-
-  /* optional look */
-  max-width: 720px;
-  width: calc(100% - 24px);
-  margin: 0 !important;
-  padding: 10px 14px;
-  background: #fff8e1;
-  border: 1px solid #ffe08a;
-  border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0,0,0,.12);
+/* Fullscreen layer */
+#upgrade-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;                /* shown by JS */
 }
 
-/* Keep page content from hiding under it */
-body.has-upgrade-banner { padding-bottom: 84px; }
+/* Backdrop */
+#upgrade-layer .upgrade-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+}
 
-/* If a banner ever ends up inside a header/container, force it to behave */
-header .upgrade-banner,
-nav .upgrade-banner { position: fixed !important; }
+/* Centered modal */
+#upgrade-banner.upgrade-modal {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(680px, calc(100% - 32px));
+  background: #fffdf6;
+  border: 1px solid #ffe08a;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  padding: 18px 20px 20px 20px;
+  font: 16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color: #3a2d00;
+}
+
+/* Content area */
+#upgrade-banner .upgrade-body a {
+  color: #7a5d00;
+  text-decoration: underline;
+}
+
+/* Close button */
+#upgrade-banner .upgrade-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b5a00;
+}
+
+/* Prevent background scroll when open */
+body.has-upgrade-banner {
+  overflow: hidden;
+}
+
