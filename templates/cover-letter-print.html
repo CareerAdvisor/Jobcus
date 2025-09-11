@@ -5,40 +5,45 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Cover Letter</title>
   <style>
+    /* Exact 0.75" on all sides */
+    @page { size: A4; margin: 0.75in; }
+
     html,body{background:#fff;margin:0;font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    .cl{max-width:740px;margin:40px auto;padding:0 18px;color:#111}
-    .header{margin-bottom:22px;text-align:center}
+    /* Remove extra vertical margin so the name sits at the 0.75" top edge */
+    .cl{max-width:740px;margin:0 auto;padding:0 18px;color:#111}
+
+    .header{margin:0 0 10px 0;text-align:center}
     .name{font-weight:800;font-size:32px;line-height:1.1}
     .muted{color:#666}
-    .date{margin-top:6px;color:#555}
+
+    /* Date on the LEFT, with small breathing room below */
+    .date-left{margin:6px 0 14px 0;color:#555;text-align:left}
+
     .recipient{margin:18px 0 16px 0}
     .block{white-space:pre-wrap}
-    @page{size:A4;margin:22mm 18mm}
   </style>
 </head>
 <body>
   <div class="cl">
 
-    <!-- Centered header -->
+    <!-- Centered header (name + contact) -->
     <header class="header">
       {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
-      {% if sender.address1 %}
-        <div class="muted">{{ sender.address1 }}</div>
-      {% endif %}
+      {% if sender.address1 %}<div class="muted">{{ sender.address1 }}</div>{% endif %}
       {% if sender.city or sender.postcode %}
-        <div class="muted">
-          {{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}
-        </div>
+        <div class="muted">{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
       {% endif %}
       {% if sender.email or sender.phone %}
         <div class="muted">
           {{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}
         </div>
       {% endif %}
-      {% if sender.date %}<div class="date">{{ sender.date }}</div>{% endif %}
     </header>
 
-    <!-- Recipient block (left-aligned) -->
+    <!-- Date on the left -->
+    {% if sender.date %}<div class="date-left">{{ sender.date }}</div>{% endif %}
+
+    <!-- Recipient block -->
     {% if recipient.company or recipient.name or recipient.address1 or recipient.city or recipient.postcode %}
     <section class="recipient">
       {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
