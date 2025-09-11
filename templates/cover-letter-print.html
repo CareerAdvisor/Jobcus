@@ -6,48 +6,55 @@
   <title>Cover Letter</title>
   <style>
     html,body{background:#fff;margin:0;font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    .cl{max-width:720px;margin:40px auto;padding:0 16px;color:#111}
-    .header{margin-bottom:18px}
-    .name{font-weight:700;font-size:18px}
+    .cl{max-width:740px;margin:40px auto;padding:0 18px;color:#111}
+    .header{margin-bottom:22px;text-align:center}
+    .name{font-weight:800;font-size:32px;line-height:1.1}
     .muted{color:#666}
+    .date{margin-top:6px;color:#555}
+    .recipient{margin:18px 0 16px 0}
     .block{white-space:pre-wrap}
     @page{size:A4;margin:22mm 18mm}
   </style>
 </head>
 <body>
   <div class="cl">
-    <!-- Sender block -->
-    <div class="header">
+
+    <!-- Centered header -->
+    <header class="header">
       {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
-      {% if sender.address1 %}<div>{{ sender.address1 }}</div>{% endif %}
+      {% if sender.address1 %}
+        <div class="muted">{{ sender.address1 }}</div>
+      {% endif %}
       {% if sender.city or sender.postcode %}
-        <div>{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
+        <div class="muted">
+          {{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}
+        </div>
       {% endif %}
       {% if sender.email or sender.phone %}
-        <div class="muted">{{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}</div>
+        <div class="muted">
+          {{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}
+        </div>
       {% endif %}
-      {% if sender.date %}<div style="margin-top:6px;">{{ sender.date }}</div>{% endif %}
-    </div>
+      {% if sender.date %}<div class="date">{{ sender.date }}</div>{% endif %}
+    </header>
 
-    <!-- Recipient block -->
-    {% if recipient.company or recipient.name or recipient.address1 %}
-    <div style="margin-bottom:18px;">
+    <!-- Recipient block (left-aligned) -->
+    {% if recipient.company or recipient.name or recipient.address1 or recipient.city or recipient.postcode %}
+    <section class="recipient">
       {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
       {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
       {% if recipient.address1 %}<div>{{ recipient.address1 }}</div>{% endif %}
       {% if recipient.city or recipient.postcode %}
         <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
       {% endif %}
-    </div>
+    </section>
     {% endif %}
 
     <!-- Salutation -->
-    <div style="margin-bottom:12px;">
-      Dear {{ recipient.name or 'Hiring Manager' }},
-    </div>
+    <div style="margin-bottom:12px;">Dear {{ recipient.name or 'Hiring Manager' }},</div>
 
-    <!-- Body (AI) -->
-    <main class="block">{{ cover_body }}</main>
+    <!-- Body (AI / user text) -->
+    <main class="block">{{ cover_body or draft }}</main>
 
     <!-- Closing -->
     <div style="margin-top:18px;">Yours sincerely,</div>
