@@ -126,7 +126,6 @@ window.apiFetch = async function apiFetch(url, options = {}) {
  * 1) Centered Upgrade Modal (replaces old sticky banner)
  *    Exposes: window.showUpgradeBanner(html), window.hideUpgradeBanner()
  * ───────────────────────────────────────────────────────────── */
-// base.js — centered upgrade modal (drop-in)
 (function () {
   function ensureModal() {
     let layer = document.getElementById("upgrade-layer");
@@ -173,6 +172,24 @@ window.apiFetch = async function apiFetch(url, options = {}) {
     const layer = document.getElementById("upgrade-layer");
     if (layer) layer.style.display = "none";
     document.body.classList.remove("has-upgrade-banner");
+  };
+})();
+
+// -- show banner, then auto-redirect to pricing
+(function () {
+  const DEFAULT_PRICING_URL = window.PRICING_URL || "/pricing";
+  let timer = null;
+
+  window.upgradePrompt = function upgradePrompt(
+    html,
+    url = DEFAULT_PRICING_URL,
+    delayMs = 1200 // adjust if you want longer/shorter view time
+  ) {
+    window.showUpgradeBanner?.(
+      html || `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`
+    );
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => { window.location.href = url; }, delayMs);
   };
 })();
 
