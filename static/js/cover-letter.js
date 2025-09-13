@@ -25,12 +25,14 @@
     try { if (ct.includes("application/json")) j=await res.json(); else t=await res.text(); } catch {}
     const msg = (j && (j.message || j.error)) || stripTags(t) || `Request failed (${res.status})`;
 
-    if (res.status === 402 || (j && (j.error === "upgrade_required" || j.error === "quota_exceeded"))) {
-      const html = j?.message_html || `You’ve reached your plan limit. <a href="${PRICING_URL}">Upgrade now →</a>`;
-      window.showUpgradeBanner?.(html);
-      setTimeout(()=>{ window.location.href = PRICING_URL; }, 800);
-      throw new Error(j?.message || "Upgrade required");
+    // inside handleCommonErrors(res)
+    if (res.status === 402 || (body && (body.error === "upgrade_required" || body.error === "quota_exceeded"))) {
+      const url  = body?.pricing_url || (window.PRICING_URL || "/pricing");
+      const html = body?.message_html || `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`;
+      window.upgradePrompt(html, url, 1200);
+      throw new Error(body?.message || "Upgrade required");
     }
+    
     if (res.status === 401 || res.status === 403) {
       const authMsg = j?.message || "Please sign up or log in to use this feature.";
       window.showUpgradeBanner?.(authMsg);
@@ -265,22 +267,19 @@
         });
 
         if (!res.ok) {
-          let j=null; const ct=res.headers.get("content-type")||"";
-          if (ct.includes("application/json")) { try { j=await res.json(); } catch {} }
-
-          if ((res.status === 403 && j?.error === "upgrade_required") || res.status === 402) {
-            const html = j?.message_html || `File downloads are available on Standard and Premium. <a href="${PRICING_URL}">Upgrade now →</a>`;
-            window.showUpgradeBanner?.(html);
-            alert(j?.message || "File downloads are available on Standard and Premium.");
-            const container = document.getElementById("cl-download")?.closest(".card, .rb-card, .actions, form, #clForm") || document.getElementById("clForm");
-            if (container) { // inline too
-              let b = container.querySelector(".inline-banner");
-              if (!b) { b = document.createElement("div"); b.className="inline-banner"; b.style.cssText="margin-top:10px;padding:10px 12px;border-radius:6px;font-size:14px;background:#fff3cd;color:#856404;border:1px solid #ffeeba"; container.appendChild(b); }
-              b.innerHTML = html;
+          const ct = res.headers.get("content-type") || "";
+          if (ct.includes("application/json")) {
+            const j = await res.json().catch(() => ({}));
+            if (res.status === 403 && j.error === "upgrade_required") {
+              const url  = j.pricing_url || (window.PRICING_URL || "/pricing");
+              const html = j.message_html || `File downloads are available on Standard and Premium. <a href="${url}">Upgrade now →</a>`;
+              window.upgradePrompt(html, url, 1200);
+              return;
             }
+            window.showUpgradeBanner?.(j.message || j.error || "Download failed.");
             return;
           }
-          window.showUpgradeBanner?.(j?.message || j?.error || "Download failed.");
+          window.showUpgradeBanner?.("Download failed.");
           return;
         }
 
