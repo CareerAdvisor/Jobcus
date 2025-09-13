@@ -26,32 +26,38 @@
     if (!form) { console.error('resumeForm not found'); return; }
     const formData = new FormData(form);
 
-    if (!resp.ok) {
+    try {
+      const resp = await fetch('/api/resume-analysis', { method: 'POST', body: formData });
       const text = await resp.text();
       let data = null; try { data = JSON.parse(text); } catch {}
-    
-      if (resp.status === 402) {
-        const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
-        const msg  = data?.message || "You’ve reached your plan limit for this feature.";
-        const html = data?.message_html || `${msg} <a href="${url}">Upgrade now →</a>`;
-        window.upgradePrompt(html, url, 1200);
-        return;
-      }
-      if (resp.status === 401) {
-        window.location = '/account?next=' + encodeURIComponent(location.pathname);
-        return;
-      }
-      console.error('resume-analysis failed', resp.status, text);
-      window.showUpgradeBanner?.(data?.message || data?.error || "Resume analysis failed.");
-      return;
-    }
 
-    const data = await resp.json();
-    try {
-      // Expect a page-defined renderer
-      renderAnalysis?.(data);
+      if (!resp.ok) {
+        if (resp.status === 402) {
+          const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
+          const msg  = data?.message || "You’ve reached your plan limit for this feature.";
+          const html = data?.message_html || `${msg} <a href="${url}">Upgrade now →</a>`;
+          window.upgradePrompt(html, url, 1200);
+          return;
+        }
+        if (resp.status === 401) {
+          window.location = '/account?next=' + encodeURIComponent(location.pathname);
+          return;
+        }
+        console.error('resume-analysis failed', resp.status, text);
+        window.showUpgradeBanner?.(data?.message || data?.error || "Resume analysis failed.");
+        return;
+      }
+
+      const result = data || {};
+      try {
+        // Expect a page-defined renderer
+        renderAnalysis?.(result);
+      } catch (err) {
+        console.error('renderAnalysis failed or missing:', err);
+      }
     } catch (err) {
-      console.error('renderAnalysis failed or missing:', err);
+      console.error(err);
+      window.showUpgradeBanner?.("Resume analysis failed.");
     }
   });
 })();
@@ -203,6 +209,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isPdf(f)) body.pdf = b64;
         else if (isDocx(f)) body.docx = b64;
 
+        // 🔹 MISSING BEFORE — add the fetch + parse
+        const res  = await fetch("/api/resume-analysis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const text = await res.text();
+        let data = null; try { data = JSON.parse(text); } catch {}
+
+        // 402 → modal + timed redirect
         if (res.status === 402) {
           const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
           const msg  = data?.message || "You’ve reached your plan limit for this feature.";
@@ -210,8 +226,6 @@ document.addEventListener("DOMContentLoaded", () => {
           window.upgradePrompt(html, url, 1200);
           return;
         }
-
-        // ⇧⇧⇧ END INSERT ⇧⇧⇧
 
         // Handle device/IP abuse guard from backend (429)
         if (res.status === 429) {
@@ -226,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        // CHANGE: prefer message over error when failing
+        // Prefer message over error when failing
         if (!res.ok) {
           const msg = (data?.message || data?.error) || "Resume analysis failed. Please try again.";
           console.error("Resume analysis failed:", text);
@@ -306,14 +320,14 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        // ⇩⇩⇩ INSERTED: 402 ➜ banner + alert + return ⇩⇩⇩
+        // 402 → show modal + timed redirect
         if (res.status === 402) {
-          const msg = (data?.message || "You’ve reached your plan limit for this feature.");
-          window.showUpgradeBanner?.(msg);
-          alert(msg);
+          const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
+          const msg  = data?.message || "You’ve reached your plan limit for this feature.";
+          const html = data?.message_html || `${msg} <a href="${url}">Upgrade now →</a>`;
+          window.upgradePrompt(html, url, 1200);
           return;
         }
-        // ⇧⇧⇧ END INSERT ⇧⇧⇧
 
         if (res.status === 429 && (data?.error === "too_many_free_accounts" || data?.error === "quota_exceeded")) {
           alert("You have reached the limit for the free version, upgrade to enjoy more features");
