@@ -203,44 +203,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isPdf(f)) body.pdf = b64;
         else if (isDocx(f)) body.docx = b64;
 
-        const res  = await fetch("/api/resume-analysis", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        });
-
-        const text = await res.text();
-
-       // helper (put near the top of the file once)
-      function escapeHtml(s=""){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
-      
-      // … inside the click handler, after reading `text`:
-      let data = null;
-      try { data = JSON.parse(text); } catch {}
-      
-      if (res.status === 402) {
-        const msgText = data?.message || "You’ve reached your plan limit for this feature.";
-        const pricing = data?.pricing_url || "/pricing";
-        const msgHtml = data?.message_html || `${escapeHtml(msgText)} <a href="${pricing}">Upgrade now →</a>`;
-      
-        window.showUpgradeBanner?.(msgHtml);  // sticky banner (clickable)
-        alert(msgText);                        // keep the legacy alert
-      
-        // Inline (card) banner stays plain text, then append a link element
-        showInlineBanner(card, msgText, "warn");
-        const b = card?.querySelector(".inline-banner");
-        if (b) {
-          const a = document.createElement("a");
-          a.href = pricing;
-          a.textContent = " Upgrade now →";
-          a.style.marginLeft = "8px";
-          a.style.textDecoration = "underline";
-          a.style.color = "#664d03";
-          b.appendChild(a);
+        if (res.status === 402) {
+          const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
+          const msg  = data?.message || "You’ve reached your plan limit for this feature.";
+          const html = data?.message_html || `${msg} <a href="${url}">Upgrade now →</a>`;
+          window.upgradePrompt(html, url, 1200);
+          return;
         }
-        return;
-      }
 
         // ⇧⇧⇧ END INSERT ⇧⇧⇧
 
