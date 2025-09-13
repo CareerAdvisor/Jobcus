@@ -263,11 +263,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const ct = res.headers.get("content-type") || "";
       if (ct.includes("application/json")) data = await res.json();
       
-      if (!res.ok) {
-        if (res.status === 402 && data?.error === "quota_exceeded") {
-          showUpgradeBanner(data.message || "You’ve reached your resume analyses limit. Upgrade to continue.");
-          return;
-        }
+      if (res.status === 402) {
+        const msgText = data?.message || "You’ve reached your plan limit for this feature.";
+        const pricing = data?.pricing_url || (window.PRICING_URL || "/pricing");
+        const msgHtml = data?.message_html || `${msgText} <a href="${pricing}">Upgrade now →</a>`;
+        window.upgradePrompt(msgHtml, pricing, 1200);
+        return;
+      }
         if (res.status === 429 && data?.error === "too_many_free_accounts") {
           showUpgradeBanner(data.message || "Too many free accounts from your network.");
           return;
