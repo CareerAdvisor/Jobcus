@@ -42,8 +42,7 @@ async function handleCommonErrors(res) {
   if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
     const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
     // sticky banner + redirect to pricing
-    window.showUpgradeBanner?.(body?.message_html || msg);
-    setTimeout(() => { window.location.href = PRICING_URL; }, 800);
+    window.upgradePrompt(body?.message_html || msg, (window.PRICING_URL || "/pricing"), 1200);
     throw new Error(msg);
   }
 
