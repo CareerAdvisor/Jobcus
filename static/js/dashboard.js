@@ -7,7 +7,7 @@
   };
 })();
 
-// ⬇️ INSERT THIS WHOLE FUNCTION HERE
+// Datalist (roles)
 async function initRoleDatalist() {
   const input = document.getElementById("dashRoleSelect");
   const dl    = document.getElementById("roleList");
@@ -30,9 +30,11 @@ async function initRoleDatalist() {
       });
   } catch (e) {
     console.warn("Could not load roles.json; using fallback.", e);
-    ["Business Analyst","Azure Architect","Animator","IT Support Specialist","Systems Administrator",
-     "Network Engineer","Product Manager","Software Engineer","Project Manager","UI/UX Designer",
-     "QA Engineer","Data Analyst","Data Scientist","DevOps Engineer"].forEach(role => {
+    [
+      "Business Analyst","Azure Architect","Animator","IT Support Specialist","Systems Administrator",
+      "Network Engineer","Product Manager","Software Engineer","Project Manager","UI/UX Designer",
+      "QA Engineer","Data Analyst","Data Scientist","DevOps Engineer"
+    ].forEach(role => {
       const opt = document.createElement("option");
       opt.value = role;
       dl.appendChild(opt);
@@ -59,13 +61,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const metrics = {
     formatting:  { meter: document.getElementById("bFormatting"),  label: document.getElementById("mFormatting") },
     sections:    { meter: document.getElementById("bSections"),    label: document.getElementById("mSections") },
-    keywords:    { meter: document.getElementById("bKeywords"),    label: document.getElementById("mKeywords") }, // NEW
+    keywords:    { meter: document.getElementById("bKeywords"),    label: document.getElementById("mKeywords") },
     readability: { meter: document.getElementById("bReadability"), label: document.getElementById("mReadability") },
     length:      { meter: document.getElementById("bLength"),      label: document.getElementById("mLength") },
     parseable:   { meter: document.getElementById("bParseable"),   label: document.getElementById("mParseable") },
   };
 
-    // ----- Free-usage nudge -----
+  // ----- Free-usage nudge -----
   const registerNudge = document.getElementById("registerNudge");
   const dismissNudge  = document.getElementById("dismissNudge");
 
@@ -84,14 +86,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ----- Upload controls -----
   const dropzone    = document.getElementById("dropzone");
-  const fileInput   = document.getElementById("dashResumeFile");
-  const fileNameEl  = document.getElementById("fileName");      // shows selection
+  const fileInput   = document.getElementById("dashResumeFile"); // IMPORTANT: must match your HTML id
+  const fileNameEl  = document.getElementById("fileName");
   const jdInput     = document.getElementById("dashJobDesc");
   const roleSelect  = document.getElementById("dashRoleSelect");
   const analyzeBtn  = document.getElementById("dashAnalyzeBtn");
   const analyzingEl = document.getElementById("dashAnalyzing");
 
-  // ✅ Populate the datalist once
+  // ✅ Populate the datalist
   initRoleDatalist();
 
   // ----- Optimize controls -----
@@ -101,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ----- “Analyze updated resume” pressed state + jump -----
   const openReBtn = document.getElementById("openReanalyze");
   openReBtn?.addEventListener("click", () => {
-    openReBtn.classList.add("is-hot");                 // white on blue (CSS)
+    openReBtn.classList.add("is-hot");
     setTimeout(() => openReBtn.classList.remove("is-hot"), 700);
     dropzone?.scrollIntoView({ behavior: "smooth", block: "center" });
     dropzone?.classList.add("pulse");
@@ -128,22 +130,23 @@ document.addEventListener("DOMContentLoaded", () => {
   function animateRing(score) {
     const v = clamp(score);
     const C = 2 * Math.PI * 52; // r=52
-    ring.style.stroke = paletteFor(v);
+    ring?.setAttribute("stroke", paletteFor(v));
     let cur = 0;
     const step = v > 0 ? 1 : -1;
     const iv = setInterval(() => {
+      if (!ring) return clearInterval(iv);
       if (cur === v) return clearInterval(iv);
       cur += step;
       const dash = (cur / 100) * C;
       ring.setAttribute("stroke-dasharray", `${dash} ${C}`);
-      ringLabel.textContent = `${cur}%`;
+      if (ringLabel) ringLabel.textContent = `${cur}%`;
     }, 12);
   }
 
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
-      fr.onload = () => resolve(fr.result.split(",")[1]);
+      fr.onload = () => resolve(String(fr.result).split(",")[1]);
       fr.onerror = reject;
       fr.readAsDataURL(file);
     });
@@ -157,22 +160,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function showFileName(f) {
     if (!fileNameEl) return;
-    if (!f) { fileNameEl.textContent = ""; return; }
-    fileNameEl.textContent = `Selected: ${f.name} (${formatSize(f.size)})`;
+    fileNameEl.textContent = f ? `Selected: ${f.name} (${formatSize(f.size)})` : "";
   }
 
   // ===== Render from localStorage =====
   function renderFromStorage() {
     const raw = localStorage.getItem("resumeAnalysis");
     if (!raw) {
-      scoreCard.style.display = "none";
-      noCTA.style.display = "block";
+      scoreCard?.style && (scoreCard.style.display = "none");
+      noCTA?.style && (noCTA.style.display = "block");
       return;
     }
 
     let data; try { data = JSON.parse(raw); } catch { return; }
-    scoreCard.style.display = "block";
-    noCTA.style.display = "none";
+    scoreCard?.style && (scoreCard.style.display = "block");
+    noCTA?.style && (noCTA.style.display = "none");
 
     animateRing(data.score || 0);
     if (metricNote && data.lastAnalyzed) {
@@ -182,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const b = data.breakdown || {};
     setMetric(metrics.formatting,  b.formatting);
     setMetric(metrics.sections,    b.sections);
-    setMetric(metrics.keywords,    b.keywords);   // NEW
+    setMetric(metrics.keywords,    b.keywords);
     setMetric(metrics.readability, b.readability);
     setMetric(metrics.length,      b.length);
     setMetric(metrics.parseable,   b.parseable === true ? 100 : (b.parseable === false ? 0 : null));
@@ -190,7 +192,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const defaultView = (data.suggestions && data.suggestions.length) ? "recs" : "fixes";
     paintPanel(defaultView, data);
 
-    // show prompt if needed
     maybeShowRegisterNudge();
   }
 
@@ -211,7 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Couldn't copy recommendations.");
     }
   });
-  
+
   // ===== Dropzone / picker =====
   function openPicker(){ fileInput?.click(); }
   dropzone?.addEventListener("click", openPicker);
@@ -224,71 +225,89 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault(); dropzone.classList.remove("is-drag");
     const f = e.dataTransfer.files?.[0];
     if (!f) return;
-    fileInput.files = e.dataTransfer.files;
-    analyzeBtn.disabled = false;
+    if (fileInput) fileInput.files = e.dataTransfer.files;
+    if (analyzeBtn) analyzeBtn.disabled = false;
     showFileName(f);
   });
 
   fileInput?.addEventListener("change", () => {
     const f = fileInput.files?.[0];
-    analyzeBtn.disabled = !f;
+    if (analyzeBtn) analyzeBtn.disabled = !f;
     showFileName(f || null);
   });
 
   // ===== Run analysis =====
   async function runAnalysis() {
-    const f = fileInput.files?.[0];
+    const f = fileInput?.files?.[0];
     if (!f) return;
 
-    analyzingEl.style.display = "inline"; // show only after click
-    analyzeBtn.disabled = true;
+    if (analyzingEl) analyzingEl.style.display = "inline";
+    if (analyzeBtn) analyzeBtn.disabled = true;
 
     try {
+      // Attach file (Base64 → JSON body)
       const b64 = await fileToBase64(f);
       const body = {
         jobDescription: jdInput?.value || "",
         jobRole: roleSelect?.value || ""
       };
-      if (f.type === "application/pdf") body.pdf = b64;
-      else if (f.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") body.docx = b64;
-      else { alert("Unsupported type. Upload PDF or DOCX."); analyzingEl.style.display = "none"; analyzeBtn.disabled = false; return; }
+      if (f.type === "application/pdf") {
+        body.pdf = b64;
+      } else if (f.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+        body.docx = b64;
+      } else {
+        alert("Unsupported type. Upload PDF or DOCX.");
+        if (analyzingEl) analyzingEl.style.display = "none";
+        if (analyzeBtn) analyzeBtn.disabled = false;
+        return;
+      }
 
       const res = await fetch("/api/resume-analysis", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(body) // or JSON.stringify(payload) if you named it payload
+        body: JSON.stringify(body)
       });
-      
-      let data = null;
-      const ct = res.headers.get("content-type") || "";
-      if (ct.includes("application/json")) data = await res.json();
-      
+
+      const text = await res.text();
+      let data = null; try { data = JSON.parse(text); } catch {}
+
+      // 402 → show centered modal + timed redirect
       if (res.status === 402) {
         const msgText = data?.message || "You’ve reached your plan limit for this feature.";
         const pricing = data?.pricing_url || (window.PRICING_URL || "/pricing");
         const msgHtml = data?.message_html || `${msgText} <a href="${pricing}">Upgrade now →</a>`;
-        window.upgradePrompt(msgHtml, pricing, 1200);
+        window.upgradePrompt?.(msgHtml, pricing, 1200);
         return;
       }
-        if (res.status === 429 && data?.error === "too_many_free_accounts") {
-          showUpgradeBanner(data.message || "Too many free accounts from your network.");
-          return;
-        }
-        console.error("Resume analysis failed:", data || res.statusText);
-        alert(data?.message || "Resume analysis failed. Please try again.");
+
+      // 429 (abuse/device guard)
+      if (res.status === 429) {
+        window.showUpgradeBanner?.(
+          data?.message || "You have reached the limit for the free version, upgrade to enjoy more features"
+        );
         return;
       }
-      
-      // success continues with your existing logic (set localStorage, repaint UI, etc.)
 
+      // Other failures
+      if (!res.ok) {
+        const msg = (data?.message || data?.error) || "Resume analysis failed. Please try again.";
+        console.error("Resume analysis failed:", text);
+        alert(msg);
+        return;
+      }
 
-      // you already have:
+      // Success
+      if (!data) {
+        alert("Unexpected server response.");
+        return;
+      }
+
       data.lastAnalyzed = new Date().toLocaleString();
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
       localStorage.setItem("resumeBase64", b64);
       localStorage.setItem("resumeKind", f.type);
-      
-      // ✅ NEW: persist a normalized snapshot for cross-device sync
+
+      // Snapshot for cross-device sync
       const resultObject = {
         score: Number(data.score || 0),
         breakdown: {
@@ -302,31 +321,28 @@ document.addEventListener("DOMContentLoaded", () => {
         suggestions: Array.isArray(data?.suggestions) ? data.suggestions : [],
         lastAnalyzed: data.lastAnalyzed
       };
-      localStorage.setItem('resume_latest', JSON.stringify(resultObject));
-      if (window.syncState) window.syncState();  // pushes to /api/state if logged in
+      localStorage.setItem("resume_latest", JSON.stringify(resultObject));
+      if (window.syncState) window.syncState();
 
-
-      // after saving to localStorage…
-      const count = parseInt(localStorage.getItem("analysisCount") || "0", 10) + 1;
-      localStorage.setItem("analysisCount", String(count));
-
-      // reset controls & repaint
-      fileInput.value = ""; showFileName(null);
-      analyzeBtn.disabled = true;
+      // Reset & repaint
+      if (fileInput) fileInput.value = "";
+      showFileName(null);
+      if (analyzeBtn) analyzeBtn.disabled = true;
       renderFromStorage();
-      scoreCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      scoreCard?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (err) {
       console.error(err);
       alert("Analysis failed. Please try again.");
     } finally {
-      analyzingEl.style.display = "none";
+      if (analyzingEl) analyzingEl.style.display = "none";
     }
   }
+
   analyzeBtn?.addEventListener("click", runAnalysis);
 
   // ===== Optimize side panel =====
   function paintPanel(view, data) {
-    optNav.querySelectorAll(".opt-btn").forEach(b => {
+    optNav?.querySelectorAll(".opt-btn").forEach(b => {
       b.classList.toggle("is-active", b.dataset.view === view);
     });
 
@@ -375,8 +391,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const hasKW = (kw.matched && kw.matched.length) || (kw.missing && kw.missing.length);
       const rows = hasKW
         ? [...new Set([...(kw.matched || []), ...(kw.missing || [])])]
-        : samples;  // only when NOTHING is returned by the backend
-      
+        : samples;
+
       optPanel.innerHTML = `
         <h3 class="panel-title">🎯 ATS keywords</h3>
         <p class="panel-sub">These are skills/terms recruiters often search for. Add only the ones you genuinely have.</p>
@@ -406,7 +422,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <ul class="list">${(w.grammar || []).map(g => `<li>${g}</li>`).join("") || "<li>No grammar suggestions returned.</li>"}</ul>`;
   }
 
-  optNav.addEventListener("click", (e) => {
+  optNav?.addEventListener("click", (e) => {
     const btn = e.target.closest(".opt-btn");
     if (!btn) return;
     const data = JSON.parse(localStorage.getItem("resumeAnalysis") || "{}");
@@ -447,6 +463,6 @@ function downloadHelper(format, text, filename) {
 }
 
 window.downloadOptimizedResume = function (format) {
-  const text = document.getElementById("optimized-output").innerText || "";
+  const text = document.getElementById("optimized-output")?.innerText || "";
   downloadHelper(format, text, "resume-optimized");
 };
