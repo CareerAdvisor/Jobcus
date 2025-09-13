@@ -26,17 +26,23 @@
     if (!form) { console.error('resumeForm not found'); return; }
     const formData = new FormData(form);
 
-    const resp = await fetch('/api/resume-analysis', {
-      method: 'POST',
-      body: formData
-    });
-
     if (!resp.ok) {
-      const text = await resp.text(); // useful for debugging
-      console.error('resume-analysis failed', resp.status, text);
+      const text = await resp.text();
+      let data = null; try { data = JSON.parse(text); } catch {}
+    
+      if (resp.status === 402) {
+        const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
+        const msg  = data?.message || "You’ve reached your plan limit for this feature.";
+        const html = data?.message_html || `${msg} <a href="${url}">Upgrade now →</a>`;
+        window.upgradePrompt(html, url, 1200);
+        return;
+      }
       if (resp.status === 401) {
         window.location = '/account?next=' + encodeURIComponent(location.pathname);
+        return;
       }
+      console.error('resume-analysis failed', resp.status, text);
+      window.showUpgradeBanner?.(data?.message || data?.error || "Resume analysis failed.");
       return;
     }
 
