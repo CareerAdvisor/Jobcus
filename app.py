@@ -1907,87 +1907,137 @@ else:
 
 # ---- Employer inquiry endpoints ----
 
+# ---------- Employer: Inquiry + AI Job Post (updated) ----------
+from flask import request, jsonify, current_app
+import re
+
 @app.post("/api/employer-inquiry")
 def employer_inquiry():
+    """
+    Accepts JSON: { company, name, email, phone, job_roles, message }
+    Inserts a row into public.employer_inquiries via Supabase (ADMIN).
+    """
     try:
-        supabase = current_app.config["SUPABASE"]
-        data = request.get_json(force=True) or {}
-        supabase.table("employer_inquiries").insert({
-            "company":   data.get("company"),
-            "name":      data.get("name"),
-            "email":     data.get("email"),
-            "phone":     data.get("phone"),
-            "job_roles": data.get("job_roles"),
-            "message":   data.get("message"),
-        }).execute()
-        return jsonify(success=True, message="Inquiry submitted"), 200
-    except Exception as e:
-        current_app.logger.exception("Employer inquiry error")
-        return jsonify(success=False, error=str(e)), 500
+        data = request.get_json(force=True, silent=True) or {}
+    except Exception:
+        return jsonify(error="Invalid JSON body"), 400
 
+    # Basic validation
+    name  = (data.get("name") or "").strip()
+    email = (data.get("email") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    if not (name and email and phone):
+        return jsonify(error="name, email and phone are required"), 400
 
-@app.post("/api/employer/submit")
-def submit_employer_form():
+    row = {
+        "company":   (data.get("company") or "").strip(),
+        "name":      name,
+        "email":     email,
+        "phone":     phone,
+        "job_roles": (data.get("job_roles") or "").strip(),
+        "message":   (data.get("message") or "").strip(),
+    }
+
     try:
-        client   = current_app.config["OPENAI_CLIENT"]
-        supabase = current_app.config["SUPABASE"]
+        supabase = current_app.config.get("SUPABASE_ADMIN") or current_app.config.get("SUPABASE")
+        if not supabase:
+            current_app.logger.warning("SUPABASE_ADMIN not configured; skipping insert")
+            return jsonify(ok=True, skipped_db=True)
 
-        data = request.get_json(force=True) or {}
-        job_title           = data.get("jobTitle")
-        company             = data.get("company")
-        role_summary        = data.get("summary")
-        location            = data.get("location")
-        employmentType      = data.get("employmentType")
-        salaryRange         = data.get("salaryRange")
-        applicationDeadline = data.get("applicationDeadline")
-        applicationEmail    = data.get("applicationEmail")
+        res = supabase.table("employer_inquiries").insert(row).execute()
+        # Some Supabase clients return {data, error}; guard either way:
+        if getattr(res, "error", None):
+            current_app.logger.error("Supabase insert error: %s", res.error)
+            return jsonify(error="Could not save inquiry"), 500
+        return jsonify(ok=True)
+    except Exception:
+        current_app.logger.exception("employer_inquiry failed")
+        return jsonify(error="Server error"), 500
 
-        if not job_title or not company:
-            return jsonify(success=False, message="Job title and company are required."), 400
 
-        prompt = f"""
-You are a recruitment assistant. Generate a professional job description:
+@app.post("/api/employer/job-post")
+def employer_job_post():
+    """
+    Accepts JSON fields from the AI job-post form and returns a generated description.
+    """
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+    except Exception:
+        return jsonify(error="Invalid JSON body"), 400
+
+    job_title   = (data.get("jobTitle") or "").strip()
+    company     = (data.get("company") or "").strip()
+    location    = (data.get("location") or "").strip()
+    emp_type    = (data.get("employmentType") or "").strip()
+    salary      = (data.get("salaryRange") or "").strip()
+    apply_to    = (data.get("applicationEmail") or "").strip()
+    deadline    = (data.get("applicationDeadline") or "").strip()
+    summary     = (data.get("summary") or "").strip()
+
+    if not job_title or not company:
+        return jsonify(error="jobTitle and company are required"), 400
+
+    client = current_app.config.get("OPENAI_CLIENT")
+    prompt = f"""
+Write a clear, professional job description in UK English.
 
 Job Title: {job_title}
 Company: {company}
-Location: {location}
-Employment Type: {employmentType}
-Salary Range: {salaryRange}
-Application Deadline: {applicationDeadline}
-Application Email/Link: {applicationEmail}
-Summary: {role_summary}
+Location: {location or "—"}
+Employment Type: {emp_type or "—"}
+Salary Range: {salary or "—"}
+How to Apply: {apply_to or "—"}
+Application Deadline: {deadline or "—"}
 
-Include: About the Company, Job Summary, Key Responsibilities,
-Required Qualifications, Preferred Skills, and How to Apply.
-"""
+Opening Summary:
+{summary or "—"}
 
-        resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.6,
+Structure:
+- Brief company/role intro (2–3 sentences)
+- Responsibilities (5–8 concise bullets)
+- Requirements (5–8 concise bullets)
+- Nice-to-haves (optional, 3–5 bullets)
+- Benefits (optional, 3–6 bullets)
+- How to apply (1–2 lines)
+Keep bullets short (8–18 words). Avoid clichés and buzzwords.
+Return PLAIN TEXT (no markdown, no headings like 'Responsibilities:'); use blank lines between sections.
+""".strip()
+
+    # Fallback if OpenAI not configured
+    if not client:
+        text = (
+            f"{company} is hiring a {job_title} in {location or 'our UK team'}.\n\n"
+            "Responsibilities:\n"
+            "- Deliver key projects with cross-functional teams.\n"
+            "- Communicate clearly with stakeholders and manage timelines.\n"
+            "- Improve processes and document best practices.\n\n"
+            "Requirements:\n"
+            "- Relevant experience in similar roles.\n"
+            "- Strong communication and problem-solving skills.\n"
+            "- Ability to work independently and in teams.\n\n"
+            f"How to apply: {apply_to or 'Send your CV to careers@company.com'}"
         )
-        job_desc = resp.choices[0].message.content
+        return jsonify(description=text)
 
-        # Optional: persist in DB
-        try:
-            supabase.table("job_posts").insert({
-                "job_title": job_title,
-                "company": company,
-                "summary": role_summary,
-                "location": location,
-                "employment_type": employmentType,
-                "salary_range": salaryRange,
-                "application_deadline": applicationDeadline,
-                "application_email": applicationEmail,
-            }).execute()
-        except Exception as db_e:
-            current_app.logger.warning("Job post save failed: %s", db_e)
-
-        return jsonify(success=True, jobDescription=job_desc), 200
-
+    try:
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role":"user","content":prompt}],
+            temperature=0.5,
+            max_tokens=900
+        )
+        text = (resp.choices[0].message.content or "").strip()
+        text = re.sub(r"```(?:\w+)?", "", text).strip()
+        return jsonify(description=text)
     except Exception:
-        current_app.logger.exception("Employer submission error")
-        return jsonify(success=False, message="Server error generating job post."), 500
+        current_app.logger.exception("job-post generation failed")
+        return jsonify(error="Generation failed"), 500
+
+
+# (Optional) Backwards-compat for old frontend hitting /api/employer/submit
+@app.post("/api/employer/submit")
+def employer_submit_alias():
+    return employer_job_post()
 
 # --- Entrypoint ---
 if __name__ == "__main__":
