@@ -1,11 +1,22 @@
 // /static/js/employer.js
 document.addEventListener("DOMContentLoaded", function () {
-  // Ensure cookies are sent (SameSite=Lax)
+  // Always send cookies (SameSite=Lax)
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
     return _fetch(input, init);
   };
+
+  // CSRF (Flask-WTF compatible)
+  function getCookie(name) {
+    const prefix = name + "=";
+    return (document.cookie || "")
+      .split(";")
+      .map(s => s.trim())
+      .find(s => s.startsWith(prefix))
+      ?.slice(prefix.length) || null;
+  }
+  const CSRF = getCookie("csrf_token") || getCookie("XSRF-TOKEN");
 
   // Safe HTML
   function escapeHtml(s = "") {
@@ -17,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/'/g, "&#39;");
   }
 
-  // Unified server error handling (auth/limits/abuse)
+  // Common error handler
   async function handleCommonErrors(res) {
     if (res.ok) return null;
     const ct = res.headers.get("content-type") || "";
@@ -33,9 +44,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
-      const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
-      window.showUpgradeBanner?.(msg);
-      throw new Error(msg);
+      const url  = body?.pricing_url || (window.PRICING_URL || "/pricing");
+      const html = body?.message_html || `${body?.message || "You’ve reached your plan limit."} <a href="${url}">Upgrade now →</a>`;
+      window.upgradePrompt?.(html, url, 1200);
+      throw new Error(body?.message || "Upgrade required");
     }
 
     if (res.status === 429 && body?.error === "too_many_free_accounts") {
@@ -49,7 +61,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Elements
-  window.docx = window.docx || window["docx"]; // (kept if you later add .docx export)
   const inquiryForm     = document.getElementById("employer-inquiry-form");
   const jobPostForm     = document.getElementById("job-post-form");
   const output          = document.getElementById("job-description-output");
@@ -57,16 +68,15 @@ document.addEventListener("DOMContentLoaded", function () {
   const dlTxtBtn        = document.getElementById("download-txt");
   const dlPdfBtn        = document.getElementById("download-pdf");
 
-  // Helper: render description safely (markdown if available, else escaped + <br>)
+  // Render helper
   function renderDescription(text = "") {
     const content = String(text || "");
-    if (window.marked && typeof window.marked.parse === "function") {
-      // If you’re worried about HTML in markdown, escape first:
+    if (window.marked?.parse) {
       const escaped = escapeHtml(content);
       return `<div class="ai-response">${window.marked.parse(escaped)}</div>`;
     }
     return `<div class="ai-response"><p>${escapeHtml(content).replace(/\n/g, "<br>")}</p></div>`;
-    }
+  }
 
   // ----------------------------
   // 📨 Employer Inquiry Handler
@@ -75,13 +85,21 @@ document.addEventListener("DOMContentLoaded", function () {
     inquiryForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       const statusEl = document.getElementById("inquiry-response");
+      const submitBtn = inquiryForm.querySelector('button[type="submit"]');
+
       const formData = new FormData(inquiryForm);
       const payload  = Object.fromEntries(formData.entries());
 
       try {
+        submitBtn && (submitBtn.disabled = true);
+        statusEl && (statusEl.textContent = "Submitting…");
+
         const res = await fetch("/api/employer-inquiry", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(CSRF ? { "X-CSRFToken": CSRF } : {})
+          },
           body: JSON.stringify(payload),
         });
 
@@ -89,12 +107,82 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const data = await res.json().catch(() => ({}));
         const ok = !!(data && (data.success || data.ok));
-        if (statusEl) statusEl.innerText = ok ? "✅ Inquiry submitted!" : "❌ Submission failed.";
+        statusEl && (statusEl.textContent = ok ? "✅ Inquiry submitted!" : "❌ Submission failed.");
+        if (ok) inquiryForm.reset();
       } catch (error) {
         console.error("Employer Inquiry Error:", error);
-        if (statusEl) statusEl.innerText = `❌ ${error.message || "Something went wrong."}`;
+        statusEl && (statusEl.textContent = `❌ ${error.message || "Something went wrong."}`);
+      } finally {
+        submitBtn && (submitBtn.disabled = false);
       }
     });
   }
 
-  // ----------------------------
+  // ------------------------------------
+  // 🤖 AI Job Post Generator – Handler
+  // ------------------------------------
+  let lastGenerated = "";
+
+  if (jobPostForm && output) {
+    jobPostForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const submitBtn = jobPostForm.querySelector('button[type="submit"]');
+      const formData  = new FormData(jobPostForm);
+      const payload   = Object.fromEntries(formData.entries());
+
+      try {
+        submitBtn && (submitBtn.disabled = true);
+        output.innerHTML = '<div class="spinner" aria-live="polite">Generating…</div>';
+
+        const res = await fetch("/api/employer/job-post", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(CSRF ? { "X-CSRFToken": CSRF } : {})
+          },
+          body: JSON.stringify(payload),
+        });
+
+        await handleCommonErrors(res);
+
+        const data = await res.json().catch(() => ({}));
+        const text = data?.description || data?.text || "";
+        lastGenerated = text;
+        output.innerHTML = renderDescription(text);
+        downloadOptions?.classList.remove("hidden");
+      } catch (err) {
+        console.error("Job post generator error:", err);
+        output.innerHTML = `<div class="error">❌ ${escapeHtml(err.message || "Could not generate description.")}</div>`;
+        downloadOptions?.classList.add("hidden");
+      } finally {
+        submitBtn && (submitBtn.disabled = false);
+      }
+    });
+  }
+
+  // -------------------
+  // ⬇️ Download buttons
+  // -------------------
+  dlTxtBtn?.addEventListener("click", () => {
+    const blob = new Blob([lastGenerated || ""], { type: "text/plain" });
+    saveAs(blob, "job-description.txt");
+  });
+
+  dlPdfBtn?.addEventListener("click", () => {
+    try {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit: "mm", format: "a4" });
+      const lines = pdf.splitTextToSize((lastGenerated || ""), 180);
+      let y = 15;
+      lines.forEach(line => {
+        if (y > 280) { pdf.addPage(); y = 15; }
+        pdf.text(line, 15, y);
+        y += 7;
+      });
+      pdf.save("job-description.pdf");
+    } catch (e) {
+      alert("PDF download failed.");
+    }
+  });
+});
