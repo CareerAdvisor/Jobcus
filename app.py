@@ -1905,22 +1905,14 @@ else:
     app.logger.warning("Skipping app.register_blueprint(resumes_bp): not found")
 
 
-# ---- Employer inquiry endpoints ----
-
 # ---------- Employer: Inquiry + AI Job Post (updated) ----------
-
 @app.post("/api/employer-inquiry")
 def employer_inquiry():
-    """
-    Accepts JSON: { company, name, email, phone, job_roles, message }
-    Inserts a row into public.employer_inquiries via Supabase (ADMIN).
-    """
     try:
         data = request.get_json(force=True, silent=True) or {}
     except Exception:
         return jsonify(error="Invalid JSON body"), 400
 
-    # Basic validation
     name  = (data.get("name") or "").strip()
     email = (data.get("email") or "").strip()
     phone = (data.get("phone") or "").strip()
@@ -1941,9 +1933,7 @@ def employer_inquiry():
         if not supabase:
             current_app.logger.warning("SUPABASE_ADMIN not configured; skipping insert")
             return jsonify(ok=True, skipped_db=True)
-
         res = supabase.table("employer_inquiries").insert(row).execute()
-        # Some Supabase clients return {data, error}; guard either way:
         if getattr(res, "error", None):
             current_app.logger.error("Supabase insert error: %s", res.error)
             return jsonify(error="Could not save inquiry"), 500
@@ -1955,22 +1945,19 @@ def employer_inquiry():
 
 @app.post("/api/employer/job-post")
 def employer_job_post():
-    """
-    Accepts JSON fields from the AI job-post form and returns a generated description.
-    """
     try:
         data = request.get_json(force=True, silent=True) or {}
     except Exception:
         return jsonify(error="Invalid JSON body"), 400
 
-    job_title   = (data.get("jobTitle") or "").strip()
-    company     = (data.get("company") or "").strip()
-    location    = (data.get("location") or "").strip()
-    emp_type    = (data.get("employmentType") or "").strip()
-    salary      = (data.get("salaryRange") or "").strip()
-    apply_to    = (data.get("applicationEmail") or "").strip()
-    deadline    = (data.get("applicationDeadline") or "").strip()
-    summary     = (data.get("summary") or "").strip()
+    job_title = (data.get("jobTitle") or "").strip()
+    company   = (data.get("company") or "").strip()
+    location  = (data.get("location") or "").strip()
+    emp_type  = (data.get("employmentType") or "").strip()
+    salary    = (data.get("salaryRange") or "").strip()
+    apply_to  = (data.get("applicationEmail") or "").strip()
+    deadline  = (data.get("applicationDeadline") or "").strip()
+    summary   = (data.get("summary") or "").strip()
 
     if not job_title or not company:
         return jsonify(error="jobTitle and company are required"), 400
@@ -2001,7 +1988,6 @@ Keep bullets short (8–18 words). Avoid clichés and buzzwords.
 Return PLAIN TEXT (no markdown, no headings like 'Responsibilities:'); use blank lines between sections.
 """.strip()
 
-    # Fallback if OpenAI not configured
     if not client:
         text = (
             f"{company} is hiring a {job_title} in {location or 'our UK team'}.\n\n"
@@ -2030,12 +2016,6 @@ Return PLAIN TEXT (no markdown, no headings like 'Responsibilities:'); use blank
     except Exception:
         current_app.logger.exception("job-post generation failed")
         return jsonify(error="Generation failed"), 500
-
-
-# (Optional) Backwards-compat for old frontend hitting /api/employer/submit
-@app.post("/api/employer/submit")
-def employer_submit_alias():
-    return employer_job_post()
 
 # --- Entrypoint ---
 if __name__ == "__main__":
