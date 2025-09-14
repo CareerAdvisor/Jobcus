@@ -17,31 +17,30 @@
     Tell us who you're looking to hire and how we can assist your recruitment process.
   </p>
 
-  <form id="employer-inquiry-form">
-    <label>Company</label>
-    <input type="text" name="company">
+  <form id="employer-inquiry-form"
+        data-endpoint="{{ url_for('employer_inquiry') }}">
+    <label for="employer-company">Company</label>
+    <input id="employer-company" type="text" name="company">
 
-    <label>Name</label>
-    <input type="text" name="name" required>
+    <label for="employer-name">Name</label>
+    <input id="employer-name" type="text" name="name" required>
 
-    <label>Email</label>
-    <input type="email" name="email" required
+    <label for="employer-email">Email</label>
+    <input id="employer-email" type="email" name="email" required
       style="width: 100%; height: auto; display: block; max-width: 100%; border-radius: 8px; padding: 10px; border: 1px solid #ccc;">
 
-    <label>Phone</label>
-    <input type="text" name="phone" required>
+    <label for="employer-phone">Phone</label>
+    <input id="employer-phone" type="text" name="phone" required>
 
-    <label>Job Roles You're Hiring For</label>
-    <input type="text" name="job_roles">
+    <label for="employer-roles">Job Roles You're Hiring For</label>
+    <input id="employer-roles" type="text" name="job_roles">
 
-    <label>Message</label>
-    <textarea name="message" rows="4" required></textarea>
+    <label for="employer-message">Message</label>
+    <textarea id="employer-message" name="message" rows="4" required></textarea>
 
     <button type="submit" class="primary-btn">Submit Inquiry</button>
-    <div id="inquiry-response"></div>
+    <div id="inquiry-response" style="margin-top:10px;color:#104879;"></div>
   </form>
-</section>
-
 </section>
 
 <!-- 🤖 AI Job Post Generator -->
@@ -51,52 +50,51 @@
     Instantly create a professional job description with the help of AI.
   </p>
 
-  <form id="job-post-form">
-  <label>Job Title</label>
-  <input type="text" name="jobTitle" required>
+  <form id="job-post-form"
+        data-endpoint="{{ url_for('employer_job_post') }}">
+    <label for="jp-title">Job Title</label>
+    <input id="jp-title" type="text" name="jobTitle" required>
 
-  <label>Company Name</label>
-  <input type="text" name="company" required>
+    <label for="jp-company">Company Name</label>
+    <input id="jp-company" type="text" name="company" required>
 
-  <label>Location</label>
-  <input type="text" name="location" placeholder="e.g. London, Manchester" required>
+    <label for="jp-location">Location</label>
+    <input id="jp-location" type="text" name="location" placeholder="e.g. London, Manchester" required>
 
-  <label>Employment Type</label>
-  <select name="employmentType" required>
-    <option value="">Select Employment Type</option>
-    <option value="Full-time">Full-time</option>
-    <option value="Part-time">Part-time</option>
-    <option value="Contract">Contract</option>
-    <option value="Hybrid">Hybrid</option>
-    <option value="Remote">Remote</option>
-  </select>
+    <label for="jp-type">Employment Type</label>
+    <select id="jp-type" name="employmentType" required>
+      <option value="">Select Employment Type</option>
+      <option value="Full-time">Full-time</option>
+      <option value="Part-time">Part-time</option>
+      <option value="Contract">Contract</option>
+      <option value="Hybrid">Hybrid</option>
+      <option value="Remote">Remote</option>
+    </select>
 
-  <label>Salary Range</label>
-  <input type="text" name="salaryRange" placeholder="e.g. £45,000 – £60,000/year">
+    <label for="jp-salary">Salary Range</label>
+    <input id="jp-salary" type="text" name="salaryRange" placeholder="e.g. £45,000 – £60,000/year">
 
-  <label>Application Email or Link</label>
-  <input type="text" name="applicationEmail" placeholder="e.g. careers@company.com or https://company.com/apply" required>
+    <label for="jp-apply">Application Email or Link</label>
+    <input id="jp-apply" type="text" name="applicationEmail" placeholder="e.g. careers@company.com or https://company.com/apply" required>
 
-  <label>Application Deadline</label>
-  <input type="date" name="applicationDeadline"></br>
+    <label for="jp-deadline">Application Deadline</label>
+    <input id="jp-deadline" type="date" name="applicationDeadline"><br>
 
-  <label>Summary (Optional)</label>
-  <textarea name="summary" rows="3" placeholder="Short intro or mission statement"></textarea>
+    <label for="jp-summary">Summary (Optional)</label>
+    <textarea id="jp-summary" name="summary" rows="3" placeholder="Short intro or mission statement"></textarea>
 
-  <button type="submit" class="primary-btn">✨ Generate Job Description</button>
-</form>
+    <button type="submit" class="primary-btn">✨ Generate Job Description</button>
+  </form>
 
   <!-- Output Box -->
- <div id="job-description-output" style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
-  <!-- Spinner goes here while loading -->
-</div>
+  <div id="job-description-output" style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);"></div>
 
-</section>
-<!-- Download Buttons -->
-  <div id="download-options" class="download-buttons hidden;">
+  <!-- Download Buttons -->
+  <div id="download-options" class="download-buttons hidden" style="margin-top:12px; display:none;">
     <button id="download-txt" class="primary-btn">⬇️ Download .txt</button>
     <button id="download-pdf" class="primary-btn">⬇️ Download .pdf</button>
   </div>
+</section>
 
 {% endblock %}
 
@@ -107,6 +105,5 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
   <!-- your main logic -->
-  <script src="{{ url_for('static', filename='js/employer.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/employers.js') }}" defer></script>
 {% endblock %}
-
