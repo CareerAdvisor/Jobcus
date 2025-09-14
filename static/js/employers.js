@@ -1,24 +1,13 @@
-// /static/js/employer.js
+// /static/js/employers.js
 document.addEventListener("DOMContentLoaded", function () {
-  // Always send cookies (SameSite=Lax)
+  /* Ensure cookies are sent (SameSite=Lax) */
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
     return _fetch(input, init);
   };
 
-  // CSRF (Flask-WTF compatible)
-  function getCookie(name) {
-    const prefix = name + "=";
-    return (document.cookie || "")
-      .split(";")
-      .map(s => s.trim())
-      .find(s => s.startsWith(prefix))
-      ?.slice(prefix.length) || null;
-  }
-  const CSRF = getCookie("csrf_token") || getCookie("XSRF-TOKEN");
-
-  // Safe HTML
+  /* Small helpers */
   function escapeHtml(s = "") {
     return String(s)
       .replace(/&/g, "&amp;")
@@ -28,7 +17,6 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/'/g, "&#39;");
   }
 
-  // Common error handler
   async function handleCommonErrors(res) {
     if (res.ok) return null;
     const ct = res.headers.get("content-type") || "";
@@ -36,6 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
     try { body = ct.includes("application/json") ? await res.json() : { message: await res.text() }; }
     catch { body = null; }
 
+    // Auth
     if (res.status === 401 || res.status === 403) {
       const msg = body?.message || "Please sign in to continue.";
       window.showUpgradeBanner?.(msg);
@@ -43,13 +32,17 @@ document.addEventListener("DOMContentLoaded", function () {
       throw new Error(msg);
     }
 
+    // Upgrade/quota
     if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
       const url  = body?.pricing_url || (window.PRICING_URL || "/pricing");
-      const html = body?.message_html || `${body?.message || "You’ve reached your plan limit."} <a href="${url}">Upgrade now →</a>`;
-      window.upgradePrompt?.(html, url, 1200);
-      throw new Error(body?.message || "Upgrade required");
+      const msg  = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
+      const html = body?.message_html || `${escapeHtml(msg)} <a href="${url}">Upgrade now →</a>`;
+      (window.upgradePrompt || window.showUpgradeBanner || alert)(html);
+      if (window.upgradePrompt) window.upgradePrompt(html, url, 1200);
+      throw new Error(msg);
     }
 
+    // Abuse guard
     if (res.status === 429 && body?.error === "too_many_free_accounts") {
       const msg = body?.message || "You have reached the limit for the free version, upgrade to enjoy more features";
       window.showUpgradeBanner?.(msg);
@@ -64,19 +57,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const inquiryForm     = document.getElementById("employer-inquiry-form");
   const jobPostForm     = document.getElementById("job-post-form");
   const output          = document.getElementById("job-description-output");
-  const downloadOptions = document.getElementById("download-options");
+  const dlBox           = document.getElementById("download-options");
   const dlTxtBtn        = document.getElementById("download-txt");
   const dlPdfBtn        = document.getElementById("download-pdf");
-
-  // Render helper
-  function renderDescription(text = "") {
-    const content = String(text || "");
-    if (window.marked?.parse) {
-      const escaped = escapeHtml(content);
-      return `<div class="ai-response">${window.marked.parse(escaped)}</div>`;
-    }
-    return `<div class="ai-response"><p>${escapeHtml(content).replace(/\n/g, "<br>")}</p></div>`;
-  }
 
   // ----------------------------
   // 📨 Employer Inquiry Handler
@@ -85,104 +68,109 @@ document.addEventListener("DOMContentLoaded", function () {
     inquiryForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       const statusEl = document.getElementById("inquiry-response");
-      const submitBtn = inquiryForm.querySelector('button[type="submit"]');
+      const endpoint = inquiryForm.dataset.endpoint; // injected by Jinja
+      if (!endpoint) {
+        console.error("No employer inquiry endpoint on form.");
+        if (statusEl) statusEl.innerText = "❌ Missing endpoint.";
+        return;
+      }
 
-      const formData = new FormData(inquiryForm);
-      const payload  = Object.fromEntries(formData.entries());
+      const payload = Object.fromEntries(new FormData(inquiryForm).entries());
+      statusEl && (statusEl.innerText = "Sending…");
 
       try {
-        submitBtn && (submitBtn.disabled = true);
-        statusEl && (statusEl.textContent = "Submitting…");
-
-        const res = await fetch("/api/employer-inquiry", {
+        const res = await fetch(endpoint, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(CSRF ? { "X-CSRFToken": CSRF } : {})
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
 
         await handleCommonErrors(res);
 
         const data = await res.json().catch(() => ({}));
-        const ok = !!(data && (data.success || data.ok));
-        statusEl && (statusEl.textContent = ok ? "✅ Inquiry submitted!" : "❌ Submission failed.");
+        const ok = !!(data && (data.success || data.ok || data.status === "ok"));
+        statusEl && (statusEl.innerText = ok ? "✅ Inquiry submitted!" : "❌ Submission failed.");
         if (ok) inquiryForm.reset();
       } catch (error) {
         console.error("Employer Inquiry Error:", error);
-        statusEl && (statusEl.textContent = `❌ ${error.message || "Something went wrong."}`);
-      } finally {
-        submitBtn && (submitBtn.disabled = false);
+        statusEl && (statusEl.innerText = `❌ ${error.message || "Something went wrong."}`);
       }
     });
   }
 
-  // ------------------------------------
-  // 🤖 AI Job Post Generator – Handler
-  // ------------------------------------
-  let lastGenerated = "";
-
-  if (jobPostForm && output) {
-    jobPostForm.addEventListener("submit", async (e) => {
+  // ----------------------------------
+  // 🤖 AI Job Post Generator Handler
+  // ----------------------------------
+  if (jobPostForm) {
+    jobPostForm.addEventListener("submit", async function (e) {
       e.preventDefault();
+      const endpoint = jobPostForm.dataset.endpoint; // injected by Jinja
+      if (!endpoint) {
+        console.error("No job-post endpoint on form.");
+        output.innerHTML = `<div class="ai-response">❌ Missing endpoint.</div>`;
+        return;
+      }
 
-      const submitBtn = jobPostForm.querySelector('button[type="submit"]');
-      const formData  = new FormData(jobPostForm);
-      const payload   = Object.fromEntries(formData.entries());
+      const payload = Object.fromEntries(new FormData(jobPostForm).entries());
+      output.innerHTML = "Generating…";
+      dlBox && (dlBox.style.display = "none");
 
       try {
-        submitBtn && (submitBtn.disabled = true);
-        output.innerHTML = '<div class="spinner" aria-live="polite">Generating…</div>';
-
-        const res = await fetch("/api/employer/job-post", {
+        const res = await fetch(endpoint, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(CSRF ? { "X-CSRFToken": CSRF } : {})
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
 
         await handleCommonErrors(res);
 
         const data = await res.json().catch(() => ({}));
-        const text = data?.description || data?.text || "";
-        lastGenerated = text;
-        output.innerHTML = renderDescription(text);
-        downloadOptions?.classList.remove("hidden");
+        const text = data?.description || data?.jobDescription || "";
+
+        if (text) {
+          output.innerHTML = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text)}</pre>`;
+          dlBox && (dlBox.style.display = "");
+        } else {
+          output.innerHTML = `<div class="ai-response">No content returned.</div>`;
+          dlBox && (dlBox.style.display = "none");
+        }
       } catch (err) {
-        console.error("Job post generator error:", err);
-        output.innerHTML = `<div class="error">❌ ${escapeHtml(err.message || "Could not generate description.")}</div>`;
-        downloadOptions?.classList.add("hidden");
-      } finally {
-        submitBtn && (submitBtn.disabled = false);
+        console.error("Job Post Error:", err);
+        output.innerHTML = `<div class="ai-response">❌ ${escapeHtml(err.message || "Something went wrong.")}</div>`;
+        dlBox && (dlBox.style.display = "none");
       }
     });
   }
 
-  // -------------------
-  // ⬇️ Download buttons
-  // -------------------
+  // -----------------
+  // ⬇️ Downloaders
+  // -----------------
+  function readOutputText() {
+    const pre = output?.querySelector("pre");
+    if (pre) return pre.innerText || pre.textContent || "";
+    return output?.innerText || "";
+  }
+
   dlTxtBtn?.addEventListener("click", () => {
-    const blob = new Blob([lastGenerated || ""], { type: "text/plain" });
+    const txt = readOutputText();
+    if (!txt.trim()) return alert("Nothing to download yet.");
+    const blob = new Blob([txt], { type: "text/plain" });
     saveAs(blob, "job-description.txt");
   });
 
   dlPdfBtn?.addEventListener("click", () => {
-    try {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit: "mm", format: "a4" });
-      const lines = pdf.splitTextToSize((lastGenerated || ""), 180);
-      let y = 15;
-      lines.forEach(line => {
-        if (y > 280) { pdf.addPage(); y = 15; }
-        pdf.text(line, 15, y);
-        y += 7;
-      });
-      pdf.save("job-description.pdf");
-    } catch (e) {
-      alert("PDF download failed.");
-    }
+    const txt = readOutputText();
+    if (!txt.trim()) return alert("Nothing to download yet.");
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF) return alert("PDF library not loaded.");
+    const pdf = new jsPDF({ unit: "mm", format: "a4" });
+    const lines = pdf.splitTextToSize(txt, 180);
+    let y = 10;
+    lines.forEach(line => {
+      if (y > 280) { pdf.addPage(); y = 10; }
+      pdf.text(line, 10, y);
+      y += 7;
+    });
+    pdf.save("job-description.pdf");
   });
 });
