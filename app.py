@@ -1908,8 +1908,6 @@ else:
 # ---- Employer inquiry endpoints ----
 
 # ---------- Employer: Inquiry + AI Job Post (updated) ----------
-from flask import request, jsonify, current_app
-import re
 
 @app.post("/api/employer-inquiry")
 def employer_inquiry():
