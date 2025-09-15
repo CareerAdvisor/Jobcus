@@ -1,0 +1,131 @@
+/* Employers page styles — shared look with resume-builder */
+
+/* Use the same font family as resume-builder if --app-font is defined globally */
+.employers-page,
+.employers-page input,
+.employers-page select,
+.employers-page textarea,
+.employers-page button {
+  font-family: var(--app-font, 'Inter', system-ui, -apple-system, 'Segoe UI',
+                   Roboto, Helvetica, Arial, sans-serif);
+  color: #0f172a; /* slate-900 */
+}
+
+/* Simple entrance animation (matches prior inline "fadeInUp") */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.fade-in-up { animation: fadeInUp 0.9s ease-in-out; }
+
+.employer-hero-full img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+}
+
+.employer-section {
+  background: #f8fafc;              /* slate-50 */
+  border: 1px solid #e2e8f0;        /* slate-200 */
+  padding: 24px;
+  border-radius: 12px;
+  margin: 24px auto;
+  max-width: 960px;
+}
+
+.employer-section.is-gold {
+  background: #ffc957;
+  border-color: #f6c34f;
+}
+
+.employer-section h2 {
+  color: #104879;
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.employer-section p {
+  margin: 0 0 16px;
+  color: #334155; /* slate-700 */
+}
+
+/* Form layout */
+.employer-section form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.employer-section label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.employer-section input,
+.employer-section select,
+.employer-section textarea {
+  width: 100%;
+  appearance: none;
+  background: #fff;
+  border: 1px solid #cbd5e1; /* slate-300 */
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  line-height: 1.4;
+  outline: none;
+}
+
+.employer-section input:focus,
+.employer-section select:focus,
+.employer-section textarea:focus {
+  border-color: #104879;
+  box-shadow: 0 0 0 3px rgba(16,72,121,0.12);
+}
+
+.primary-btn {
+  background: #104879;
+  color: #fff;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .04s ease, filter .2s ease;
+  width: fit-content;
+}
+.primary-btn:hover { filter: brightness(1.05); }
+.primary-btn:active { transform: translateY(1px); }
+
+#job-description-output {
+  margin-top: 20px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.06);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.download-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.download-buttons.hidden { display: none !important; }
+
+/* Simple responsive tweak */
+@media (min-width: 768px) {
+  .employer-section form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .employer-section form > label,
+  .employer-section form > input,
+  .employer-section form > select,
+  .employer-section form > textarea,
+  .employer-section form > button,
+  .employer-section form > div#inquiry-response {
+    grid-column: 1 / -1; /* default full width */
+  }
+}
