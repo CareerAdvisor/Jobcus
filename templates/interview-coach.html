@@ -96,7 +96,8 @@
         aria-live="polite"
       >
         <!-- Responsive history panel wrapper (prevents horizontal overflow) -->
-        <div id="historyPanel" class="history-panel">
+        <div id="historyPanel" class="history-panel"
+             {% if not is_paid %} data-watermark="{{ wm }}" data-watermark-tile="1"{% endif %}>
           <div id="historyContent" class="ai-response"><!-- feedback markdown injected here --></div>
         </div>
       </div>
