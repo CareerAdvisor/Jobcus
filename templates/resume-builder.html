@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Resume Builder – Jobcus{% endblock %}
 
+{% set wm = (current_user.email ~ " · Jobcus") if current_user.is_authenticated else "Guest · Jobcus" %}
+{% set is_paid = (current_user.is_authenticated and (current_user.plan|lower in ['standard','premium'])) %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-builder.css') }}">
 {% endblock %}
