@@ -16,6 +16,7 @@ from flask_login import (
     login_required, user_logged_in, LoginManager, UserMixin
 )
 from markupsafe import escape
+from weasyprint import HTML, CSS
 from gotrue.errors import AuthApiError
 from dotenv import load_dotenv
 from supabase_auth.errors import AuthApiError
