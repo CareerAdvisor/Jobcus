@@ -241,7 +241,8 @@
               <button type="button" id="cl-preview" class="cta-secondary">Preview</button>
               <button type="button" id="cl-download" class="cta-primary">Download PDF</button>
             </div>
-            <div id="clPreviewWrap" class="preview-wrap" style="display:none;">
+            <div id="clPreviewWrap" class="preview-wrap" style="display:none;"
+                 {% if not is_paid %} data-watermark="{{ wm }}"{% endif %}>
               <iframe id="clPreview" style="width:100%; height:80vh; border:0; background:#fff;"></iframe>
             </div>
           </div>
