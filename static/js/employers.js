@@ -37,8 +37,8 @@ document.addEventListener("DOMContentLoaded", function () {
       const url  = body?.pricing_url || (window.PRICING_URL || "/pricing");
       const msg  = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
       const html = body?.message_html || `${escapeHtml(msg)} <a href="${url}">Upgrade now →</a>`;
-      (window.upgradePrompt || window.showUpgradeBanner || alert)(html);
       if (window.upgradePrompt) window.upgradePrompt(html, url, 1200);
+      else window.showUpgradeBanner?.(html);
       throw new Error(msg);
     }
 
@@ -54,53 +54,83 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Elements
-  const inquiryForm     = document.getElementById("employer-inquiry-form");
-  const jobPostForm     = document.getElementById("job-post-form");
-  const output          = document.getElementById("job-description-output");
-  const dlBox           = document.getElementById("download-options");
-  const dlTxtBtn        = document.getElementById("download-txt");
-  const dlPdfBtn        = document.getElementById("download-pdf");
+  const inquiryForm      = document.getElementById("employer-inquiry-form");
+  const jobPostForm      = document.getElementById("job-post-form");
+  const output           = document.getElementById("job-description-output");
+  const downloadOptions  = document.getElementById("download-options");
+  const dlTxtBtn         = document.getElementById("download-txt");
+  const dlPdfBtn         = document.getElementById("download-pdf");
 
-  // helper to extract plain text from the output box
-  function getJobText() {
-    // If you render plain text inside <div>, innerText preserves line-breaks
-    return (output?.innerText || "").trim();
+  // Helper to render JD and reveal downloads
+  function paintJD(text) {
+    if (!output) return;
+    output.innerHTML = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text || "")}</pre>`;
+    // show the download box
+    downloadOptions?.classList.remove("hidden");
+    // enable buttons
+    if (dlTxtBtn) dlTxtBtn.disabled = false;
+    if (dlPdfBtn) dlPdfBtn.disabled = false;
   }
-  
-  // unified download call
+
+  // Hide downloads while loading/empty
+  function hideDownloads() {
+    downloadOptions?.classList.add("hidden");
+    if (dlTxtBtn) dlTxtBtn.disabled = true;
+    if (dlPdfBtn) dlPdfBtn.disabled = true;
+  }
+
+  // ---------- Read text from output (used by fallback) ----------
+  function readOutputText() {
+    const pre = output?.querySelector("pre");
+    if (pre) return pre.innerText || pre.textContent || "";
+    return output?.innerText || "";
+  }
+
+  // ---------- Gated server download with 404 fallback ----------
   async function downloadJD(fmt) {
-    const text = getJobText();
+    const text = (output?.innerText || "").trim();
     if (!text) { alert("Generate a job description first."); return; }
-  
-    const res = await fetch("/api/employer/job-post/download", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "same-origin",
-      body: JSON.stringify({ format: fmt, text })
-    });
-  
+
+    let res;
+    try {
+      res = await fetch("/api/employer/job-post/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ format: fmt, text })
+      });
+    } catch (e) {
+      // Network failure: try fallback
+      return fallbackDownload(fmt);
+    }
+
+    // Endpoint missing in this environment? Use fallback.
+    if (res.status === 404) {
+      return fallbackDownload(fmt);
+    }
+
     // Gate: not upgraded
     if (res.status === 403) {
       let info = null;
       try { info = await res.json(); } catch {}
       const url  = info?.pricing_url || (window.PRICING_URL || "/pricing");
       const html = info?.message_html || `File downloads are available on Standard and Premium. <a href="${url}">Upgrade now →</a>`;
-      window.upgradePrompt?.(html, url, 1200);  // centered modal + timed redirect
+      window.upgradePrompt?.(html, url, 1200);
       return;
     }
-  
-    // Not signed in (Flask-Login may redirect to HTML page)
+
+    // Not signed in (Flask-Login might redirect)
     if (res.status === 401 || res.redirected) {
       window.location.href = "/account?mode=login";
       return;
     }
-  
+
     if (!res.ok) {
       const msg = (await res.text()) || "Download failed.";
       window.showUpgradeBanner?.(msg);
       return;
     }
-  
+
     // Success: stream file to user
     const blob = await res.blob();
     const a = document.createElement("a");
@@ -111,8 +141,44 @@ document.addEventListener("DOMContentLoaded", function () {
     a.remove();
     URL.revokeObjectURL(a.href);
   }
-  
-  // bind buttons
+
+  // ---------- Old client-side generators (used ONLY if server 404) ----------
+  function fallbackDownload(fmt) {
+    const txt = readOutputText();
+    if (!txt.trim()) return alert("Nothing to download yet.");
+
+    if (fmt === "txt") {
+      const blob = new Blob([txt], { type: "text/plain" });
+      if (window.saveAs) {
+        window.saveAs(blob, "job-description.txt");
+      } else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "job-description.txt";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+      }
+      return;
+    }
+
+    if (fmt === "pdf") {
+      const { jsPDF } = window.jspdf || {};
+      if (!jsPDF) return alert("PDF library not loaded.");
+      const pdf = new jsPDF({ unit: "mm", format: "a4" });
+      const lines = pdf.splitTextToSize(txt, 180);
+      let y = 10;
+      lines.forEach(line => {
+        if (y > 280) { pdf.addPage(); y = 10; }
+        pdf.text(line, 10, y);
+        y += 7;
+      });
+      pdf.save("job-description.pdf");
+    }
+  }
+
+  // Bind download buttons (always go through gated flow with 404 fallback)
   dlTxtBtn?.addEventListener("click", () => downloadJD("txt"));
   dlPdfBtn?.addEventListener("click", () => downloadJD("pdf"));
 
@@ -163,12 +229,13 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!endpoint) {
         console.error("No job-post endpoint on form.");
         output.innerHTML = `<div class="ai-response">❌ Missing endpoint.</div>`;
+        hideDownloads();
         return;
       }
 
       const payload = Object.fromEntries(new FormData(jobPostForm).entries());
       output.innerHTML = "Generating…";
-      dlBox && (dlBox.style.display = "none");
+      hideDownloads();
 
       try {
         const res = await fetch(endpoint, {
@@ -183,49 +250,16 @@ document.addEventListener("DOMContentLoaded", function () {
         const text = data?.description || data?.jobDescription || "";
 
         if (text) {
-          output.innerHTML = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text)}</pre>`;
-          dlBox && (dlBox.style.display = "");
+          paintJD(text); // renders + reveals downloads
         } else {
           output.innerHTML = `<div class="ai-response">No content returned.</div>`;
-          dlBox && (dlBox.style.display = "none");
+          hideDownloads();
         }
       } catch (err) {
         console.error("Job Post Error:", err);
         output.innerHTML = `<div class="ai-response">❌ ${escapeHtml(err.message || "Something went wrong.")}</div>`;
-        dlBox && (dlBox.style.display = "none");
+        hideDownloads();
       }
     });
   }
-
-  // -----------------
-  // ⬇️ Downloaders
-  // -----------------
-  function readOutputText() {
-    const pre = output?.querySelector("pre");
-    if (pre) return pre.innerText || pre.textContent || "";
-    return output?.innerText || "";
-  }
-
-  dlTxtBtn?.addEventListener("click", () => {
-    const txt = readOutputText();
-    if (!txt.trim()) return alert("Nothing to download yet.");
-    const blob = new Blob([txt], { type: "text/plain" });
-    saveAs(blob, "job-description.txt");
-  });
-
-  dlPdfBtn?.addEventListener("click", () => {
-    const txt = readOutputText();
-    if (!txt.trim()) return alert("Nothing to download yet.");
-    const { jsPDF } = window.jspdf || {};
-    if (!jsPDF) return alert("PDF library not loaded.");
-    const pdf = new jsPDF({ unit: "mm", format: "a4" });
-    const lines = pdf.splitTextToSize(txt, 180);
-    let y = 10;
-    lines.forEach(line => {
-      if (y > 280) { pdf.addPage(); y = 10; }
-      pdf.text(line, 10, y);
-      y += 7;
-    });
-    pdf.save("job-description.pdf");
-  });
 });
