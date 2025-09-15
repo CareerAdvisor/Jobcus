@@ -37,8 +37,8 @@ document.addEventListener("DOMContentLoaded", function () {
       const url  = body?.pricing_url || (window.PRICING_URL || "/pricing");
       const msg  = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
       const html = body?.message_html || `${escapeHtml(msg)} <a href="${url}">Upgrade now →</a>`;
+      (window.upgradePrompt || window.showUpgradeBanner || alert)(html);
       if (window.upgradePrompt) window.upgradePrompt(html, url, 1200);
-      else window.showUpgradeBanner?.(html);
       throw new Error(msg);
     }
 
@@ -54,76 +54,122 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Elements
-  const inquiryForm      = document.getElementById("employer-inquiry-form");
-  const jobPostForm      = document.getElementById("job-post-form");
-  const output           = document.getElementById("job-description-output");
-  const downloadOptions  = document.getElementById("download-options");
-  const dlTxtBtn         = document.getElementById("download-txt");
-  const dlPdfBtn         = document.getElementById("download-pdf");
+  const inquiryForm     = document.getElementById("employer-inquiry-form");
+  const jobPostForm     = document.getElementById("job-post-form");
+  const output          = document.getElementById("job-description-output");
+  const downloadOptions = document.getElementById("download-options");
+  const dlPdfBtn        = document.getElementById("download-pdf");
+  const dlDocxBtn       = document.getElementById("download-docx"); // <-- keep only PDF & DOCX
 
-  // Helper to render JD and reveal downloads
+  // Helper to render JD and reveal downloads (REPLACEMENT)
   function paintJD(text) {
     if (!output) return;
     output.innerHTML = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text || "")}</pre>`;
-    // show the download box
+    // reveal downloads
     downloadOptions?.classList.remove("hidden");
+    downloadOptions && (downloadOptions.style.display = "");
     // enable buttons
-    if (dlTxtBtn) dlTxtBtn.disabled = false;
-    if (dlPdfBtn) dlPdfBtn.disabled = false;
+    dlPdfBtn && (dlPdfBtn.disabled = false);
+    dlDocxBtn && (dlDocxBtn.disabled = false);
   }
 
   // Hide downloads while loading/empty
   function hideDownloads() {
     downloadOptions?.classList.add("hidden");
-    if (dlTxtBtn) dlTxtBtn.disabled = true;
-    if (dlPdfBtn) dlPdfBtn.disabled = true;
+    downloadOptions && (downloadOptions.style.display = "none");
+    dlPdfBtn && (dlPdfBtn.disabled = true);
+    dlDocxBtn && (dlDocxBtn.disabled = true);
   }
 
-  // ---------- Read text from output (used by fallback) ----------
+  // Helper: extract plain text from the output box
   function readOutputText() {
     const pre = output?.querySelector("pre");
-    if (pre) return pre.innerText || pre.textContent || "";
-    return output?.innerText || "";
+    if (pre) return (pre.innerText || pre.textContent || "").trim();
+    return (output?.innerText || "").trim();
   }
 
-  // ---------- Gated server download with 404 fallback ----------
-  async function downloadJD(fmt) {
-    const text = (output?.innerText || "").trim();
+  // Local fallback (dev only; used on 404 so you don’t bypass gating in prod)
+  async function fallbackDownload(fmt) {
+    const text = readOutputText();
     if (!text) { alert("Generate a job description first."); return; }
 
-    let res;
-    try {
-      res = await fetch("/api/employer/job-post/download", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ format: fmt, text })
+    if (fmt === "pdf") {
+      const { jsPDF } = window.jspdf || {};
+      if (!jsPDF) return alert("PDF library not loaded.");
+      const pdf = new jsPDF({ unit: "mm", format: "a4" });
+      const lines = pdf.splitTextToSize(text, 180);
+      let y = 10;
+      lines.forEach(line => {
+        if (y > 280) { pdf.addPage(); y = 10; }
+        pdf.text(line, 10, y);
+        y += 7;
       });
-    } catch (e) {
-      // Network failure: try fallback
-      return fallbackDownload(fmt);
+      pdf.save("job-description.pdf");
+      return;
     }
 
-    // Endpoint missing in this environment? Use fallback.
-    if (res.status === 404) {
-      return fallbackDownload(fmt);
+    if (fmt === "docx") {
+      const docx = window.docx || window["docx"];
+      if (!docx) return alert("DOCX library not loaded.");
+      const { Document, Packer, Paragraph, TextRun } = docx;
+      const doc = new Document({
+        sections: [{
+          children: text.split("\n").map(line =>
+            new Paragraph({ children: [new TextRun({ text: line })] })
+          )
+        }]
+      });
+      const blob = await Packer.toBlob(doc);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "job-description.docx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+      return;
     }
 
-    // Gate: not upgraded
+    alert("Unsupported format.");
+  }
+
+  // Unified (gated) downloader — CALLS SERVER FIRST
+  async function downloadJD(fmt) {
+    if (!["pdf", "docx"].includes(fmt)) { alert("Unsupported format."); return; }
+    const text = readOutputText();
+    if (!text) { alert("Generate a job description first."); return; }
+
+    const res = await fetch("/api/employer/job-post/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ format: fmt, text })
+    });
+
+    // 🔐 Gating & auth checks (INSERTED HERE, right after fetch)
     if (res.status === 403) {
-      let info = null;
-      try { info = await res.json(); } catch {}
+      const info = await res.json().catch(() => ({}));
       const url  = info?.pricing_url || (window.PRICING_URL || "/pricing");
       const html = info?.message_html || `File downloads are available on Standard and Premium. <a href="${url}">Upgrade now →</a>`;
       window.upgradePrompt?.(html, url, 1200);
       return;
     }
-
-    // Not signed in (Flask-Login might redirect)
     if (res.status === 401 || res.redirected) {
       window.location.href = "/account?mode=login";
       return;
     }
+    // server exists but doesn't support DOCX yet
+    if (res.status === 400) {
+      const t = (await res.text()).toLowerCase();
+      if (t.includes("unsupported")) {
+        window.showUpgradeBanner?.("DOCX download not available yet. Please use PDF for now.");
+        return;
+      }
+      window.showUpgradeBanner?.("Download failed.");
+      return;
+    }
+    // dev-only: missing route
+    if (res.status === 404) return fallbackDownload(fmt);
 
     if (!res.ok) {
       const msg = (await res.text()) || "Download failed.";
@@ -135,52 +181,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const blob = await res.blob();
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = (fmt === "pdf") ? "job-description.pdf" : "job-description.txt";
+    a.download = (fmt === "pdf") ? "job-description.pdf" : "job-description.docx";
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(a.href);
   }
 
-  // ---------- Old client-side generators (used ONLY if server 404) ----------
-  function fallbackDownload(fmt) {
-    const txt = readOutputText();
-    if (!txt.trim()) return alert("Nothing to download yet.");
-
-    if (fmt === "txt") {
-      const blob = new Blob([txt], { type: "text/plain" });
-      if (window.saveAs) {
-        window.saveAs(blob, "job-description.txt");
-      } else {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "job-description.txt";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(a.href);
-      }
-      return;
-    }
-
-    if (fmt === "pdf") {
-      const { jsPDF } = window.jspdf || {};
-      if (!jsPDF) return alert("PDF library not loaded.");
-      const pdf = new jsPDF({ unit: "mm", format: "a4" });
-      const lines = pdf.splitTextToSize(txt, 180);
-      let y = 10;
-      lines.forEach(line => {
-        if (y > 280) { pdf.addPage(); y = 10; }
-        pdf.text(line, 10, y);
-        y += 7;
-      });
-      pdf.save("job-description.pdf");
-    }
-  }
-
-  // Bind download buttons (always go through gated flow with 404 fallback)
-  dlTxtBtn?.addEventListener("click", () => downloadJD("txt"));
-  dlPdfBtn?.addEventListener("click", () => downloadJD("pdf"));
+  // Bind download buttons (only PDF & DOCX)
+  dlPdfBtn?.addEventListener("click",  () => downloadJD("pdf"));
+  dlDocxBtn?.addEventListener("click", () => downloadJD("docx"));
 
   // ----------------------------
   // 📨 Employer Inquiry Handler
@@ -229,7 +239,6 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!endpoint) {
         console.error("No job-post endpoint on form.");
         output.innerHTML = `<div class="ai-response">❌ Missing endpoint.</div>`;
-        hideDownloads();
         return;
       }
 
@@ -250,7 +259,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const text = data?.description || data?.jobDescription || "";
 
         if (text) {
-          paintJD(text); // renders + reveals downloads
+          paintJD(text); // <-- this sets innerHTML AND reveals the buttons
         } else {
           output.innerHTML = `<div class="ai-response">No content returned.</div>`;
           hideDownloads();
