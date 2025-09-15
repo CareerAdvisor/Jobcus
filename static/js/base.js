@@ -530,4 +530,71 @@ function applyConsent(consent) {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closePanel();
   });
-})();
+  })();
+  
+  // ── Watermark helper (global; add once) ─────────────────────
+  (function () {
+    if (window.__wm_inited__) return;
+    window.__wm_inited__ = true;
+  
+    function applyTiledWatermark(el, text, opts = {}) {
+      if (!el || !text) return;
+      const size = opts.size || 360;
+      const alpha = opts.alpha ?? 0.12;
+  
+      const c = document.createElement('canvas');
+      c.width = size; c.height = size;
+      const ctx = c.getContext('2d');
+  
+      ctx.clearRect(0, 0, size, size);
+      ctx.globalAlpha = alpha;
+      ctx.translate(size / 2, size / 2);
+      ctx.rotate(-Math.PI / 6);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      ctx.fillStyle = '#000';
+  
+      const lines = String(text).split(/\s·\s|\\n/g);
+      const gap = 32;
+      const start = -(gap * (lines.length - 1)) / 2;
+      lines.forEach((ln, i) => ctx.fillText(ln, 0, start + i * gap));
+  
+      const url = c.toDataURL('image/png');
+  
+      el.classList.add('wm-tiled');
+      el.style.backgroundImage = `url(${url})`;
+      el.style.backgroundSize = `${size}px ${size}px`;
+    }
+  
+    function scan(root = document) {
+      root.querySelectorAll('[data-watermark][data-watermark-tile="1"]').forEach((el) => {
+        if (el.__wm_applied__) return;
+        el.__wm_applied__ = true;
+        const text = el.getAttribute('data-watermark') || '';
+        applyTiledWatermark(el, text);
+      });
+    }
+  
+    document.addEventListener('DOMContentLoaded', () => scan());
+    new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === 'childList') {
+          m.addedNodes.forEach((n) => {
+            if (n.nodeType === 1) {
+              if (n.matches?.('[data-watermark][data-watermark-tile="1"]')) {
+                if (!n.__wm_applied__) {
+                  n.__wm_applied__ = true;
+                  applyTiledWatermark(n, n.getAttribute('data-watermark') || '');
+                }
+              }
+              scan(n);
+            }
+          });
+        }
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  
+    window.applyTiledWatermark = applyTiledWatermark;
+  })();
+  
