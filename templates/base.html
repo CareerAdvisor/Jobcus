@@ -24,7 +24,12 @@
   {% endif %}
 </head>
 
-<body class="{% block body_class %}{% endblock %}" data-authed="{{ '1' if current_user.is_authenticated else '0' }}">
+<body
+  class="{% block body_class %}{% endblock %}"
+  data-authed="{{ '1' if current_user.is_authenticated else '0' }}"
+  data-plan="{{ (current_user.plan|lower) if current_user.is_authenticated else 'guest' }}"
+  data-wm="{{ (current_user.email ~ ' · Jobcus') if current_user.is_authenticated else 'Guest · Jobcus' }}"
+>
   <div class="page-container">
 
     {% if not for_pdf %}
