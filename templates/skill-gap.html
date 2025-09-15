@@ -33,7 +33,8 @@
   </section>
 
   <section class="skill-gap-result">
-    <div id="gapResult" class="result-box show">
+    <div id="gapResult" class="result-box show"
+         {% if not is_paid %} data-watermark="{{ wm }}" data-watermark-tile="1"{% endif %}>
       Result appears here...
     </div>
   </section>
