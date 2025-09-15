@@ -211,7 +211,8 @@ Google IT Support Professional Certificate (2021)"></textarea>
                 <button type="button" id="downloadTemplatePdf" class="cta-primary">Download PDF</button>
                 <button type="button" id="downloadTemplateDocx" class="cta-secondary">Download DOCX</button>
               </div>
-              <div id="resumePreviewWrap" style="display:none;margin-top:1rem;">
+              <div id="resumePreviewWrap" style="display:none;margin-top:1rem;"
+                   {% if not is_paid %} data-watermark="{{ wm }}"{% endif %}>
                 <h3>Preview</h3>
                 <iframe id="resumePreview" class="resume-preview" style="width:100%;height:100vh;border:0;background:#fff;"></iframe>
               </div>
@@ -231,7 +232,8 @@ Google IT Support Professional Certificate (2021)"></textarea>
                 <button type="button" id="downloadTemplatePdfFinish" class="cta-primary">Download PDF</button>
                 <button type="button" id="downloadTemplateDocxFinish" class="cta-secondary">Download DOCX</button>
               </div>
-              <div id="resumePreviewWrapFinish" style="display:none;margin-top:1rem;">
+              <div id="resumePreviewWrapFinish" style="display:none;margin-top:1rem;"
+                   {% if not is_paid %} data-watermark="{{ wm }}"{% endif %}>
                 <h3>Preview</h3>
                 <iframe id="resumePreviewFinish" class="resume-preview" style="width:100%;height:90vh;border:0;background:#fff;"></iframe>
               </div>
