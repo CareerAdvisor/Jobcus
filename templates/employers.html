@@ -88,10 +88,8 @@
 
     <!-- Output Box -->
     <div id="job-description-output"
-         {% if not current_user.is_authenticated or current_user.plan|lower == 'free' %}
-           data-watermark="{{ wm }}"
-           data-watermark-tile="1"
-         {% endif %}>
+         {% if not is_paid %} data-watermark="{{ wm }}" data-watermark-tile="1"{% endif %}
+         style="margin-top:20px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.05);">
     </div>
     
     <!-- Download Buttons (hidden until JS shows them) -->
