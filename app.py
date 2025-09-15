@@ -8,13 +8,14 @@ from auth_utils import api_login_required, is_staff, is_superadmin, require_supe
 
 from flask import (
     Blueprint, Flask, request, jsonify, render_template, redirect,
-    session, flash, url_for, current_app, make_response, g
+    session, flash, url_for, send_file, current_app, make_response, g
 )
 from flask_cors import CORS
 from flask_login import (
     login_user, logout_user, current_user,
     login_required, user_logged_in, LoginManager, UserMixin
 )
+from markupsafe import escape
 from gotrue.errors import AuthApiError
 from dotenv import load_dotenv
 from supabase_auth.errors import AuthApiError
@@ -2016,6 +2017,60 @@ Return PLAIN TEXT (no markdown, no headings like 'Responsibilities:'); use blank
     except Exception:
         current_app.logger.exception("job-post generation failed")
         return jsonify(error="Generation failed"), 500
+
+@app.post("/api/employer/job-post/download")
+@login_required
+def employer_job_post_download():
+    """
+    JSON body: { "format": "txt"|"pdf", "text": "<job description>" }
+    Enforces plan 'downloads' gate, returns file as attachment.
+    """
+    PRICING_URL = "https://www.jobcus.com/pricing"
+
+    data = request.get_json(force=True, silent=True) or {}
+    fmt  = (data.get("format") or "txt").lower()
+    text = (data.get("text") or "").strip()
+
+    if not text:
+        return jsonify(error="No text provided"), 400
+
+    # Gate like other downloads
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    if not feature_enabled(plan, "downloads"):
+        return jsonify(
+            error="upgrade_required",
+            message="File downloads are available on Standard and Premium.",
+            message_html=f'File downloads are available on Standard and Premium. <a href="{PRICING_URL}">Upgrade now →</a>',
+            pricing_url=PRICING_URL
+        ), 403
+
+    if fmt == "txt":
+        buf = BytesIO(text.encode("utf-8"))
+        return send_file(
+            buf,
+            as_attachment=True,
+            download_name="job-description.txt",
+            mimetype="text/plain"
+        )
+
+    if fmt == "pdf":
+        safe_html = f"""
+        <html><head><meta charset="utf-8"></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height:1.5; font-size:12pt;">
+          <pre style="white-space:pre-wrap; word-wrap:break-word; margin:0;">{escape(text)}</pre>
+        </body></html>
+        """.strip()
+        pdf_bytes = HTML(string=safe_html, base_url=current_app.root_path).write_pdf(
+            stylesheets=[CSS(string="@page{size:A4;margin:0.75in}")]
+        )
+        return send_file(
+            BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name="job-description.pdf"
+        )
+
+    return jsonify(error="Unsupported format"), 400
 
 # --- Entrypoint ---
 if __name__ == "__main__":
