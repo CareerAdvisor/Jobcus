@@ -104,20 +104,12 @@
     </section>
 
     <!-- AI tip suggestions (when available) -->
-    <div
-      id="suggestions-box"
-      class="fallback-box"
-      style="display:none;"
-      aria-live="polite"
-    ></div>
+    <div id="suggestions-box" class="fallback-box" style="display:none;"
+         {% if not is_paid %} data-watermark="{{ wm }}"{% endif %} aria-live="polite"></div>
 
     <!-- Per-answer feedback -->
-    <div
-      id="feedback-box"
-      class="result-box"
-      style="display:none;"
-      aria-live="polite"
-    ></div>
+    <div id="feedback-box" class="result-box" style="display:none;"
+         {% if not is_paid %} data-watermark="{{ wm }}"{% endif %} aria-live="polite"></div>
   </section>
 
 </main>
