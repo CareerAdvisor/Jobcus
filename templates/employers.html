@@ -87,12 +87,13 @@
   </form>
 
   <!-- Output Box -->
-  <div id="job-description-output" style="margin-top: 20px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);"></div>
-
-  <!-- Download Buttons -->
-  <div id="download-options" class="download-buttons hidden" style="margin-top:12px; display:none;">
-    <button id="download-txt" class="primary-btn">⬇️ Download .txt</button>
-    <button id="download-pdf" class="primary-btn">⬇️ Download .pdf</button>
+  <div id="job-description-output"
+       style="margin-top:20px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.05);"></div>
+  
+  <!-- Download Buttons (start hidden; JS will show after generation) -->
+  <div id="download-options" class="download-buttons hidden" style="margin-top:12px;display:none;">
+    <button id="download-pdf"  class="primary-btn">⬇️ Download .pdf</button>
+    <button id="download-docx" class="primary-btn">⬇️ Download .docx</button>
   </div>
 </section>
 
