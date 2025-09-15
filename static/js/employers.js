@@ -61,6 +61,61 @@ document.addEventListener("DOMContentLoaded", function () {
   const dlTxtBtn        = document.getElementById("download-txt");
   const dlPdfBtn        = document.getElementById("download-pdf");
 
+  // helper to extract plain text from the output box
+  function getJobText() {
+    // If you render plain text inside <div>, innerText preserves line-breaks
+    return (output?.innerText || "").trim();
+  }
+  
+  // unified download call
+  async function downloadJD(fmt) {
+    const text = getJobText();
+    if (!text) { alert("Generate a job description first."); return; }
+  
+    const res = await fetch("/api/employer/job-post/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ format: fmt, text })
+    });
+  
+    // Gate: not upgraded
+    if (res.status === 403) {
+      let info = null;
+      try { info = await res.json(); } catch {}
+      const url  = info?.pricing_url || (window.PRICING_URL || "/pricing");
+      const html = info?.message_html || `File downloads are available on Standard and Premium. <a href="${url}">Upgrade now →</a>`;
+      window.upgradePrompt?.(html, url, 1200);  // centered modal + timed redirect
+      return;
+    }
+  
+    // Not signed in (Flask-Login may redirect to HTML page)
+    if (res.status === 401 || res.redirected) {
+      window.location.href = "/account?mode=login";
+      return;
+    }
+  
+    if (!res.ok) {
+      const msg = (await res.text()) || "Download failed.";
+      window.showUpgradeBanner?.(msg);
+      return;
+    }
+  
+    // Success: stream file to user
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = (fmt === "pdf") ? "job-description.pdf" : "job-description.txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  }
+  
+  // bind buttons
+  dlTxtBtn?.addEventListener("click", () => downloadJD("txt"));
+  dlPdfBtn?.addEventListener("click", () => downloadJD("pdf"));
+
   // ----------------------------
   // 📨 Employer Inquiry Handler
   // ----------------------------
