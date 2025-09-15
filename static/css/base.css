@@ -308,3 +308,43 @@
 /* If you had old top/bottom sticky styles, neutralize them when modal is used */
 .has-upgrade-banner .upgrade-banner { position: static !important; }
 
+/* Watermark host */
+[data-watermark] {
+  position: relative;             /* anchor ::before */
+}
+
+/* Single centered watermark (simple, fast) */
+[data-watermark]::before {
+  content: attr(data-watermark);
+  position: absolute; inset: 0;
+  display: grid; place-content: center;
+  text-align: center;
+  pointer-events: none;
+  opacity: .12;
+  font-size: 44px;
+  line-height: 1.25;
+  color: #000;
+  transform: rotate(-30deg);
+  white-space: pre-wrap;
+}
+
+/* Optional: stronger/light modes (tweak if needed) */
+[data-watermark].wm-light::before { opacity: .08; }
+[data-watermark].wm-strong::before { opacity: .16; }
+
+/* Optional (for very long content): allow a tiled bg watermark
+   (the JS below will set background-image on the element) */
+[data-watermark].wm-tiled {
+  background-repeat: repeat;
+  background-size: 360px 360px;   /* must match JS tile size */
+}
+
+/* OPTIONAL: If you also want casual copy deterrence, uncomment:
+[data-watermark] {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+*/
+
