@@ -35,9 +35,8 @@
 <body
   class="{% block body_class %}{% endblock %}"
   data-authed="{{ '1' if current_user.is_authenticated else '0' }}"
-  data-plan="{{ (_plan | lower) if current_user.is_authenticated else 'free' }}"
-  data-superadmin="{{ '1' if _is_superadmin else '0' }}"
-  data-wm="{{ _wm }}"
+  data-plan="{{ (current_user.plan|lower) if current_user.is_authenticated else 'guest' }}"
+  data-superadmin="{{ '1' if (current_user.is_authenticated and (current_user.role|lower == 'superadmin')) else '0' }}"
 >
   <div class="page-container">
 
