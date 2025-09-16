@@ -97,3 +97,43 @@
 
 /* Optional nocopy style (used by skill-gap/others) */
 .nocopy, .nocopy * { user-select:none !important; -webkit-user-select:none !important; }
+
+/* --- Subject-style header (matches cover-letter vibe) --- */
+.subject-header{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin:0 0 12px;
+  padding:14px 16px;
+  background:#fff;
+  border:1px solid var(--stroke);
+  border-radius:12px;
+  box-shadow:0 2px 10px rgba(16,72,121,.06);
+}
+.subject-title{
+  margin:0;
+  font-weight:800;
+  color:var(--brand);
+  font-size:clamp(22px, 2.4vw, 30px);
+  line-height:1.2;
+  white-space:normal;           /* prevent the tall broken stacking you saw */
+}
+.subject-title .emoji{
+  margin-right:.4rem;
+  filter: saturate(1.1);
+}
+.subject-subtitle{
+  margin:0;
+  color:var(--muted);
+  line-height:1.45;
+}
+
+@media (min-width: 720px){
+  .subject-header{
+    flex-direction:row;
+    align-items:flex-end;
+    justify-content:space-between;
+  }
+  .subject-subtitle{ max-width:60ch; text-align:right; }
+}
+
