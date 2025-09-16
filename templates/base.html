@@ -24,11 +24,20 @@
   {% endif %}
 </head>
 
+  </head>
+
+{# put these near the top of <body> or just before it #}
+{% set _plan = (current_user.plan | default('free', true)) %}
+{% set _role = (current_user.role | default('', true)) %}
+{% set _is_superadmin = current_user.is_authenticated and (_role | lower == 'superadmin') %}
+{% set _wm = (current_user.email | default('Guest', true)) ~ ' · Jobcus' %}
+
 <body
   class="{% block body_class %}{% endblock %}"
   data-authed="{{ '1' if current_user.is_authenticated else '0' }}"
-  data-plan="{{ (current_user.plan|lower) if current_user.is_authenticated else 'free' }}"
-  data-superadmin="{{ '1' if current_user.is_authenticated and (getattr(current_user,'role','')|lower=='superadmin') else '0' }}"
+  data-plan="{{ (_plan | lower) if current_user.is_authenticated else 'free' }}"
+  data-superadmin="{{ '1' if _is_superadmin else '0' }}"
+  data-wm="{{ _wm }}"
 >
   <div class="page-container">
 
