@@ -147,9 +147,18 @@
       const frame = document.getElementById("clPreview") || document.getElementById("letterPreview");
       if (wrap) wrap.style.display = "block";
       if (frame) {
-        // sandbox to reduce extension errors inside the preview
         frame.setAttribute("sandbox", "allow-same-origin");
         frame.srcdoc = html;
+      }
+      
+      // ✅ Watermark wrapper (FREE only)
+      const plan = (document.body.dataset.plan || "guest").toLowerCase();
+      const isPaid = (plan === "standard" || plan === "premium");
+      const isSuperadmin = document.body.dataset.superadmin === "1";
+      if (!isPaid && !isSuperadmin && window.applyTiledWatermark && wrap) {
+        window.applyTiledWatermark(wrap, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+        wrap.classList.add("nocopy");
+        (window.enableNoCopyNoShot || function(){ })(wrap);
       }
       window.hideUpgradeBanner?.();
     } catch (err) {
