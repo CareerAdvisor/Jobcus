@@ -531,69 +531,64 @@ function applyConsent(consent) {
     if (e.key === "Escape") closePanel();
   });
   })();
-  
-  // ── Watermark helper (global; add once) ─────────────────────
+ 
+  /* ── Watermark helper (global; add once) ───────────────────── */
   (function () {
     if (window.__wm_inited__) return;
     window.__wm_inited__ = true;
   
-    function applyTiledWatermark(el, text, opts = {}) {
-      if (!el || !text) return;
-      const size = opts.size || 360;
-      const alpha = opts.alpha ?? 0.12;
-  
+    // Make a single tile at a given rotation
+    function makeTile(text, { size=420, alpha=0.18, angle=-30, font='bold 36px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif'}={}) {
       const c = document.createElement('canvas');
       c.width = size; c.height = size;
       const ctx = c.getContext('2d');
-  
-      ctx.clearRect(0, 0, size, size);
+      ctx.clearRect(0,0,size,size);
       ctx.globalAlpha = alpha;
-      ctx.translate(size / 2, size / 2);
-      ctx.rotate(-Math.PI / 6);
+      ctx.translate(size/2, size/2);
+      ctx.rotate((angle * Math.PI)/180);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      ctx.font = font;
       ctx.fillStyle = '#000';
   
-      const lines = String(text).split(/\s·\s|\\n/g);
-      const gap = 32;
-      const start = -(gap * (lines.length - 1)) / 2;
-      lines.forEach((ln, i) => ctx.fillText(ln, 0, start + i * gap));
+      // Repeat the text on multiple lines in one tile
+      const L1 = String(text).toUpperCase();
+      const L2 = L1; // repeat same line for denser tile
+      const gap = 44;
+      ctx.fillText(L1, 0, -gap/2);
+      ctx.fillText(L2, 0,  gap/2);
+      return c.toDataURL('image/png');
+    }
   
-      const url = c.toDataURL('image/png');
+    /**
+     * applyTiledWatermark(el, text, opts)
+     * opts: { size, alpha, angles: [..], font }
+     * Uses multiple rotated tiles layered as multiple CSS backgrounds.
+     */
+    function applyTiledWatermark(el, text, opts={}) {
+      if (!el || !text) return;
+      const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
+      const urls   = angles.map(a => makeTile(text, { ...opts, angle:a }));
+      const sz     = (opts.size || 420) + 'px ' + (opts.size || 420) + 'px';
   
       el.classList.add('wm-tiled');
-      el.style.backgroundImage = `url(${url})`;
-      el.style.backgroundSize = `${size}px ${size}px`;
+      el.style.backgroundImage = urls.map(u => `url(${u})`).join(', ');
+      el.style.backgroundSize  = urls.map(() => sz).join(', ');
+      el.style.backgroundBlendMode = 'multiply, multiply';
+      // keep it subtle over white boxes
+      el.style.backgroundRepeat = 'repeat';
     }
   
-    function scan(root = document) {
-      root.querySelectorAll('[data-watermark][data-watermark-tile="1"]').forEach((el) => {
+    // Auto-apply if elements declare the attributes (still optional)
+    function scan(root=document){
+      root.querySelectorAll('[data-watermark][data-watermark-tile="1"]').forEach(el=>{
         if (el.__wm_applied__) return;
         el.__wm_applied__ = true;
-        const text = el.getAttribute('data-watermark') || '';
-        applyTiledWatermark(el, text);
+        applyTiledWatermark(el, el.getAttribute('data-watermark') || 'JOBCUS.COM');
       });
     }
-  
-    document.addEventListener('DOMContentLoaded', () => scan());
-    new MutationObserver((muts) => {
-      for (const m of muts) {
-        if (m.type === 'childList') {
-          m.addedNodes.forEach((n) => {
-            if (n.nodeType === 1) {
-              if (n.matches?.('[data-watermark][data-watermark-tile="1"]')) {
-                if (!n.__wm_applied__) {
-                  n.__wm_applied__ = true;
-                  applyTiledWatermark(n, n.getAttribute('data-watermark') || '');
-                }
-              }
-              scan(n);
-            }
-          });
-        }
-      }
-    }).observe(document.documentElement, { childList: true, subtree: true });
+    document.addEventListener('DOMContentLoaded', scan);
+    new MutationObserver(()=>scan()).observe(document.documentElement,{childList:true,subtree:true});
   
     window.applyTiledWatermark = applyTiledWatermark;
   })();
