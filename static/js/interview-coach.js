@@ -226,6 +226,16 @@ document.addEventListener("DOMContentLoaded", () => {
           setLive(feedbackBox, "<em>No feedback returned.</em>");
         }
 
+        // after setLive(feedbackBox, html);
+        const plan = (document.body.dataset.plan || "guest").toLowerCase();
+        const isPaid = (plan === "standard" || plan === "premium");
+        const isSuperadmin = document.body.dataset.superadmin === "1";
+        if (!isPaid && !isSuperadmin && window.applyTiledWatermark && feedbackBox) {
+          window.applyTiledWatermark(feedbackBox, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+          feedbackBox.classList.add("nocopy");
+          (window.enableNoCopyNoShot || function(){ })(feedbackBox);
+        }
+
         // Optional tips
         const tips = Array.isArray(data?.fallbacks) ? data.fallbacks : [];
         if (tips.length) {
