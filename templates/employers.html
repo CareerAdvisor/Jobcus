@@ -1,113 +1,145 @@
 {% extends "base.html" %}
-
 {% block title %}Employers – Jobcus{% endblock %}
 
-{% block styles %}
-  {{ super() }}
+{% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/employers.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="employers-page">
 
-  <!-- 🌟 Hero Banner -->
-  <section class="employer-hero-full fade-in-up">
-    <img src="{{ url_for('static', filename='images/employer-hero.png') }}" alt="Hire Smarter with Jobcus">
-  </section>
+<section class="employer-hero-full" aria-label="Partner with Jobcus">
+  <img src="{{ url_for('static', filename='images/employer-hero.png') }}" alt="Hire Smarter with Jobcus">
+</section>
 
-  <!-- 🤝 Employer Inquiry Form -->
-  <section class="employer-section">
+<section class="employer-section card">
+  <header class="section-head">
     <h2>🤝 Employer Inquiry Form</h2>
     <p>Tell us who you're looking to hire and how we can assist your recruitment process.</p>
+  </header>
 
-    <form id="employer-inquiry-form"
-          data-endpoint="{{ url_for('employer_inquiry') }}">
-      <label for="employer-company">Company</label>
-      <input id="employer-company" type="text" name="company">
+  <form id="employer-inquiry-form"
+        class="ui-form"
+        data-endpoint="{{ url_for('employer_inquiry') }}"
+        novalidate>
+    <div class="form-grid">
+      <div class="field full">
+        <label for="employer-company">Company</label>
+        <input id="employer-company" type="text" name="company" autocomplete="organization">
+      </div>
 
-      <label for="employer-name">Name</label>
-      <input id="employer-name" type="text" name="name" required>
+      <div class="field full">
+        <label for="employer-name">Name</label>
+        <input id="employer-name" type="text" name="name" autocomplete="name" required>
+      </div>
 
-      <label for="employer-email">Email</label>
-      <input id="employer-email" type="email" name="email" required>
+      <div class="field two">
+        <div class="field">
+          <label for="employer-email">Email</label>
+          <input id="employer-email" type="email" name="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="employer-phone">Phone</label>
+          <input id="employer-phone" type="text" name="phone" autocomplete="tel" required>
+        </div>
+      </div>
 
-      <label for="employer-phone">Phone</label>
-      <input id="employer-phone" type="text" name="phone" required>
+      <div class="field full">
+        <label for="employer-roles">Job Roles You're Hiring For</label>
+        <input id="employer-roles" type="text" name="job_roles" placeholder="e.g. Product Manager, Data Analyst">
+      </div>
 
-      <label for="employer-roles">Job Roles You're Hiring For</label>
-      <input id="employer-roles" type="text" name="job_roles">
+      <div class="field full">
+        <label for="employer-message">Message</label>
+        <textarea id="employer-message" name="message" rows="5" placeholder="Tell us about the roles, timeframe, budget, and any specifics…" required></textarea>
+      </div>
+    </div>
 
-      <label for="employer-message">Message</label>
-      <textarea id="employer-message" name="message" rows="4" required></textarea>
-
+    <div class="actions">
       <button type="submit" class="primary-btn">Submit Inquiry</button>
-      <div id="inquiry-response" style="margin-top:10px;color:#104879;"></div>
-    </form>
-  </section>
+      <div id="inquiry-response" class="status" aria-live="polite"></div>
+    </div>
+  </form>
+</section>
 
-  <!-- 🤖 AI Job Post Generator -->
-  <section class="employer-section is-gold">
+<section class="employer-section card alt">
+  <header class="section-head">
     <h2>AI-Powered Job Post Generator</h2>
-    <p style="color:#333; margin-bottom: 20px;">Instantly create a professional job description with the help of AI.</p>
+    <p>Instantly create a professional job description with the help of AI.</p>
+  </header>
 
-    <form id="job-post-form"
-          data-endpoint="{{ url_for('employer_job_post') }}">
-      <label for="jp-title">Job Title</label>
-      <input id="jp-title" type="text" name="jobTitle" required>
+  <form id="job-post-form"
+        class="ui-form"
+        data-endpoint="{{ url_for('employer_job_post') }}"
+        novalidate>
+    <div class="form-grid">
+      <div class="field full">
+        <label for="jp-title">Job Title</label>
+        <input id="jp-title" type="text" name="jobTitle" required placeholder="e.g. Senior Product Designer">
+      </div>
 
-      <label for="jp-company">Company Name</label>
-      <input id="jp-company" type="text" name="company" required>
+      <div class="field full">
+        <label for="jp-company">Company Name</label>
+        <input id="jp-company" type="text" name="company" required>
+      </div>
 
-      <label for="jp-location">Location</label>
-      <input id="jp-location" type="text" name="location" placeholder="e.g. London, Manchester" required>
+      <div class="field two">
+        <div class="field">
+          <label for="jp-location">Location</label>
+          <input id="jp-location" type="text" name="location" placeholder="e.g. London / Manchester" required>
+        </div>
+        <div class="field">
+          <label for="jp-type">Employment Type</label>
+          <select id="jp-type" name="employmentType" required>
+            <option value="">Select Employment Type</option>
+            <option>Full-time</option>
+            <option>Part-time</option>
+            <option>Contract</option>
+            <option>Hybrid</option>
+            <option>Remote</option>
+          </select>
+        </div>
+      </div>
 
-      <label for="jp-type">Employment Type</label>
-      <select id="jp-type" name="employmentType" required>
-        <option value="">Select Employment Type</option>
-        <option value="Full-time">Full-time</option>
-        <option value="Part-time">Part-time</option>
-        <option value="Contract">Contract</option>
-        <option value="Hybrid">Hybrid</option>
-        <option value="Remote">Remote</option>
-      </select>
+      <div class="field full">
+        <label for="jp-salary">Salary Range</label>
+        <input id="jp-salary" type="text" name="salaryRange" placeholder="e.g. £45,000 – £60,000/year">
+      </div>
 
-      <label for="jp-salary">Salary Range</label>
-      <input id="jp-salary" type="text" name="salaryRange" placeholder="e.g. £45,000 – £60,000/year">
+      <div class="field full">
+        <label for="jp-apply">Application Email or Link</label>
+        <input id="jp-apply" type="text" name="applicationEmail" placeholder="careers@company.com or https://company.com/apply" required>
+      </div>
 
-      <label for="jp-apply">Application Email or Link</label>
-      <input id="jp-apply" type="text" name="applicationEmail" placeholder="e.g. careers@company.com or https://company.com/apply" required>
+      <div class="field two">
+        <div class="field">
+          <label for="jp-deadline">Application Deadline</label>
+          <input id="jp-deadline" type="date" name="applicationDeadline">
+        </div>
+        <div class="field">
+          <label for="jp-summary">Summary (Optional)</label>
+          <textarea id="jp-summary" name="summary" rows="3" placeholder="Short intro or mission statement"></textarea>
+        </div>
+      </div>
+    </div>
 
-      <label for="jp-deadline">Application Deadline</label>
-      <input id="jp-deadline" type="date" name="applicationDeadline"><br>
-
-      <label for="jp-summary">Summary (Optional)</label>
-      <textarea id="jp-summary" name="summary" rows="3" placeholder="Short intro or mission statement"></textarea>
-
+    <div class="actions">
       <button type="submit" class="primary-btn">✨ Generate Job Description</button>
-    </form>
-
-    <!-- Output Box -->
-    <div id="job-description-output"
-         {% if not is_paid %} data-watermark="{{ wm }}" data-watermark-tile="1"{% endif %}
-         style="margin-top:20px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,.05);">
     </div>
-    
-    <!-- Download Buttons (hidden until JS shows them) -->
-    <div id="download-options" class="download-buttons hidden">
-      <button id="download-pdf"  class="primary-btn">⬇️ Download .pdf</button>
-      <button id="download-docx" class="primary-btn">⬇️ Download .docx</button>
-    </div>
-  </section>
+  </form>
 
-</div>
+  <div id="job-description-output" class="output-box" aria-live="polite"></div>
+
+  <div id="download-options" class="download-bar hidden" style="display:none;">
+    <button id="download-pdf"  class="secondary-btn">⬇️ Download .pdf</button>
+    <button id="download-docx" class="secondary-btn">⬇️ Download .docx</button>
+  </div>
+</section>
+
 {% endblock %}
 
 {% block scripts %}
-  <!-- 3rd-party libs must come first -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.7.0/docx.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-  <!-- your main logic -->
   <script src="{{ url_for('static', filename='js/employers.js') }}" defer></script>
 {% endblock %}
