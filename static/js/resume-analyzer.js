@@ -157,6 +157,21 @@ document.addEventListener("DOMContentLoaded", () => {
     try { return JSON.parse(text); } catch { return null; }
   }
 
+  function enableNoCopyNoShot(el){
+    if (!el) return;
+    const kill = e => { e.preventDefault(); e.stopPropagation(); };
+    el.addEventListener("copy", kill);
+    el.addEventListener("cut", kill);
+    el.addEventListener("dragstart", kill);
+    el.addEventListener("contextmenu", kill);
+    el.addEventListener("selectstart", kill);
+    document.addEventListener("keydown", (e) => {
+      const k = (e.key || "").toLowerCase();
+      if ((e.ctrlKey||e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
+      if (k === "printscreen") return kill(e);
+    });
+  }
+
   // =========================================================
   // A) Dashboard-style uploader (preferred)
   // =========================================================
