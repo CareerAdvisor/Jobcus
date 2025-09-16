@@ -53,18 +53,51 @@ document.addEventListener("DOMContentLoaded", function () {
     throw new Error(msg);
   }
 
-  // Elements
+  // ── Plan flags from <body data-*>, set in base.html ────────────────────────
+  const plan         = (document.body.dataset.plan || "guest").toLowerCase();
+  const isPaid       = (plan === "standard" || plan === "premium");
+  const isSuperadmin = (document.body.dataset.superadmin === "1");
+
+  // ── Elements ───────────────────────────────────────────────────────────────
   const inquiryForm     = document.getElementById("employer-inquiry-form");
   const jobPostForm     = document.getElementById("job-post-form");
   const output          = document.getElementById("job-description-output");
   const downloadOptions = document.getElementById("download-options");
   const dlPdfBtn        = document.getElementById("download-pdf");
-  const dlDocxBtn       = document.getElementById("download-docx"); // <-- keep only PDF & DOCX
+  const dlDocxBtn       = document.getElementById("download-docx"); // only PDF & DOCX
 
-  // Helper to render JD and reveal downloads (REPLACEMENT)
+  // ── No-copy / no-screenshot guard (free tier only) ─────────────────────────
+  function enableNoCopyNoShot(el){
+    if (!el) return;
+    const kill = e => { e.preventDefault(); e.stopPropagation(); };
+    el.addEventListener("copy", kill);
+    el.addEventListener("cut", kill);
+    el.addEventListener("dragstart", kill);
+    el.addEventListener("contextmenu", kill);
+    el.addEventListener("selectstart", kill);
+    document.addEventListener("keydown", (e) => {
+      const k = (e.key || "").toLowerCase();
+      if ((e.ctrlKey||e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
+      if (k === "printscreen") return kill(e);
+    });
+  }
+
+  // ── Helper to render JD and reveal downloads (with watermark for free) ─────
   function paintJD(text) {
     if (!output) return;
     output.innerHTML = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text || "")}</pre>`;
+
+    // 🔒 Watermark only for free users (and not superadmin)
+    if (!isPaid && !isSuperadmin && typeof window.applyTiledWatermark === "function") {
+      window.applyTiledWatermark(output, "JOBCUS.COM", {
+        size: 460,        // bigger
+        alpha: 0.16,      // slightly stronger
+        angles: [-32, 32] // multi-angle
+      });
+      output.classList.add("nocopy"); // CSS disables selection
+      enableNoCopyNoShot(output);     // JS guard against copy/screenshot keys
+    }
+
     // reveal downloads
     downloadOptions?.classList.remove("hidden");
     downloadOptions && (downloadOptions.style.display = "");
@@ -73,12 +106,18 @@ document.addEventListener("DOMContentLoaded", function () {
     dlDocxBtn && (dlDocxBtn.disabled = false);
   }
 
-  // Hide downloads while loading/empty
+  // Hide downloads while loading/empty + clear any prior watermark
   function hideDownloads() {
     downloadOptions?.classList.add("hidden");
     downloadOptions && (downloadOptions.style.display = "none");
     dlPdfBtn && (dlPdfBtn.disabled = true);
     dlDocxBtn && (dlDocxBtn.disabled = true);
+
+    if (output) {
+      output.classList.remove("wm-tiled","nocopy");
+      output.style.backgroundImage = "";
+      output.style.backgroundSize  = "";
+    }
   }
 
   // Helper: extract plain text from the output box
@@ -146,7 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
       body: JSON.stringify({ format: fmt, text })
     });
 
-    // 🔐 Gating & auth checks (INSERTED HERE, right after fetch)
+    // 🔐 Gating & auth checks
     if (res.status === 403) {
       const info = await res.json().catch(() => ({}));
       const url  = info?.pricing_url || (window.PRICING_URL || "/pricing");
@@ -158,7 +197,6 @@ document.addEventListener("DOMContentLoaded", function () {
       window.location.href = "/account?mode=login";
       return;
     }
-    // server exists but doesn't support DOCX yet
     if (res.status === 400) {
       const t = (await res.text()).toLowerCase();
       if (t.includes("unsupported")) {
@@ -168,8 +206,7 @@ document.addEventListener("DOMContentLoaded", function () {
       window.showUpgradeBanner?.("Download failed.");
       return;
     }
-    // dev-only: missing route
-    if (res.status === 404) return fallbackDownload(fmt);
+    if (res.status === 404) return fallbackDownload(fmt); // dev only
 
     if (!res.ok) {
       const msg = (await res.text()) || "Download failed.";
@@ -259,7 +296,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const text = data?.description || data?.jobDescription || "";
 
         if (text) {
-          paintJD(text); // <-- this sets innerHTML AND reveals the buttons
+          paintJD(text); // sets HTML, watermark (if free), and enables buttons
         } else {
           output.innerHTML = `<div class="ai-response">No content returned.</div>`;
           hideDownloads();
