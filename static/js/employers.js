@@ -86,22 +86,17 @@ document.addEventListener("DOMContentLoaded", function () {
   function paintJD(text) {
     if (!output) return;
     output.innerHTML = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text || "")}</pre>`;
-
-    // 🔒 Watermark only for free users (and not superadmin)
-    if (!isPaid && !isSuperadmin && typeof window.applyTiledWatermark === "function") {
-      window.applyTiledWatermark(output, "JOBCUS.COM", {
-        size: 460,        // bigger
-        alpha: 0.16,      // slightly stronger
-        angles: [-32, 32] // multi-angle
-      });
-      output.classList.add("nocopy"); // CSS disables selection
-      enableNoCopyNoShot(output);     // JS guard against copy/screenshot keys
+  
+    // ✅ Watermark + protect (FREE users only)
+    if (!isPaid && !isSuperadmin && window.applyTiledWatermark) {
+      window.applyTiledWatermark(output, "JOBCUS.COM",
+        { size: 460, alpha: 0.16, angles: [-32, 32] });
+      output.classList.add("nocopy");       // add the CSS guard
+      enableNoCopyNoShot(output);           // add the JS guard
     }
-
-    // reveal downloads
+  
     downloadOptions?.classList.remove("hidden");
     downloadOptions && (downloadOptions.style.display = "");
-    // enable buttons
     dlPdfBtn && (dlPdfBtn.disabled = false);
     dlDocxBtn && (dlDocxBtn.disabled = false);
   }
