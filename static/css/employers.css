@@ -1,131 +1,99 @@
-/* Employers page styles — shared look with resume-builder */
+/* ===== Employers page styles ===== */
 
-/* Use the same font family as resume-builder if --app-font is defined globally */
-.employers-page,
-.employers-page input,
-.employers-page select,
-.employers-page textarea,
-.employers-page button {
-  font-family: var(--app-font, 'Inter', system-ui, -apple-system, 'Segoe UI',
-                   Roboto, Helvetica, Arial, sans-serif);
-  color: #0f172a; /* slate-900 */
+:root{
+  --brand: #104879;
+  --brand-2: #0b355a;
+  --gold: #ffc957;
+  --ink: #0f172a;
+  --muted: #475569;
+  --bg: #f5f8fc;
+  --card: #ffffff;
+  --stroke: #dce6f2;
+  --focus: #28527a;
+  --radius: 12px;
 }
 
-/* Simple entrance animation (matches prior inline "fadeInUp") */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translate3d(0, 8px, 0); }
-  to   { opacity: 1; transform: translate3d(0, 0, 0); }
-}
-.fade-in-up { animation: fadeInUp 0.9s ease-in-out; }
+.employer-hero-full { width:100%; display:block; background:#0f1f33; }
+.employer-hero-full img { width:100%; height:auto; display:block; }
 
-.employer-hero-full img {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 12px;
+/* Sections (cards) */
+.employer-section.card{
+  max-width:980px; margin:24px auto; padding:24px;
+  background:var(--card); border:1px solid var(--stroke);
+  border-radius:var(--radius);
+  box-shadow:0 4px 14px rgba(16,72,121,.06);
 }
-
-.employer-section {
-  background: #f8fafc;              /* slate-50 */
-  border: 1px solid #e2e8f0;        /* slate-200 */
-  padding: 24px;
-  border-radius: 12px;
-  margin: 24px auto;
-  max-width: 960px;
+.employer-section.card.alt{
+  background:#fdf7e6; border-color:#ffe39d;
 }
 
-.employer-section.is-gold {
-  background: #ffc957;
-  border-color: #f6c34f;
+.section-head h2{
+  margin:0 0 6px; color:var(--brand);
+  font-size:clamp(22px,2.4vw,28px); font-weight:800; letter-spacing:.2px;
+}
+.section-head p{ margin:0 0 16px; color:var(--muted); }
+
+/* Forms */
+.ui-form { margin-top:6px; }
+.form-grid{ display:grid; gap:14px; }
+.field.full{ grid-column:1 / -1; }
+.field.two{ display:grid; grid-template-columns:1fr; gap:14px; }
+
+@media (min-width:720px){
+  .form-grid{ grid-template-columns:1fr; }
+  .field.two{ grid-template-columns:1fr 1fr; }
 }
 
-.employer-section h2 {
-  color: #104879;
-  margin: 0 0 8px;
-  font-weight: 700;
+.field label{ display:inline-block; margin:4px 0 6px; font-weight:600; color:var(--brand-2); }
+
+.field input, .field select, .field textarea{
+  width:100%; border:1px solid var(--stroke); background:#fff;
+  padding:12px 14px; border-radius:10px; outline:none; color:var(--ink);
+  font:16px/1.3 inherit;
+  transition: box-shadow .15s ease, border-color .15s ease, background-color .15s ease;
+}
+.field textarea{ min-height:120px; }
+
+.field input::placeholder, .field textarea::placeholder{ color:#9aa7b6; }
+
+.field input:focus, .field select:focus, .field textarea:focus{
+  border-color:var(--brand); box-shadow:0 0 0 3px rgba(16,72,121,.15);
 }
 
-.employer-section p {
-  margin: 0 0 16px;
-  color: #334155; /* slate-700 */
+.actions{ display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
+
+.primary-btn{
+  appearance:none; border:0; border-radius:10px; padding:12px 18px;
+  background:var(--brand); color:#fff; font-weight:700; letter-spacing:.2px; cursor:pointer;
+  transition: transform .06s ease, filter .15s ease;
+}
+.primary-btn:hover{ filter:brightness(.96); }
+.primary-btn:active{ transform:translateY(1px); }
+
+.secondary-btn{
+  border:1px solid var(--brand); background:#fff; color:var(--brand);
+  border-radius:10px; padding:10px 14px; font-weight:700; cursor:pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.secondary-btn:hover{ background:var(--brand); color:#fff; }
+
+/* Response/status */
+.status{ min-height:20px; font-weight:600; color:var(--brand); }
+
+/* Output preview box */
+.output-box{
+  margin-top:16px; background:#fff; border:1px solid var(--stroke);
+  border-radius:10px; padding:16px; max-height:480px; overflow:auto; color:var(--ink);
+  box-shadow: inset 0 1px 0 rgba(16,72,121,.03);
+}
+.output-box pre{
+  margin:0; white-space:pre-wrap; word-wrap:break-word;
+  font:15px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; color:#0b1220;
 }
 
-/* Form layout */
-.employer-section form {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
+/* Download bar */
+.download-bar{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
+.hidden{ display:none !important; }
 
-.employer-section label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.employer-section input,
-.employer-section select,
-.employer-section textarea {
-  width: 100%;
-  appearance: none;
-  background: #fff;
-  border: 1px solid #cbd5e1; /* slate-300 */
-  border-radius: 10px;
-  padding: 10px 12px;
-  font: inherit;
-  line-height: 1.4;
-  outline: none;
-}
-
-.employer-section input:focus,
-.employer-section select:focus,
-.employer-section textarea:focus {
-  border-color: #104879;
-  box-shadow: 0 0 0 3px rgba(16,72,121,0.12);
-}
-
-.primary-btn {
-  background: #104879;
-  color: #fff;
-  padding: 10px 16px;
-  border: 0;
-  border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform .04s ease, filter .2s ease;
-  width: fit-content;
-}
-.primary-btn:hover { filter: brightness(1.05); }
-.primary-btn:active { transform: translateY(1px); }
-
-#job-description-output {
-  margin-top: 20px;
-  background: #fff;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(2,6,23,0.06);
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.download-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-}
-.download-buttons.hidden { display: none !important; }
-
-/* Simple responsive tweak */
-@media (min-width: 768px) {
-  .employer-section form {
-    grid-template-columns: 1fr 1fr;
-  }
-  .employer-section form > label,
-  .employer-section form > input,
-  .employer-section form > select,
-  .employer-section form > textarea,
-  .employer-section form > button,
-  .employer-section form > div#inquiry-response {
-    grid-column: 1 / -1; /* default full width */
-  }
-}
+/* Optional nocopy style (used by skill-gap/others) */
+.nocopy, .nocopy * { user-select:none !important; -webkit-user-select:none !important; }
