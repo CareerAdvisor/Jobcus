@@ -120,7 +120,15 @@
   function protectPreviewIfFree(box) {
     const { isPaid, isSuperadmin } = readFlags();
     if (isPaid || isSuperadmin) { clearWatermark(box); return; }
-    applyWatermarkJobcus(box);
+    if (window.applyTiledWatermark) {
+      window.applyTiledWatermark(box, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+    } else {
+      // keep your CSS fallback if helper not loaded
+      box.classList.add("wm-tiled");
+      box.style.backgroundImage =
+        "repeating-linear-gradient(-30deg, rgba(0,0,0,.12) 0, rgba(0,0,0,.12) 1px, transparent 1px, transparent 60px)";
+      box.style.backgroundSize = "360px 360px";
+    }
     enableNoCopyAndNoScreenshot(box);
   }
 
