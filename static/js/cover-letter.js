@@ -1,5 +1,8 @@
 // /static/js/cover-letter.js
 (function () {
+  "use strict";
+
+  // Always send cookies with fetch (SameSite=Lax)
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
@@ -13,11 +16,91 @@
   function stripTags(s = "") { return String(s).replace(/<[^>]*>/g, "").trim(); }
   const PRICING_URL = (window.PRICING_URL || "/pricing");
 
-  // minimal hide helper (in case base.js didn't provide one)
+  // ───────────────────────────────────────────────
+  // Watermark helpers (email-safe + strip fallbacks)
+  // ───────────────────────────────────────────────
+  const EMAIL_RE = /@.+\./;
+  function sanitizeWM(t) {
+    const raw = String(t || "").trim();
+    return (!raw || EMAIL_RE.test(raw)) ? "JOBCUS.COM" : raw;
+  }
+  function stripWatermarks(root = document) {
+    // Prefer global helper from base.js if present
+    if (typeof window.stripExistingWatermarks === "function") {
+      try { window.stripExistingWatermarks(root); return; } catch {}
+    }
+    // Local fallback (kills bg images & pseudo-element content)
+    try {
+      const doc = root.ownerDocument || root;
+      if (doc && !doc.getElementById("wm-nuke-style")) {
+        const st = doc.createElement("style");
+        st.id = "wm-nuke-style";
+        st.textContent = `
+          * { background-image: none !important; }
+          *::before, *::after { background-image: none !important; content: '' !important; }
+        `;
+        (doc.head || doc.documentElement).appendChild(st);
+      }
+      (root.querySelectorAll
+        ? root.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']")
+        : []
+      ).forEach(el => {
+        el.removeAttribute?.("data-watermark");
+        el.removeAttribute?.("data-watermark-tile");
+        el.classList?.remove("wm-tiled");
+        if (el.style) {
+          el.style.backgroundImage = "";
+          el.style.backgroundSize = "";
+          el.style.backgroundBlendMode = "";
+        }
+      });
+    } catch {}
+  }
+  function applyWM(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
+    text = sanitizeWM(text);
+    if (!el || !text) return;
+    if (typeof window.applyTiledWatermark === "function") {
+      stripWatermarks(el);
+      window.applyTiledWatermark(el, text, opts);
+      return;
+    }
+    // Minimal tiler fallback
+    stripWatermarks(el);
+    const size = opts.size || 420;
+    const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
+    function makeTile(t, angle, alpha = 0.18) {
+      const c = document.createElement("canvas");
+      c.width = size; c.height = size;
+      const ctx = c.getContext("2d");
+      ctx.clearRect(0,0,size,size);
+      ctx.globalAlpha = (opts.alpha ?? alpha);
+      ctx.translate(size/2, size/2);
+      ctx.rotate((angle * Math.PI)/180);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = 'bold 36px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      ctx.fillStyle = "#000";
+      const L = String(t).toUpperCase();
+      const gap = 44;
+      ctx.fillText(L, 0, -gap/2);
+      ctx.fillText(L, 0,  gap/2);
+      return c.toDataURL("image/png");
+    }
+    const urls = angles.map(a => makeTile(text, a));
+    const sz = size + "px " + size + "px";
+    el.classList.add("wm-tiled");
+    el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
+    el.style.backgroundSize = urls.map(() => sz).join(", ");
+    el.style.backgroundBlendMode = "multiply, multiply";
+    el.style.backgroundRepeat = "repeat";
+  }
+
+  // Minimal hide helper (in case base.js didn't provide one)
   if (!window.hideUpgradeBanner) window.hideUpgradeBanner = function(){
     document.getElementById("upgrade-banner")?.remove();
   };
 
+  // Fixed & hardened error handler
   async function handleCommonErrors(res) {
     if (res.ok) return null;
     const ct = (res.headers.get("content-type") || "").toLowerCase();
@@ -25,25 +108,29 @@
     try { if (ct.includes("application/json")) j=await res.json(); else t=await res.text(); } catch {}
     const msg = (j && (j.message || j.error)) || stripTags(t) || `Request failed (${res.status})`;
 
-    // inside handleCommonErrors(res)
-    if (res.status === 402 || (body && (body.error === "upgrade_required" || body.error === "quota_exceeded"))) {
-      const url  = body?.pricing_url || (window.PRICING_URL || "/pricing");
-      const html = body?.message_html || `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`;
-      window.upgradePrompt(html, url, 1200);
-      throw new Error(body?.message || "Upgrade required");
+    // Upgrade/quota FIRST
+    if (res.status === 402 || (j && (j.error === "upgrade_required" || j.error === "quota_exceeded"))) {
+      const url  = j?.pricing_url || PRICING_URL;
+      const html = j?.message_html || `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`;
+      window.upgradePrompt?.(html, url, 1200);
+      throw new Error(j?.message || "Upgrade required");
     }
-    
+
+    // Auth required
     if (res.status === 401 || res.status === 403) {
       const authMsg = j?.message || "Please sign up or log in to use this feature.";
       window.showUpgradeBanner?.(authMsg);
       setTimeout(()=>{ window.location.href = "/account?mode=login"; }, 800);
       throw new Error(authMsg);
     }
+
+    // Abuse guard
     if (res.status === 429 && (j?.error === "too_many_free_accounts" || j?.error === "device_limit")) {
       const ab = j?.message || "Too many free accounts detected from your network/device.";
       window.showUpgradeBanner?.(ab);
       throw new Error(ab);
     }
+
     window.showUpgradeBanner?.(escapeHtml(msg));
     throw new Error(msg);
   }
@@ -85,7 +172,6 @@
     const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
     const baseTone = (form.tone?.value || "professional").trim();
     const toneAugmented = `${baseTone}; human-like and natural; concise; maximum 3 short paragraphs`;
-    // IMPORTANT: read draft robustly
     const draft = sanitizeDraft(readDraftFromFormOrAI(form) || "");
 
     return {
@@ -119,7 +205,6 @@
         tone: toneAugmented,
         draft
       },
-      // also provide legacy key the template might use:
       cover_body: draft
     };
   }
@@ -148,18 +233,51 @@
       if (wrap) wrap.style.display = "block";
       if (frame) {
         frame.setAttribute("sandbox", "allow-same-origin");
+        // Bind onload BEFORE assigning html
+        frame.addEventListener("load", () => {
+          try {
+            const plan = (document.body.dataset.plan || "guest").toLowerCase();
+            const isPaid       = (plan === "standard" || plan === "premium");
+            const isSuperadmin = document.body.dataset.superadmin === "1";
+
+            const d    = frame.contentDocument || frame.contentWindow?.document;
+            const host = d?.body || d?.documentElement;
+            if (!host) return;
+
+            // Nuke any existing (email/user) watermarks INSIDE the iframe
+            stripWatermarks(d);
+
+            // Free users only: apply sanitized JOBCUS.COM + nocopy guards
+            if (!isPaid && !isSuperadmin) {
+              applyWM(host, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+
+              // nocopy + key guards inside the iframe
+              host.classList.add("nocopy");
+              const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
+              ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
+                host.addEventListener(ev, kill, { passive: false })
+              );
+              d.addEventListener("keydown", (e) => {
+                const k = (e.key || "").toLowerCase();
+                if ((e.ctrlKey || e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
+                if (k === "printscreen") return kill(e);
+              }, { passive: false });
+            }
+          } catch {}
+        }, { once:true });
+
         frame.srcdoc = html;
       }
-      
-      // ✅ Watermark wrapper (FREE only)
+
+      // Optional: also protect the wrapper box for free users (visual only)
       const plan = (document.body.dataset.plan || "guest").toLowerCase();
       const isPaid = (plan === "standard" || plan === "premium");
       const isSuperadmin = document.body.dataset.superadmin === "1";
-      if (!isPaid && !isSuperadmin && window.applyTiledWatermark && wrap) {
-        window.applyTiledWatermark(wrap, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
-        wrap.classList.add("nocopy");
-        (window.enableNoCopyNoShot || function(){ })(wrap);
+      if (!isPaid && !isSuperadmin && wrap) {
+        stripWatermarks(wrap);
+        applyWM(wrap, "JOBCUS.COM", { size: 460, alpha: 0.12, angles: [-32, 32] });
       }
+
       window.hideUpgradeBanner?.();
     } catch (err) {
       console.warn("Cover letter preview error:", err);
@@ -245,7 +363,7 @@
         );
         if (draft && bodyEl) {
           bodyEl.value = sanitizeDraft(draft);
-          bodyEl.dispatchEvent(new Event("input", { bubbles: true })); // so any live bindings notice
+          bodyEl.dispatchEvent(new Event("input", { bubbles: true }));
         }
       }
     });
@@ -280,9 +398,9 @@
           if (ct.includes("application/json")) {
             const j = await res.json().catch(() => ({}));
             if (res.status === 403 && j.error === "upgrade_required") {
-              const url  = j.pricing_url || (window.PRICING_URL || "/pricing");
+              const url  = j.pricing_url || PRICING_URL;
               const html = j.message_html || `File downloads are available on Standard and Premium. <a href="${url}">Upgrade now →</a>`;
-              window.upgradePrompt(html, url, 1200);
+              window.upgradePrompt?.(html, url, 1200);
               return;
             }
             window.showUpgradeBanner?.(j.message || j.error || "Download failed.");
