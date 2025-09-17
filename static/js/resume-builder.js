@@ -372,42 +372,69 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
       
           const d    = frame.contentDocument || frame.contentWindow?.document;
           const host = d?.body || d?.documentElement;
-          if (!host) return;
+          if (!host || !d) return;
       
-          // Ensure nocopy CSS exists INSIDE the iframe
-          const style = d.createElement("style");
-          style.textContent = `
+          // 0) Ensure iframe gets the nocopy base CSS
+          const baseStyle = d.createElement("style");
+          baseStyle.textContent = `
             .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
-            @media print { body { background-image: none !important; }
+            @media print { body { background-image: none !important; } }
           `;
-          d.head.appendChild(style);
+          d.head.appendChild(baseStyle);
       
-          // 1) Nuke any watermark/backgrounds (including pseudo-elements) inside the iframe
-          (function nukeIframeWatermarks(doc){
+          // 1) Nuke server-injected watermark styles (attributes, inline, and stylesheet rules)
+          (function stripAllWatermarks(doc){
             try {
+              // a) Remove watermark-y attributes/classes and inline bg images
+              doc.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [class*='watermark'], [id*='watermark']")
+                .forEach(el => {
+                  el.removeAttribute?.("data-watermark");
+                  el.removeAttribute?.("data-watermark-tile");
+                  el.classList?.remove("wm-tiled");
+                  if (el.style) {
+                    el.style.backgroundImage = "";
+                    el.style.backgroundSize = "";
+                    el.style.backgroundBlendMode = "";
+                  }
+                });
+      
+              // b) Programmatically remove stylesheet rules that print text as a watermark
+              Array.from(doc.styleSheets).forEach(sheet => {
+                let rules;
+                try { rules = sheet.cssRules || sheet.rules; } catch { rules = null; } // cross-origin guard
+                if (!rules) return;
+                for (let i = rules.length - 1; i >= 0; i--) {
+                  const css = String(rules[i].cssText || "").toLowerCase();
+                  if (
+                    /watermark/.test(css) ||
+                    /::before|::after/.test(css) && (
+                      /content\s*:/.test(css) && (/@/.test(css) || /attr\(/.test(css))
+                    )
+                  ) {
+                    try { sheet.deleteRule(i); } catch {}
+                  }
+                }
+              });
+      
+              // c) Final override: a tiny "nuke" style that zeroes pseudo-element content/bg images
               if (!doc.getElementById("wm-nuke-style")) {
                 const st = doc.createElement("style");
                 st.id = "wm-nuke-style";
                 st.textContent = `
-                  * { background-image: none !important; }
-                  *::before, *::after { background-image: none !important; content: '' !important; }
+                  [data-watermark], [data-watermark-tile],
+                  [class*="watermark"], [id*="watermark"],
+                  body::before, body::after,
+                  *::before, *::after {
+                    background-image: none !important;
+                    content: "" !important;
+                  }
                 `;
-                (doc.head || doc.documentElement).appendChild(st);
+                doc.head.appendChild(st);
               }
-              doc.querySelectorAll("[data-watermark], [data-watermark-tile]").forEach(el => {
-                el.removeAttribute("data-watermark");
-                el.removeAttribute("data-watermark-tile");
-              });
-              doc.querySelectorAll(".wm-tiled, [style*='background-image']").forEach(el => {
-                el.classList.remove("wm-tiled");
-                el.style.backgroundImage = "";
-                el.style.backgroundSize = "";
-                el.style.backgroundBlendMode = "";
-              });
             } catch {}
           })(d);
       
-          // 2) Apply ONLY our brand watermark (comment out isPaid check if you want it even for paid)
+          // 2) Apply ONLY JOBCUS.COM for free users
           if (!isSuperadmin /* && !isPaid */ && window.applyTiledWatermark) {
             window.applyTiledWatermark(host, "JOBCUS.COM", {
               size: 460,
@@ -416,17 +443,17 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
             });
           }
       
-          // 3) nocopy guards
+          // 3) No-copy/key guards inside iframe
           host.classList.add("nocopy");
           const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
           ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
-            host.addEventListener(ev, kill)
+            host.addEventListener(ev, kill, { passive:false })
           );
           d.addEventListener("keydown", (e) => {
             const k = (e.key || "").toLowerCase();
             if ((e.ctrlKey || e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
             if (k === "printscreen") return kill(e);
-          });
+          }, { passive:false });
         } catch {}
       };
 
