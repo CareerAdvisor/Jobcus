@@ -175,6 +175,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const sessionSection   = document.querySelector(".interview-session");
 
+  // 🔹 Your requested preview-wrap delayed watermark (for the optional iframe preview)
+  const coachWrap  = document.getElementById("coachWrap");
+  const coachFrame = document.getElementById("coachPreview");
+
+  function loadCoachPreview(htmlOrUrl) {
+    coachWrap?.classList.remove("wm-active"); // hide overlay until content is ready
+    if (htmlOrUrl?.startsWith("<")) {
+      coachFrame.srcdoc = htmlOrUrl;
+    } else {
+      coachFrame.src = htmlOrUrl || "about:blank";
+    }
+    coachFrame.addEventListener("load", () => {
+      if (coachWrap?.dataset?.watermark) coachWrap.classList.add("wm-active");
+      try {
+        const d = coachFrame.contentDocument || coachFrame.contentWindow?.document;
+        if (d?.body && window.applyTiledWatermark) {
+          window.applyTiledWatermark(d.body, coachWrap.dataset.watermark, { size: 360, alpha: 0.12, angle: -28 });
+        }
+      } catch {}
+    }, { once: true });
+  }
+  // expose if you want to call it elsewhere:
+  window.loadCoachPreview = loadCoachPreview;
+
   let currentQuestion = "";
   let previousRole    = "";
   let targetRole      = "";
@@ -297,8 +321,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Enforce watermark rules on paid features:
-        // - Free users: strip any existing/email wm, apply ONLY JOBCUS.COM
-        // - Paid or superadmin: strip any stray wm (ensures clean output)
         const plan = (document.body.dataset.plan || "guest").toLowerCase();
         const isPaid = (plan === "standard" || plan === "premium");
         const isSuperadmin = document.body.dataset.superadmin === "1";
@@ -341,9 +363,9 @@ document.addEventListener("DOMContentLoaded", () => {
           tips,
         });
 
-        renderHistory();                  // updates innerHTML only
-        suggestionsBox.style.display = "block";  // show tips
-        feedbackBox.style.display = "block";     // show feedback
+        renderHistory();
+        suggestionsBox.style.display = "block";
+        feedbackBox.style.display = "block";
 
         try {
           window.syncState?.({
