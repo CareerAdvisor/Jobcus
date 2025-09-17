@@ -168,7 +168,7 @@ function attachAISuggestionHandlers() {
         if (type === "summary") {
           lines = await aiSuggest("summary", ctx);
           textEl.textContent = lines.join(" ");
-        } else if (type === "highlights")) {
+        } else if (type === "highlights") {
           const allItems = qsa(builder, "#exp-list .rb-item");
           const itemEl = btn.closest(".rb-item");
           const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
