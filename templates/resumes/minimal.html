@@ -10,12 +10,37 @@
   <link rel="stylesheet" href="{{ base_css }}">
   <link rel="stylesheet" href="{{ theme_css }}">
 
+  {# Watermark logic: free = JOBCUS.COM, paid = none #}
+  {% set is_paid = current_user.is_authenticated and (current_user.plan|lower in ['standard','premium']) %}
+  {% set wm_text = 'JOBCUS.COM' if not is_paid else '' %}
+
+  <style>
+    {% if wm_text %}
+    body[data-watermark]::before{
+      content: attr(data-watermark);
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%,-50%) rotate(-32deg);
+      font: 72px/1.1 Arial, Helvetica, sans-serif;
+      color: rgba(0,0,0,.12);
+      letter-spacing: 2px;
+      white-space: nowrap;
+      user-select: none;
+      pointer-events: none;
+      z-index: 9999;
+    }
+    @media print {
+      body[data-watermark]::before{ opacity: 0.95; }
+    }
+    {% endif %}
+  </style>
+
   {% if not for_pdf %}
     <script type="module" src="{{ url_for('static', filename='js/minimal.js') }}"></script>
   {% endif %}
-  
 </head>
-<body>
+<body {% if wm_text %}data-watermark="{{ wm_text }}"{% endif %}>
   <div class="resume-page resume resume--minimal">
     <header class="resume-header">
       <div class="resume-name">{{ name or fullName or full_name or 'Your Name' }}</div>
