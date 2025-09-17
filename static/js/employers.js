@@ -398,18 +398,21 @@ document.addEventListener("DOMContentLoaded", function () {
         const text = data?.description || data?.jobDescription || "";
 
         if (text) {
-          // ⬇️ Your requested insertion point:
-          //    call renderJobDescription(...) THEN optionally tile-inside for free users
-          //    (This is also wrapped by paintJD(), which keeps no-copy + downloads logic.)
-          paintJD(text);
-
-          // If you ever want to do it manually instead of paintJD:
-          // const html = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text)}</pre>`;
-          // renderJobDescription(html);
-          // if (!isPaid && window.applyTiledWatermark) {
-          //   window.applyTiledWatermark(document.getElementById("job-description-output"), "JOBCUS.COM");
-          // }
-
+          // inside jobPostForm submit → if (text) { … }
+          const html = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text)}</pre>`;
+          renderJobDescription(html);  // shows overlay (wm-active) only after content exists
+          if (!isPaid && window.applyTiledWatermark) {
+            window.applyTiledWatermark(
+              document.getElementById("job-description-output"),
+              "JOBCUS.COM"
+            );
+          }
+          // (Optional) also keep the protections used by paintJD:
+          stripWatermarks(output);               // clear any stray email WMs
+          if (!isPaid && !isSuperadmin) {
+            output.classList.add("nocopy");
+            enableNoCopyNoShot(output);
+          }
         } else {
           out.innerHTML = `<div class="ai-response">No content returned.</div>`;
           hideDownloads();
