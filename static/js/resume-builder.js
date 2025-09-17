@@ -369,7 +369,48 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
 
   if (ct.includes("text/html")) {
     const html = await res.text();
-    if (wrap && frame) { wrap.style.display = "block"; frame.srcdoc = html; }
+    if (wrap && frame) {
+      wrap.style.display = "block";
+      frame.srcdoc = html;
+    }
+  
+    // ✅ JOBCUS watermark + nocopy IN THE IFRAME (no emails)
+    try {
+      const plan = (document.body.dataset.plan || "guest").toLowerCase();
+      const isPaid       = (plan === "standard" || plan === "premium");
+      const isSuperadmin = (document.body.dataset.superadmin === "1");
+  
+      // If you want the watermark for everyone, remove the gate below
+      if (!isSuperadmin /* && !isPaid */ && window.applyTiledWatermark && frame) {
+        // wait for srcdoc to render
+        setTimeout(() => {
+          try {
+            const d    = frame.contentDocument || frame.contentWindow?.document;
+            const host = d?.body || d?.documentElement;
+            if (!host) return;
+  
+            // Watermark: bigger, multi-angle
+            window.applyTiledWatermark(host, "JOBCUS.COM", {
+              size: 460,
+              alpha: 0.16,
+              angles: [-32, 32]
+            });
+  
+            // nocopy CSS + JS guards inside iframe
+            host.classList.add("nocopy");
+            const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
+            ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
+              host.addEventListener(ev, kill)
+            );
+            d.addEventListener("keydown", (e) => {
+              const k = (e.key || "").toLowerCase();
+              if ((e.ctrlKey || e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
+              if (k === "printscreen") return kill(e);
+            });
+          } catch {}
+        }, 50);
+      }
+    } catch {}
   } else if (ct.includes("application/json")) {
     const data = await res.json().catch(() => ({}));
     if (data?.message) window.showUpgradeBanner?.(data.message);
@@ -378,7 +419,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     const txt = await res.text().catch(() => "");
     throw new Error(`Preview failed. ${txt ? "Server said: " + txt : ""}`);
   }
-}
 
 // ───────────────────────────────────────────────
 // Wizard
