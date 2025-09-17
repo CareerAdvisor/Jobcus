@@ -23,6 +23,16 @@
     >
   </section>
 
+  <!-- Optional live preview frame (watermark wrapper) -->
+  <section style="margin:18px 0;">
+    <div id="coachWrap" class="preview-wrap"
+         {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
+      <iframe id="coachPreview"
+              style="width:100%;height:70vh;border:0;background:#fff;"
+              loading="lazy"></iframe>
+    </div>
+  </section>
+
   <!-- Lead copy + role setup form -->
   <section class="interview-form-section">
     <p style="margin-bottom:16px;font-weight:500;color:#104879;">
@@ -97,7 +107,7 @@
       >
         <!-- Responsive history panel wrapper (prevents horizontal overflow) -->
         <div id="historyPanel" class="history-panel"
-             {% if not is_paid %} data-watermark="{{ wm }}" data-watermark-tile="1"{% endif %}>
+             {% if wm_text %} data-watermark="{{ wm_text }}" data-watermark-tile="1"{% endif %}>
           <div id="historyContent" class="ai-response"><!-- feedback markdown injected here --></div>
         </div>
       </div>
@@ -105,11 +115,13 @@
 
     <!-- AI tip suggestions (when available) -->
     <div id="suggestions-box" class="fallback-box" style="display:none;"
-         {% if not is_paid %} data-watermark="{{ wm }}"{% endif %} aria-live="polite"></div>
+         {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}
+         aria-live="polite"></div>
 
     <!-- Per-answer feedback -->
     <div id="feedback-box" class="result-box" style="display:none;"
-         {% if not is_paid %} data-watermark="{{ wm }}"{% endif %} aria-live="polite"></div>
+         {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}
+         aria-live="polite"></div>
   </section>
 
 </main>
