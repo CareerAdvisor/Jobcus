@@ -166,7 +166,7 @@
 
     // Hide on print
     const style = document.createElement("style");
-    style.textContent = "@media print { #gapResult { visibility:hidden !important; } }";
+    style.textContent = "@media print { #gapResult, #skillGapOutput { visibility:hidden !important; } }";
     document.head.appendChild(style);
   }
 
@@ -184,9 +184,27 @@
   // ── Main form wire-up ───────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
     const form        = document.getElementById("skillGapForm");
+    // 🔹 Your requested overlay wrap (shows watermark only after content exists)
+    const sgWrap      = document.getElementById("skillGapWrap");
+    const sgOut       = document.getElementById("skillGapOutput") || document.getElementById("gapResult"); // fallback
+
+    function renderSkillGap(html) {
+      if (!sgOut) return;
+      sgOut.innerHTML = html || "";
+      if (sgWrap?.dataset?.watermark) sgWrap.classList.add("wm-active");
+    }
+    function clearSkillGap() {
+      if (!sgOut) return;
+      sgOut.textContent = "Result appears here...";
+      sgWrap?.classList.remove("wm-active");
+    }
+    // Expose if you want to call elsewhere:
+    window.renderSkillGap = renderSkillGap;
+    window.clearSkillGap  = clearSkillGap;
+
     const goalInput   = document.getElementById("goal");
     const skillsInput = document.getElementById("skills");
-    const resultBox   = document.getElementById("gapResult");
+    const resultBox   = sgOut; // use new output box (or fallback)
 
     if (!form || !goalInput || !skillsInput || !resultBox) return;
 
@@ -197,14 +215,15 @@
       const skills = (skillsInput.value || "").trim();
 
       if (!goal || !skills) {
-        resultBox.innerHTML = "⚠️ Please enter both your career goal and current skills.";
+        renderSkillGap("⚠️ Please enter both your career goal and current skills.");
         resultBox.classList.add("show");
         return;
       }
 
       // Reset + loading
       stripWatermarks(resultBox);
-      resultBox.innerHTML = '<span class="typing">Analyzing skill gaps<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>';
+      clearSkillGap();
+      renderSkillGap('<span class="typing">Analyzing skill gaps<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>');
       resultBox.classList.remove("show");
       void resultBox.offsetWidth; // reflow for animation
       resultBox.classList.add("show");
@@ -230,23 +249,21 @@
 
         const output = data.result || data.reply || data.analysis || data.description || "";
         if (!output) {
-          resultBox.innerHTML = "⚠️ No result returned. Please try again.";
+          renderSkillGap("⚠️ No result returned. Please try again.");
           return;
         }
 
-        // Render: markdown if available, else escape+pre
-        if (window.marked?.parse) {
-          resultBox.innerHTML = '<div class="ai-response">' + window.marked.parse(String(output)) + "</div>";
-        } else {
-          resultBox.innerHTML = '<div class="ai-response"><pre>' + escapeHtml(String(output)) + "</pre></div>";
-        }
+        // Render (markdown if available)
+        const html = window.marked?.parse
+          ? '<div class="ai-response">' + window.marked.parse(String(output)) + "</div>"
+          : '<div class="ai-response"><pre>' + escapeHtml(String(output)) + "</pre></div>";
 
-        // After content exists, enforce the policy (free users only get JOBCUS.COM)
-        protectResultBox(resultBox);
+        renderSkillGap(html);    // show content first (this also shows the overlay WM)
+        protectResultBox(resultBox); // then tile inside for free users
       } catch (err) {
         console.error("Skill Gap Error:", err);
         const msg = err?.message || "Something went wrong. Please try again later.";
-        resultBox.innerHTML = "❌ " + escapeHtml(msg);
+        renderSkillGap("❌ " + escapeHtml(msg));
       }
     });
   });
