@@ -537,16 +537,43 @@ function applyConsent(consent) {
     if (window.__wm_inited__) return;
     window.__wm_inited__ = true;
   
-    // Simple email-ish pattern
     const EMAIL_RE = /@.+\./;
   
     function sanitizeWatermarkText(t) {
       const raw = String(t || "").trim();
+      // Never allow emails or empty strings to become the watermark
       if (!raw || EMAIL_RE.test(raw)) return "JOBCUS.COM";
       return raw;
     }
   
-    // Make a single tile at a given rotation
+    // Remove any prior watermarks/inline backgrounds in a document or subtree
+    function stripExistingWatermarks(root = document) {
+      try {
+        const doc = root.ownerDocument || root; // works for iframes, too
+        // 1) Brutal CSS override to kill pseudo-element watermarks & tiled bg
+        if (!doc.getElementById("wm-nuke-style")) {
+          const st = doc.createElement("style");
+          st.id = "wm-nuke-style";
+          st.textContent = `
+            * { background-image: none !important; }
+            *::before, *::after { background-image: none !important; content: '' !important; }
+          `;
+          (doc.head || doc.documentElement).appendChild(st);
+        }
+        // 2) Remove attributes/classes our or server code might have set
+        (root.querySelectorAll
+          ? root.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']")
+          : []
+        ).forEach(el => {
+          el.removeAttribute?.("data-watermark");
+          el.removeAttribute?.("data-watermark-tile");
+          el.classList?.remove("wm-tiled");
+          el.style && (el.style.backgroundImage = el.style.backgroundSize = el.style.backgroundBlendMode = "");
+        });
+      } catch {}
+    }
+  
+    // Make a single tile
     function makeTile(text, { size=420, alpha=0.18, angle=-30, font='bold 36px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif'}={}) {
       const c = document.createElement('canvas');
       c.width = size; c.height = size;
@@ -559,29 +586,33 @@ function applyConsent(consent) {
       ctx.textBaseline = 'middle';
       ctx.font = font;
       ctx.fillStyle = '#000';
-  
-      const L1 = String(text).toUpperCase();
-      const L2 = L1;
+      const L = String(text).toUpperCase();
       const gap = 44;
-      ctx.fillText(L1, 0, -gap/2);
-      ctx.fillText(L2, 0,  gap/2);
+      ctx.fillText(L, 0, -gap/2);
+      ctx.fillText(L, 0,  gap/2);
       return c.toDataURL('image/png');
     }
   
+    // Public: apply tiled watermark
     function applyTiledWatermark(el, text, opts={}) {
       text = sanitizeWatermarkText(text);
       if (!el || !text) return;
+  
+      // clean any previous backgrounds first
+      stripExistingWatermarks(el);
+  
       const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
       const urls   = angles.map(a => makeTile(text, { ...opts, angle:a }));
-      const sz     = (opts.size || 420) + 'px ' + (opts.size || 420) + 'px';
+      const sizePx = (opts.size || 420) + 'px ' + (opts.size || 420) + 'px';
   
       el.classList.add('wm-tiled');
       el.style.backgroundImage = urls.map(u => `url(${u})`).join(', ');
-      el.style.backgroundSize  = urls.map(() => sz).join(', ');
+      el.style.backgroundSize  = urls.map(() => sizePx).join(', ');
       el.style.backgroundBlendMode = 'multiply, multiply';
       el.style.backgroundRepeat = 'repeat';
     }
   
+    // Auto-apply for declarative elements but never allow emails
     function scan(root) {
       if (!root || typeof root.querySelectorAll !== "function") root = document;
       root.querySelectorAll('[data-watermark][data-watermark-tile="1"]').forEach(el => {
@@ -590,8 +621,12 @@ function applyConsent(consent) {
         applyTiledWatermark(el, sanitizeWatermarkText(el.getAttribute('data-watermark') || 'JOBCUS.COM'));
       });
     }
+  
+    // Helper you can call anywhere (answers, previews, etc.)
+    window.stripExistingWatermarks = stripExistingWatermarks;
+    window.applyTiledWatermark     = applyTiledWatermark;
+  
     document.addEventListener('DOMContentLoaded', () => scan(document));
     new MutationObserver(() => scan()).observe(document.documentElement, { childList: true, subtree: true });
-  
-    window.applyTiledWatermark = applyTiledWatermark;
   })();
+
