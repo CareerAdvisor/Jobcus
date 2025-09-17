@@ -21,11 +21,10 @@ const escapeHtml = (s="") =>
   s.replace(/&/g,"&amp;").replace(/</g,"&lt;")
    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
-// ✅ Single source of truth for Pricing URL (no .html)
-//    If base.js sets window.PRICING_URL, use it; otherwise default to /pricing
+// ✅ Single source of truth for Pricing URL
 const PRICING_URL = (window.PRICING_URL || "/pricing");
 
-// Centralized server-response handling for plan/auth/abuse messages
+// Centralized server-response handling
 async function handleCommonErrors(res) {
   if (res.ok) return null;
 
@@ -34,34 +33,24 @@ async function handleCommonErrors(res) {
   try {
     body = ct.includes("application/json") ? await res.json()
                                            : { message: await res.text() };
-  } catch {
-    body = null;
-  }
+  } catch { body = null; }
 
-  // 🔁 PRIORITIZE UPGRADE FIRST
   if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
     const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
-    // sticky banner + redirect to pricing
     window.upgradePrompt(body?.message_html || msg, (window.PRICING_URL || "/pricing"), 1200);
     throw new Error(msg);
   }
-
-  // Then handle auth-required 401/403
   if (res.status === 401 || res.status === 403) {
     const msg = body?.message || "Please sign in to continue.";
     window.showUpgradeBanner?.(msg);
     setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
     throw new Error(msg);
   }
-
-  // Abuse guard
   if (res.status === 429 && (body?.error === "too_many_free_accounts" || body?.error === "device_limit")) {
     const msg = body?.message || "Too many free accounts detected from your network/device.";
     window.showUpgradeBanner?.(msg);
     throw new Error(msg);
   }
-
-  // Generic
   const msg = body?.message || `Request failed (${res.status})`;
   throw new Error(msg);
 }
@@ -179,7 +168,7 @@ function attachAISuggestionHandlers() {
         if (type === "summary") {
           lines = await aiSuggest("summary", ctx);
           textEl.textContent = lines.join(" ");
-        } else if (type === "highlights") {
+        } else if (type === "highlights")) {
           const allItems = qsa(builder, "#exp-list .rb-item");
           const itemEl = btn.closest(".rb-item");
           const idx = Math.max(0, allItems.findIndex(n => n === itemEl));
@@ -309,7 +298,6 @@ function initSkills() {
 // ───────────────────────────────────────────────────────────────
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
 
-  // JSON POST helper for this module (uses same error path)
   async function postAndMaybeError(url, payload) {
     const res = await fetch(url, {
       method: "POST",
@@ -354,8 +342,10 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
   if (!res.ok) { await handleCommonErrors(res); }
 
   const ct = res.headers.get("content-type") || "";
-  const wrap  = qs(document, withinBuilder("#resumePreviewWrap, #resumePreviewWrapFinish"));
-  const frame = qs(document, withinBuilder("#resumePreview, #resumePreviewFinish"));
+
+  // 🔁 UPDATED to new IDs (previewTemplateWrap/Frame)
+  const wrap  = qs(document, withinBuilder("#previewTemplateWrap, #previewTemplateWrapFinish"));
+  const frame = qs(document, withinBuilder("#previewTemplateFrame, #previewTemplateFrameFinish"));
 
   if (ct.includes("text/html")) {
     const html = await res.text();
@@ -363,29 +353,27 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     if (wrap && frame) {
       wrap.style.display = "block";
 
-      // Bind before setting srcdoc so load is never missed
       const onLoadOnce = () => {
         try {
           const plan = (document.body.dataset.plan || "guest").toLowerCase();
           const isPaid       = (plan === "standard" || plan === "premium");
           const isSuperadmin = (document.body.dataset.superadmin === "1");
-      
+
           const d    = frame.contentDocument || frame.contentWindow?.document;
           const host = d?.body || d?.documentElement;
           if (!host || !d) return;
-      
-          // 0) Ensure iframe gets the nocopy base CSS
+
+          // basic style for nocopy & print
           const baseStyle = d.createElement("style");
           baseStyle.textContent = `
             .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
             @media print { body { background-image: none !important; } }
           `;
           d.head.appendChild(baseStyle);
-      
-          // 1) Nuke server-injected watermark styles (attributes, inline, and stylesheet rules)
+
+          // strip any watermark the template may add
           (function stripAllWatermarks(doc){
             try {
-              // a) Remove watermark-y attributes/classes and inline bg images
               doc.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [class*='watermark'], [id*='watermark']")
                 .forEach(el => {
                   el.removeAttribute?.("data-watermark");
@@ -397,26 +385,20 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
                     el.style.backgroundBlendMode = "";
                   }
                 });
-      
-              // b) Programmatically remove stylesheet rules that print text as a watermark
+
               Array.from(doc.styleSheets).forEach(sheet => {
                 let rules;
-                try { rules = sheet.cssRules || sheet.rules; } catch { rules = null; } // cross-origin guard
+                try { rules = sheet.cssRules || sheet.rules; } catch { rules = null; }
                 if (!rules) return;
                 for (let i = rules.length - 1; i >= 0; i--) {
                   const css = String(rules[i].cssText || "").toLowerCase();
-                  if (
-                    /watermark/.test(css) ||
-                    /::before|::after/.test(css) && (
-                      /content\s*:/.test(css) && (/@/.test(css) || /attr\(/.test(css))
-                    )
-                  ) {
+                  if (/watermark/.test(css) ||
+                      (/::before|::after/.test(css) && /content\s*:/.test(css) && (/@/.test(css) || /attr\(/.test(css)))) {
                     try { sheet.deleteRule(i); } catch {}
                   }
                 }
               });
-      
-              // c) Final override: a tiny "nuke" style that zeroes pseudo-element content/bg images
+
               if (!doc.getElementById("wm-nuke-style")) {
                 const st = doc.createElement("style");
                 st.id = "wm-nuke-style";
@@ -433,17 +415,12 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
               }
             } catch {}
           })(d);
-      
-          // 2) Apply ONLY JOBCUS.COM for free users
-          if (!isSuperadmin /* && !isPaid */ && window.applyTiledWatermark) {
-            window.applyTiledWatermark(host, "JOBCUS.COM", {
-              size: 460,
-              alpha: 0.16,
-              angles: [-32, 32]
-            });
+
+          // apply JOBCUS.COM overlay only outside superadmin (if you also want it only for free, add !isPaid)
+          if (!isSuperadmin && window.applyTiledWatermark) {
+            window.applyTiledWatermark(host, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
           }
-      
-          // 3) No-copy/key guards inside iframe
+
           host.classList.add("nocopy");
           const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
           ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
@@ -469,7 +446,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     const txt = await res.text().catch(() => "");
     throw new Error(`Preview failed. ${txt ? "Server said: " + txt : ""}`);
   }
-} // ← END of renderWithTemplateFromContext
+} // END renderWithTemplateFromContext
 
 // ───────────────────────────────────────────────
 // Wizard
@@ -751,4 +728,25 @@ document.addEventListener("DOMContentLoaded", () => {
   } catch (e) {
     console.error("Resume builder init failed:", e);
   }
+
+  // ───────────────────────────────────────────────
+  // 🔁 Your extra preview hookup (as requested)
+  // ───────────────────────────────────────────────
+  const wrap  = document.getElementById("previewTemplateWrap");
+  const frame = document.getElementById("previewTemplateFrame");
+  const wm    = wrap?.dataset?.watermark || ""; // JOBCUS.COM for free, blank for paid
+
+  document.getElementById("previewTemplate")?.addEventListener("click", async () => {
+    if (wrap) wrap.style.display = "block";
+    // You still build the preview via renderWithTemplateFromContext in initWizard.
+    // If you ever build HTML directly, do: frame.srcdoc = html;
+  });
+
+  const wrapFin  = document.getElementById("previewTemplateWrapFinish");
+  const frameFin = document.getElementById("previewTemplateFrameFinish");
+  const wmFin    = wrapFin?.dataset?.watermark || "";
+  document.getElementById("previewTemplateFinish")?.addEventListener("click", () => {
+    if (wrapFin) wrapFin.style.display = "block";
+    // If building HTML directly, set: frameFin.srcdoc = html;
+  });
 });
