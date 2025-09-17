@@ -369,27 +369,50 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           const plan = (document.body.dataset.plan || "guest").toLowerCase();
           const isPaid       = (plan === "standard" || plan === "premium");
           const isSuperadmin = (document.body.dataset.superadmin === "1");
-
+      
           const d    = frame.contentDocument || frame.contentWindow?.document;
           const host = d?.body || d?.documentElement;
           if (!host) return;
-
-          // Ensure nocopy CSS exists inside the iframe
+      
+          // Ensure nocopy CSS exists INSIDE the iframe
           const style = d.createElement("style");
           style.textContent = `
             .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
             @media print { body { background-image: none !important; } }
           `;
           d.head.appendChild(style);
-
-          // Apply JOBCUS.COM watermark (remove && !isPaid if you want on all tiers)
+      
+          // ─────────────────────────────────────────────────────────
+          // 1) STRIP ANY EXISTING WATERMARK (email, old tiles, etc.)
+          // ─────────────────────────────────────────────────────────
+          (function stripExistingWatermarks(doc){
+            try {
+              // remove attributes the server may have placed
+              doc.querySelectorAll("[data-watermark], [data-watermark-tile]").forEach(el => {
+                el.removeAttribute("data-watermark");
+                el.removeAttribute("data-watermark-tile");
+              });
+              // remove our/old classes + inline backgrounds
+              doc.querySelectorAll(".wm-tiled, [style*='background-image']").forEach(el => {
+                el.classList.remove("wm-tiled");
+                el.style.backgroundImage = "";
+                el.style.backgroundSize = "";
+                el.style.backgroundBlendMode = "";
+              });
+            } catch {}
+          })(d);
+          // ─────────────────────────────────────────────────────────
+      
+          // 2) Apply ONLY JOBCUS.COM (remove "&& !isPaid" if you want on all tiers)
           if (!isSuperadmin /* && !isPaid */ && window.applyTiledWatermark) {
             window.applyTiledWatermark(host, "JOBCUS.COM", {
-              size: 460, alpha: 0.16, angles: [-32, 32]
+              size: 460,
+              alpha: 0.16,
+              angles: [-32, 32]
             });
           }
-
-          // nocopy class + JS guards inside the iframe
+      
+          // 3) nocopy + key guards inside the iframe
           host.classList.add("nocopy");
           const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
           ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
