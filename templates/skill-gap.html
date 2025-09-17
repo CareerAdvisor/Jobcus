@@ -3,6 +3,9 @@
 
 {% block title %}Skill Gap Analysis – Jobcus{% endblock %}
 
+{% set is_paid  = current_user.is_authenticated and (current_user.plan|lower in ['standard','premium']) %}
+{% set wm_text  = '' if is_paid else 'JOBCUS.COM' %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/skill-gap.css') }}">
 {% endblock %}
