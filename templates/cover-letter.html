@@ -2,8 +2,8 @@
 {% extends "base.html" %}
 {% block title %}Cover Letter – Jobcus{% endblock %}
 
-{% set wm = (current_user.email ~ " · Jobcus") if current_user.is_authenticated else "Guest · Jobcus" %}
-{% set is_paid = (current_user.is_authenticated and (current_user.plan|lower in ['standard','premium'])) %}
+{% set is_paid  = current_user.is_authenticated and (current_user.plan|lower in ['standard','premium']) %}
+{% set wm_text  = '' if is_paid else 'JOBCUS.COM' %}
 
 {% block content %}
 
