@@ -32,8 +32,10 @@
   </section>
 
   <section class="skill-gap-result">
-    <!-- 🔹 No watermark attributes here; JS will apply after generation if needed -->
-    <div id="gapResult" class="result-box" aria-live="polite">Result appears here...</div>
+    <div id="skillGapWrap" class="preview-wrap"
+         {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
+      <div id="skillGapOutput" class="output-box" aria-live="polite">Result appears here...</div>
+    </div>
   </section>
 
 </div>
