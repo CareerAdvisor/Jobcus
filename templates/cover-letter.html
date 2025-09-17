@@ -10,56 +10,68 @@
 {# ---------- LETTER-ONLY (iframe preview / PDF) ---------- #}
 {% if letter_only %}
   <style>
-    /* Hide site chrome from base layout for clean letter-only rendering */
+    /* Hide site chrome for clean letter-only render */
     header, nav, footer,
     .site-header, .site-footer, .navbar, .topbar, .app-footer,
     .chat-widget, .floating-chat, .intercom-lightweight-app { display:none !important; }
-
-    html, body { background:#fff; margin:0; }
-
-    /* Wider, print-friendly page body.
-       - Mobile stays comfy
-       - Desktop grows up to ~A4 width without being clipped by site chrome */
+  
+    html, body { background:#fff; margin:0; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  
+    /* ---- SCREEN: use px so size is stable across zoom/iframes ---- */
     .cl {
       max-width: clamp(680px, 84vw, 860px);
       margin: 36px auto;
       padding: 0 16px;
       color:#111;
-      font: 12pt/1.55 Arial, Helvetica, sans-serif;
+      font: 16px/1.55 Arial, Helvetica, sans-serif; /* ≈ 12pt */
     }
-
-    /* Centered identity block; bigger name */
-    .cl-header { text-align:center; margin: 0 auto 14pt; }
-    .cl-header .name { font-weight:800; font-size:32pt; margin:0; }
-    .cl-header .contact { margin-top:4pt; }
-
-    .date { margin: 12pt 0 14pt; }
-    .recipient { margin: 0 0 12pt; }
-    .salutation { margin: 0 0 10pt; }
-    .block { white-space:pre-wrap; overflow-wrap:anywhere; }
-
-    @page { size:A4; margin:18mm 18mm; }
+  
+    .cl-header { text-align:center; margin: 0 auto 14px; }
+    .cl-header .name { font-weight:800; font-size:42px; line-height:1.1; margin:0; } /* ≈ 32pt */
+    .cl-header .contact { margin-top:6px; color:#555; font-size:1em; }
+    .cl-header .contact .addr-line { margin:2px 0; }
+    .cl-header .contact .ep-line   { margin:4px 0 0; }
+  
+    .date       { margin: 12px 0 14px; color:#555; }
+    .recipient  { margin: 0 0 12px; }
+    .salutation { margin: 0 0 10px; }
+    .block      { white-space:pre-wrap; overflow-wrap:anywhere; }
+  
+    /* ---- PRINT: switch to true points ---- */
+    @page  { size:A4; margin:18mm 18mm; }
+    @media print {
+      .cl { font: 12pt/1.55 Arial, Helvetica, sans-serif; }
+      .cl-header { margin-bottom: 14pt; }
+      .cl-header .name { font-size:32pt; }
+      .cl-header .contact { margin-top:6pt; }
+      .cl-header .contact .addr-line { margin:2pt 0; }
+      .cl-header .contact .ep-line   { margin:4pt 0 0; }
+      .date       { margin: 12pt 0 14pt; }
+      .recipient  { margin-bottom: 12pt; }
+      .salutation { margin-bottom: 10pt; }
+    }
   </style>
 
   <div class="cl">
-    <!-- Applicant header (centered) -->
     <div class="cl-header">
       {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
       <div class="contact">
-        {% if sender.address1 %}{{ sender.address1 }}{% endif %}
+        {% if sender.address1 %}<div class="addr-line">{{ sender.address1 }}</div>{% endif %}
         {% if sender.city or sender.postcode %}
-          {% if sender.address1 %} {% endif %}
-          {{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}
+          <div class="addr-line">
+            {{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}
+          </div>
         {% endif %}
-        {% if (sender.email or sender.phone) and (sender.address1 or sender.city or sender.postcode) %} | {% endif %}
-        {% if sender.email %}{{ sender.email }}{% if sender.phone %} | {% endif %}{% endif %}
-        {% if sender.phone %}{{ sender.phone }}{% endif %}
+        {% if sender.email or sender.phone %}
+          <div class="ep-line">
+            {{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}
+          </div>
+        {% endif %}
       </div>
     </div>
-
+  
     {% if sender.date %}<div class="date">{{ sender.date }}</div>{% endif %}
-
-    <!-- Recipient block -->
+  
     {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
       <div class="recipient">
         {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
@@ -70,12 +82,11 @@
         {% endif %}
       </div>
     {% endif %}
-
-    <!-- Salutation + body + closing -->
+  
     <div class="salutation">Dear {{ recipient.name or 'Hiring Manager' }},</div>
     <main class="block">{{ draft or '' }}</main>
-
-    <div style="margin-top:12pt;">Yours sincerely,</div>
+  
+    <div style="margin-top:12px;">Yours sincerely,</div>
     <div>{{ sender.name or '' }}</div>
   </div>
 
