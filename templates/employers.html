@@ -131,16 +131,16 @@
   </form>
 
   {# around the generator output #}
-<div id="jobDescriptionWrap" class="preview-wrap"
-     {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
-  <div id="job-description-output" class="output-box" aria-live="polite"></div>
-</div>
-
-<div id="download-options" class="download-bar hidden" style="display:none;">
-  <button id="download-pdf"  class="secondary-btn">⬇️ Download .pdf</button>
-  <button id="download-docx" class="secondary-btn">⬇️ Download .docx</button>
-</div>
-</section>
+  <div id="jobDescriptionWrap" class="preview-wrap"
+       {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
+    <div id="job-description-output" class="output-box" aria-live="polite"></div>
+  </div>
+  
+  <div id="download-options" class="download-bar hidden" style="display:none;">
+    <button id="download-pdf"  class="secondary-btn">⬇️ Download .pdf</button>
+    <button id="download-docx" class="secondary-btn">⬇️ Download .docx</button>
+  </div>
+  </section>
 
 {% endblock %}
 
