@@ -531,11 +531,20 @@ function applyConsent(consent) {
     if (e.key === "Escape") closePanel();
   });
   })();
- 
+  
   /* ── Watermark helper (global; add once) ───────────────────── */
   (function () {
     if (window.__wm_inited__) return;
     window.__wm_inited__ = true;
+  
+    // Simple email-ish pattern
+    const EMAIL_RE = /@.+\./;
+  
+    function sanitizeWatermarkText(t) {
+      const raw = String(t || "").trim();
+      if (!raw || EMAIL_RE.test(raw)) return "JOBCUS.COM";
+      return raw;
+    }
   
     // Make a single tile at a given rotation
     function makeTile(text, { size=420, alpha=0.18, angle=-30, font='bold 36px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif'}={}) {
@@ -551,21 +560,16 @@ function applyConsent(consent) {
       ctx.font = font;
       ctx.fillStyle = '#000';
   
-      // Repeat the text on multiple lines in one tile
       const L1 = String(text).toUpperCase();
-      const L2 = L1; // repeat same line for denser tile
+      const L2 = L1;
       const gap = 44;
       ctx.fillText(L1, 0, -gap/2);
       ctx.fillText(L2, 0,  gap/2);
       return c.toDataURL('image/png');
     }
   
-    /**
-     * applyTiledWatermark(el, text, opts)
-     * opts: { size, alpha, angles: [..], font }
-     * Uses multiple rotated tiles layered as multiple CSS backgrounds.
-     */
     function applyTiledWatermark(el, text, opts={}) {
+      text = sanitizeWatermarkText(text);
       if (!el || !text) return;
       const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
       const urls   = angles.map(a => makeTile(text, { ...opts, angle:a }));
@@ -575,19 +579,15 @@ function applyConsent(consent) {
       el.style.backgroundImage = urls.map(u => `url(${u})`).join(', ');
       el.style.backgroundSize  = urls.map(() => sz).join(', ');
       el.style.backgroundBlendMode = 'multiply, multiply';
-      // keep it subtle over white boxes
       el.style.backgroundRepeat = 'repeat';
     }
   
-    // Auto-apply if elements declare the attributes (still optional)
     function scan(root) {
-      // If called as an event handler or with a non-node, default to document
       if (!root || typeof root.querySelectorAll !== "function") root = document;
-    
       root.querySelectorAll('[data-watermark][data-watermark-tile="1"]').forEach(el => {
         if (el.__wm_applied__) return;
         el.__wm_applied__ = true;
-        applyTiledWatermark(el, el.getAttribute('data-watermark') || 'JOBCUS.COM');
+        applyTiledWatermark(el, sanitizeWatermarkText(el.getAttribute('data-watermark') || 'JOBCUS.COM'));
       });
     }
     document.addEventListener('DOMContentLoaded', () => scan(document));
@@ -595,4 +595,3 @@ function applyConsent(consent) {
   
     window.applyTiledWatermark = applyTiledWatermark;
   })();
-  
