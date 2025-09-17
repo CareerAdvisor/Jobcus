@@ -1,4 +1,5 @@
 // /static/js/interview-coach.js
+"use strict";
 
 // Always send cookies with fetch (SameSite=Lax)
 (function () {
@@ -8,6 +9,86 @@
     return _fetch(input, init);
   };
 })();
+
+// ───────────────────────────────────────────────
+// Watermark helpers (email-safe + strip fallbacks)
+// ───────────────────────────────────────────────
+const __EMAIL_RE__ = /@.+\./;
+function __sanitizeWM__(t) {
+  const raw = String(t || "").trim();
+  return (!raw || __EMAIL_RE__.test(raw)) ? "JOBCUS.COM" : raw;
+}
+function __stripWatermarks__(root = document) {
+  // Prefer the global helper from base.js if available
+  if (typeof window.stripExistingWatermarks === "function") {
+    try { window.stripExistingWatermarks(root); return; } catch {}
+  }
+  // Local fallback: nuke bg images & pseudo elements + known attrs/classes
+  try {
+    const doc = (root.ownerDocument || root);
+    if (doc && !doc.getElementById("wm-nuke-style")) {
+      const st = doc.createElement("style");
+      st.id = "wm-nuke-style";
+      st.textContent = `
+        * { background-image: none !important; }
+        *::before, *::after { background-image: none !important; content: '' !important; }
+      `;
+      (doc.head || doc.documentElement).appendChild(st);
+    }
+    (root.querySelectorAll
+      ? root.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']")
+      : []
+    ).forEach(el => {
+      el.removeAttribute?.("data-watermark");
+      el.removeAttribute?.("data-watermark-tile");
+      el.classList?.remove("wm-tiled");
+      if (el.style) {
+        el.style.backgroundImage = "";
+        el.style.backgroundSize = "";
+        el.style.backgroundBlendMode = "";
+      }
+    });
+  } catch {}
+}
+function __applyWatermark__(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
+  text = __sanitizeWM__(text);
+  if (!el || !text) return;
+  // Prefer global from base.js
+  if (typeof window.applyTiledWatermark === "function") {
+    __stripWatermarks__(el);
+    window.applyTiledWatermark(el, text, opts);
+    return;
+  }
+  // Local minimal tiler fallback
+  __stripWatermarks__(el);
+  const size = opts.size || 420;
+  const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
+  function makeTile(t, angle, alpha = 0.18) {
+    const c = document.createElement("canvas");
+    c.width = size; c.height = size;
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0,0,size,size);
+    ctx.globalAlpha = (opts.alpha ?? alpha);
+    ctx.translate(size/2, size/2);
+    ctx.rotate((angle * Math.PI)/180);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = 'bold 36px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+    ctx.fillStyle = "#000";
+    const L = String(t).toUpperCase();
+    const gap = 44;
+    ctx.fillText(L, 0, -gap/2);
+    ctx.fillText(L, 0,  gap/2);
+    return c.toDataURL("image/png");
+  }
+  const urls = angles.map(a => makeTile(text, a));
+  const sz = size + "px " + size + "px";
+  el.classList.add("wm-tiled");
+  el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
+  el.style.backgroundSize = urls.map(() => sz).join(", ");
+  el.style.backgroundBlendMode = "multiply, multiply";
+  el.style.backgroundRepeat = "repeat";
+}
 
 // Simple HTML escaper to keep dynamic content safe
 function escapeHtml(s = "") {
@@ -19,7 +100,7 @@ function escapeHtml(s = "") {
     .replace(/'/g, "&#39;");
 }
 
-// Centralized error handling (auth/limits/abuse) — prefers message_html for the sticky banner
+// Centralized error handling (auth/limits/abuse)
 async function handleCommonErrors(res) {
   if (res.ok) return null;
 
@@ -27,14 +108,10 @@ async function handleCommonErrors(res) {
   let body = null;
   let text = "";
   try {
-    if (ct.includes("application/json")) {
-      body = await res.json();
-    } else {
-      text = await res.text();
-    }
-  } catch { /* best effort */ }
+    if (ct.includes("application/json")) body = await res.json();
+    else text = await res.text();
+  } catch {}
 
-  // discard raw HTML pages
   if (text && /<html/i.test(text)) text = "";
 
   // Auth required
@@ -45,15 +122,15 @@ async function handleCommonErrors(res) {
     throw new Error(msg);
   }
 
-  // Plan limits / feature gating — show linked banner if available
+  // Plan limits / upgrade
   if (res.status === 402 || (body && body.error === "upgrade_required")) {
     const html = body?.message_html;
     const msg  = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
-    window.showUpgradeBanner?.(html || msg); // sticky banner supports HTML links
+    window.showUpgradeBanner?.(html || msg);
     throw new Error(msg);
   }
 
-  // Abuse guard
+  // Abuse
   if (res.status === 429 && body && body.error === "too_many_free_accounts") {
     const msg = body.message || "Too many free accounts detected from your network/device.";
     window.showUpgradeBanner?.(msg);
@@ -64,14 +141,11 @@ async function handleCommonErrors(res) {
   throw new Error(fallback);
 }
 
-// Shared POST helper (adds Accept + runs common error handler)
+// Shared POST helper
 async function apiPost(url, payload) {
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json"
-    },
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
     body: JSON.stringify(payload),
   });
   await handleCommonErrors(res);
@@ -136,13 +210,9 @@ document.addEventListener("DOMContentLoaded", () => {
     setBusy(nextBtn, true);
 
     try {
-      // Explicit Accept so errors come back as JSON
       const res = await fetch("/api/interview/question", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({ previousRole, targetRole, experience })
       });
 
@@ -226,14 +296,29 @@ document.addEventListener("DOMContentLoaded", () => {
           setLive(feedbackBox, "<em>No feedback returned.</em>");
         }
 
-        // after setLive(feedbackBox, html);
+        // Enforce watermark rules on paid features:
+        // - Free users: strip any existing/email wm, apply ONLY JOBCUS.COM
+        // - Paid or superadmin: strip any stray wm (ensures clean output)
         const plan = (document.body.dataset.plan || "guest").toLowerCase();
         const isPaid = (plan === "standard" || plan === "premium");
         const isSuperadmin = document.body.dataset.superadmin === "1";
-        if (!isPaid && !isSuperadmin && window.applyTiledWatermark && feedbackBox) {
-          window.applyTiledWatermark(feedbackBox, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
-          feedbackBox.classList.add("nocopy");
-          (window.enableNoCopyNoShot || function(){ })(feedbackBox);
+
+        if (feedbackBox) {
+          __stripWatermarks__(feedbackBox);
+          if (!isPaid && !isSuperadmin) {
+            __applyWatermark__(feedbackBox, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+            // nocopy + key guards for free users
+            feedbackBox.classList.add("nocopy");
+            const kill = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
+            ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
+              feedbackBox.addEventListener(ev, kill, { passive: false })
+            );
+            document.addEventListener("keydown", (ev) => {
+              const k = (ev.key || "").toLowerCase();
+              if ((ev.ctrlKey || ev.metaKey) && ["c","x","s","p"].includes(k)) return kill(ev);
+              if (k === "printscreen") return kill(ev);
+            }, { passive: false });
+          }
         }
 
         // Optional tips
@@ -256,9 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
           tips,
         });
 
-        // === Inserted as requested ===
         renderHistory();                  // updates innerHTML only
-        // DO NOT: historyContainer.style.display = "block";
         suggestionsBox.style.display = "block";  // show tips
         feedbackBox.style.display = "block";     // show feedback
 
@@ -306,11 +389,10 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }).join("");
 
-    // Update content only
     document.getElementById('historyContent').innerHTML = entriesHtml;
   }
 
-  // Toggle history visibility (the ONLY place that shows/hides it)
+  // Toggle history visibility
   if (toggleHistoryBtn && historyContainer) {
     toggleHistoryBtn.addEventListener("click", () => {
       const isVisible = historyContainer.style.display === "block";
