@@ -1,5 +1,7 @@
 // /static/js/employers.js
 document.addEventListener("DOMContentLoaded", function () {
+  "use strict";
+
   /* Ensure cookies are sent (SameSite=Lax) */
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
@@ -15,6 +17,83 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  }
+
+  // ───────────────────────────────────────────────
+  // Watermark helpers (email-safe + strip fallbacks)
+  // ───────────────────────────────────────────────
+  const EMAIL_RE = /@.+\./;
+  function sanitizeWM(t) {
+    const raw = String(t || "").trim();
+    return (!raw || EMAIL_RE.test(raw)) ? "JOBCUS.COM" : raw;
+  }
+  function stripWatermarks(root = document) {
+    if (typeof window.stripExistingWatermarks === "function") {
+      try { window.stripExistingWatermarks(root); return; } catch {}
+    }
+    try {
+      const doc = root.ownerDocument || root;
+      if (doc && !doc.getElementById("wm-nuke-style")) {
+        const st = doc.createElement("style");
+        st.id = "wm-nuke-style";
+        st.textContent = `
+          * { background-image: none !important; }
+          *::before, *::after { background-image: none !important; content: '' !important; }
+        `;
+        (doc.head || doc.documentElement).appendChild(st);
+      }
+      (root.querySelectorAll
+        ? root.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']")
+        : []
+      ).forEach(el => {
+        el.removeAttribute?.("data-watermark");
+        el.removeAttribute?.("data-watermark-tile");
+        el.classList?.remove("wm-tiled");
+        if (el.style) {
+          el.style.backgroundImage = "";
+          el.style.backgroundSize = "";
+          el.style.backgroundBlendMode = "";
+        }
+      });
+    } catch {}
+  }
+  function applyWM(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
+    text = sanitizeWM(text);
+    if (!el || !text) return;
+    if (typeof window.applyTiledWatermark === "function") {
+      stripWatermarks(el);
+      window.applyTiledWatermark(el, text, opts);
+      return;
+    }
+    // minimal fallback
+    stripWatermarks(el);
+    const size = opts.size || 420;
+    const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
+    function makeTile(t, angle, alpha = 0.18) {
+      const c = document.createElement("canvas");
+      c.width = size; c.height = size;
+      const ctx = c.getContext("2d");
+      ctx.clearRect(0,0,size,size);
+      ctx.globalAlpha = (opts.alpha ?? alpha);
+      ctx.translate(size/2, size/2);
+      ctx.rotate((angle * Math.PI)/180);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = 'bold 36px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      ctx.fillStyle = "#000";
+      const L = String(t).toUpperCase();
+      const gap = 44;
+      ctx.fillText(L, 0, -gap/2);
+      ctx.fillText(L, 0,  gap/2);
+      return c.toDataURL("image/png");
+    }
+    const urls = angles.map(a => makeTile(text, a));
+    const sz = size + "px " + size + "px";
+    el.classList.add("wm-tiled");
+    el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
+    el.style.backgroundSize = urls.map(() => sz).join(", ");
+    el.style.backgroundBlendMode = "multiply, multiply";
+    el.style.backgroundRepeat = "repeat";
   }
 
   async function handleCommonErrors(res) {
@@ -85,16 +164,20 @@ document.addEventListener("DOMContentLoaded", function () {
   // ── Helper to render JD and reveal downloads (with watermark for free) ─────
   function paintJD(text) {
     if (!output) return;
+
+    // Render first
     output.innerHTML = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text || "")}</pre>`;
-  
+
+    // Always strip any pre-existing/email watermark; then enforce policy
+    stripWatermarks(output);
+
     // ✅ Watermark + protect (FREE users only)
-    if (!isPaid && !isSuperadmin && window.applyTiledWatermark) {
-      window.applyTiledWatermark(output, "JOBCUS.COM",
-        { size: 460, alpha: 0.16, angles: [-32, 32] });
-      output.classList.add("nocopy");       // add the CSS guard
-      enableNoCopyNoShot(output);           // add the JS guard
+    if (!isPaid && !isSuperadmin) {
+      applyWM(output, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+      output.classList.add("nocopy");
+      enableNoCopyNoShot(output);
     }
-  
+
     downloadOptions?.classList.remove("hidden");
     downloadOptions && (downloadOptions.style.display = "");
     dlPdfBtn && (dlPdfBtn.disabled = false);
@@ -109,9 +192,8 @@ document.addEventListener("DOMContentLoaded", function () {
     dlDocxBtn && (dlDocxBtn.disabled = true);
 
     if (output) {
-      output.classList.remove("wm-tiled","nocopy");
-      output.style.backgroundImage = "";
-      output.style.backgroundSize  = "";
+      stripWatermarks(output);
+      output.classList.remove("nocopy");
     }
   }
 
@@ -291,7 +373,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const text = data?.description || data?.jobDescription || "";
 
         if (text) {
-          paintJD(text); // sets HTML, watermark (if free), and enables buttons
+          paintJD(text); // sets HTML, strips old WM, applies single JOBCUS.COM for free, and enables buttons
         } else {
           output.innerHTML = `<div class="ai-response">No content returned.</div>`;
           hideDownloads();
