@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Resume Builder – Jobcus{% endblock %}
 
-{% set wm = (current_user.email ~ " · Jobcus") if current_user.is_authenticated else "Guest · Jobcus" %}
-{% set is_paid = (current_user.is_authenticated and (current_user.plan|lower in ['standard','premium'])) %}
+{# NEW: unified watermark logic #}
+{% set is_paid  = current_user.is_authenticated and (current_user.plan|lower in ['standard','premium']) %}
+{% set wm_text  = '' if is_paid else 'JOBCUS.COM' %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-builder.css') }}">
@@ -211,10 +212,16 @@ Google IT Support Professional Certificate (2021)"></textarea>
                 <button type="button" id="downloadTemplatePdf" class="cta-primary">Download PDF</button>
                 <button type="button" id="downloadTemplateDocx" class="cta-secondary">Download DOCX</button>
               </div>
-              <div id="resumePreviewWrap" style="display:none;margin-top:1rem;"
-                   {% if not is_paid %} data-watermark="{{ wm }}"{% endif %}>
+
+              {# UPDATED: unified preview wrapper + watermark #}
+              <div id="previewTemplateWrap"
+                   class="preview-wrap"
+                   style="display:none;margin-top:1rem;"
+                   {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
                 <h3>Preview</h3>
-                <iframe id="resumePreview" class="resume-preview" style="width:100%;height:100vh;border:0;background:#fff;"></iframe>
+                <iframe id="previewTemplateFrame"
+                        class="resume-preview"
+                        style="width:100%;height:100vh;border:0;background:#fff;"></iframe>
               </div>
             </div>
           </article>
@@ -232,10 +239,16 @@ Google IT Support Professional Certificate (2021)"></textarea>
                 <button type="button" id="downloadTemplatePdfFinish" class="cta-primary">Download PDF</button>
                 <button type="button" id="downloadTemplateDocxFinish" class="cta-secondary">Download DOCX</button>
               </div>
-              <div id="resumePreviewWrapFinish" style="display:none;margin-top:1rem;"
-                   {% if not is_paid %} data-watermark="{{ wm }}"{% endif %}>
+
+              {# UPDATED: finish preview wrapper + watermark #}
+              <div id="previewTemplateWrapFinish"
+                   class="preview-wrap"
+                   style="display:none;margin-top:1rem;"
+                   {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
                 <h3>Preview</h3>
-                <iframe id="resumePreviewFinish" class="resume-preview" style="width:100%;height:90vh;border:0;background:#fff;"></iframe>
+                <iframe id="previewTemplateFrameFinish"
+                        class="resume-preview"
+                        style="width:100%;height:90vh;border:0;background:#fff;"></iframe>
               </div>
             </div>
           </article>
