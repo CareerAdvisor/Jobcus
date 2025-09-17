@@ -16,6 +16,7 @@
     <h2 class="subject-title">Employer Inquiry Form</h2>
     <p class="subject-subtitle">Tell us who you're looking to hire and how we can assist your recruitment process.</p>
   </header>
+
   <form id="employer-inquiry-form"
         class="ui-form"
         data-endpoint="{{ url_for('employer_inquiry') }}"
@@ -125,7 +126,7 @@
       <button type="submit" class="primary-btn">✨ Generate Job Description</button>
     </div>
   </form>
-  
+
   <div id="job-description-output" class="output-box" aria-live="polite"></div>
   <div id="download-options" class="download-bar hidden" style="display:none;">
     <button id="download-pdf"  class="secondary-btn">⬇️ Download .pdf</button>
