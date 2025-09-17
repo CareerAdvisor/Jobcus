@@ -369,29 +369,35 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           const plan = (document.body.dataset.plan || "guest").toLowerCase();
           const isPaid       = (plan === "standard" || plan === "premium");
           const isSuperadmin = (document.body.dataset.superadmin === "1");
-    
+      
           const d    = frame.contentDocument || frame.contentWindow?.document;
           const host = d?.body || d?.documentElement;
           if (!host) return;
-    
+      
+          // Ensure nocopy CSS exists INSIDE the iframe
           const style = d.createElement("style");
           style.textContent = `
             .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
-            @media print { body { background-image: none !important; } }
+            @media print { body { background-image: none !important; }
           `;
           d.head.appendChild(style);
       
-          // ─────────────────────────────────────────────────────────
-          // 1) STRIP any existing watermarks (including email-based)
-          // ─────────────────────────────────────────────────────────
-          (function stripExistingWatermarks(doc){
+          // 1) Nuke any watermark/backgrounds (including pseudo-elements) inside the iframe
+          (function nukeIframeWatermarks(doc){
             try {
-              // remove attributes the server may have placed
+              if (!doc.getElementById("wm-nuke-style")) {
+                const st = doc.createElement("style");
+                st.id = "wm-nuke-style";
+                st.textContent = `
+                  * { background-image: none !important; }
+                  *::before, *::after { background-image: none !important; content: '' !important; }
+                `;
+                (doc.head || doc.documentElement).appendChild(st);
+              }
               doc.querySelectorAll("[data-watermark], [data-watermark-tile]").forEach(el => {
                 el.removeAttribute("data-watermark");
                 el.removeAttribute("data-watermark-tile");
               });
-              // remove our/old classes + inline backgrounds
               doc.querySelectorAll(".wm-tiled, [style*='background-image']").forEach(el => {
                 el.classList.remove("wm-tiled");
                 el.style.backgroundImage = "";
@@ -400,10 +406,8 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
               });
             } catch {}
           })(d);
-          
-          // ─────────────────────────────────────────────────────────
       
-          // 2) Apply sanitized JOBCUS.COM watermark
+          // 2) Apply ONLY our brand watermark (comment out isPaid check if you want it even for paid)
           if (!isSuperadmin /* && !isPaid */ && window.applyTiledWatermark) {
             window.applyTiledWatermark(host, "JOBCUS.COM", {
               size: 460,
@@ -412,7 +416,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
             });
           }
       
-          // 3) nocopy guards inside the iframe
+          // 3) nocopy guards
           host.classList.add("nocopy");
           const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
           ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
