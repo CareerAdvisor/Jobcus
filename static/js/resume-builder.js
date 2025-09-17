@@ -304,24 +304,19 @@ function initSkills() {
   return { refreshChips, skillsSet };
 }
 
-// ───────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────
 // Render with server templates (HTML/PDF/DOCX)
-// ───────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
 
   // JSON POST helper for this module (uses same error path)
   async function postAndMaybeError(url, payload) {
     const res = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"   // ensure JSON on errors (e.g., 403/402)
-      },
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify(payload)
     });
-    if (!res.ok) {
-      await handleCommonErrors(res);
-    }
+    if (!res.ok) { await handleCommonErrors(res); }
     return res;
   }
 
@@ -329,9 +324,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     const res = await postAndMaybeError("/build-resume", { format: "pdf", theme, ...ctx });
     const blob = await res.blob();
     const ct   = res.headers.get("content-type") || "";
-    if (!ct.includes("application/pdf")) {
-      throw new Error("PDF generation failed.");
-    }
+    if (!ct.includes("application/pdf")) throw new Error("PDF generation failed.");
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = "resume.pdf"; a.click();
@@ -358,10 +351,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ format: "html", theme, ...ctx })
   });
-
-  if (!res.ok) {
-    await handleCommonErrors(res);
-  }
+  if (!res.ok) { await handleCommonErrors(res); }
 
   const ct = res.headers.get("content-type") || "";
   const wrap  = qs(document, withinBuilder("#resumePreviewWrap, #resumePreviewWrapFinish"));
@@ -369,33 +359,37 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
 
   if (ct.includes("text/html")) {
     const html = await res.text();
-  
+
     if (wrap && frame) {
       wrap.style.display = "block";
-  
+
+      // Bind before setting srcdoc so load is never missed
       const onLoadOnce = () => {
         try {
           const plan = (document.body.dataset.plan || "guest").toLowerCase();
           const isPaid       = (plan === "standard" || plan === "premium");
           const isSuperadmin = (document.body.dataset.superadmin === "1");
-  
+
           const d    = frame.contentDocument || frame.contentWindow?.document;
           const host = d?.body || d?.documentElement;
           if (!host) return;
-  
+
+          // Ensure nocopy CSS exists inside the iframe
           const style = d.createElement("style");
           style.textContent = `
             .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
             @media print { body { background-image: none !important; } }
           `;
           d.head.appendChild(style);
-  
+
+          // Apply JOBCUS.COM watermark (remove && !isPaid if you want on all tiers)
           if (!isSuperadmin /* && !isPaid */ && window.applyTiledWatermark) {
             window.applyTiledWatermark(host, "JOBCUS.COM", {
               size: 460, alpha: 0.16, angles: [-32, 32]
             });
           }
-  
+
+          // nocopy class + JS guards inside the iframe
           host.classList.add("nocopy");
           const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
           ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
@@ -408,11 +402,11 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           });
         } catch {}
       };
-  
+
       frame.addEventListener("load", onLoadOnce, { once: true });
       frame.srcdoc = html;
     }
-  
+
   } else if (ct.includes("application/json")) {
     const data = await res.json().catch(() => ({}));
     if (data?.message) window.showUpgradeBanner?.(data.message);
@@ -421,6 +415,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     const txt = await res.text().catch(() => "");
     throw new Error(`Preview failed. ${txt ? "Server said: " + txt : ""}`);
   }
+} // ← END of renderWithTemplateFromContext
 
 // ───────────────────────────────────────────────
 // Wizard
