@@ -29,24 +29,25 @@
 <body>
   <div class="cl">
 
-    <!-- Centered header (name → address → email/phone) -->
+    <!-- Header: Name (big) → one-line address → email/phone -->
     <header class="header">
       {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
 
-      {# Address directly under the name #}
-      {% if sender.address1 %}
-        <div class="muted">{{ sender.address1 }}</div>
-      {% endif %}
-      {% if sender.city or sender.postcode %}
+      {# Address on ONE line: "address1, city, postcode" #}
+      {% if sender.address1 or sender.city or sender.postcode %}
         <div class="muted">
-          {{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}
+          {% if sender.address1 %}{{ sender.address1 }}{% endif %}
+          {% if sender.city %}{% if sender.address1 %}, {% endif %}{{ sender.city }}{% endif %}
+          {% if sender.postcode %}{% if sender.address1 or sender.city %}, {% endif %}{{ sender.postcode }}{% endif %}
         </div>
       {% endif %}
 
-      {# Email/phone directly under address (separate line) #}
+      {# Email | Phone on the next line #}
       {% if sender.email or sender.phone %}
         <div class="muted">
-          {{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}
+          {% if sender.email %}{{ sender.email }}{% endif %}
+          {% if sender.email and sender.phone %} | {% endif %}
+          {% if sender.phone %}{{ sender.phone }}{% endif %}
         </div>
       {% endif %}
     </header>
