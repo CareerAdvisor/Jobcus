@@ -623,7 +623,6 @@ def _penalties(resume_text: str, roles: list, hard_fail: bool):
 
     return pts, reasons
 
-# ---------- 1) Template-based resume (HTML/PDF) ----------
 @resumes_bp.post("/build-resume")
 @login_required
 def build_resume():
@@ -632,6 +631,11 @@ def build_resume():
     fmt   = (data.get("format") or "html").lower()
 
     ctx = _normalize_ctx(data)
+
+    # 1) Paid/watermark flags for the template (explicit)
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    is_paid = plan in ("standard", "premium")
+    wm_text = "" if is_paid else "JOBCUS.COM"
 
     tpl_ctx = {
         "name":           ctx.get("name", ""),
@@ -643,13 +647,39 @@ def build_resume():
         "experience":     ctx.get("experience", []),
         "education":      ctx.get("education", []),
         "certifications": ctx.get("certifications", []),
+        # expose to Jinja
+        "is_paid": is_paid,
+        "wm_text": wm_text,
+        "for_pdf": (fmt == "pdf"),
     }
 
     template_path = f"resumes/{'minimal' if theme == 'minimal' else 'modern'}.html"
-    html = render_template(template_path, for_pdf=(fmt == "pdf"), **tpl_ctx)
+    html = render_template(template_path, **tpl_ctx)
+
+    # 2) Optional PDF hardening: if template forgot watermark, add a light overlay
+    if fmt == "pdf" and not is_paid:
+        if "data-watermark" not in html:
+            html = html.replace("<body", f'<body data-watermark="{wm_text}"', 1)
+        if "data-watermark]::before" not in html:
+            wm_css = """
+<style>
+  body[data-watermark]::before{
+    content: attr(data-watermark);
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%) rotate(-32deg);
+    font: 72px/1.1 Arial, Helvetica, sans-serif;
+    color: rgba(0,0,0,.12);
+    letter-spacing: 2px;
+    white-space: nowrap;
+    user-select: none;
+    pointer-events: none;
+    z-index: 9999;
+  }
+</style>"""
+            html = html.replace("</head>", wm_css + "</head>", 1)
 
     if fmt == "pdf":
-        plan = (getattr(current_user, "plan", "free") or "free").lower()
         if not feature_enabled(plan, "downloads"):
             return jsonify(
                 error="upgrade_required",
