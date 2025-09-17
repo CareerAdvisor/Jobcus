@@ -145,6 +145,24 @@ document.addEventListener("DOMContentLoaded", function () {
   const dlPdfBtn        = document.getElementById("download-pdf");
   const dlDocxBtn       = document.getElementById("download-docx"); // only PDF & DOCX
 
+  // 🔹 Your requested overlay controller (shows WM only after content exists)
+  const wrap = document.getElementById("jobDescriptionWrap");
+  const out  = output; // alias
+
+  function renderJobDescription(html) {
+    if (!out) return;
+    out.innerHTML = html || "";
+    if (wrap?.dataset?.watermark) wrap.classList.add("wm-active"); // show overlay now
+    downloadOptions?.classList.remove("hidden");
+    if (downloadOptions) downloadOptions.style.display = "";
+  }
+  function clearJobDescription() {
+    if (!out) return;
+    out.textContent = "";
+    wrap?.classList.remove("wm-active");
+    downloadOptions?.classList.add("hidden");
+  }
+
   // ── No-copy / no-screenshot guard (free tier only) ─────────────────────────
   function enableNoCopyNoShot(el){
     if (!el) return;
@@ -161,47 +179,54 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ── Helper to render JD and reveal downloads (with watermark for free) ─────
+  // ── Helper to render JD & enforce policy (uses overlay + optional inner tiler) ─
   function paintJD(text) {
-    if (!output) return;
+    if (!out) return;
 
-    // Render first
-    output.innerHTML = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text || "")}</pre>`;
+    // 1) Render and show overlay watermark now
+    const html = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text || "")}</pre>`;
+    renderJobDescription(html);
 
-    // Always strip any pre-existing/email watermark; then enforce policy
-    stripWatermarks(output);
+    // 2) Always strip any pre-existing/email watermark from the inner content
+    stripWatermarks(out);
 
-    // ✅ Watermark + protect (FREE users only)
+    // 3) FREE users: tile inside the box + protect copy
     if (!isPaid && !isSuperadmin) {
-      applyWM(output, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
-      output.classList.add("nocopy");
-      enableNoCopyNoShot(output);
+      if (window.applyTiledWatermark) {
+        window.applyTiledWatermark(out, "JOBCUS.COM", { size: 460, alpha: 0.16, angle: -30 });
+      } else {
+        applyWM(out, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+      }
+      out.classList.add("nocopy");
+      enableNoCopyNoShot(out);
     }
 
+    // 4) enable download buttons
     downloadOptions?.classList.remove("hidden");
-    downloadOptions && (downloadOptions.style.display = "");
-    dlPdfBtn && (dlPdfBtn.disabled = false);
-    dlDocxBtn && (dlDocxBtn.disabled = false);
+    if (downloadOptions) downloadOptions.style.display = "";
+    if (dlPdfBtn) dlPdfBtn.disabled = false;
+    if (dlDocxBtn) dlDocxBtn.disabled = false;
   }
 
   // Hide downloads while loading/empty + clear any prior watermark
   function hideDownloads() {
     downloadOptions?.classList.add("hidden");
-    downloadOptions && (downloadOptions.style.display = "none");
-    dlPdfBtn && (dlPdfBtn.disabled = true);
-    dlDocxBtn && (dlDocxBtn.disabled = true);
+    if (downloadOptions) downloadOptions.style.display = "none";
+    if (dlPdfBtn) dlPdfBtn.disabled = true;
+    if (dlDocxBtn) dlDocxBtn.disabled = true;
 
-    if (output) {
-      stripWatermarks(output);
-      output.classList.remove("nocopy");
+    if (out) {
+      stripWatermarks(out);
+      out.classList.remove("nocopy");
+      wrap?.classList.remove("wm-active");
     }
   }
 
   // Helper: extract plain text from the output box
   function readOutputText() {
-    const pre = output?.querySelector("pre");
+    const pre = out?.querySelector("pre");
     if (pre) return (pre.innerText || pre.textContent || "").trim();
-    return (output?.innerText || "").trim();
+    return (out?.innerText || "").trim();
   }
 
   // Local fallback (dev only; used on 404 so you don’t bypass gating in prod)
@@ -352,12 +377,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const endpoint = jobPostForm.dataset.endpoint; // injected by Jinja
       if (!endpoint) {
         console.error("No job-post endpoint on form.");
-        output.innerHTML = `<div class="ai-response">❌ Missing endpoint.</div>`;
+        out.innerHTML = `<div class="ai-response">❌ Missing endpoint.</div>`;
         return;
       }
 
       const payload = Object.fromEntries(new FormData(jobPostForm).entries());
-      output.innerHTML = "Generating…";
+      out.innerHTML = "Generating…";
       hideDownloads();
 
       try {
@@ -373,14 +398,25 @@ document.addEventListener("DOMContentLoaded", function () {
         const text = data?.description || data?.jobDescription || "";
 
         if (text) {
-          paintJD(text); // sets HTML, strips old WM, applies single JOBCUS.COM for free, and enables buttons
+          // ⬇️ Your requested insertion point:
+          //    call renderJobDescription(...) THEN optionally tile-inside for free users
+          //    (This is also wrapped by paintJD(), which keeps no-copy + downloads logic.)
+          paintJD(text);
+
+          // If you ever want to do it manually instead of paintJD:
+          // const html = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text)}</pre>`;
+          // renderJobDescription(html);
+          // if (!isPaid && window.applyTiledWatermark) {
+          //   window.applyTiledWatermark(document.getElementById("job-description-output"), "JOBCUS.COM");
+          // }
+
         } else {
-          output.innerHTML = `<div class="ai-response">No content returned.</div>`;
+          out.innerHTML = `<div class="ai-response">No content returned.</div>`;
           hideDownloads();
         }
       } catch (err) {
         console.error("Job Post Error:", err);
-        output.innerHTML = `<div class="ai-response">❌ ${escapeHtml(err.message || "Something went wrong.")}</div>`;
+        out.innerHTML = `<div class="ai-response">❌ ${escapeHtml(err.message || "Something went wrong.")}</div>`;
         hideDownloads();
       }
     });
