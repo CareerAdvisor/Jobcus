@@ -348,3 +348,18 @@
 }
 */
 
+  .preview-wrap{ position: relative; }
+  .preview-wrap iframe{ display:block; width:100%; height:80vh; border:0; background:#fff; }
+
+  /* Center overlay; shows only if the attribute exists */
+  .preview-wrap[data-watermark]::after{
+    content: attr(data-watermark);
+    position:absolute; inset:0;
+    display:grid; place-items:center;
+    font: 700 28px/1 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: rgba(16,72,121,.10);
+    transform: rotate(-28deg);
+    letter-spacing:.08em;
+    user-select:none; pointer-events:none;
+    z-index: 3;
+  }
