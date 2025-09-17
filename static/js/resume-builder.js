@@ -368,57 +368,66 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
   const frame = qs(document, withinBuilder("#resumePreview, #resumePreviewFinish"));
 
   if (ct.includes("text/html")) {
-    const html = await res.text();
-    if (wrap && frame) {
-      wrap.style.display = "block";
-      frame.srcdoc = html;
-    }
-  
-    // ✅ JOBCUS watermark + nocopy IN THE IFRAME (no emails)
-    try {
-      const plan = (document.body.dataset.plan || "guest").toLowerCase();
-      const isPaid       = (plan === "standard" || plan === "premium");
-      const isSuperadmin = (document.body.dataset.superadmin === "1");
-  
-      // If you want the watermark for everyone, remove the gate below
-      if (!isSuperadmin /* && !isPaid */ && window.applyTiledWatermark && frame) {
-        // wait for srcdoc to render
-        setTimeout(() => {
-          try {
-            const d    = frame.contentDocument || frame.contentWindow?.document;
-            const host = d?.body || d?.documentElement;
-            if (!host) return;
-  
-            // Watermark: bigger, multi-angle
-            window.applyTiledWatermark(host, "JOBCUS.COM", {
-              size: 460,
-              alpha: 0.16,
-              angles: [-32, 32]
-            });
-  
-            // nocopy CSS + JS guards inside iframe
-            host.classList.add("nocopy");
-            const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
-            ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
-              host.addEventListener(ev, kill)
-            );
-            d.addEventListener("keydown", (e) => {
-              const k = (e.key || "").toLowerCase();
-              if ((e.ctrlKey || e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
-              if (k === "printscreen") return kill(e);
-            });
-          } catch {}
-        }, 50);
-      }
-    } catch {}
-  } else if (ct.includes("application/json")) {
-    const data = await res.json().catch(() => ({}));
-    if (data?.message) window.showUpgradeBanner?.(data.message);
-    throw new Error(data?.message || "Preview failed.");
-  } else {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`Preview failed. ${txt ? "Server said: " + txt : ""}`);
+  const html = await res.text();
+
+  if (wrap && frame) {
+    wrap.style.display = "block";
+
+    // Bind before setting srcdoc so we never miss the event
+    const onLoadOnce = () => {
+      try {
+        const plan = (document.body.dataset.plan || "guest").toLowerCase();
+        const isPaid       = (plan === "standard" || plan === "premium");
+        const isSuperadmin = (document.body.dataset.superadmin === "1");
+
+        // Step into the iframe document
+        const d    = frame.contentDocument || frame.contentWindow?.document;
+        const host = d?.body || d?.documentElement;
+        if (!host) return;
+
+        // 1) Ensure nocopy CSS exists INSIDE the iframe
+        const style = d.createElement("style");
+        style.textContent = `
+          .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
+          @media print { body { background-image: none !important; } }
+        `;
+        d.head.appendChild(style);
+
+        // 2) Apply watermark (remove "&& !isPaid" if you want all tiers watermarked)
+        if (!isSuperadmin /* && !isPaid */ && window.applyTiledWatermark) {
+          window.applyTiledWatermark(host, "JOBCUS.COM", {
+            size: 460,
+            alpha: 0.16,
+            angles: [-32, 32]
+          });
+        }
+
+        // 3) nocopy class + JS guards inside the iframe
+        host.classList.add("nocopy");
+        const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
+        ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
+          host.addEventListener(ev, kill)
+        );
+        d.addEventListener("keydown", (e) => {
+          const k = (e.key || "").toLowerCase();
+          if ((e.ctrlKey || e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
+          if (k === "printscreen") return kill(e);
+        });
+      } catch {}
+    };
+
+    frame.addEventListener("load", onLoadOnce, { once: true });
+    frame.srcdoc = html; // triggers the load event
   }
+
+} else if (ct.includes("application/json")) {
+  const data = await res.json().catch(() => ({}));
+  if (data?.message) window.showUpgradeBanner?.(data.message);
+  throw new Error(data?.message || "Preview failed.");
+} else {
+  const txt = await res.text().catch(() => "");
+  throw new Error(`Preview failed. ${txt ? "Server said: " + txt : ""}`);
+}
 
 // ───────────────────────────────────────────────
 // Wizard
