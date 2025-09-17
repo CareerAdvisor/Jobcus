@@ -369,12 +369,11 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           const plan = (document.body.dataset.plan || "guest").toLowerCase();
           const isPaid       = (plan === "standard" || plan === "premium");
           const isSuperadmin = (document.body.dataset.superadmin === "1");
-      
+    
           const d    = frame.contentDocument || frame.contentWindow?.document;
           const host = d?.body || d?.documentElement;
           if (!host) return;
-      
-          // Ensure nocopy CSS exists INSIDE the iframe
+    
           const style = d.createElement("style");
           style.textContent = `
             .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
@@ -383,7 +382,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           d.head.appendChild(style);
       
           // ─────────────────────────────────────────────────────────
-          // 1) STRIP ANY EXISTING WATERMARK (email, old tiles, etc.)
+          // 1) STRIP any existing watermarks (including email-based)
           // ─────────────────────────────────────────────────────────
           (function stripExistingWatermarks(doc){
             try {
@@ -401,9 +400,10 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
               });
             } catch {}
           })(d);
+          
           // ─────────────────────────────────────────────────────────
       
-          // 2) Apply ONLY JOBCUS.COM (remove "&& !isPaid" if you want on all tiers)
+          // 2) Apply sanitized JOBCUS.COM watermark
           if (!isSuperadmin /* && !isPaid */ && window.applyTiledWatermark) {
             window.applyTiledWatermark(host, "JOBCUS.COM", {
               size: 460,
@@ -412,7 +412,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
             });
           }
       
-          // 3) nocopy + key guards inside the iframe
+          // 3) nocopy guards inside the iframe
           host.classList.add("nocopy");
           const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
           ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
