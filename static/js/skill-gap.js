@@ -1,5 +1,7 @@
 // /static/js/skill-gap.js
 (function () {
+  "use strict";
+
   // Always send cookies with fetch (SameSite=Lax)
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
@@ -14,6 +16,86 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  }
+
+  // ───────────────────────────────────────────────
+  // Watermark helpers (email-safe + strip fallbacks)
+  // ───────────────────────────────────────────────
+  const EMAIL_RE = /@.+\./;
+  function sanitizeWM(t) {
+    const raw = String(t || "").trim();
+    return (!raw || EMAIL_RE.test(raw)) ? "JOBCUS.COM" : raw;
+  }
+  function stripWatermarks(root = document) {
+    // Prefer global helper from base.js
+    if (typeof window.stripExistingWatermarks === "function") {
+      try { window.stripExistingWatermarks(root); return; } catch {}
+    }
+    // Local fallback (kills bg images & pseudo-element content)
+    try {
+      const doc = root.ownerDocument || root;
+      if (doc && !doc.getElementById("wm-nuke-style")) {
+        const st = doc.createElement("style");
+        st.id = "wm-nuke-style";
+        st.textContent = `
+          * { background-image: none !important; }
+          *::before, *::after { background-image: none !important; content: '' !important; }
+        `;
+        (doc.head || doc.documentElement).appendChild(st);
+      }
+      (root.querySelectorAll
+        ? root.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']")
+        : []
+      ).forEach(el => {
+        el.removeAttribute?.("data-watermark");
+        el.removeAttribute?.("data-watermark-tile");
+        el.classList?.remove("wm-tiled");
+        if (el.style) {
+          el.style.backgroundImage = "";
+          el.style.backgroundSize = "";
+          el.style.backgroundBlendMode = "";
+        }
+      });
+    } catch {}
+  }
+  function applyWM(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
+    text = sanitizeWM(text);
+    if (!el || !text) return;
+    // Prefer global tiler from base.js
+    if (typeof window.applyTiledWatermark === "function") {
+      stripWatermarks(el);
+      window.applyTiledWatermark(el, text, opts);
+      return;
+    }
+    // Local minimal fallback
+    stripWatermarks(el);
+    const size = opts.size || 420;
+    const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
+    function makeTile(t, angle, alpha = 0.18) {
+      const c = document.createElement("canvas");
+      c.width = size; c.height = size;
+      const ctx = c.getContext("2d");
+      ctx.clearRect(0,0,size,size);
+      ctx.globalAlpha = (opts.alpha ?? alpha);
+      ctx.translate(size/2, size/2);
+      ctx.rotate((angle * Math.PI)/180);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = 'bold 36px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      ctx.fillStyle = "#000";
+      const L = String(t).toUpperCase();
+      const gap = 44;
+      ctx.fillText(L, 0, -gap/2);
+      ctx.fillText(L, 0,  gap/2);
+      return c.toDataURL("image/png");
+    }
+    const urls = angles.map(a => makeTile(text, a));
+    const sz = size + "px " + size + "px";
+    el.classList.add("wm-tiled");
+    el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
+    el.style.backgroundSize = urls.map(() => sz).join(", ");
+    el.style.backgroundBlendMode = "multiply, multiply";
+    el.style.backgroundRepeat = "repeat";
   }
 
   // Centralized error handler — handle upgrade BEFORE generic 401/403
@@ -31,15 +113,15 @@
       }
     } catch { body = null; }
 
-    // ---- Upgrade / quota exceeded FIRST (covers 402 or 403 with upgrade_required) ----
+    // ---- Upgrade / quota exceeded FIRST ----
     if (res.status === 402 || (body?.error === "upgrade_required")) {
       const html = body?.message_html;
       const text = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
-      window.showUpgradeBanner?.(html || text);  // sticky banner supports HTML links
+      window.showUpgradeBanner?.(html || text);
       throw new Error(text);
     }
 
-    // ---- Auth required (true 401/403 without upgrade flag) ----
+    // ---- Auth required ----
     if (res.status === 401 || res.status === 403) {
       const msg = (body && body.message) || "Please sign up or log in to use this feature.";
       window.showUpgradeBanner?.(msg);
@@ -47,7 +129,7 @@
       throw new Error(msg);
     }
 
-    // Abuse guard (network/device)
+    // Abuse guard
     if (res.status === 429 && body && (body.error === "too_many_free_accounts" || body.error === "device_limit")) {
       const msg = (body && body.message) || "Too many free accounts detected from your network/device.";
       window.showUpgradeBanner?.(msg);
@@ -58,7 +140,7 @@
     throw new Error(msg);
   }
 
-  // ── Watermark + protections (applied AFTER content renders) ─────────────────
+  // ── Plan flags ─────────────────
   function readFlags() {
     const plan = (document.body.dataset.plan || "guest").toLowerCase();
     return {
@@ -67,49 +149,20 @@
     };
   }
 
-  function clearWatermark(box) {
-    if (!box) return;
-    box.classList.remove("wm-tiled", "nocopy");
-    box.style.backgroundImage = "";
-    box.style.backgroundSize  = "";
-    box.removeAttribute("data-watermark");
-    box.removeAttribute("data-watermark-tile");
-  }
-
-  function applyWatermarkJobcus(box) {
-    if (!box) return;
-    if (typeof window.applyTiledWatermark === "function") {
-      box.setAttribute("data-watermark", "jobcus");
-      box.setAttribute("data-watermark-tile", "1");
-      window.applyTiledWatermark(box, "jobcus", { size: 360, alpha: 0.12 });
-      return;
-    }
-    // Fallback if helper isn’t loaded
-    box.classList.add("wm-tiled");
-    box.style.backgroundImage =
-      "repeating-linear-gradient(-30deg, rgba(0,0,0,.12) 0, rgba(0,0,0,.12) 1px, transparent 1px, transparent 60px)";
-    box.style.backgroundSize = "360px 360px";
-  }
-
-  function enableNoCopyAndNoScreenshot(box) {
+  // nocopy + key guards (for free users)
+  function enableNoCopyNoShot(box) {
     if (!box) return;
     box.classList.add("nocopy");
-
     const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
     const keyBlock = (e) => {
-      const k = e.key?.toLowerCase?.() || "";
-      if (
-        (e.ctrlKey || e.metaKey) && (k === "c" || k === "x" || k === "s" || k === "p") ||
-        k === "printscreen"
-      ) kill(e);
+      const k = (e.key || "").toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
+      if (k === "printscreen") return kill(e);
     };
-
-    box.addEventListener("copy", kill);
-    box.addEventListener("cut", kill);
-    box.addEventListener("dragstart", kill);
-    box.addEventListener("contextmenu", kill);
-    box.addEventListener("selectstart", kill);
-    document.addEventListener("keydown", keyBlock);
+    ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
+      box.addEventListener(ev, kill, { passive: false })
+    );
+    document.addEventListener("keydown", keyBlock, { passive: false });
 
     // Hide on print
     const style = document.createElement("style");
@@ -117,19 +170,15 @@
     document.head.appendChild(style);
   }
 
-  function protectPreviewIfFree(box) {
+  // Enforce watermark policy on the result box
+  function protectResultBox(box) {
     const { isPaid, isSuperadmin } = readFlags();
-    if (isPaid || isSuperadmin) { clearWatermark(box); return; }
-    if (window.applyTiledWatermark) {
-      window.applyTiledWatermark(box, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
-    } else {
-      // keep your CSS fallback if helper not loaded
-      box.classList.add("wm-tiled");
-      box.style.backgroundImage =
-        "repeating-linear-gradient(-30deg, rgba(0,0,0,.12) 0, rgba(0,0,0,.12) 1px, transparent 1px, transparent 60px)";
-      box.style.backgroundSize = "360px 360px";
+    // Always strip any pre-existing (email/user) watermark first
+    stripWatermarks(box);
+    if (!isPaid && !isSuperadmin) {
+      applyWM(box, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+      enableNoCopyNoShot(box);
     }
-    enableNoCopyAndNoScreenshot(box);
   }
 
   // ── Main form wire-up ───────────────────────────────────────────
@@ -154,7 +203,7 @@
       }
 
       // Reset + loading
-      clearWatermark(resultBox);
+      stripWatermarks(resultBox);
       resultBox.innerHTML = '<span class="typing">Analyzing skill gaps<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>';
       resultBox.classList.remove("show");
       void resultBox.offsetWidth; // reflow for animation
@@ -192,8 +241,8 @@
           resultBox.innerHTML = '<div class="ai-response"><pre>' + escapeHtml(String(output)) + "</pre></div>";
         }
 
-        // 🔒 Only after content exists, protect & watermark (free users only)
-        protectPreviewIfFree(resultBox);
+        // After content exists, enforce the policy (free users only get JOBCUS.COM)
+        protectResultBox(resultBox);
       } catch (err) {
         console.error("Skill Gap Error:", err);
         const msg = err?.message || "Something went wrong. Please try again later.";
