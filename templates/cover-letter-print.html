@@ -8,31 +8,42 @@
     /* Exact 0.75" on all sides */
     @page { size: A4; margin: 0.75in; }
 
-    html,body{background:#fff;margin:0;font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    /* Remove extra vertical margin so the name sits at the 0.75" top edge */
-    .cl{max-width:740px;margin:0 auto;padding:0 18px;color:#111}
+    /* 12pt body everywhere; calm, readable line-height */
+    html, body { background:#fff; margin:0; font: 12pt/1.55 Arial, Helvetica, sans-serif; color:#111; }
 
-    .header{margin:0 0 10px 0;text-align:center}
-    .name{font-weight:800;font-size:32px;line-height:1.1}
-    .muted{color:#666}
+    /* Page container */
+    .cl { max-width: 740px; margin: 0 auto; padding: 0 18px; }
 
-    /* Date on the LEFT, with small breathing room below */
-    .date-left{margin:6px 0 14px 0;color:#555;text-align:left}
+    /* Centered identity block */
+    .header { margin: 0 0 10pt 0; text-align: center; }
+    .name   { font-weight: 800; font-size: 32pt; line-height: 1.1; margin: 0; }
+    .muted  { color: #666; }
 
-    .recipient{margin:18px 0 16px 0}
-    .block{white-space:pre-wrap}
+    /* Date left, same 12pt scale */
+    .date-left { margin: 6pt 0 14pt 0; color: #555; text-align: left; }
+
+    .recipient { margin: 18pt 0 16pt 0; }
+    .block { white-space: pre-wrap; overflow-wrap: anywhere; }
   </style>
 </head>
 <body>
   <div class="cl">
 
-    <!-- Centered header (name + contact) -->
+    <!-- Centered header (name → address → email/phone) -->
     <header class="header">
       {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
-      {% if sender.address1 %}<div class="muted">{{ sender.address1 }}</div>{% endif %}
-      {% if sender.city or sender.postcode %}
-        <div class="muted">{{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}</div>
+
+      {# Address directly under the name #}
+      {% if sender.address1 %}
+        <div class="muted">{{ sender.address1 }}</div>
       {% endif %}
+      {% if sender.city or sender.postcode %}
+        <div class="muted">
+          {{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}
+        </div>
+      {% endif %}
+
+      {# Email/phone directly under address (separate line) #}
       {% if sender.email or sender.phone %}
         <div class="muted">
           {{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}
@@ -56,13 +67,13 @@
     {% endif %}
 
     <!-- Salutation -->
-    <div style="margin-bottom:12px;">Dear {{ recipient.name or 'Hiring Manager' }},</div>
+    <div style="margin-bottom:12pt;">Dear {{ recipient.name or 'Hiring Manager' }},</div>
 
-    <!-- Body (AI / user text) -->
+    <!-- Body -->
     <main class="block">{{ cover_body or draft }}</main>
 
     <!-- Closing -->
-    <div style="margin-top:18px;">Yours sincerely,</div>
+    <div style="margin-top:18pt;">Yours sincerely,</div>
     <div>{{ sender.name }}</div>
   </div>
 </body>
