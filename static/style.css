@@ -3954,3 +3954,21 @@ body.has-upgrade-banner {
   overflow: hidden;
 }
 
+/* Watermark overlay: hidden by default, shown when .wm-active is added */
+.preview-wrap[data-watermark] { position: relative; }
+.preview-wrap[data-watermark]::after{
+  /* hidden until .wm-active is added */
+  display: none;
+  content: attr(data-watermark);
+  position: absolute; inset: 0;
+  display: none;               /* default hidden */
+  place-items: center;
+  font: 700 28px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: rgba(16,72,121,.08);
+  transform: rotate(-30deg);
+  user-select: none; pointer-events: none;
+  white-space: pre-wrap; text-align: center;
+}
+.preview-wrap[data-watermark].wm-active::after{
+  display: grid;                /* show only once content is ready */
+}
