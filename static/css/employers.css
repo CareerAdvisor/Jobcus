@@ -27,12 +27,6 @@
   background:#fdf7e6; border-color:#ffe39d;
 }
 
-.section-head h2{
-  margin:0 0 6px; color:var(--brand);
-  font-size:clamp(22px,2.4vw,28px); font-weight:800; letter-spacing:.2px;
-}
-.section-head p{ margin:0 0 16px; color:var(--muted); }
-
 /* Forms */
 .ui-form { margin-top:6px; }
 .form-grid{ display:grid; gap:14px; }
@@ -95,85 +89,37 @@
 .download-bar{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
 .hidden{ display:none !important; }
 
-/* Optional nocopy style (used by skill-gap/others) */
+/* Optional nocopy style */
 .nocopy, .nocopy * { user-select:none !important; -webkit-user-select:none !important; }
 
-/* --- Subject-style header (matches cover-letter vibe) --- */
-.subject-header{
+/* ----- Clean stacked form headers (title above subtitle) ----- */
+.stacked-hero{
   display:flex;
   flex-direction:column;
+  align-items:flex-start;
   gap:6px;
+  padding:16px 20px;
   margin:0 0 12px;
-  padding:14px 16px;
-  background:#fff;
-  border:1px solid var(--stroke);
-  border-radius:12px;
-  box-shadow:0 2px 10px rgba(16,72,121,.06);
+  background:#f6fbff;
+  border:1px solid #e6edf5;
+  border-radius:14px;
+  height:auto !important;   /* ensure it grows with content */
+  min-height:0;             /* no fixed heights */
 }
-.subject-title{
+.stacked-hero .subject-title{
   margin:0;
   font-weight:800;
   color:var(--brand);
-  font-size:clamp(22px, 2.4vw, 30px);
+  font-size:clamp(22px, 2.6vw, 28px);   /* reduced so it won't collide with fields */
   line-height:1.2;
-  white-space:normal;           /* prevent the tall broken stacking you saw */
 }
-.subject-title .emoji{
-  margin-right:.4rem;
-  filter: saturate(1.1);
-}
-.subject-subtitle{
+.stacked-hero .subject-subtitle{
   margin:0;
-  color:var(--muted);
+  color:#304c66;
+  font-size:clamp(14px, 1.6vw, 17px);
   line-height:1.45;
+  max-width:65ch;
 }
-
-@media (min-width: 720px){
-  .subject-header{
-    flex-direction:row;
-    align-items:flex-end;
-    justify-content:space-between;
-  }
-  .subject-subtitle{ max-width:60ch; text-align:right; }
+@media (min-width:720px){
+  .stacked-hero { padding:18px 22px; }
 }
-
-<!-- Put this <style> on the Job Post Generator & Employer Inquiry pages,
-     or move the CSS into your site stylesheet. -->
-
-  /* Reusable “stacked” hero for form cards */
-  .stacked-hero {
-    display: flex;
-    flex-direction: column;       /* title above subheader */
-    align-items: flex-start;
-    gap: 6px;
-    padding: 16px 20px;
-    border-radius: 14px;
-    background: #f6fbff;
-    border: 1px solid #e6edf5;
-    height: auto !important;      /* let it grow to fit content */
-    min-height: 0;                /* kill any fixed heights */
-  }
-  .stacked-hero h1 {
-    margin: 0;
-    line-height: 1.15;
-    font-weight: 800;
-    font-size: clamp(22px, 3.2vw, 34px);
-    color: #104879;
-  }
-  .stacked-hero p {
-    margin: 0;
-    max-width: 65ch;              /* keep a nice readable width */
-    font-size: clamp(14px, 1.6vw, 18px);
-    color: #304c66;
-  }
-
-  /* If your current card header has a fixed height, neutralize it */
-  .rb-card > header {
-    height: auto !important;
-    min-height: 0 !important;
-    display: block;                /* or flex; our .stacked-hero handles layout */
-    padding: 0;                    /* padding comes from .stacked-hero */
-    background: transparent;
-    border: 0;
-  }
-
