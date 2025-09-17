@@ -580,15 +580,18 @@ function applyConsent(consent) {
     }
   
     // Auto-apply if elements declare the attributes (still optional)
-    function scan(root=document){
-      root.querySelectorAll('[data-watermark][data-watermark-tile="1"]').forEach(el=>{
+    function scan(root) {
+      // If called as an event handler or with a non-node, default to document
+      if (!root || typeof root.querySelectorAll !== "function") root = document;
+    
+      root.querySelectorAll('[data-watermark][data-watermark-tile="1"]').forEach(el => {
         if (el.__wm_applied__) return;
         el.__wm_applied__ = true;
         applyTiledWatermark(el, el.getAttribute('data-watermark') || 'JOBCUS.COM');
       });
     }
-    document.addEventListener('DOMContentLoaded', scan);
-    new MutationObserver(()=>scan()).observe(document.documentElement,{childList:true,subtree:true});
+    document.addEventListener('DOMContentLoaded', () => scan(document));
+    new MutationObserver(() => scan()).observe(document.documentElement, { childList: true, subtree: true });
   
     window.applyTiledWatermark = applyTiledWatermark;
   })();
