@@ -14,64 +14,55 @@
     header, nav, footer,
     .site-header, .site-footer, .navbar, .topbar, .app-footer,
     .chat-widget, .floating-chat, .intercom-lightweight-app { display:none !important; }
-  
+
     html, body { background:#fff; margin:0; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
-  
-    /* ---- SCREEN: use px so size is stable across zoom/iframes ---- */
+
+    /* Screen + print use 12pt to match requirement */
     .cl {
       max-width: clamp(680px, 84vw, 860px);
       margin: 36px auto;
       padding: 0 16px;
       color:#111;
-      font: 16px/1.55 Arial, Helvetica, sans-serif; /* ≈ 12pt */
+      font: 12pt/1.55 Arial, Helvetica, sans-serif;
     }
-  
-    .cl-header { text-align:center; margin: 0 auto 14px; }
-    .cl-header .name { font-weight:800; font-size:42px; line-height:1.1; margin:0; } /* ≈ 32pt */
-    .cl-header .contact { margin-top:6px; color:#555; font-size:1em; }
-    .cl-header .contact .addr-line { margin:2px 0; }
-    .cl-header .contact .ep-line   { margin:4px 0 0; }
-  
-    .date       { margin: 12px 0 14px; color:#555; }
-    .recipient  { margin: 0 0 12px; }
-    .salutation { margin: 0 0 10px; }
+
+    .cl-header { text-align:center; margin: 0 auto 14pt; }
+    .cl-header .name { font-weight:800; font-size:32pt; line-height:1.1; margin:0; } /* big name */
+    .cl-header .contact { margin-top:6pt; color:#555; }
+    .cl-header .contact .line { margin:2pt 0; }
+
+    .date       { margin: 12pt 0 14pt; color:#555; }
+    .recipient  { margin: 0 0 12pt; }
+    .salutation { margin: 0 0 10pt; }
     .block      { white-space:pre-wrap; overflow-wrap:anywhere; }
-  
-    /* ---- PRINT: switch to true points ---- */
+
     @page  { size:A4; margin:18mm 18mm; }
-    @media print {
-      .cl { font: 12pt/1.55 Arial, Helvetica, sans-serif; }
-      .cl-header { margin-bottom: 14pt; }
-      .cl-header .name { font-size:32pt; }
-      .cl-header .contact { margin-top:6pt; }
-      .cl-header .contact .addr-line { margin:2pt 0; }
-      .cl-header .contact .ep-line   { margin:4pt 0 0; }
-      .date       { margin: 12pt 0 14pt; }
-      .recipient  { margin-bottom: 12pt; }
-      .salutation { margin-bottom: 10pt; }
-    }
   </style>
 
   <div class="cl">
+    <!-- Header: Name → one-line address → email/phone -->
     <div class="cl-header">
       {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
       <div class="contact">
-        {% if sender.address1 %}<div class="addr-line">{{ sender.address1 }}</div>{% endif %}
-        {% if sender.city or sender.postcode %}
-          <div class="addr-line">
-            {{ sender.city }}{% if sender.city and sender.postcode %}, {% endif %}{{ sender.postcode }}
+        {% if sender.address1 or sender.city or sender.postcode %}
+          <div class="line">
+            {% if sender.address1 %}{{ sender.address1 }}{% endif %}
+            {% if sender.city %}{% if sender.address1 %}, {% endif %}{{ sender.city }}{% endif %}
+            {% if sender.postcode %}{% if sender.address1 or sender.city %}, {% endif %}{{ sender.postcode }}{% endif %}
           </div>
         {% endif %}
         {% if sender.email or sender.phone %}
-          <div class="ep-line">
-            {{ sender.email }}{% if sender.email and sender.phone %} | {% endif %}{{ sender.phone }}
+          <div class="line">
+            {% if sender.email %}{{ sender.email }}{% endif %}
+            {% if sender.email and sender.phone %} | {% endif %}
+            {% if sender.phone %}{{ sender.phone }}{% endif %}
           </div>
         {% endif %}
       </div>
     </div>
-  
+
     {% if sender.date %}<div class="date">{{ sender.date }}</div>{% endif %}
-  
+
     {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
       <div class="recipient">
         {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
@@ -82,11 +73,11 @@
         {% endif %}
       </div>
     {% endif %}
-  
+
     <div class="salutation">Dear {{ recipient.name or 'Hiring Manager' }},</div>
-    <main class="block">{{ draft or '' }}</main>
-  
-    <div style="margin-top:12px;">Yours sincerely,</div>
+    <main class="block">{{ cover_body or draft or '' }}</main>
+
+    <div style="margin-top:12pt;">Yours sincerely,</div>
     <div>{{ sender.name or '' }}</div>
   </div>
 
