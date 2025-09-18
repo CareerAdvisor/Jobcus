@@ -23,7 +23,7 @@
 }
 .hero-title{
   color:#fff; font-weight:800; line-height:1.12; margin:0;
-  font-size: clamp(26px, 4.5vw + .25rem, 54px);
+  font-size: clamp(28px, 4.5vw + .25rem, 58px);
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 .hero-title .accent{ color:#ffc957; }
