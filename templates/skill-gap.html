@@ -11,34 +11,42 @@
 {% endblock %}
 
 {% block content %}
-<div class="skill-gap-container">
+<main class="skill-gap-page">
 
-  <h1 class="skill-gap-title">Skill-Gap Analysis</h1>
+  <!-- Hero -->
+  <div class="hero-wrap">
+    <section class="hero">
+      <h5 class="hero-kicker">AI SKILL-GAP ANALYZER</h5>
+      <h1 class="hero-title">
+        Skill-Gap <span class="accent">Analysis</span>
+      </h1>
+      <p class="hero-subtitle">
+        Find out what skills you're missing for your dream job and how to close the gap. Powered by AI deep insight.
+      </p>
+    </section>
+  </div>
 
-  <p class="skill-gap-intro">
-    Find out what skills you're missing for your dream job and how to close the gap. Powered by AI deep insight.
-  </p>
+  <div class="skill-gap-container">
+    <section class="skill-gap-form">
+      <form id="skillGapForm" novalidate>
+        <label for="goal">Career Goal</label>
+        <input type="text" name="goal" id="goal" placeholder="e.g., Data Analyst" required>
 
-  <section class="skill-gap-form">
-    <form id="skillGapForm" novalidate>
-      <label for="goal">Career Goal</label>
-      <input type="text" name="goal" id="goal" placeholder="e.g., Data Analyst" required>
+        <label for="skills">Your Current Skills</label>
+        <textarea name="skills" id="skills" rows="4" placeholder="e.g., Excel, SQL" required></textarea>
 
-      <label for="skills">Your Current Skills</label>
-      <textarea name="skills" id="skills" rows="4" placeholder="e.g., Excel, SQL" required></textarea>
+        <button type="submit">Analyze My Gap</button>
+      </form>
+    </section>
 
-      <button type="submit">Analyze My Gap</button>
-    </form>
-  </section>
-
-  <section class="skill-gap-result">
-    <div id="skillGapWrap" class="preview-wrap"
-         {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
-      <div id="skillGapOutput" class="output-box" aria-live="polite">Result appears here...</div>
-    </div>
-  </section>
-
-</div>
+    <section class="skill-gap-result">
+      <div id="skillGapWrap" class="preview-wrap"
+           {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
+        <div id="skillGapOutput" class="output-box" aria-live="polite">Result appears here...</div>
+      </div>
+    </section>
+  </div>
+</main>
 {% endblock %}
 
 {% block scripts %}
