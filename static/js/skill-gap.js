@@ -63,63 +63,66 @@
       });
     } catch {}
   }
-  // Sparse big-stamp watermark (2–3 placements)
+  
+  // --- Watermark helpers: sparse, 2-stamp overlay (no tiling) ---
   function applySparseWM(el, text = "JOBCUS.COM", opts = {}) {
-    text = sanitizeWM(text);
     if (!el || !text) return;
-
-    // remove any previous overlays on this element
-    try { el.querySelectorAll(":scope > .wm-overlay").forEach(x => { x._ro?.disconnect?.(); x.remove(); }); } catch {}
-
+    // Remove any previous overlays
+    try { el.querySelectorAll(":scope > .wm-overlay").forEach(n => { n._ro?.disconnect?.(); n.remove(); }); } catch {}
+  
     const overlay = document.createElement("canvas");
     overlay.className = "wm-overlay";
-    el.classList.add("wm-sparse");
     el.appendChild(overlay);
-
-    const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
-    const angle = (opts.rotate != null ? opts.rotate : -30) * Math.PI / 180;
+  
+    const DPR   = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    const angle = ((opts.rotate ?? -28) * Math.PI) / 180;
     const color = opts.color || "rgba(16,72,121,.12)";
-    const baseFont = opts.fontFamily || "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
-
+    const font  = opts.fontFamily || "Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+    const count = 2;                 // ✅ exactly two stamps
+  
     function draw() {
       const r = el.getBoundingClientRect();
       const w = Math.max(1, Math.round(r.width));
       const h = Math.max(1, Math.round(el.scrollHeight || r.height));
+  
       overlay.style.width = w + "px";
       overlay.style.height = h + "px";
       overlay.width  = Math.round(w * DPR);
       overlay.height = Math.round(h * DPR);
-
+  
       const ctx = overlay.getContext("2d");
-      ctx.clearRect(0,0,overlay.width, overlay.height);
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
       ctx.save();
       ctx.scale(DPR, DPR);
       ctx.fillStyle = color;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-
-      const count  = (opts.count ? +opts.count : (h > (opts.threshold || 1400) ? 3 : 2));
-      const fontPx = opts.fontSize || Math.max(96, Math.min(Math.floor((w + h) / 10), 180));
-      ctx.font = `700 ${fontPx}px ${baseFont}`;
-
-      let points;
-      if (count <= 2) {
-        points = [[0.22,0.30],[0.50,0.55],[0.78,0.80]];
-      } else {
-        points = [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
-      }
-
+  
+      const fontPx = opts.fontSize || Math.max(110, Math.min(Math.floor((w + h) / 8), 200));
+      ctx.font = `700 ${fontPx}px ${font}`;
+  
+      // Two large stamps — upper-left-ish & lower-right-ish
+      const points = [[0.28, 0.32], [0.72, 0.74]];
       points.forEach(([fx, fy]) => {
         const x = fx * w, y = fy * h;
-        ctx.save(); ctx.translate(x,y); ctx.rotate(angle); ctx.fillText(text,0,0); ctx.restore();
+        ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.fillText(text, 0, 0); ctx.restore();
       });
+  
       ctx.restore();
     }
-
+  
     draw();
     const ro = new ResizeObserver(draw);
     ro.observe(el);
     overlay._ro = ro;
+  }
+  
+  function stripWatermarks(root = document) {
+    try {
+      root.querySelectorAll(".wm-overlay").forEach(n => { n._ro?.disconnect?.(); n.remove(); });
+      (root.querySelectorAll ? root.querySelectorAll("[style*='background-image']") : [])
+        .forEach(el => { el.style.backgroundImage = ""; el.style.backgroundSize = ""; el.style.backgroundBlendMode = ""; });
+    } catch {}
   }
 
   // Centralized error handler — handle upgrade BEFORE generic 401/403
@@ -196,17 +199,17 @@
 
   // Enforce watermark policy on the result box
   function protectResultBox(box) {
-    const { isPaid, isSuperadmin } = readFlags();
-    // Always strip any pre-existing (email/user) watermark first
-    stripWatermarks(box);
+    const plan = (document.body.dataset.plan || "guest").toLowerCase();
+    const isPaid = (plan === "standard" || plan === "premium");
+    const isSuperadmin = (document.body.dataset.superadmin === "1");
+  
+    stripWatermarks(box);                 // clear any previous WM/canvas/tiling
     if (!isPaid && !isSuperadmin) {
-      // Apply 3–4 big sparse stamps (no stacking)
-      applySparseWM(box, "JOBCUS.COM", {
-        fontSize: 150,
-        rotate: -30,
-        count: (box.scrollHeight > 1400 ? 4 : 3)
+      applySparseWM(box, "JOBCUS.COM", {  // exactly two big stamps (via applySparseWM)
+        fontSize: 160,
+        rotate: -28
       });
-      enableNoCopyNoShot(box);
+      enableNoCopyNoShot(box);            // keep your free-tier guard
     }
   }
 
@@ -220,13 +223,14 @@
     function renderSkillGap(html) {
       if (!sgOut) return;
       sgOut.innerHTML = html || "";
-      if (sgWrap?.dataset?.watermark) sgWrap.classList.add("wm-active");
     }
+    
     function clearSkillGap() {
       if (!sgOut) return;
       sgOut.textContent = "Result appears here...";
-      sgWrap?.classList.remove("wm-active");
+      stripWatermarks(sgOut);        // ✅ also clear any prior canvas overlays
     }
+    
     // Expose if you want to call elsewhere:
     window.renderSkillGap = renderSkillGap;
     window.clearSkillGap  = clearSkillGap;
