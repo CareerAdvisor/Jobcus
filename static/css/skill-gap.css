@@ -1,18 +1,19 @@
-/* ==== Page shell + layout fixes ==== */
-.skill-gap-page { background:#f7fbff; padding: 12px; }
-.skill-gap-container {
-  max-width: 980px;
+/* ==== Page shell + layout ==== */
+.skill-gap-page { background:#f7fbff; padding: clamp(8px, 2vw, 16px); }
+
+/* Container now grows to the screen (up to very wide desktops) */
+.skill-gap-container{
+  width: min(100%, 1400px);
   margin: 0 auto;
-  padding: 0 8px 24px;
-  overflow: visible;          /* prevent any clipping of children */
+  padding: 0 clamp(8px, 2vw, 24px) clamp(16px, 3vw, 32px);
+  overflow: visible;
 }
 
-/* ==== Fluid hero (shared with other pages) ==== */
-.hero {
+/* ==== Fluid hero (unchanged except: white subtitle) ==== */
+.hero{
   display:flex; flex-direction:column; align-items:center; text-align:center;
   padding: clamp(16px, 4vw, 48px) clamp(10px, 4vw, 24px);
-  background:#104879; border-radius:14px;
-  margin: 0 auto 16px;
+  background:#104879; border-radius:14px; margin: 0 auto clamp(12px, 2vw, 20px);
 }
 .hero-kicker{
   color:#ffc957; font-weight:700; letter-spacing:.08em;
@@ -22,28 +23,30 @@
 }
 .hero-title{
   color:#fff; font-weight:800; line-height:1.12; margin:0;
-  /* 26px → 54px on large screens (resume/cover-letter style) */
   font-size: clamp(26px, 4.5vw + .25rem, 54px);
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 .hero-title .accent{ color:#ffc957; }
+/* 👉 make this paragraph white for strong contrast */
 .hero-subtitle{
-  color:#e9f0f7; margin: clamp(8px, 1.2vw, 14px) 0 0;
-  max-width: 60ch;
+  color:#ffffff;                 /* changed from light blue to white */
+  margin: clamp(8px, 1.2vw, 14px) 0 0;
+  max-width: 70ch;
   font-size: clamp(16px, 1.2vw + .25rem, 22px);
   line-height: 1.5;
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* ==== Form card ==== */
+/* ==== Form card — now fully fluid ==== */
 .skill-gap-form{
+  width: 100%;                   /* full width of container */
   background:#fff;
   border:1px solid #e7edf5;
   border-radius:14px;
-  padding: 18px;
+  padding: clamp(14px, 2vw, 22px);
   box-shadow: 0 6px 18px rgba(16,72,121,.06);
   position: relative;
-  margin: 8px 0 16px;
+  margin: clamp(8px, 1.5vw, 16px) 0;
 }
 .skill-gap-form::before,
 .skill-gap-form::after{
@@ -73,34 +76,35 @@
 .sg-btn:hover{ filter:brightness(.95); }
 
 /* ==== Result box ==== */
-.skill-gap-result { margin-top: 14px; overflow: visible; }
+.skill-gap-result { margin-top: clamp(10px, 2vw, 18px); overflow: visible; }
 .output-box{
   background:#fff; border:1px solid #e7edf5; border-radius:12px;
   min-height: 120px; padding:14px;
   box-shadow: 0 4px 14px rgba(16,72,121,.05);
 }
 
-/* Watermark overlay for result preview */
+/* Watermark overlay:
+   - Hidden by default
+   - Only appears when .wm-active is added after content renders */
 .preview-wrap{ position:relative; overflow:visible; }
 .preview-wrap[data-watermark]::after{
   content: attr(data-watermark);
-  position:absolute; inset:0; display:grid; place-items:center;
+  position:absolute; inset:0;
+  display: none;                 /* 👈 hidden by default */
+  place-items:center;
   font: 700 28px/1 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   color: rgba(16,72,121,.10);
   transform: rotate(-28deg);
   user-select:none; pointer-events:none;
 }
+.preview-wrap.wm-active::after{ display:grid; }  /* 👈 show only after output */
 
-/* ==== Markdown content (AI response) ==== */
-.ai-response h2, .ai-response h3{
-  font-weight:700; color:#104879; margin:1em 0 .5em;
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
+/* Markdown styling kept as-is */
+.ai-response h2, .ai-response h3{ font-weight:700; color:#104879; margin:1em 0 .5em; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 .ai-response strong{ color:#104879; }
 .ai-response ul{ margin-left:1.2em; list-style:disc; }
 .ai-response li{ margin:.4em 0; }
 
-/* Responsive tweaks */
 @media (min-width: 768px){
-  .hero-subtitle{ max-width: 46rem; }
+  .hero-subtitle{ max-width: 52rem; }
 }
