@@ -55,8 +55,74 @@ document.addEventListener("DOMContentLoaded", function () {
           el.style.backgroundBlendMode = "";
         }
       });
+      // NEW: also clear any prior sparse overlays so they don't stack
+      (root.querySelectorAll ? root.querySelectorAll(".wm-overlay") : []).forEach(n => {
+        try { n._ro?.disconnect?.(); } catch {}
+        n.remove();
+      });
     } catch {}
   }
+
+  // NEW: Sparse big-stamp watermark (3–4 placements)
+  function applySparseWM(el, text = "JOBCUS.COM", opts = {}) {
+    text = sanitizeWM(text);
+    if (!el || !text) return;
+
+    // remove any previous overlays on this element
+    try { el.querySelectorAll(":scope > .wm-overlay").forEach(x => { x._ro?.disconnect?.(); x.remove(); }); } catch {}
+
+    const overlay = document.createElement("canvas");
+    overlay.className = "wm-overlay";
+    el.appendChild(overlay);
+
+    const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    const angle = (opts.rotate != null ? opts.rotate : -30) * Math.PI / 180;
+    const color = opts.color || "rgba(16,72,121,.12)";
+    const baseFont = opts.fontFamily || "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+
+    function draw() {
+      const r = el.getBoundingClientRect();
+      const w = Math.max(1, Math.round(r.width));
+      const h = Math.max(1, Math.round(el.scrollHeight || r.height));
+      overlay.style.width = w + "px";
+      overlay.style.height = h + "px";
+      overlay.width  = Math.round(w * DPR);
+      overlay.height = Math.round(h * DPR);
+
+      const ctx = overlay.getContext("2d");
+      ctx.clearRect(0,0,overlay.width, overlay.height);
+      ctx.save();
+      ctx.scale(DPR, DPR);
+      ctx.fillStyle = color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      const count  = (opts.count ? +opts.count : (h > (opts.threshold || 1400) ? 4 : 3));
+      const fontPx = opts.fontSize || Math.max(96, Math.min(Math.floor((w + h) / 10), 180));
+      ctx.font = `700 ${fontPx}px ${baseFont}`;
+
+      // 3 or 4 placement points
+      let points;
+      if (count <= 3) {
+        points = [[0.22,0.30],[0.50,0.55],[0.78,0.80]];
+      } else {
+        points = [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
+      }
+
+      points.forEach(([fx, fy]) => {
+        const x = fx * w, y = fy * h;
+        ctx.save(); ctx.translate(x,y); ctx.rotate(angle); ctx.fillText(text,0,0); ctx.restore();
+      });
+      ctx.restore();
+    }
+
+    draw();
+    const ro = new ResizeObserver(draw);
+    ro.observe(el);
+    overlay._ro = ro;
+  }
+
+  // Original tiled fallback (kept for completeness; not used in free block anymore)
   function applyWM(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
     text = sanitizeWM(text);
     if (!el || !text) return;
@@ -179,7 +245,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ── Helper to render JD & enforce policy (uses overlay + optional inner tiler) ─
+  // ── Helper to render JD & enforce policy (uses overlay + sparse stamps) ─
   function paintJD(text) {
     if (!out) return;
 
@@ -190,13 +256,14 @@ document.addEventListener("DOMContentLoaded", function () {
     // 2) Always strip any pre-existing/email watermark from the inner content
     stripWatermarks(out);
 
-    // 3) FREE users: tile inside the box + protect copy
+    // 3) FREE users: 3–4 big sparse stamps + protect copy
     if (!isPaid && !isSuperadmin) {
-      if (window.applyTiledWatermark) {
-        window.applyTiledWatermark(out, "JOBCUS.COM", { size: 460, alpha: 0.16, angle: -30 });
-      } else {
-        applyWM(out, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
-      }
+      stripWatermarks(out); // ensure clean
+      applySparseWM(out, "JOBCUS.COM", {
+        fontSize: 150,
+        rotate: -30,
+        count: (out.scrollHeight > 1400 ? 4 : 3)
+      });
       out.classList.add("nocopy");
       enableNoCopyNoShot(out);
     }
@@ -401,15 +468,15 @@ document.addEventListener("DOMContentLoaded", function () {
           // inside jobPostForm submit → if (text) { … }
           const html = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text)}</pre>`;
           renderJobDescription(html);  // shows overlay (wm-active) only after content exists
-          if (!isPaid && window.applyTiledWatermark) {
-            window.applyTiledWatermark(
-              document.getElementById("job-description-output"),
-              "JOBCUS.COM"
-            );
-          }
-          // (Optional) also keep the protections used by paintJD:
-          stripWatermarks(output);               // clear any stray email WMs
+
+          // Use the same sparse 3–4 stamp watermark for free users
+          stripWatermarks(output);
           if (!isPaid && !isSuperadmin) {
+            applySparseWM(output, "JOBCUS.COM", {
+              fontSize: 150,
+              rotate: -30,
+              count: (output.scrollHeight > 1400 ? 4 : 3)
+            });
             output.classList.add("nocopy");
             enableNoCopyNoShot(output);
           }
