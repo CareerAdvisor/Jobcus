@@ -24,8 +24,8 @@
 }
 #resume-builder .hero-title{
   color:#fff; font-weight:700; line-height:1.15; margin:0;
-  /* 28px on tiny phones → up to 50px on large screens */
-  font-size: clamp(28px, 4.5vw + .25rem, 50px);
+  /* 24px on tiny phones → up to 50px on large screens */
+  font-size: clamp(24px, 4.5vw + .25rem, 50px);
 }
 #resume-builder .hero-title .accent{ color: var(--accent); }
 #resume-builder .hero-subtitle{
