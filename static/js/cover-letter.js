@@ -86,6 +86,29 @@
     el.style.backgroundRepeat = "repeat";
   }
 
+  // Dynamic loader for docx (client fallback)
+  async function ensureDocxBundle() {
+    if (window.docx) return window.docx;
+    const urls = [
+      "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js",
+      "https://cdn.jsdelivr.net/npm/docx@8.4.0/build/index.umd.js",
+      "https://unpkg.com/docx@8.5.0/build/index.umd.js",
+    ];
+    for (const src of urls) {
+      try {
+        await new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = src; s.async = true; s.crossOrigin = "anonymous";
+          s.onload = () => window.docx ? resolve() : reject();
+          s.onerror = reject;
+          document.head.appendChild(s);
+        });
+        if (window.docx) return window.docx;
+      } catch {}
+    }
+    throw new Error("DOCX library failed to load.");
+  }
+
   async function handleCommonErrors(res) {
     if (res.ok) return null;
     const ct = (res.headers.get("content-type") || "").toLowerCase();
@@ -171,7 +194,7 @@
   }
 
   /* ---------- Wizard ---------- */
-  function initWizard() {
+  function initWizard(onFinish) {
     const steps = Array.from(document.querySelectorAll(".rb-step"));
     const back  = document.getElementById("rb-back");
     const next  = document.getElementById("rb-next");
@@ -186,20 +209,27 @@
         s.hidden = !active;
       });
       if (back) back.disabled = (idx === 0);
-      if (next) next.textContent = (idx >= steps.length - 1) ? "Finish" : "Next";
+      if (next) next.textContent = (idx >= steps.length - 1) ? "Generate Cover Letter" : "Next";
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     back?.addEventListener("click", () => show(idx - 1));
-    next?.addEventListener("click", () => show(idx + 1));
+    next?.addEventListener("click", async () => {
+      if (idx < steps.length - 1) { show(idx + 1); return; }
+      // last step → generate
+      try { await onFinish?.(); } catch {}
+    });
 
     // Initial visibility
     steps.forEach((s, k) => { if (k !== idx) s.hidden = true; });
     show(idx);
   }
 
-  /* ---------- Preview ---------- */
+  /* ---------- Preview (returns when iframe loaded) ---------- */
   async function previewLetter(payload) {
+    const wrap  = document.getElementById("clPreviewWrap");
+    const frame = document.getElementById("clPreview");
+    const dlBar = document.getElementById("cl-downloads");
     try {
       const res = await fetch("/build-cover-letter", {
         method: "POST",
@@ -212,15 +242,14 @@
       if (!ct.includes("text/html")) throw new Error("Unexpected response.");
       const html = await res.text();
 
-      const wrap  = document.getElementById("clPreviewWrap");
-      const frame = document.getElementById("clPreview");
-      if (wrap) wrap.style.display = "block";
-      if (wrap) wrap.classList.remove("wm-active"); // hide overlay until loaded
+      if (wrap) {
+        wrap.style.display = "block";
+        wrap.classList.remove("wm-active"); // overlay appears only after load
+      }
 
       if (frame) {
-        frame.setAttribute("sandbox", "allow-same-origin");
+        // bind before setting srcdoc
         frame.addEventListener("load", () => {
-          // show overlay watermark now
           if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
 
           try {
@@ -232,9 +261,12 @@
             const host = d?.body || d?.documentElement;
             if (!host) return;
 
+            // inside the iframe
             stripWatermarks(d);
             if (!isPaid && !isSuperadmin) {
               applyWM(host, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+
+              // nocopy guards
               host.classList.add("nocopy");
               const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
               ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
@@ -247,8 +279,11 @@
               }, { passive: false });
             }
           } catch {}
-        }, { once:true });
+          // finally: reveal downloads
+          if (dlBar) dlBar.style.display = "";
+        }, { once: true });
 
+        frame.setAttribute("sandbox", "allow-same-origin");
         frame.srcdoc = html;
       }
     } catch (err) {
@@ -315,14 +350,18 @@
     }
 
     // Client-side fallback using docx
-    const docx = window.docx || window["docx"];
-    if (!docx) { window.showUpgradeBanner?.("DOCX library not loaded."); return; }
+    try {
+      await ensureDocxBundle();
+    } catch (e) {
+      window.showUpgradeBanner?.(e.message || "DOCX library not loaded.");
+      return;
+    }
+    const { Document, Packer, Paragraph, TextRun } = window.docx;
 
-    const { Document, Packer, Paragraph, TextRun } = docx;
     const lines = [];
+    const body = (ctx.cover_body || "").split("\n");
     const sender = ctx.sender || {};
     const recipient = ctx.recipient || {};
-    const body = (ctx.cover_body || "").split("\n");
 
     function push(text, bold=false) {
       lines.push(new Paragraph({ children: [new TextRun({ text, bold })] }));
@@ -333,7 +372,7 @@
     if (contact) push(contact);
     const reach = [sender.email, sender.phone].filter(Boolean).join(" | ");
     if (reach) push(reach);
-    push(""); // space
+    push("");
 
     if (sender.date) push(sender.date);
     const recLines = [
@@ -359,13 +398,17 @@
 
   /* ---------- Boot ---------- */
   document.addEventListener("DOMContentLoaded", () => {
-    initWizard();
-
     const form = document.getElementById("clForm");
+
+    // wizard: last step triggers preview/generate
+    initWizard(async () => {
+      await previewLetter(gatherContext(form));
+    });
+
+    // AI refresh / insert
     const aiCard = document.getElementById("ai-cl");
     const getAiTextEl = () => aiCard?.querySelector(".ai-text");
 
-    // AI refresh / insert
     aiCard?.addEventListener("click", async (e) => {
       const btn = e.target.closest(".ai-refresh, .ai-add");
       if (!btn) return;
@@ -392,12 +435,12 @@
       }
     });
 
-    // Preview
+    // Manual preview
     document.getElementById("cl-preview")?.addEventListener("click", async () => {
-      try { await previewLetter(gatherContext(form)); } catch {}
+      await previewLetter(gatherContext(form));
     });
 
-    // Downloads
+    // Downloads (shown after preview load)
     document.getElementById("cl-download-pdf")?.addEventListener("click", async () => {
       await downloadPDF(gatherContext(form));
     });
