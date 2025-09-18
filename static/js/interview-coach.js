@@ -175,28 +175,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const sessionSection   = document.querySelector(".interview-session");
 
-  // 🔹 Your requested preview-wrap delayed watermark (for the optional iframe preview)
-  const coachWrap  = document.getElementById("coachWrap");
-  const coachFrame = document.getElementById("coachPreview");
-
+  // --- delayed watermark + show only when there is content ---
+  const coachSection = document.getElementById("coachPreviewSection");
+  const coachWrap    = document.getElementById("coachWrap");
+  const coachFrame   = document.getElementById("coachPreview");
+  
   function loadCoachPreview(htmlOrUrl) {
-    coachWrap?.classList.remove("wm-active"); // hide overlay until content is ready
+    // start hidden + no overlay
+    coachWrap?.classList.remove("wm-active");
+  
+    // load content
     if (htmlOrUrl?.startsWith("<")) {
       coachFrame.srcdoc = htmlOrUrl;
     } else {
       coachFrame.src = htmlOrUrl || "about:blank";
     }
-    coachFrame.addEventListener("load", () => {
-      if (coachWrap?.dataset?.watermark) coachWrap.classList.add("wm-active");
-      try {
-        const d = coachFrame.contentDocument || coachFrame.contentWindow?.document;
-        if (d?.body && window.applyTiledWatermark) {
-          window.applyTiledWatermark(d.body, coachWrap.dataset.watermark, { size: 360, alpha: 0.12, angle: -28 });
-        }
-      } catch {}
-    }, { once: true });
+  
+    // reveal the block only after the iframe is ready
+    coachFrame.addEventListener(
+      "load",
+      () => {
+        if (coachSection) coachSection.style.display = "block";
+        if (coachWrap?.dataset?.watermark) coachWrap.classList.add("wm-active");
+  
+        // (optional) put the watermark inside the iframe body
+        try {
+          const d = coachFrame.contentDocument || coachFrame.contentWindow?.document;
+          if (d?.body && window.applyTiledWatermark && coachWrap.dataset.watermark) {
+            window.applyTiledWatermark(d.body, coachWrap.dataset.watermark, {
+              size: 360, alpha: 0.12, angle: -28
+            });
+          }
+        } catch {}
+      },
+      { once: true }
+    );
   }
-  // expose if you want to call it elsewhere:
   window.loadCoachPreview = loadCoachPreview;
 
   let currentQuestion = "";
