@@ -1,38 +1,31 @@
-{# templates/cover-letter.html #}
 {% extends "base.html" %}
 {% block title %}Cover Letter – Jobcus{% endblock %}
 
 {% set is_paid  = current_user.is_authenticated and (current_user.plan|lower in ['standard','premium']) %}
 {% set wm_text  = '' if is_paid else 'JOBCUS.COM' %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}">
-<style>
-  /* Make sure the Back button never gets a blue active bg */
-  .ghost, .ghost:active, .ghost:focus { background: transparent !important; color: var(--brand) !important; }
-</style>
-{% endblock %}
-
 {% block content %}
 <main id="cover-letter" class="rb-wrap">
+  <!-- Hero -->
+  <div class="interview-container" style="padding:20px 16px;width:100%;background:#104879;">
+    <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+      <h5 style="color:#ffc957;font-weight:700;font-size:14px;letter-spacing:1px;margin:0;">AI COVER LETTER</h5>
+      <h1 style="font-size:28px;font-weight:800;color:#fff;margin:12px 0 8px;">
+        Create a tailored <span style="color:#ffc957;">cover letter</span>
+      </h1>
+      <p style="max-width:520px;color:#fff;font-size:16px;margin:0 0 4px;">
+        Use your resume details to draft a polished letter.
+      </p>
+    </section>
+  </div>
 
-  <!-- Hero (matches your screenshot) -->
-  <section class="hero-slab">
-    <div class="hero-card">
-      <div class="hero-eyebrow">AI COVER LETTER</div>
-      <h1 class="hero-title">Create a tailored <span>cover</span> letter</h1>
-      <p class="hero-sub">Use your resume details to draft a polished letter.</p>
-    </div>
-  </section>
-
-  <!-- 70% page-width container -->
+  <!-- 70% width 2-column layout (see cover-letter.css) -->
   <div class="rb-container rb-layout">
-    <!-- LEFT: Wizard form -->
+    <!-- Left: Wizard form -->
     <div class="rb-main">
       <form id="clForm" class="rb-form" autocomplete="on">
-
         <!-- STEP 1: Recruiter -->
-        <section class="rb-step active" aria-label="Recruiter details">
+        <section class="rb-step active">
           <article class="rb-card">
             <header>
               <h2>Recruiter</h2>
@@ -49,7 +42,6 @@
                 <label class="full">Job link (optional)
                   <input type="url" name="jobUrl" placeholder="https://…">
                 </label>
-
                 <label class="full">Tone
                   <select name="tone">
                     <option value="professional" selected>Professional</option>
@@ -57,12 +49,11 @@
                     <option value="concise">Concise</option>
                   </select>
                 </label>
-
                 <label class="full">Recipient (Name or Team)
                   <input type="text" name="recipient" placeholder="Hiring Manager">
                 </label>
 
-                <div class="full rb-subheading">Recipient’s address</div>
+                <div class="full" style="margin-top:6px;font-weight:700;color:#104879;">Recipient’s address</div>
                 <label class="full">Company address (line 1)
                   <input type="text" name="companyAddress1" placeholder="45 Market Road">
                 </label>
@@ -78,7 +69,7 @@
         </section>
 
         <!-- STEP 2: Applicant -->
-        <section class="rb-step" aria-label="Applicant details">
+        <section class="rb-step">
           <article class="rb-card">
             <header>
               <h2>Applicant</h2>
@@ -111,17 +102,16 @@
           </article>
         </section>
 
-        <!-- STEP 3: Body + AI -->
-        <section class="rb-step" aria-label="Letter body">
+        <!-- STEP 3: Letter body + AI -->
+        <section class="rb-step">
           <article class="rb-card">
             <header>
-              <h2>Letter Body</h2>
-              <p>Write or generate your letter body (max ~3 short paragraphs).</p>
+              <h2>Letter body</h2>
+              <p>Write your letter or let AI draft one you can edit.</p>
             </header>
             <div class="rb-panel">
               <textarea name="body" rows="12" placeholder="Write or generate your letter body here…"></textarea>
 
-              <!-- AI box -->
               <div class="ai-suggest" id="ai-cl" data-field="cover_letter">
                 <div class="ai-title">✦ Write with AI</div>
                 <p class="ai-text">We’ll draft a tailored letter using your details above.</p>
@@ -138,7 +128,7 @@
         <footer class="rb-footer">
           <button type="button" id="rb-back" class="ghost">← Back</button>
 
-          <div class="rb-actions">
+          <div class="rb-row">
             <button type="button" id="cl-preview" class="cta-secondary">Preview</button>
             <button type="button" id="rb-next" class="cta-primary">Next</button>
           </div>
@@ -146,18 +136,18 @@
       </form>
     </div>
 
-    <!-- RIGHT: Preview + Downloads -->
+    <!-- Right: sticky preview + downloads -->
     <aside class="rb-preview">
       <article class="rb-card">
         <div class="rb-panel">
           <div id="clPreviewWrap" class="preview-wrap" style="display:none;"
                {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
-            <iframe id="clPreview"></iframe>
+            <iframe id="clPreview" style="width:100%;height:80vh;border:0;background:#fff;"></iframe>
           </div>
 
           <div id="cl-downloads" class="rb-actions" style="display:none;margin-top:10px;">
-            <button type="button" id="cl-download-pdf"  class="cta-primary">Download PDF</button>
-            <button type="button" id="cl-download-docx" class="cta-primary">Download Word</button>
+            <button type="button" id="cl-download-pdf"  class="cta-secondary">⬇️ Download PDF</button>
+            <button type="button" id="cl-download-docx" class="cta-secondary">⬇️ Download Word</button>
           </div>
         </div>
       </article>
@@ -167,5 +157,6 @@
 {% endblock %}
 
 {% block scripts %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}">
 <script defer src="{{ url_for('static', filename='js/cover-letter.js') }}"></script>
 {% endblock %}
