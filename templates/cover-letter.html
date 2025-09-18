@@ -5,217 +5,156 @@
 {% set is_paid  = current_user.is_authenticated and (current_user.plan|lower in ['standard','premium']) %}
 {% set wm_text  = '' if is_paid else 'JOBCUS.COM' %}
 
-{% block extra_css %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}">
-{% endblock %}
-
 {% block content %}
+<main id="cover-letter" class="cl-wrap">
+  <!-- Top hero (small) -->
+  <section class="cl-hero">
+    <h5>AI COVER LETTER</h5>
+    <h1>Create a tailored <span>cover letter</span></h1>
+    <p>Use your resume details to draft a polished letter.</p>
+  </section>
 
-{# ---------- LETTER-ONLY (iframe/print view) ---------- #}
-{% if letter_only %}
-  {# NOTE: We keep only the "hide chrome" rules inline because they must
-     target elements outside the letter container (header/nav/footer). #}
-  <style>
-    header, nav, footer,
-    .site-header, .site-footer, .navbar, .topbar, .app-footer,
-    .chat-widget, .floating-chat, .intercom-lightweight-app { display:none !important; }
+  <div class="rb-container rb-layout">
+    <!-- Left: Wizard form -->
+    <div class="rb-main">
+      <form id="clForm" class="rb-form" autocomplete="on" novalidate>
+        <!-- Recruiter (Step 1) -->
+        <section class="rb-step active" id="cl-step-1" data-step="0">
+          <article class="rb-card">
+            <header class="stacked-hero">
+              <h2 class="subject-title">Recruiter</h2>
+              <p class="subject-subtitle">Company, role, job link, tone, and recipient details.</p>
+            </header>
 
-    html, body { background:#fff; margin:0; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
-    @page  { size:A4; margin:18mm 18mm; }
-  </style>
+            <div class="rb-panel">
+              <div class="rb-grid">
+                <label>Company
+                  <input type="text" name="company" placeholder="Acme Inc.">
+                </label>
+                <label>Role
+                  <input type="text" name="role" placeholder="IT Support">
+                </label>
+                <label class="full">Job link (optional)
+                  <input type="url" name="jobUrl" placeholder="https://…">
+                </label>
+                <label class="full">Tone
+                  <select name="tone">
+                    <option value="professional" selected>Professional</option>
+                    <option value="friendly">Friendly</option>
+                    <option value="concise">Concise</option>
+                  </select>
+                </label>
 
-  <div class="cl">
-    <!-- Header: Name → one-line address → email/phone -->
-    <div class="cl-header">
-      {% if sender.name %}<div class="name">{{ sender.name }}</div>{% endif %}
-      <div class="contact">
-        {% if sender.address1 or sender.city or sender.postcode %}
-          <div class="line">
-            {% if sender.address1 %}{{ sender.address1 }}{% endif %}
-            {% if sender.city %}{% if sender.address1 %}, {% endif %}{{ sender.city }}{% endif %}
-            {% if sender.postcode %}{% if sender.address1 or sender.city %}, {% endif %}{{ sender.postcode }}{% endif %}
+                <label class="full">Recipient (Name or Team)
+                  <input type="text" name="recipient" placeholder="Hiring Manager">
+                </label>
+
+                <div class="full mini-section-title">Recipient’s address</div>
+                <label class="full">Company address (line 1)
+                  <input type="text" name="companyAddress1" placeholder="45 Market Road">
+                </label>
+                <label>City
+                  <input type="text" name="companyCity" placeholder="London">
+                </label>
+                <label>Postcode
+                  <input type="text" name="companyPostcode" placeholder="W1 2BC">
+                </label>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- Applicant (Step 2) -->
+        <section class="rb-step" id="cl-step-2" data-step="1">
+          <article class="rb-card">
+            <header class="stacked-hero">
+              <h2 class="subject-title">Applicant</h2>
+              <p class="subject-subtitle">Your contact details for the letter heading.</p>
+            </header>
+
+            <div class="rb-panel">
+              <div class="rb-grid">
+                <label>First name <input type="text" name="firstName" placeholder="John"></label>
+                <label>Last name  <input type="text" name="lastName"  placeholder="Doe"></label>
+
+                <label class="full">Your address (line 1)
+                  <input type="text" name="senderAddress1" placeholder="123 High Street">
+                </label>
+                <label>City
+                  <input type="text" name="senderCity" placeholder="London">
+                </label>
+                <label>Postcode
+                  <input type="text" name="senderPostcode" placeholder="E1 1AA">
+                </label>
+                <label>Email
+                  <input type="email" name="senderEmail" placeholder="you@email.com">
+                </label>
+                <label>Phone
+                  <input type="tel" name="senderPhone" placeholder="+44 7123 456 789">
+                </label>
+                <label>Date
+                  <input type="date" name="letterDate">
+                </label>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- Body + AI (Step 3) -->
+        <section class="rb-step" id="cl-step-3" data-step="2">
+          <article class="rb-card">
+            <header class="stacked-hero">
+              <h2 class="subject-title">Letter body</h2>
+              <p class="subject-subtitle">Write or generate your letter. Keep it concise (≤3 short paragraphs).</p>
+            </header>
+
+            <div class="rb-panel">
+              <textarea name="body" rows="12" placeholder="Write or generate your letter body here…"></textarea>
+
+              <div class="ai-suggest" id="ai-cl" data-field="cover_letter">
+                <div class="ai-title">✦ Write with AI</div>
+                <p class="ai-text">We’ll draft a tailored letter using your details above.</p>
+                <div class="ai-actions">
+                  <button type="button" class="btn ai-refresh" id="ai-refresh" data-ai="cover_letter">Refresh</button>
+                  <button type="button" class="btn btn-primary ai-add" id="ai-add">Insert</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- Wizard controls -->
+        <footer class="rb-footer">
+          <div class="wizard-controls">
+            <button type="button" id="cl-back" class="ghost" disabled>← Back</button>
+            <button type="button" id="cl-next" class="primary">Next →</button>
           </div>
-        {% endif %}
-        {% if sender.email or sender.phone %}
-          <div class="line">
-            {% if sender.email %}{{ sender.email }}{% endif %}
-            {% if sender.email and sender.phone %} | {% endif %}
-            {% if sender.phone %}{{ sender.phone }}{% endif %}
-          </div>
-        {% endif %}
-      </div>
+          <a class="ghost small" href="/resume-builder">Back to Builder</a>
+        </footer>
+      </form>
     </div>
 
-    {% if sender.date %}<div class="date">{{ sender.date }}</div>{% endif %}
+    <!-- Right: Sticky preview & download -->
+    <aside class="rb-preview">
+      <article class="rb-card">
+        <div class="rb-panel">
+          <div class="rb-actions">
+            <button type="button" id="cl-preview" class="cta-secondary">Preview</button>
+            <button type="button" id="cl-download" class="cta-primary">Download PDF</button>
+          </div>
 
-    {% if recipient.name or recipient.company or recipient.address1 or recipient.city or recipient.postcode %}
-      <div class="recipient">
-        {% if recipient.name %}<div>{{ recipient.name }}</div>{% endif %}
-        {% if recipient.company %}<div>{{ recipient.company }}</div>{% endif %}
-        {% if recipient.address1 %}<div>{{ recipient.address1 }}</div>{% endif %}
-        {% if recipient.city or recipient.postcode %}
-          <div>{{ recipient.city }}{% if recipient.city and recipient.postcode %}, {% endif %}{{ recipient.postcode }}</div>
-        {% endif %}
-      </div>
-    {% endif %}
-
-    <div class="salutation">Dear {{ recipient.name or 'Hiring Manager' }},</div>
-    <main class="block">{{ cover_body or draft or '' }}</main>
-
-    <div style="margin-top:12pt;">Yours sincerely,</div>
-    <div>{{ sender.name or '' }}</div>
+          <div id="clPreviewWrap" class="preview-wrap" style="display:none;"
+               {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
+            <iframe id="clPreview"></iframe>
+          </div>
+        </div>
+      </article>
+    </aside>
   </div>
-
-{# ---------- BUILDER PAGE ---------- #}
-{% else %}
-  <main id="cover-letter" class="rb-wrap">
-    <!-- Hero -->
-    <div class="interview-container hero">
-      <section class="interview-hero-with-image hero-inner">
-        <h5 class="hero-eyebrow">AI COVER LETTER</h5>
-        <h1 class="hero-title">Create a tailored <span>cover letter</span></h1>
-        <p class="hero-sub">Use your resume details to draft a polished letter.</p>
-      </section>
-    </div>
-
-    <div class="rb-container rb-layout">
-      <!-- Left: Form -->
-      <div class="rb-main">
-        <form id="clForm" class="rb-form" autocomplete="on">
-
-          <!-- Recruiter section -->
-          <div class="rb-section">
-            <section class="rb-step active">
-              <article class="rb-card">
-                <header class="rb-head">
-                  <h2>Recruiter</h2>
-                  <p>Company, role, job link, tone, and recipient details.</p>
-                </header>
-                <div class="rb-panel">
-                  <div class="rb-grid">
-                    <label>Company
-                      <input type="text" name="company" placeholder="Acme Inc.">
-                    </label>
-                    <label>Role
-                      <input type="text" name="role" placeholder="IT Support">
-                    </label>
-                    <label class="full">Job link (optional)
-                      <input type="url" name="jobUrl" placeholder="https://…">
-                    </label>
-                    <label class="full">Tone
-                      <select name="tone">
-                        <option value="professional" selected>Professional</option>
-                        <option value="friendly">Friendly</option>
-                        <option value="concise">Concise</option>
-                      </select>
-                    </label>
-
-                    <label class="full">Recipient (Name or Team)
-                      <input type="text" name="recipient" placeholder="Hiring Manager">
-                    </label>
-
-                    <div class="full rb-subhead">Recipient’s address</div>
-                    <label class="full">Company address (line 1)
-                      <input type="text" name="companyAddress1" placeholder="45 Market Road">
-                    </label>
-                    <label>City
-                      <input type="text" name="companyCity" placeholder="London">
-                    </label>
-                    <label>Postcode
-                      <input type="text" name="companyPostcode" placeholder="W1 2BC">
-                    </label>
-                  </div>
-                </div>
-              </article>
-            </section>
-          </div>
-
-          <!-- Applicant section -->
-          <div class="rb-section">
-            <section class="rb-step">
-              <article class="rb-card">
-                <header class="rb-head">
-                  <h2>Applicant</h2>
-                  <p>Your contact details for the letter heading.</p>
-                </header>
-                <div class="rb-panel">
-                  <div class="rb-grid">
-                    <label>First name <input type="text" name="firstName" placeholder="John"></label>
-                    <label>Last name  <input type="text" name="lastName"  placeholder="Doe"></label>
-                    <label class="full">Your address (line 1)
-                      <input type="text" name="senderAddress1" placeholder="123 High Street">
-                    </label>
-                    <label>City
-                      <input type="text" name="senderCity" placeholder="London">
-                    </label>
-                    <label>Postcode
-                      <input type="text" name="senderPostcode" placeholder="E1 1AA">
-                    </label>
-                    <label>Email
-                      <input type="email" name="senderEmail" placeholder="you@email.com">
-                    </label>
-                    <label>Phone
-                      <input type="tel" name="senderPhone" placeholder="+44 7123 456 789">
-                    </label>
-                    <label>Date
-                      <input type="date" name="letterDate">
-                    </label>
-                  </div>
-                </div>
-              </article>
-            </section>
-          </div>
-
-          <!-- Body -->
-          <div class="rb-section">
-            <section class="rb-step">
-              <article class="rb-card">
-                <div class="rb-panel">
-                  <textarea name="body" rows="12" placeholder="Write or generate your letter body here…"></textarea>
-
-                  <div class="ai-suggest" id="ai-cl" data-field="cover_letter">
-                    <div class="ai-title">✦ Write with AI</div>
-                    <p class="ai-text">We’ll draft a tailored letter using your details above.</p>
-                    <div class="ai-actions">
-                      <button type="button" class="btn ai-refresh" data-ai="cover_letter">Refresh</button>
-                      <button type="button" class="btn btn-primary ai-add">Insert</button>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            </section>
-          </div>
-
-          <footer class="rb-footer">
-            <a class="ghost" href="/resume-builder">← Back to Builder</a>
-          </footer>
-        </form>
-      </div>
-
-      <!-- Right: Sticky Preview -->
-      <aside class="rb-preview">
-        <article class="rb-card">
-          <div class="rb-panel">
-            <div class="rb-actions">
-              <button type="button" id="cl-preview" class="cta-secondary">Preview</button>
-              <button type="button" id="cl-download" class="cta-primary">Download PDF</button>
-            </div>
-
-            <!-- Hidden until Preview is clicked -->
-            <div id="clPreviewWrap" class="preview-wrap" style="display:none;"
-                 {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
-              <iframe id="clPreview"></iframe>
-            </div>
-          </div>
-        </article>
-      </aside>
-    </div>
-  </main>
-{% endif %}
+</main>
 {% endblock %}
 
 {% block scripts %}
-  {% if not letter_only %}
-    <script defer src="{{ url_for('static', filename='js/cover-letter.js') }}"></script>
-  {% endif %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}">
+  <script defer src="{{ url_for('static', filename='js/cover-letter.js') }}"></script>
 {% endblock %}
