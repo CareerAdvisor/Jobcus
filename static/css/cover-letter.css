@@ -14,7 +14,7 @@
   --shadow:0 6px 18px rgba(16,72,121,.06);
 }
 
-/* Hero bar used on this page */
+/* ===== Small hero bar (kept) ===== */
 .interview-container{
   width:100%;
   background: var(--brand);
@@ -36,7 +36,7 @@
 /* ===== Layout (70% page width, centered) ===== */
 .rb-wrap{ background: #f8fcff; }
 .rb-container.rb-layout{
-  width: min(70vw, 1300px);
+  width: min(70vw, 1300px);                  /* ← 70% viewport width kept */
   margin: 16px auto;
   display: flex; gap: 16px;
   align-items: flex-start;
@@ -59,6 +59,8 @@
   overflow: hidden;
   margin-bottom: 14px;
 }
+
+/* Legacy header (kept for backward-compat) */
 .rb-card > header{
   padding: 14px 16px;
   background: #fff;
@@ -70,6 +72,23 @@
 .rb-card > header p{
   margin: 4px 0 0; color: var(--muted);
 }
+
+/* New stacked header (prevents overlap) */
+.stacked-hero{
+  display:flex; flex-direction:column; gap:6px;
+  padding:14px 16px;
+  background:#fff;
+  border-bottom:1px solid var(--stroke);
+}
+.subject-title{
+  margin:0; color:var(--brand);
+  font-weight:800; line-height:1.2;
+  font-size: clamp(20px, 2.6vw, 26px);
+}
+.subject-subtitle{
+  margin:0; color:var(--muted); line-height:1.45; max-width:65ch;
+}
+
 .rb-panel{ padding: 16px; }
 
 /* ===== Form grid ===== */
@@ -111,7 +130,7 @@
 }
 .ai-suggest .btn.btn-primary:hover{ filter: brightness(.96); }
 
-/* Make the “gold” refresh stand out (requested) */
+/* “Gold” refresh stands out */
 .ai-suggest .ai-refresh{
   background: var(--gold);
   border-color: var(--gold);
@@ -143,22 +162,30 @@
 .rb-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .rb-footer{ display:flex; gap:10px; justify-content:space-between; padding: 10px 0 4px; }
 
+/* Wizard helpers (Back/Next) */
+.wizard-controls{ display:flex; gap:10px; align-items:center; }
+.primary{
+  background:var(--brand); color:#fff; border:0; border-radius:10px;
+  padding:10px 14px; font-weight:800; cursor:pointer;
+}
+.primary:hover{ filter:brightness(.96); }
+
 /* ===== Preview (sticky) ===== */
 .rb-preview .rb-card{ position: relative; }
-
-/* The iframe itself */
 #clPreview{
   width: 100%;
   height: 80vh;
   border: 0;
   background: #fff;
   display: block;
+  border-radius:8px;
 }
 
 /* ===== Delayed watermark overlay for preview wraps ===== */
-/* Only shows AFTER JS adds .wm-active */
 .preview-wrap{ position: relative; }
 .preview-wrap iframe{ display:block; width:100%; height:80vh; border:0; background:#fff; }
+
+/* Only shows AFTER JS adds .wm-active */
 .preview-wrap[data-watermark]::after{
   content: attr(data-watermark);
   position:absolute; inset:0;
