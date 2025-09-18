@@ -1,172 +1,111 @@
-/* Container styling reused from resume builder vibe */
-#cover-letter .cl-container { max-width: 900px; margin: 0 auto; padding: 16px; }
-#cover-letter .cl-card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; margin:16px 0; box-shadow:0 4px 14px rgba(16,72,121,.06); }
-#cover-letter .cl-card > header { padding:16px 16px 8px; border-bottom:1px solid #eef2f7; }
-#cover-letter .cl-card > header h2 { margin:0 0 .4rem; font-size:1.1rem; font-weight:700; }
-#cover-letter .cl-card > header p { margin:0; font-size:.9rem; color:#6b7280; }
-#cover-letter .cl-panel { padding:14px; display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
-#cover-letter .cl-panel .full { grid-column:1/-1; }
-#cover-letter label { display:flex; flex-direction:column; gap:.35rem; font-weight:600; font-size:.9rem; }
-#cover-letter input, #cover-letter textarea { border:1px solid #e5e7eb; border-radius:10px; padding:.85rem .9rem; font:inherit; font-size:.9rem; background:#fff; }
-#cover-letter textarea { resize:vertical; }
+/* =========================
+   Cover Letter – Builder UI
+   ========================= */
 
-#cover-letter .ai-suggest { border:1px solid #e5e7eb; border-radius:12px; padding:12px; background:#fffef8; margin-bottom:.5rem; grid-column:1/-1;}
-#cover-letter .ai-actions { display:flex; gap:8px; }
-#cover-letter .btn { border:1px solid #e5e7eb; background:#fff; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:.85rem; }
-#cover-letter .btn-primary { background:#104879; color:#fff; border:none; }
-
-#cover-letter .cl-footer { display:flex; gap:10px; justify-content:flex-end; padding:8px 0; }
-#cover-letter .cta-primary { background:#ffc957; color:#1f2a37; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
-#cover-letter .cta-secondary { background:#104879; color:#fff; border:0; padding:.7rem 1rem; border-radius:10px; font-weight:700; }
-
-@media (max-width:680px){ #cover-letter .cl-panel{ grid-template-columns:1fr; } }
-
-/* Printable doc */
-.cl-doc { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#111827; }
-.cl-doc-header { margin:24px 0 16px; }
-.cl-name { font-size:28px; font-weight:800; }
-.cl-title { color:#374151; margin-top:2px; }
-.cl-contact { color:#4b5563; margin-top:6px; }
-.cl-doc-body pre { white-space:pre-wrap; line-height:1.6; font-family: inherit; }
-
-/* Use the same tokens from resume-builder.css via #cover-letter scope */
-#cover-letter .rb-card > header{
-  display:flex;
-  flex-direction:column;   /* stack H2 above P (your screenshot had them side-by-side) */
-  align-items:flex-start;
+/* Hero */
+.hero {
+  padding: 20px 16px;
+  width: 100%;
+  background: #104879;
 }
-#cover-letter .rb-card > header h2{
-  margin:0 0 .4rem;
-  font-size:1.1rem;
-  font-weight:700;
+.hero-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
-#cover-letter .rb-card > header p{
-  margin:0;
-  font-size:.9rem;
-  color:var(--muted);
-  line-height:1.35;
+.hero-eyebrow {
+  color: #ffc957;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 1px;
+  margin: 0;
 }
-/* Ensure grid behaves like the builder */
-#cover-letter .rb-grid{ display:grid; gap:.9rem; grid-template-columns:1fr 1fr; }
-#cover-letter .rb-grid .full{ grid-column:1/-1; }
-@media (max-width:640px){ #cover-letter .rb-grid{ grid-template-columns:1fr; } }
+.hero-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  margin: 10px 0;
+}
+.hero-title span { color: #ffc957; }
+.hero-sub {
+  max-width: 520px;
+  color: #fff;
+  font-size: 16px;
+  margin: 10px 0 20px;
+}
 
-/* Layout shell */
-.rb-layout {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 16px;
+/* Container: 1 col on mobile; 2 cols inside ~70% width on desktop */
+.rb-container.rb-layout {
+  margin: 16px auto;
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
+  background: #f8fcff;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
 }
-
 @media (min-width: 1024px) {
-  .rb-layout {
-    grid-template-columns: 1fr 420px; /* left form, right preview */
-    gap: 24px;
+  .rb-container.rb-layout {
+    width: min(70vw, 1200px);
+    grid-template-columns: 1fr 1fr;  /* form | preview */
   }
+  .rb-preview { position: sticky; top: 12px; align-self: start; }
 }
 
-/* Sticky preview card on desktop */
-.rb-preview {
-  position: relative;
-}
+/* Section headers */
+.rb-head { color:#104879; }
+.rb-head h2 { margin: 0 0 6px; font-size: 20px; }
+.rb-head p  { margin: 0 0 8px; color: #475569; }
+.rb-subhead { margin-top:6px; font-weight:600; color:#104879; }
 
-@media (min-width: 1024px) {
-  .rb-preview {
-    position: sticky;
-    top: 88px; /* below your fixed header */
-    height: calc(100vh - 120px);
-    overflow: hidden;
-  }
-  .rb-preview .rb-card,
-  .rb-preview .rb-panel {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
+/* Actions row (preview/download) */
+.rb-actions{
+  position: sticky; top: 0; z-index: 2;
+  display: flex; gap: 10px; align-items: center;
+  padding: 8px 0; background: #fff;
+  border-bottom: 1px solid #eef2f7; margin-bottom: 12px;
 }
-
-/* Preview iframe area */
-.preview-wrap {
-  margin-top: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: #fff;
-  overflow: hidden;
-  flex: 1;
-  min-height: 360px;
+.cta-secondary, .cta-primary{
+  appearance: none; border-radius: 10px; padding: 10px 14px;
+  font-weight: 700; cursor: pointer;
 }
+.cta-secondary{ background:#0f2946; color:#fff; border:0; }
+.cta-primary{ background:#ffc957; color:#104879; border:1px solid #ffc957; }
 
-.preview-wrap iframe {
+/* Preview frame */
+#clPreview{
   width: 100%;
-  height: 100%;
+  height: 80vh;
   border: 0;
   background: #fff;
+  display: block;
 }
 
-/* Actions row */
-.rb-actions {
-  display: flex;
-  gap: .5rem;
-  justify-content: flex-end;
+/* AI button style */
+.ai-suggest .ai-refresh{
+  background:#ffc957; border:1px solid #ffc957; color:#104879;
 }
+.ai-suggest .ai-refresh:hover{ filter:brightness(.95); }
+.ai-suggest .ai-refresh:focus{ outline:2px solid #104879; outline-offset:2px; }
 
-/* Cover-letter style subject header */
-.subject-header{
-  display:flex; align-items:flex-start; gap:16px;
-  background:#fff; border:1px solid var(--stroke); border-radius:12px;
-  padding:16px 18px; box-shadow:0 2px 8px rgba(16,72,121,.06);
-  margin:-4px 0 14px;
+/* =========================
+   Letter-only Typography
+   ========================= */
+
+.cl {
+  max-width: clamp(680px, 84vw, 860px);
+  margin: 36px auto;
+  padding: 0 16px;
+  color:#111;
+  font: 12pt/1.55 Arial, Helvetica, sans-serif;
 }
-.subject-header h2{
-  margin:0; color:var(--brand); font-weight:800;
-  font-size:clamp(20px,2.6vw,28px); letter-spacing:.2px;
-}
-.subject-header p{
-  margin:2px 0 0; color:#64748b; font-size:clamp(14px,1.7vw,16px);
-}
-@media (min-width:720px){
-  .subject-header{ justify-content:space-between; }
-  .subject-header h2{ flex:0 1 auto; }
-  .subject-header p{ max-width:420px; }
-}
+.cl-header { text-align:center; margin: 0 auto 14pt; }
+.cl-header .name { font-weight:800; font-size:32pt; line-height:1.1; margin:0; }
+.cl-header .contact { margin-top:6pt; color:#555; }
+.cl-header .contact .line { margin:2pt 0; }
 
-/* Optional: stronger watermark visibility on white boxes */
-.wm-tiled{ background-position:0 0, 210px 210px; }
-
-  /* Layout: single column on mobile; two equal columns on desktop
-     inside ~70% of page width, centered */
-  .rb-container.rb-layout{
-    margin:16px auto;
-    display:grid;
-    grid-template-columns: 1fr;
-    gap:16px;
-  }
-  @media (min-width: 1024px){
-    .rb-container.rb-layout{
-      width: min(70vw, 1200px);
-      grid-template-columns: 1fr 1fr;
-    }
-    .rb-preview{ position:sticky; top:12px; align-self:start; }
-  }
-
-  /* Make the preview roomy */
-  #clPreview{
-    width:100%;
-    height:80vh;
-    margin:0 auto;
-    display:block;
-    border:0;
-    background:#fff;
-  }
-
-  /* Golden yellow refresh button with high-contrast text */
-  .ai-suggest .ai-refresh {
-    background:#ffc957;
-    border:1px solid #ffc957;
-    color:#104879;
-  }
-  .ai-suggest .ai-refresh:hover { filter:brightness(0.95); }
-  .ai-suggest .ai-refresh:focus { outline:2px solid #104879; outline-offset:2px; }
+.date       { margin: 12pt 0 14pt; color:#555; }
+.recipient  { margin: 0 0 12pt; }
+.salutation { margin: 0 0 10pt; }
+.block      { white-space:pre-wrap; overflow-wrap:anywhere; }
