@@ -1,19 +1,95 @@
+/* ===== Skill Gap (page) ===== */
+:root{
+  --brand:#104879;
+  --gold:#ffc957;
+  --bg:#f5f8fc;
+  --card:#ffffff;
+  --stroke:#e5e7ee;
+  --ink:#0f172a;
+  --muted:#475569;
+  --radius:14px;
+}
+
+/* Layout wrappers */
+.skill-gap-page { background: var(--bg); }
+.skill-gap-container{
+  width:min(960px, 92vw);
+  margin: 18px auto 28px;
+}
+
+/* ---------- Fluid hero (matches other pages) ---------- */
+.hero-wrap { background:#104879; }
+.hero{
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  padding: clamp(16px, 4vw, 48px) clamp(12px, 4vw, 24px);
+}
+.hero-kicker{
+  color:#ffc957; font-weight:700; letter-spacing:.08em;
+  font-size: clamp(12px, 1.2vw, 18px);
+  margin: 0 0 clamp(6px, .8vw, 10px);
+}
+.hero-title{
+  color:#fff; font-weight:800; line-height:1.15; margin: 0;
+  /* 24px on tiny phones → up to 50px on large screens (per your spec) */
+  font-size: clamp(24px, 4.5vw + .25rem, 50px);
+}
+.hero-title .accent{ color:#ffc957; }
+.hero-subtitle{
+  color:#fff; opacity:.95;
+  margin: clamp(8px, 1.5vw, 14px) 0 clamp(18px, 2vw, 24px);
+  max-width: 60ch;
+  font-size: clamp(16px, 1.2vw + .25rem, 22px);
+  line-height: 1.5;
+}
+@media (min-width:768px){
+  .hero-subtitle{ max-width:46rem; }
+}
+
+/* ---------- Form & output basics (unchanged behavior) ---------- */
+.skill-gap-form form{
+  display:grid; gap:12px;
+  background:var(--card); border:1px solid var(--stroke);
+  border-radius: var(--radius); padding:16px;
+}
+.skill-gap-form label{ font-weight:700; color:var(--brand); }
+.skill-gap-form input,
+.skill-gap-form textarea{
+  border:1px solid var(--stroke); border-radius:10px;
+  padding:12px 14px; font: 16px/1.35 inherit; color:var(--ink);
+  background:#fff;
+}
+.skill-gap-form button{
+  justify-self:start;
+  background:var(--brand); color:#fff; font-weight:800;
+  border:0; border-radius:10px; padding:10px 14px; cursor:pointer;
+}
+.skill-gap-form button:hover{ filter:brightness(.96); }
+
+/* Output area + watermark overlay hook (JS controls wm-active) */
+.preview-wrap{ position:relative; margin-top:16px; }
+.output-box{
+  background:#fff; border:1px solid var(--stroke); border-radius: var(--radius);
+  padding:16px; min-height:140px;
+}
+
+/* If you also want a big overlay watermark (optional)
+.preview-wrap[data-watermark]::after{
+  content: attr(data-watermark);
+  position:absolute; inset:0; display:none; place-items:center;
+  font:700 28px/1 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color: rgba(16,72,121,.10); transform: rotate(-28deg);
+  user-select:none; pointer-events:none;
+}
+.preview-wrap.wm-active::after{ display:grid; }
+*/
+
+/* ---------- AI response content (kept from your original) ---------- */
 .ai-response h2, .ai-response h3 {
   font-weight: 700;
   color: #104879;
   margin-top: 1em;
   margin-bottom: 0.5em;
 }
-
-.ai-response strong {
-  color: #104879;
-}
-
-.ai-response ul {
-  margin-left: 1.2em;
-  list-style-type: disc;
-}
-
-.ai-response li {
-  margin: 0.4em 0;
-}
+.ai-response strong { color: #104879; }
+.ai-response ul { margin-left: 1.2em; list-style-type: disc; }
+.ai-response li { margin: 0.4em 0; }
