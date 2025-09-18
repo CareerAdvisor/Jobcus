@@ -136,3 +136,37 @@
 /* Optional: stronger watermark visibility on white boxes */
 .wm-tiled{ background-position:0 0, 210px 210px; }
 
+  /* Layout: single column on mobile; two equal columns on desktop
+     inside ~70% of page width, centered */
+  .rb-container.rb-layout{
+    margin:16px auto;
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:16px;
+  }
+  @media (min-width: 1024px){
+    .rb-container.rb-layout{
+      width: min(70vw, 1200px);
+      grid-template-columns: 1fr 1fr;
+    }
+    .rb-preview{ position:sticky; top:12px; align-self:start; }
+  }
+
+  /* Make the preview roomy */
+  #clPreview{
+    width:100%;
+    height:80vh;
+    margin:0 auto;
+    display:block;
+    border:0;
+    background:#fff;
+  }
+
+  /* Golden yellow refresh button with high-contrast text */
+  .ai-suggest .ai-refresh {
+    background:#ffc957;
+    border:1px solid #ffc957;
+    color:#104879;
+  }
+  .ai-suggest .ai-refresh:hover { filter:brightness(0.95); }
+  .ai-suggest .ai-refresh:focus { outline:2px solid #104879; outline-offset:2px; }
