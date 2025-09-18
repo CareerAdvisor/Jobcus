@@ -37,6 +37,41 @@
   margin:0; font-size:clamp(14px, 2.4vw, 18px); color:#e9eef6; max-width:60ch; margin-inline:auto;
 }
 
+/* ------- Card headers (title + subheader) ------- */
+.rb-card > header{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;                       /* space between h2 and p */
+  padding: 18px 20px;             /* taller area */
+  min-height: 96px;               /* roomy, but grows with content */
+  background: #fff;
+  border-bottom: 1px solid var(--stroke);
+}
+
+/* Title */
+.rb-card > header h2{
+  margin: 0;
+  color: #104879;                 /* requested color */
+  font-weight: 800;
+  line-height: 1.2;
+  font-size: clamp(18px, 2.2vw, 24px);
+}
+
+/* Subheader */
+.rb-card > header p{
+  margin: 0;                      /* no extra push-down */
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.35;
+  max-width: 60ch;                /* tidy line length like your employer card */
+}
+
+/* In case any inline height/size sneaks back in, neutralize it */
+.rb-card > header[style]{
+  height: auto !important;
+}
+
 /* ===== Layout (wider container, like screenshot) ===== */
 .rb-wrap{ background: #f8fcff; }
 .rb-container.rb-layout{
