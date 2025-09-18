@@ -321,7 +321,13 @@
 
             __stripWatermarks__(d);
             if (!isPaid && !isSuperadmin) {
-              __applyWatermark__(host, "JOBCUS.COM", { mode: "sparse", fontSize: 150 });
+              // ⬇️ UPDATED: force 4 very large sparse stamps
+              __applyWatermark__(host, "JOBCUS.COM", {
+                mode: "sparse",
+                fontSize: 200,   // big
+                count: 4,        // up to 4 stamps
+                rotate: -30
+              });
 
               host.classList.add("nocopy");
               const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
