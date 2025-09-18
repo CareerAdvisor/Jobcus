@@ -19,7 +19,7 @@
   }
 
   // ───────────────────────────────────────────────
-  // Watermark helpers (email-safe + strip fallbacks)
+  // Watermark helpers (email-safe + strip + SPARSE stamps)
   // ───────────────────────────────────────────────
   const EMAIL_RE = /@.+\./;
   function sanitizeWM(t) {
@@ -49,53 +49,77 @@
       ).forEach(el => {
         el.removeAttribute?.("data-watermark");
         el.removeAttribute?.("data-watermark-tile");
-        el.classList?.remove("wm-tiled");
+        el.classList?.remove("wm-tiled","wm-sparse");
         if (el.style) {
           el.style.backgroundImage = "";
           el.style.backgroundSize = "";
           el.style.backgroundBlendMode = "";
         }
       });
+      // Also remove any prior sparse overlays so stamps don’t stack
+      (root.querySelectorAll ? root.querySelectorAll(".wm-overlay") : []).forEach(n => {
+        try { n._ro?.disconnect?.(); } catch {}
+        n.remove();
+      });
     } catch {}
   }
-  function applyWM(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
+  // Sparse big-stamp watermark (3–4 placements)
+  function applySparseWM(el, text = "JOBCUS.COM", opts = {}) {
     text = sanitizeWM(text);
     if (!el || !text) return;
-    // Prefer global tiler from base.js
-    if (typeof window.applyTiledWatermark === "function") {
-      stripWatermarks(el);
-      window.applyTiledWatermark(el, text, opts);
-      return;
-    }
-    // Local minimal fallback
-    stripWatermarks(el);
-    const size = opts.size || 420;
-    const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
-    function makeTile(t, angle, alpha = 0.18) {
-      const c = document.createElement("canvas");
-      c.width = size; c.height = size;
-      const ctx = c.getContext("2d");
-      ctx.clearRect(0,0,size,size);
-      ctx.globalAlpha = (opts.alpha ?? alpha);
-      ctx.translate(size/2, size/2);
-      ctx.rotate((angle * Math.PI)/180);
+
+    // remove any previous overlays on this element
+    try { el.querySelectorAll(":scope > .wm-overlay").forEach(x => { x._ro?.disconnect?.(); x.remove(); }); } catch {}
+
+    const overlay = document.createElement("canvas");
+    overlay.className = "wm-overlay";
+    el.classList.add("wm-sparse");
+    el.appendChild(overlay);
+
+    const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    const angle = (opts.rotate != null ? opts.rotate : -30) * Math.PI / 180;
+    const color = opts.color || "rgba(16,72,121,.12)";
+    const baseFont = opts.fontFamily || "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+
+    function draw() {
+      const r = el.getBoundingClientRect();
+      const w = Math.max(1, Math.round(r.width));
+      const h = Math.max(1, Math.round(el.scrollHeight || r.height));
+      overlay.style.width = w + "px";
+      overlay.style.height = h + "px";
+      overlay.width  = Math.round(w * DPR);
+      overlay.height = Math.round(h * DPR);
+
+      const ctx = overlay.getContext("2d");
+      ctx.clearRect(0,0,overlay.width, overlay.height);
+      ctx.save();
+      ctx.scale(DPR, DPR);
+      ctx.fillStyle = color;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.font = 'bold 36px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
-      ctx.fillStyle = "#000";
-      const L = String(t).toUpperCase();
-      const gap = 44;
-      ctx.fillText(L, 0, -gap/2);
-      ctx.fillText(L, 0,  gap/2);
-      return c.toDataURL("image/png");
+
+      const count  = (opts.count ? +opts.count : (h > (opts.threshold || 1400) ? 4 : 3));
+      const fontPx = opts.fontSize || Math.max(96, Math.min(Math.floor((w + h) / 10), 180));
+      ctx.font = `700 ${fontPx}px ${baseFont}`;
+
+      let points;
+      if (count <= 3) {
+        points = [[0.22,0.30],[0.50,0.55],[0.78,0.80]];
+      } else {
+        points = [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
+      }
+
+      points.forEach(([fx, fy]) => {
+        const x = fx * w, y = fy * h;
+        ctx.save(); ctx.translate(x,y); ctx.rotate(angle); ctx.fillText(text,0,0); ctx.restore();
+      });
+      ctx.restore();
     }
-    const urls = angles.map(a => makeTile(text, a));
-    const sz = size + "px " + size + "px";
-    el.classList.add("wm-tiled");
-    el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
-    el.style.backgroundSize = urls.map(() => sz).join(", ");
-    el.style.backgroundBlendMode = "multiply, multiply";
-    el.style.backgroundRepeat = "repeat";
+
+    draw();
+    const ro = new ResizeObserver(draw);
+    ro.observe(el);
+    overlay._ro = ro;
   }
 
   // Centralized error handler — handle upgrade BEFORE generic 401/403
@@ -176,7 +200,12 @@
     // Always strip any pre-existing (email/user) watermark first
     stripWatermarks(box);
     if (!isPaid && !isSuperadmin) {
-      applyWM(box, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+      // Apply 3–4 big sparse stamps (no stacking)
+      applySparseWM(box, "JOBCUS.COM", {
+        fontSize: 150,
+        rotate: -30,
+        count: (box.scrollHeight > 1400 ? 4 : 3)
+      });
       enableNoCopyNoShot(box);
     }
   }
@@ -258,8 +287,8 @@
           ? '<div class="ai-response">' + window.marked.parse(String(output)) + "</div>"
           : '<div class="ai-response"><pre>' + escapeHtml(String(output)) + "</pre></div>";
 
-        renderSkillGap(html);    // show content first (this also shows the overlay WM)
-        protectResultBox(resultBox); // then tile inside for free users
+        renderSkillGap(html);        // show content first (this also toggles the overlay WM)
+        protectResultBox(resultBox); // then apply sparse stamps for free users
       } catch (err) {
         console.error("Skill Gap Error:", err);
         const msg = err?.message || "Something went wrong. Please try again later.";
