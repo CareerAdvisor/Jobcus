@@ -24,106 +24,6 @@ const escapeHtml = (s="") =>
 // ✅ Single source of truth for Pricing URL
 const PRICING_URL = (window.PRICING_URL || "/pricing");
 
-// ───────────────────────────────────────────────
-// Watermark helpers (email-safe + strip + SPARSE stamps)
-// ───────────────────────────────────────────────
-const __EMAIL_RE__ = /@.+\./;
-function __sanitizeWM__(t) {
-  const raw = String(t || "").trim();
-  return (!raw || __EMAIL_RE__.test(raw)) ? "JOBCUS.COM" : raw;
-}
-function __stripWatermarks__(root = document) {
-  // Allow a site-wide stripper if present
-  if (typeof window.stripExistingWatermarks === "function") {
-    try { window.stripExistingWatermarks(root); return; } catch {}
-  }
-  try {
-    const doc = (root.ownerDocument || root);
-    // Kill bg-image watermarks
-    if (doc && !doc.getElementById("wm-nuke-style")) {
-      const st = doc.createElement("style");
-      st.id = "wm-nuke-style";
-      st.textContent = `
-        * { background-image: none !important; }
-        *::before, *::after { background-image: none !important; content: '' !important; }
-      `;
-      (doc.head || doc.documentElement).appendChild(st);
-    }
-    (root.querySelectorAll ? root.querySelectorAll(
-      "[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']"
-    ) : []).forEach(el => {
-      el.removeAttribute?.("data-watermark");
-      el.removeAttribute?.("data-watermark-tile");
-      el.classList?.remove("wm-tiled","wm-sparse");
-      if (el.style) {
-        el.style.backgroundImage = "";
-        el.style.backgroundSize = "";
-        el.style.backgroundBlendMode = "";
-      }
-    });
-    // Remove any existing sparse overlays
-    (root.querySelectorAll ? root.querySelectorAll(".wm-overlay") : []).forEach(n => {
-      try { n._ro?.disconnect?.(); } catch {}
-      n.remove();
-    });
-  } catch {}
-}
-// Sparse big-stamp watermark (3–4 placements)
-function __applySparseWM__(el, text = "JOBCUS.COM", opts = {}) {
-  text = __sanitizeWM__(text);
-  if (!el || !text) return;
-
-  try { el.querySelectorAll(":scope > .wm-overlay").forEach(x => { x._ro?.disconnect?.(); x.remove(); }); } catch {}
-  const overlay = document.createElement("canvas");
-  overlay.className = "wm-overlay";
-  el.appendChild(overlay);
-
-  const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
-  const angle = (opts.rotate != null ? opts.rotate : -30) * Math.PI / 180;
-  const color = opts.color || "rgba(16,72,121,.12)";
-  const baseFont = opts.fontFamily || "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
-
-  function draw() {
-    const r = el.getBoundingClientRect();
-    const w = Math.max(1, Math.round(r.width));
-    const h = Math.max(1, Math.round(el.scrollHeight || r.height));
-    overlay.style.width = w + "px";
-    overlay.style.height = h + "px";
-    overlay.width  = Math.round(w * DPR);
-    overlay.height = Math.round(h * DPR);
-
-    const ctx = overlay.getContext("2d");
-    ctx.clearRect(0,0,overlay.width, overlay.height);
-    ctx.save();
-    ctx.scale(DPR, DPR);
-    ctx.fillStyle = color;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    const count  = (opts.count ? +opts.count : (h > (opts.threshold || 1400) ? 3 : 2));
-    const fontPx = opts.fontSize || Math.max(96, Math.min(Math.floor((w + h) / 10), 180));
-    ctx.font = `700 ${fontPx}px ${baseFont}`;
-
-    let points;
-    if (count <= 2) {
-      points = [[0.22,0.30],[0.50,0.55],[0.78,0.80]];
-    } else {
-      points = [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
-    }
-
-    points.forEach(([fx, fy]) => {
-      const x = fx * w, y = fy * h;
-      ctx.save(); ctx.translate(x,y); ctx.rotate(angle); ctx.fillText(text,0,0); ctx.restore();
-    });
-    ctx.restore();
-  }
-
-  draw();
-  const ro = new ResizeObserver(draw);
-  ro.observe(el);
-  overlay._ro = ro;
-}
-
 // Centralized server-response handling
 async function handleCommonErrors(res) {
   if (res.ok) return null;
@@ -463,7 +363,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           const host = d?.body || d?.documentElement;
           if (!host || !d) return;
 
-          // base style for nocopy & print
+          // basic style for nocopy & print
           const baseStyle = d.createElement("style");
           baseStyle.textContent = `
             .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
@@ -478,7 +378,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
                 .forEach(el => {
                   el.removeAttribute?.("data-watermark");
                   el.removeAttribute?.("data-watermark-tile");
-                  el.classList?.remove("wm-tiled","wm-sparse");
+                  el.classList?.remove("wm-tiled");
                   if (el.style) {
                     el.style.backgroundImage = "";
                     el.style.backgroundSize = "";
@@ -516,64 +416,9 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
             } catch {}
           })(d);
 
-          // ➕ Apply JOBCUS.COM as 3–4 sparse big stamps for FREE plans (not superadmin)
-          if (!isPaid && !isSuperadmin) {
-            // Use helpers scoped to the iframe document
-            (function sparseInside(doc, targetEl) {
-              try {
-                // strip any previous overlays inside the iframe
-                (doc.querySelectorAll ? doc.querySelectorAll(".wm-overlay") : []).forEach(n => {
-                  try { n._ro?.disconnect?.(); } catch {}
-                  n.remove();
-                });
-              } catch {}
-
-              const overlay = doc.createElement("canvas");
-              overlay.className = "wm-overlay";
-              targetEl.appendChild(overlay);
-
-              const DPR = Math.max(1, Math.min(3, (frame.contentWindow?.devicePixelRatio || window.devicePixelRatio || 1)));
-              const angle = (-30) * Math.PI / 180;
-              const color = "rgba(16,72,121,.12)";
-              const baseFont = "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
-
-              function draw() {
-                const r = targetEl.getBoundingClientRect();
-                const w = Math.max(1, Math.round(r.width));
-                const h = Math.max(1, Math.round(targetEl.scrollHeight || r.height));
-                overlay.style.width = w + "px";
-                overlay.style.height = h + "px";
-                overlay.width  = Math.round(w * DPR);
-                overlay.height = Math.round(h * DPR);
-
-                const ctx = overlay.getContext("2d");
-                ctx.clearRect(0,0,overlay.width, overlay.height);
-                ctx.save();
-                ctx.scale(DPR, DPR);
-                ctx.fillStyle = color;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-
-                const count  = (h > 1400 ? 4 : 3);
-                const fontPx = Math.max(96, Math.min(Math.floor((w + h) / 10), 180));
-                ctx.font = `700 ${fontPx}px ${baseFont}`;
-
-                const points = (count <= 3)
-                  ? [[0.22,0.30],[0.50,0.55],[0.78,0.80]]
-                  : [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
-
-                points.forEach(([fx, fy]) => {
-                  const x = fx * w, y = fy * h;
-                  ctx.save(); ctx.translate(x,y); ctx.rotate(angle); ctx.fillText("JOBCUS.COM",0,0); ctx.restore();
-                });
-                ctx.restore();
-              }
-
-              draw();
-              const ro = new (frame.contentWindow?.ResizeObserver || ResizeObserver)(draw);
-              ro.observe(targetEl);
-              overlay._ro = ro;
-            })(d, host);
+          // apply JOBCUS.COM overlay only outside superadmin (if you also want it only for free, add !isPaid)
+          if (!isSuperadmin && window.applyTiledWatermark) {
+            window.applyTiledWatermark(host, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
           }
 
           host.classList.add("nocopy");
