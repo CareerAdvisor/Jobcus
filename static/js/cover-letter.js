@@ -11,18 +11,25 @@
 
   const PRICING_URL = (window.PRICING_URL || "/pricing");
 
-  /* ---------- Tiny helpers ---------- */
-  const EMAIL_RE = /@.+\./;
-  const sanitizeWM = (t) => (!String(t||"").trim() || EMAIL_RE.test(t)) ? "JOBCUS.COM" : String(t).trim();
-  const escapeHtml = (s="") => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  /* ---------- tiny utils ---------- */
+  const escapeHtml = (s="") =>
+    String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
-  function stripWatermarks(root = document) {
+  // ───────────────────────────────────────────────
+  // Watermark helpers (tiled fallback + SPARSE big stamps)
+  // ───────────────────────────────────────────────
+  const __EMAIL_RE__ = /@.+\./;
+  function __sanitizeWM__(t) {
+    const raw = String(t || "").trim();
+    return (!raw || __EMAIL_RE__.test(raw)) ? "JOBCUS.COM" : raw;
+  }
+  function __stripWatermarks__(root = document) {
     if (typeof window.stripExistingWatermarks === "function") {
       try { window.stripExistingWatermarks(root); return; } catch {}
     }
     try {
-      const doc = root.ownerDocument || root;
+      const doc = (root.ownerDocument || root);
       if (doc && !doc.getElementById("wm-nuke-style")) {
         const st = doc.createElement("style");
         st.id = "wm-nuke-style";
@@ -32,32 +39,82 @@
         `;
         (doc.head || doc.documentElement).appendChild(st);
       }
-      (root.querySelectorAll
-        ? root.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']")
-        : []
-      ).forEach(el => {
-        el.removeAttribute?.("data-watermark");
+      (root.querySelectorAll ? root.querySelectorAll(
+        "[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']"
+      ) : []).forEach(el => {
         el.removeAttribute?.("data-watermark-tile");
-        el.classList?.remove("wm-tiled");
+        el.classList?.remove("wm-tiled","wm-sparse");
         if (el.style) {
           el.style.backgroundImage = "";
           el.style.backgroundSize = "";
           el.style.backgroundBlendMode = "";
         }
       });
+      (root.querySelectorAll ? root.querySelectorAll(".wm-overlay") : []).forEach(n => {
+        try { n._ro?.disconnect?.(); } catch {}
+        n.remove();
+      });
     } catch {}
   }
-  function applyWM(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
-    text = sanitizeWM(text);
+  function __applySparseWM__(el, text = "JOBCUS.COM", opts = {}) {
+    text = __sanitizeWM__(text);
     if (!el || !text) return;
-    if (typeof window.applyTiledWatermark === "function") {
-      stripWatermarks(el);
-      window.applyTiledWatermark(el, text, opts);
-      return;
+    try { el.querySelectorAll(":scope > .wm-overlay").forEach(x => { x._ro?.disconnect?.(); x.remove(); }); } catch {}
+    const overlay = document.createElement("canvas");
+    overlay.className = "wm-overlay";
+    el.classList.add("wm-sparse");
+    el.appendChild(overlay);
+
+    const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    const angle = (opts.rotate != null ? opts.rotate : -30) * Math.PI / 180;
+    const color = opts.color || "rgba(16,72,121,.12)";
+    const baseFont = opts.fontFamily || "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+
+    function draw() {
+      const r = el.getBoundingClientRect();
+      const w = Math.max(1, Math.round(r.width));
+      const h = Math.max(1, Math.round(el.scrollHeight || r.height));
+      overlay.style.width = w + "px";
+      overlay.style.height = h + "px";
+      overlay.width  = Math.round(w * DPR);
+      overlay.height = Math.round(h * DPR);
+
+      const ctx = overlay.getContext("2d");
+      ctx.clearRect(0,0,overlay.width, overlay.height);
+      ctx.save();
+      ctx.scale(DPR, DPR);
+      ctx.fillStyle = color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      const count = (opts.count ? +opts.count : (h > (opts.threshold || 1400) ? 4 : 3));
+      const fontPx = opts.fontSize || Math.max(96, Math.min(Math.floor((w + h) / 10), 180));
+      ctx.font = `700 ${fontPx}px ${baseFont}`;
+
+      let points;
+      if (count <= 3) {
+        points = [[0.22,0.30],[0.50,0.55],[0.78,0.80]];
+      } else {
+        points = [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
+      }
+
+      points.forEach(([fx, fy]) => {
+        const x = fx * w, y = fy * h;
+        ctx.save(); ctx.translate(x,y); ctx.rotate(angle); ctx.fillText(text,0,0); ctx.restore();
+      });
+      ctx.restore();
     }
-    // Minimal canvas tiler
-    stripWatermarks(el);
-    const size = opts.size || 420;
+
+    draw();
+    const ro = new ResizeObserver(draw);
+    ro.observe(el);
+    overlay._ro = ro;
+  }
+  function __applyTiledWM__(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
+    text = __sanitizeWM__(text);
+    if (!el || !text) return;
+    __stripWatermarks__(el);
+    const size = opts.size || 540;
     const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
     function makeTile(t, angle, alpha = 0.18) {
       const c = document.createElement("canvas");
@@ -69,21 +126,32 @@
       ctx.rotate((angle * Math.PI)/180);
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.font = 'bold 36px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      ctx.font = 'bold 48px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
       ctx.fillStyle = "#000";
       const L = String(t).toUpperCase();
-      const gap = 44;
+      const gap = 56;
       ctx.fillText(L, 0, -gap/2);
       ctx.fillText(L, 0,  gap/2);
       return c.toDataURL("image/png");
     }
     const urls = angles.map(a => makeTile(text, a));
     const sz = size + "px " + size + "px";
+    el.classList.remove("wm-sparse");
     el.classList.add("wm-tiled");
     el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
     el.style.backgroundSize = urls.map(() => sz).join(", ");
     el.style.backgroundBlendMode = "multiply, multiply";
     el.style.backgroundRepeat = "repeat";
+  }
+  function __applyWatermark__(el, text = "JOBCUS.COM", opts = {}) {
+    text = __sanitizeWM__(text);
+    if (!el || !text) return;
+    __stripWatermarks__(el);
+    if (opts && (opts.mode === "sparse" || opts.count || opts.fontSize)) {
+      __applySparseWM__(el, text, opts);
+    } else {
+      __applyTiledWM__(el, text, opts);
+    }
   }
 
   // Dynamic loader for docx (client fallback)
@@ -116,27 +184,23 @@
     try { if (ct.includes("application/json")) j=await res.json(); else t=await res.text(); } catch {}
     const msg = (j && (j.message || j.error)) || t || `Request failed (${res.status})`;
 
-    // Upgrade/quota FIRST
     if (res.status === 402 || (j && (j.error === "upgrade_required" || j.error === "quota_exceeded"))) {
       const url  = j?.pricing_url || PRICING_URL;
       const html = j?.message_html || `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`;
       window.upgradePrompt?.(html, url, 1200);
       throw new Error(j?.message || "Upgrade required");
     }
-    // Auth
     if (res.status === 401 || res.status === 403) {
       const authMsg = j?.message || "Please sign up or log in to use this feature.";
       window.showUpgradeBanner?.(authMsg);
       setTimeout(()=>{ window.location.href = "/account?mode=login"; }, 800);
       throw new Error(authMsg);
     }
-    // Abuse
     if (res.status === 429 && (j?.error === "too_many_free_accounts" || j?.error === "device_limit")) {
       const ab = j?.message || "Too many free accounts detected from your network/device.";
       window.showUpgradeBanner?.(ab);
       throw new Error(ab);
     }
-
     window.showUpgradeBanner?.(escapeHtml(msg));
     throw new Error(msg);
   }
@@ -216,11 +280,9 @@
     back?.addEventListener("click", () => show(idx - 1));
     next?.addEventListener("click", async () => {
       if (idx < steps.length - 1) { show(idx + 1); return; }
-      // last step → generate (preview)
       try { await onFinish?.(); } catch {}
     });
 
-    // Initial visibility
     steps.forEach((s, k) => { if (k !== idx) s.hidden = true; });
     show(idx);
   }
@@ -242,13 +304,9 @@
       if (!ct.includes("text/html")) throw new Error("Unexpected response.");
       const html = await res.text();
 
-      if (wrap) {
-        wrap.style.display = "block";
-        wrap.classList.remove("wm-active"); // overlay appears only after load
-      }
+      if (wrap) { wrap.style.display = "block"; wrap.classList.remove("wm-active"); }
 
       if (frame) {
-        // bind before setting srcdoc
         frame.addEventListener("load", () => {
           if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
 
@@ -261,12 +319,10 @@
             const host = d?.body || d?.documentElement;
             if (!host) return;
 
-            // inside the iframe
-            stripWatermarks(d);
+            __stripWatermarks__(d);
             if (!isPaid && !isSuperadmin) {
-              applyWM(host, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+              __applyWatermark__(host, "JOBCUS.COM", { mode: "sparse", fontSize: 150 });
 
-              // nocopy guards
               host.classList.add("nocopy");
               const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
               ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
@@ -275,11 +331,9 @@
               d.addEventListener("keydown", (e) => {
                 const k = (e.key || "").toLowerCase();
                 if ((e.ctrlKey || e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
-                if (k === "printscreen") return kill(e);
               }, { passive: false });
             }
           } catch {}
-          // finally: reveal downloads
           if (dlBar) dlBar.style.display = "";
         }, { once: true });
 
@@ -315,7 +369,6 @@
         body: JSON.stringify({ format: "pdf", letter_only: true, ...ctx })
       });
       if (!res.ok) await handleCommonErrors(res);
-
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -327,7 +380,7 @@
   }
 
   async function downloadDOCX(ctx) {
-    // Enforce same plan gate as PDF (and block client fallback for free plans)
+    // Same plan gate as PDF
     const plan = (document.body.dataset.plan || "guest").toLowerCase();
     const isPaid = (plan === "standard" || plan === "premium");
     const isSuperadmin = (document.body.dataset.superadmin === "1");
@@ -353,16 +406,10 @@
       a.href = url; a.download = "cover-letter.docx"; a.click();
       URL.revokeObjectURL(url);
       return;
-    } catch (err) {
-      if (err && err.message !== "route_404") {
-        // fall through to client mode anyway
-      }
-    }
+    } catch (err) { /* fall through to client mode */ }
 
     // Client-side fallback using docx — styled to match the PDF
-    try {
-      await ensureDocxBundle();
-    } catch (e) {
+    try { await ensureDocxBundle(); } catch (e) {
       window.showUpgradeBanner?.(e.message || "DOCX library not loaded.");
       return;
     }
@@ -373,10 +420,10 @@
     const sender = ctx.sender || {};
     const recipient = ctx.recipient || {};
 
-    const A4 = { width: 11906, height: 16838 };          // twips
-    const M  = 1020;                                      // ~18mm margins
-    const LINE = 276;                                     // ~1.5 line height
-    const NORMAL = { size: 24, font: "Arial" };           // 12pt
+    const A4 = { width: 11906, height: 16838 }; // twips
+    const M  = 1020;                             // ~18mm margins
+    const LINE = 276;                            // ~1.5 line height
+    const NORMAL = { size: 24, font: "Arial" };  // 12pt
     const NAME   = { size: 64, font: "Arial", bold: true };
 
     const P = (text, {align="LEFT", run=NORMAL, after=120}={}) =>
@@ -386,12 +433,11 @@
         children: [ new TextRun(Object.assign({ text }, run)) ],
       });
 
-    // Centered identity like the PDF
-    if (ctx.name) lines.push(P(ctx.name,   { align:"CENTER", run: NAME,  after: 80 }));
+    if (ctx.name) lines.push(P(ctx.name, { align:"CENTER", run: NAME, after: 80 }));
     const contact = [sender.address1, sender.city, sender.postcode].filter(Boolean).join(", ");
-    if (contact)  lines.push(P(contact,   { align:"CENTER" }));
-    const reach   = [sender.email, sender.phone].filter(Boolean).join(" | ");
-    if (reach)    lines.push(P(reach,     { align:"CENTER", after: 160 }));
+    if (contact)  lines.push(P(contact, { align:"CENTER" }));
+    const reach = [sender.email, sender.phone].filter(Boolean).join(" | ");
+    if (reach)   lines.push(P(reach, { align:"CENTER", after: 160 }));
 
     if (sender.date) lines.push(P(sender.date));
     const recLines = [
@@ -408,12 +454,7 @@
     lines.push(P(ctx.name || "", { after: 0 }));
 
     const doc = new Document({
-      sections: [{
-        properties: {
-          page: { size: A4, margin: { top: M, bottom: M, left: M, right: M } },
-        },
-        children: lines
-      }]
+      sections: [{ properties:{ page:{ size:A4, margin:{ top:M, bottom:M, left:M, right:M } } }, children: lines }]
     });
 
     const blob = await Packer.toBlob(doc);
@@ -427,10 +468,8 @@
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("clForm");
 
-    // wizard: last step triggers preview/generate
-    initWizard(async () => {
-      await previewLetter(gatherContext(form));
-    });
+    // Wizard: last step triggers preview/generate
+    initWizard(async () => { await previewLetter(gatherContext(form)); });
 
     // AI refresh / insert
     const aiCard = document.getElementById("ai-cl");
@@ -462,12 +501,12 @@
       }
     });
 
-    // Manual preview
+    // Manual preview button
     document.getElementById("cl-preview")?.addEventListener("click", async () => {
       await previewLetter(gatherContext(form));
     });
 
-    // Downloads (shown after preview load)
+    // Downloads (revealed after preview loads)
     document.getElementById("cl-download-pdf")?.addEventListener("click", async () => {
       await downloadPDF(gatherContext(form));
     });
