@@ -23,8 +23,8 @@
     >
   </section>
 
-  <!-- Optional live preview frame (watermark wrapper) -->
-  <section style="margin:18px 0;">
+  <!-- Optional live preview frame (hidden until used) -->
+  <section id="coachPreviewSection" style="margin:18px 0; display:none;">
     <div id="coachWrap" class="preview-wrap"
          {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
       <iframe id="coachPreview"
