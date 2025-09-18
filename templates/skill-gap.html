@@ -13,18 +13,17 @@
 {% block content %}
 <main class="skill-gap-page">
 
-  <!-- Hero -->
-  <div class="hero-wrap">
-    <section class="hero">
-      <h5 class="hero-kicker">AI SKILL-GAP ANALYZER</h5>
-      <h1 class="hero-title">
-        Skill-Gap <span class="accent">Analysis</span>
-      </h1>
-      <p class="hero-subtitle">
-        Find out what skills you're missing for your dream job and how to close the gap. Powered by AI deep insight.
-      </p>
-    </section>
-  </div>
+  <!-- Hero (uses the shared fluid hero styles) -->
+  <section class="hero sg-hero">
+    <div class="hero-kicker">AI SKILL-GAP ANALYZER</div>
+    <h1 class="hero-title">
+      <span class="accent">Analysis</span>
+    </h1>
+    <p class="hero-subtitle">
+      Find out what skills you're missing for your dream job and how to close the gap.
+      Powered by AI deep insight.
+    </p>
+  </section>
 
   <div class="skill-gap-container">
     <section class="skill-gap-form">
@@ -35,7 +34,7 @@
         <label for="skills">Your Current Skills</label>
         <textarea name="skills" id="skills" rows="4" placeholder="e.g., Excel, SQL" required></textarea>
 
-        <button type="submit">Analyze My Gap</button>
+        <button type="submit" class="sg-btn">Analyze My Gap</button>
       </form>
     </section>
 
@@ -50,6 +49,5 @@
 {% endblock %}
 
 {% block scripts %}
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <script src="{{ url_for('static', filename='js/skill-gap.js') }}" defer></script>
 {% endblock %}
