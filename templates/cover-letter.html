@@ -6,35 +6,35 @@
 {% set wm_text  = '' if is_paid else 'JOBCUS.COM' %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cover-letter.css') }}">
+<style>
+  /* Make sure the Back button never gets a blue active bg */
+  .ghost, .ghost:active, .ghost:focus { background: transparent !important; color: var(--brand) !important; }
+</style>
 {% endblock %}
 
 {% block content %}
 <main id="cover-letter" class="rb-wrap">
 
-  <!-- Hero (matches your original look) -->
-  <section class="cl-hero">
-    <div class="cl-hero-card">
-      <div class="cl-hero-eyebrow">AI COVER LETTER</div>
-      <h1 class="cl-hero-title">
-        Create a tailored <span>cover</span> letter
-      </h1>
-      <p class="cl-hero-subtitle">
-        Use your resume details to draft a polished letter.
-      </p>
+  <!-- Hero (matches your screenshot) -->
+  <section class="hero-slab">
+    <div class="hero-card">
+      <div class="hero-eyebrow">AI COVER LETTER</div>
+      <h1 class="hero-title">Create a tailored <span>cover</span> letter</h1>
+      <p class="hero-sub">Use your resume details to draft a polished letter.</p>
     </div>
   </section>
 
-  <!-- Layout: form + sticky preview -->
+  <!-- 70% page-width container -->
   <div class="rb-container rb-layout">
-
-    <!-- Left: Form (2-step wizard) -->
+    <!-- LEFT: Wizard form -->
     <div class="rb-main">
       <form id="clForm" class="rb-form" autocomplete="on">
-        <!-- Step 1: Recruiter -->
-        <section class="rb-step active" id="step-recruiter">
+
+        <!-- STEP 1: Recruiter -->
+        <section class="rb-step active" aria-label="Recruiter details">
           <article class="rb-card">
-            <header class="stacked-hero">
+            <header>
               <h2>Recruiter</h2>
               <p>Company, role, job link, tone, and recipient details.</p>
             </header>
@@ -49,6 +49,7 @@
                 <label class="full">Job link (optional)
                   <input type="url" name="jobUrl" placeholder="https://…">
                 </label>
+
                 <label class="full">Tone
                   <select name="tone">
                     <option value="professional" selected>Professional</option>
@@ -61,7 +62,7 @@
                   <input type="text" name="recipient" placeholder="Hiring Manager">
                 </label>
 
-                <div class="full rb-minihead">Recipient’s address</div>
+                <div class="full rb-subheading">Recipient’s address</div>
                 <label class="full">Company address (line 1)
                   <input type="text" name="companyAddress1" placeholder="45 Market Road">
                 </label>
@@ -76,10 +77,10 @@
           </article>
         </section>
 
-        <!-- Step 2: Applicant -->
-        <section class="rb-step" id="step-applicant">
+        <!-- STEP 2: Applicant -->
+        <section class="rb-step" aria-label="Applicant details">
           <article class="rb-card">
-            <header class="stacked-hero">
+            <header>
               <h2>Applicant</h2>
               <p>Your contact details for the letter heading.</p>
             </header>
@@ -105,21 +106,29 @@
                 <label>Date
                   <input type="date" name="letterDate">
                 </label>
+              </div>
+            </div>
+          </article>
+        </section>
 
-                <label class="full">Letter body
-                  <textarea name="body" rows="10" placeholder="Write or generate your letter body here…"></textarea>
-                </label>
+        <!-- STEP 3: Body + AI -->
+        <section class="rb-step" aria-label="Letter body">
+          <article class="rb-card">
+            <header>
+              <h2>Letter Body</h2>
+              <p>Write or generate your letter body (max ~3 short paragraphs).</p>
+            </header>
+            <div class="rb-panel">
+              <textarea name="body" rows="12" placeholder="Write or generate your letter body here…"></textarea>
 
-                <!-- AI assistant -->
-                <div class="ai-suggest" id="ai-cl" data-field="cover_letter">
-                  <div class="ai-title">✦ Write with AI</div>
-                  <p class="ai-text">We’ll draft a tailored letter using your details above.</p>
-                  <div class="ai-actions">
-                    <button type="button" class="btn ai-refresh" data-ai="cover_letter">Refresh</button>
-                    <button type="button" class="btn btn-primary ai-add">Insert</button>
-                  </div>
+              <!-- AI box -->
+              <div class="ai-suggest" id="ai-cl" data-field="cover_letter">
+                <div class="ai-title">✦ Write with AI</div>
+                <p class="ai-text">We’ll draft a tailored letter using your details above.</p>
+                <div class="ai-actions">
+                  <button type="button" class="btn ai-refresh">Refresh</button>
+                  <button type="button" class="btn btn-primary ai-add">Insert</button>
                 </div>
-
               </div>
             </div>
           </article>
@@ -127,38 +136,36 @@
 
         <!-- Wizard controls -->
         <footer class="rb-footer">
-          <button type="button" id="rb-back"  class="ghost">← Back</button>
+          <button type="button" id="rb-back" class="ghost">← Back</button>
+
           <div class="rb-actions">
+            <button type="button" id="cl-preview" class="cta-secondary">Preview</button>
             <button type="button" id="rb-next" class="cta-primary">Next</button>
           </div>
         </footer>
       </form>
     </div>
 
-    <!-- Right: Sticky Preview -->
+    <!-- RIGHT: Preview + Downloads -->
     <aside class="rb-preview">
       <article class="rb-card">
         <div class="rb-panel">
-          <div class="rb-actions">
-            <button type="button" id="cl-preview" class="cta-secondary">Preview</button>
-            <button type="button" id="cl-download-pdf"  class="cta-primary">Download PDF</button>
-            <button type="button" id="cl-download-docx" class="cta-primary alt">Download Word</button>
-          </div>
-
           <div id="clPreviewWrap" class="preview-wrap" style="display:none;"
                {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
-            <iframe id="clPreview" title="Cover Letter Preview"></iframe>
+            <iframe id="clPreview"></iframe>
+          </div>
+
+          <div id="cl-downloads" class="rb-actions" style="display:none;margin-top:10px;">
+            <button type="button" id="cl-download-pdf"  class="cta-primary">Download PDF</button>
+            <button type="button" id="cl-download-docx" class="cta-primary">Download Word</button>
           </div>
         </div>
       </article>
     </aside>
-
   </div>
 </main>
 {% endblock %}
 
 {% block scripts %}
-  <!-- DOCX fallback (for client-side Word download if server route missing) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.7.0/docx.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script defer src="{{ url_for('static', filename='js/cover-letter.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/cover-letter.js') }}"></script>
 {% endblock %}
