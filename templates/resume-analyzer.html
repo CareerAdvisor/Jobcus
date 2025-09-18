@@ -7,6 +7,37 @@
 
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+
+  <style>
+    /* Fluid hero (scoped to this page) */
+    .res-page .hero{
+      display:flex; flex-direction:column; align-items:center; text-align:center;
+      padding: clamp(16px, 4vw, 48px) clamp(12px, 4vw, 24px);
+      background:#104879; border-radius:14px;
+    }
+    .res-page .hero-kicker{
+      color:#ffc957; font-weight:600; letter-spacing:.08em;
+      font-size: clamp(12px, 1.2vw, 18px);
+      margin: 0 0 clamp(6px, .8vw, 10px);
+    }
+    .res-page .hero-title{
+      color:#fff; font-weight:700; line-height:1.15; margin: 0;
+      /* 24px on tiny phones → up to 50px on large screens */
+      font-size: clamp(24px, 4.5vw + .25rem, 50px);
+    }
+    .res-page .hero-title .accent { color:#ffc957; }
+    .res-page .hero-subtitle{
+      color:#fff; opacity:.95;
+      margin: clamp(10px, 1.5vw, 14px) 0 clamp(18px, 2vw, 24px);
+      max-width: 60ch;
+      /* 16 → 22 */
+      font-size: clamp(16px, 1.2vw + .25rem, 22px);
+      line-height: 1.5;
+    }
+    @media (min-width: 768px){
+      .res-page .hero-subtitle { max-width: 46rem; }
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -14,12 +45,12 @@
 
   <!-- Hero -->
   <div class="interview-container" style="padding:20px 16px;width:100%;background:#104879;">
-    <section class="interview-hero-with-image" style="display:flex;flex-direction:column;align-items:center;text-align:center;">
-      <h5 style="color:#ffc957;font-weight:600;font-size:14px;letter-spacing:1px;">AI RESUME ANALYZER</h5>
-      <h1 style="font-size:28px;font-weight:700;color:#fff;margin:10px 0;">
-        Improve your <span style="color:#ffc957;">resume</span> with instant feedback
+    <section class="interview-hero-with-image hero">
+      <h5 class="hero-kicker">AI RESUME ANALYZER</h5>
+      <h1 class="hero-title">
+        Improve your <span class="accent">resume</span> with instant feedback
       </h1>
-      <p style="max-width:520px;color:#fff;font-size:16px;margin:10px 0 10px;">
+      <p class="hero-subtitle">
         Get a score, keyword insights, and actionable suggestions, all optimized for ATS.
       </p>
     </section>
@@ -79,7 +110,7 @@
         <div id="analyzerNotice" class="notice" hidden role="alert" aria-live="polite"></div>
       </article>
 
-      <!-- Centered Cover Letter CTA (add id for seeding) -->
+      <!-- Centered Cover Letter CTA -->
       <div style="text-align:center; margin-top:24px;">
         <a id="openCoverLetter" href="/cover-letter" class="primary-btn"
            style="background:#ffc957;color:#104879;padding:12px 16px;border-radius:6px;
@@ -97,7 +128,6 @@
 {% endblock %}
 
 {% block scripts %}
-  <!-- Load base helpers (upgrade banner, state sync) then analyzer logic -->
   <script defer src="{{ url_for('static', filename='js/base.js') }}"></script>
   <script defer src="{{ url_for('static', filename='js/resume-analyzer.js') }}"></script>
 {% endblock %}
