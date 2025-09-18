@@ -100,12 +100,12 @@ function __applySparseWM__(el, text = "JOBCUS.COM", opts = {}) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    const count  = (opts.count ? +opts.count : (h > (opts.threshold || 1400) ? 4 : 3));
+    const count  = (opts.count ? +opts.count : (h > (opts.threshold || 1400) ? 3 : 2));
     const fontPx = opts.fontSize || Math.max(96, Math.min(Math.floor((w + h) / 10), 180));
     ctx.font = `700 ${fontPx}px ${baseFont}`;
 
     let points;
-    if (count <= 3) {
+    if (count <= 2) {
       points = [[0.22,0.30],[0.50,0.55],[0.78,0.80]];
     } else {
       points = [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
