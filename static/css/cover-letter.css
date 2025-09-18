@@ -1,6 +1,6 @@
 /* ===== Cover Letter (page-specific) ===== */
 :root{
-  --brand: #104879;
+  --brand: #104879;   /* brand blue to match screenshot */
   --brand-2:#0b355a;
   --gold:  #ffc957;
   --ink:   #0f172a;
@@ -12,35 +12,35 @@
   --shadow:0 6px 18px rgba(16,72,121,.06);
 }
 
-/* ---- Hero ---- */
-.cl-hero{ width:100%; background:#f6fafc; padding:20px 0 8px; }
+/* ---- Hero (matches your screenshot) ---- */
+.cl-hero{ width:100%; background:#f6fafc; padding:22px 0 10px; }
 .cl-hero-card{
-  width:min(760px, calc(100% - 32px));
+  width:min(820px, calc(100% - 32px));
   margin:0 auto;
-  background:#0b355a;
+  background: var(--brand);        /* exact site blue */
   border-radius:22px;
-  padding:28px 24px;
+  padding:32px 28px;
   color:#fff;
-  text-align:left;
+  text-align:center;
   box-shadow:0 10px 30px rgba(16,72,121,.18);
 }
 .cl-hero-eyebrow{
   color:var(--gold); font-weight:800; letter-spacing:.12em; font-size:14px;
-  text-transform:uppercase; margin-bottom:8px;
+  text-transform:uppercase; margin-bottom:10px;
 }
 .cl-hero-title{
-  margin:0 0 10px; font-weight:800;
-  font-size:clamp(24px, 4.8vw, 34px); line-height:1.2;
+  margin:0 0 12px; font-weight:800;
+  font-size:clamp(26px, 5vw, 36px); line-height:1.2;
 }
 .cl-hero-title span{ color:var(--gold); }
 .cl-hero-subtitle{
-  margin:0; font-size:clamp(14px, 2.6vw, 18px); color:#e9eef6; max-width:60ch;
+  margin:0; font-size:clamp(14px, 2.4vw, 18px); color:#e9eef6; max-width:60ch; margin-inline:auto;
 }
 
-/* ===== Layout (70% page width, centered) ===== */
+/* ===== Layout (wider container, like screenshot) ===== */
 .rb-wrap{ background: #f8fcff; }
 .rb-container.rb-layout{
-  width: min(70vw, 1300px);
+  width: min(90vw, 1300px);  /* wider than 70% to match the picture */
   margin: 16px auto;
   display: flex; gap: 16px;
   align-items: flex-start;
@@ -57,26 +57,26 @@
 .rb-card{
   background: var(--card);
   border: 1px solid var(--stroke);
-  border-radius: var(--radius);
+  border-radius: 16px;
   box-shadow: var(--shadow);
   overflow: hidden;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
-.rb-panel{ padding: 16px; }
+.rb-panel{ padding: 18px; }
 
-/* Stacked header (title above subtitle) – matches Employers page */
+/* Stacked header (title then subtitle) – left aligned */
 .stacked-hero{
   display:flex; flex-direction:column; gap:6px;
-  padding:14px 16px; background:#f6fbff;
+  padding:16px 18px; background:#f6fbff;
   border-bottom:1px solid var(--stroke);
 }
 .stacked-hero h2{
   margin:0; color:var(--brand);
-  font-weight:800; font-size:clamp(20px, 2.4vw, 24px);
+  font-weight:800; font-size:clamp(20px, 2.6vw, 24px);
 }
 .stacked-hero p{
   margin:0; color:var(--muted);
-  font-size:clamp(14px, 1.8vw, 16px);
+  font-size:clamp(14px, 1.9vw, 16px);
 }
 
 /* ===== Form grid ===== */
@@ -119,8 +119,15 @@
   background: var(--brand); color:#fff; border-color: var(--brand);
 }
 .ai-suggest .btn.btn-primary:hover{ filter: brightness(.96); }
-/* Gold refresh button */
-.ai-suggest .ai-refresh{ background: var(--gold); border-color: var(--gold); color: var(--brand); }
+
+/* — your exact gold button + focus ring (from snippet) — */
+.ai-suggest .ai-refresh{
+  background: #ffc957;
+  border: 1px solid #ffc957;
+  color: #104879;
+}
+.ai-suggest .ai-refresh:hover { filter: brightness(0.95); }
+.ai-suggest .ai-refresh:focus { outline: 2px solid #104879; outline-offset: 2px; }
 
 /* ===== Buttons & footer ===== */
 .cta-primary{
@@ -157,6 +164,21 @@
 .rb-preview .rb-card{ position: relative; }
 #clPreview{ width:100%; height:80vh; border:0; background:#fff; display:block; }
 
+/* --- Your wide desktop preview snippet --- */
+@media (min-width: 1024px) {
+  .rb-container.rb-layout { max-width: 1300px; }
+  .rb-preview { max-width: none; }
+  #clPreviewWrap { max-width: none; }
+  #clPreview {
+    width: min(100%, 900px);  /* ~A4 width */
+    height: 90vh;
+    margin: 0 auto;
+    display: block;
+    border: 0;
+    background: #fff;
+  }
+}
+
 /* ===== Delayed watermark overlay for preview wraps ===== */
 .preview-wrap{ position: relative; }
 .preview-wrap iframe{ display:block; width:100%; height:80vh; border:0; background:#fff; }
@@ -176,6 +198,41 @@
 
 /* Optional “nocopy” guard (free tier) */
 .nocopy, .nocopy * { user-select:none !important; -webkit-user-select:none !important; }
+
+/* ===== Letter-only preview styles (SCOPED) =====
+   Add class="cl-letter-only" on <body> in your letter-only template so these rules
+   apply INSIDE the iframe without affecting the main site. */
+body.cl-letter-only header,
+body.cl-letter-only nav,
+body.cl-letter-only footer,
+body.cl-letter-only .site-header,
+body.cl-letter-only .site-footer,
+body.cl-letter-only .navbar,
+body.cl-letter-only .topbar,
+body.cl-letter-only .app-footer,
+body.cl-letter-only .chat-widget,
+body.cl-letter-only .floating-chat,
+body.cl-letter-only .intercom-lightweight-app { display:none !important; }
+
+body.cl-letter-only,
+body.cl-letter-only html { background:#fff; margin:0; }
+
+/* The letter wrapper itself (same class name you already use) */
+body.cl-letter-only .cl{
+  max-width: clamp(680px, 84vw, 860px);
+  margin: 36px auto;
+  padding: 0 16px;
+  color:#111;
+  font: 12pt/1.55 Arial, Helvetica, sans-serif;
+}
+body.cl-letter-only .cl-header { text-align:center; margin: 0 auto 14pt; }
+body.cl-letter-only .cl-header .name { font-weight:800; font-size:32pt; margin:0; }
+body.cl-letter-only .cl-header .contact { margin-top:4pt; }
+body.cl-letter-only .date { margin: 12pt 0 14pt; }
+body.cl-letter-only .recipient { margin: 0 0 12pt; }
+body.cl-letter-only .salutation { margin: 0 0 10pt; }
+body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
+@page { size:A4; margin:18mm 18mm; }
 
 /* Minor utility */
 .rb-row{ display:flex; gap:10px; flex-wrap:wrap; }
