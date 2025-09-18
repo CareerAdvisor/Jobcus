@@ -216,7 +216,7 @@
     back?.addEventListener("click", () => show(idx - 1));
     next?.addEventListener("click", async () => {
       if (idx < steps.length - 1) { show(idx + 1); return; }
-      // last step → generate
+      // last step → generate (preview)
       try { await onFinish?.(); } catch {}
     });
 
@@ -327,6 +327,16 @@
   }
 
   async function downloadDOCX(ctx) {
+    // Enforce same plan gate as PDF (and block client fallback for free plans)
+    const plan = (document.body.dataset.plan || "guest").toLowerCase();
+    const isPaid = (plan === "standard" || plan === "premium");
+    const isSuperadmin = (document.body.dataset.superadmin === "1");
+    if (!isPaid && !isSuperadmin) {
+      const html = `File downloads are available on Standard and Premium. <a href="${PRICING_URL}">Upgrade now →</a>`;
+      window.upgradePrompt?.(html, PRICING_URL, 1200);
+      return;
+    }
+
     // Try server route first
     try {
       const res = await fetch("/build-cover-letter-docx", {
@@ -349,46 +359,63 @@
       }
     }
 
-    // Client-side fallback using docx
+    // Client-side fallback using docx — styled to match the PDF
     try {
       await ensureDocxBundle();
     } catch (e) {
       window.showUpgradeBanner?.(e.message || "DOCX library not loaded.");
       return;
     }
-    const { Document, Packer, Paragraph, TextRun } = window.docx;
+    const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
 
     const lines = [];
     const body = (ctx.cover_body || "").split("\n");
     const sender = ctx.sender || {};
     const recipient = ctx.recipient || {};
 
-    function push(text, bold=false) {
-      lines.push(new Paragraph({ children: [new TextRun({ text, bold })] }));
-    }
+    const A4 = { width: 11906, height: 16838 };          // twips
+    const M  = 1020;                                      // ~18mm margins
+    const LINE = 276;                                     // ~1.5 line height
+    const NORMAL = { size: 24, font: "Arial" };           // 12pt
+    const NAME   = { size: 64, font: "Arial", bold: true };
 
-    if (ctx.name) push(ctx.name, true);
+    const P = (text, {align="LEFT", run=NORMAL, after=120}={}) =>
+      new Paragraph({
+        alignment: AlignmentType[align],
+        spacing: { line: LINE, after },
+        children: [ new TextRun(Object.assign({ text }, run)) ],
+      });
+
+    // Centered identity like the PDF
+    if (ctx.name) lines.push(P(ctx.name,   { align:"CENTER", run: NAME,  after: 80 }));
     const contact = [sender.address1, sender.city, sender.postcode].filter(Boolean).join(", ");
-    if (contact) push(contact);
-    const reach = [sender.email, sender.phone].filter(Boolean).join(" | ");
-    if (reach) push(reach);
-    push("");
+    if (contact)  lines.push(P(contact,   { align:"CENTER" }));
+    const reach   = [sender.email, sender.phone].filter(Boolean).join(" | ");
+    if (reach)    lines.push(P(reach,     { align:"CENTER", after: 160 }));
 
-    if (sender.date) push(sender.date);
+    if (sender.date) lines.push(P(sender.date));
     const recLines = [
       recipient.name, recipient.company, recipient.address1,
       [recipient.city, recipient.postcode].filter(Boolean).join(", ")
     ].filter(Boolean);
-    recLines.forEach(l => push(l));
-    push("");
+    recLines.forEach(l => lines.push(P(l)));
+    lines.push(P("", { after: 80 }));
 
-    push(`Dear ${recipient.name || "Hiring Manager"},`);
-    body.forEach(p => push(p || ""));
-    push("");
-    push("Yours sincerely,");
-    push(ctx.name || "");
+    lines.push(P(`Dear ${recipient.name || "Hiring Manager"},`));
+    body.forEach(p => lines.push(P(p || "")));
+    lines.push(P(""));
+    lines.push(P("Yours sincerely,"));
+    lines.push(P(ctx.name || "", { after: 0 }));
 
-    const doc = new Document({ sections: [{ children: lines }] });
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: { size: A4, margin: { top: M, bottom: M, left: M, right: M } },
+        },
+        children: lines
+      }]
+    });
+
     const blob = await Packer.toBlob(doc);
     const url  = URL.createObjectURL(blob);
     const a = document.createElement("a");
