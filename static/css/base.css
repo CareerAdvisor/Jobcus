@@ -308,12 +308,12 @@
 /* If you had old top/bottom sticky styles, neutralize them when modal is used */
 .has-upgrade-banner .upgrade-banner { position: static !important; }
 
-/* Watermark host */
+/* Watermark host (generic, immediate) */
 [data-watermark] {
   position: relative;             /* anchor ::before */
 }
 
-/* Single centered watermark (simple, fast) */
+/* Single centered watermark (simple, fast) — generic / immediate */
 [data-watermark]::before {
   content: attr(data-watermark);
   position: absolute; inset: 0;
@@ -328,18 +328,17 @@
   white-space: pre-wrap;
 }
 
-/* Optional: stronger/light modes (tweak if needed) */
+/* Optional strength modifiers */
 [data-watermark].wm-light::before { opacity: .08; }
 [data-watermark].wm-strong::before { opacity: .16; }
 
-/* Optional (for very long content): allow a tiled bg watermark
-   (the JS below will set background-image on the element) */
+/* Optional tiled background class (JS will set background-image) */
 [data-watermark].wm-tiled {
   background-repeat: repeat;
   background-size: 360px 360px;   /* must match JS tile size */
 }
 
-/* OPTIONAL: If you also want casual copy deterrence, uncomment:
+/* OPTIONAL: no-copy deterrence
 [data-watermark] {
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -348,18 +347,30 @@
 }
 */
 
-  .preview-wrap{ position: relative; }
-  .preview-wrap iframe{ display:block; width:100%; height:80vh; border:0; background:#fff; }
+/* -------------------------------------------------------
+   Preview wrappers: overlay should appear ONLY after JS
+   sets `.wm-active` (post-render). We also suppress the
+   generic [data-watermark]::before on preview-wrap.
+   ------------------------------------------------------- */
 
-  /* Center overlay; shows only if the attribute exists */
-  .preview-wrap[data-watermark]::after{
-    content: attr(data-watermark);
-    position:absolute; inset:0;
-    display:grid; place-items:center;
-    font: 700 28px/1 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
-    color: rgba(16,72,121,.10);
-    transform: rotate(-28deg);
-    letter-spacing:.08em;
-    user-select:none; pointer-events:none;
-    z-index: 3;
-  }
+/* base */
+.preview-wrap{ position: relative; }
+.preview-wrap iframe{ display:block; width:100%; height:80vh; border:0; background:#fff; }
+
+/* prevent generic immediate ::before on preview wrappers */
+.preview-wrap[data-watermark]::before{ content:none !important; }
+
+/* overlay definition (hidden by default) */
+.preview-wrap[data-watermark] { position: relative; }
+.preview-wrap[data-watermark]::after {
+  content: attr(data-watermark);
+  position: absolute; inset: 0;
+  display: none;              /* hidden by default */
+  place-items: center;
+  font: 700 28px/1 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: rgba(16,72,121,.08);
+  transform: rotate(-30deg);
+  user-select: none; pointer-events: none;
+  z-index: 3;
+}
+.preview-wrap.wm-active::after { display: grid; } /* only after content is ready */
