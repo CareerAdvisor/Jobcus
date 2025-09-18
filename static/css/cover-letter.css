@@ -1,6 +1,4 @@
 /* ===== Cover Letter (page-specific) ===== */
-
-/* local vars so this file works even if base.css is trimmed */
 :root{
   --brand: #104879;
   --brand-2:#0b355a;
@@ -14,29 +12,35 @@
   --shadow:0 6px 18px rgba(16,72,121,.06);
 }
 
-/* ===== Small hero bar (kept) ===== */
-.interview-container{
-  width:100%;
-  background: var(--brand);
+/* ---- Hero ---- */
+.cl-hero{ width:100%; background:#f6fafc; padding:20px 0 8px; }
+.cl-hero-card{
+  width:min(760px, calc(100% - 32px));
+  margin:0 auto;
+  background:#0b355a;
+  border-radius:22px;
+  padding:28px 24px;
+  color:#fff;
+  text-align:left;
+  box-shadow:0 10px 30px rgba(16,72,121,.18);
 }
-.interview-container .interview-hero-with-image{
-  display:flex; flex-direction:column; align-items:center; text-align:center;
-  padding:20px 16px;
+.cl-hero-eyebrow{
+  color:var(--gold); font-weight:800; letter-spacing:.12em; font-size:14px;
+  text-transform:uppercase; margin-bottom:8px;
 }
-.interview-container h5{
-  color:var(--gold); font-weight:700; font-size:14px; letter-spacing:1px; margin:0;
+.cl-hero-title{
+  margin:0 0 10px; font-weight:800;
+  font-size:clamp(24px, 4.8vw, 34px); line-height:1.2;
 }
-.interview-container h1{
-  font-size:28px; font-weight:800; color:#fff; margin:10px 0;
-}
-.interview-container p{
-  max-width:520px; color:#fff; font-size:16px; margin:10px 0 20px;
+.cl-hero-title span{ color:var(--gold); }
+.cl-hero-subtitle{
+  margin:0; font-size:clamp(14px, 2.6vw, 18px); color:#e9eef6; max-width:60ch;
 }
 
 /* ===== Layout (70% page width, centered) ===== */
 .rb-wrap{ background: #f8fcff; }
 .rb-container.rb-layout{
-  width: min(70vw, 1300px);                  /* ← 70% viewport width kept */
+  width: min(70vw, 1300px);
   margin: 16px auto;
   display: flex; gap: 16px;
   align-items: flex-start;
@@ -44,7 +48,6 @@
 .rb-main{ flex: 1 1 55%; min-width: 0; }
 .rb-preview{ flex: 1 1 45%; min-width: 0; position: sticky; top: 16px; }
 
-/* Stack on small screens */
 @media (max-width: 960px){
   .rb-container.rb-layout{ width: calc(100% - 24px); flex-direction: column; }
   .rb-preview{ position: static; }
@@ -59,41 +62,28 @@
   overflow: hidden;
   margin-bottom: 14px;
 }
+.rb-panel{ padding: 16px; }
 
-/* Legacy header (kept for backward-compat) */
-.rb-card > header{
-  padding: 14px 16px;
-  background: #fff;
-  border-bottom: 1px solid var(--stroke);
-}
-.rb-card > header h2{
-  margin: 0; color: var(--brand); font-size: clamp(18px, 2.4vw, 22px); font-weight: 800;
-}
-.rb-card > header p{
-  margin: 4px 0 0; color: var(--muted);
-}
-
-/* New stacked header (prevents overlap) */
+/* Stacked header (title above subtitle) – matches Employers page */
 .stacked-hero{
   display:flex; flex-direction:column; gap:6px;
-  padding:14px 16px;
-  background:#fff;
+  padding:14px 16px; background:#f6fbff;
   border-bottom:1px solid var(--stroke);
 }
-.subject-title{
+.stacked-hero h2{
   margin:0; color:var(--brand);
-  font-weight:800; line-height:1.2;
-  font-size: clamp(20px, 2.6vw, 26px);
+  font-weight:800; font-size:clamp(20px, 2.4vw, 24px);
 }
-.subject-subtitle{
-  margin:0; color:var(--muted); line-height:1.45; max-width:65ch;
+.stacked-hero p{
+  margin:0; color:var(--muted);
+  font-size:clamp(14px, 1.8vw, 16px);
 }
-
-.rb-panel{ padding: 16px; }
 
 /* ===== Form grid ===== */
 .rb-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .rb-grid .full{ grid-column: 1 / -1; }
+.rb-minihead{ margin-top:6px; font-weight:700; color:var(--brand-2); }
+
 .rb-grid label{ display: block; font-weight: 600; color: var(--brand-2); }
 .rb-grid input, .rb-grid select, .rb-grid textarea{
   width: 100%; margin-top: 6px;
@@ -129,13 +119,8 @@
   background: var(--brand); color:#fff; border-color: var(--brand);
 }
 .ai-suggest .btn.btn-primary:hover{ filter: brightness(.96); }
-
-/* “Gold” refresh stands out */
-.ai-suggest .ai-refresh{
-  background: var(--gold);
-  border-color: var(--gold);
-  color: var(--brand);
-}
+/* Gold refresh button */
+.ai-suggest .ai-refresh{ background: var(--gold); border-color: var(--gold); color: var(--brand); }
 
 /* ===== Buttons & footer ===== */
 .cta-primary{
@@ -144,6 +129,7 @@
   color:#fff; font-weight:800; cursor:pointer;
   transition: transform .06s ease, filter .15s ease;
 }
+.cta-primary.alt{ background:#0b355a; }
 .cta-primary:hover{ filter: brightness(.96); }
 .cta-primary:active{ transform: translateY(1px); }
 
@@ -153,39 +139,27 @@
 }
 .cta-secondary:hover{ background: var(--brand); color:#fff; }
 
+/* “Back” stays plain (no blue fill on click) */
 .ghost{
   color: var(--brand); text-decoration:none; font-weight:700;
   border:0; background:transparent; padding:8px 0;
 }
-.ghost:hover{ text-decoration: underline; }
+.ghost:hover, .ghost:focus, .ghost:active{
+  background:transparent; color:var(--brand); text-decoration:underline;
+}
 
 .rb-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-.rb-footer{ display:flex; gap:10px; justify-content:space-between; padding: 10px 0 4px; }
-
-/* Wizard helpers (Back/Next) */
-.wizard-controls{ display:flex; gap:10px; align-items:center; }
-.primary{
-  background:var(--brand); color:#fff; border:0; border-radius:10px;
-  padding:10px 14px; font-weight:800; cursor:pointer;
+.rb-footer{
+  display:flex; gap:10px; justify-content:space-between; padding: 10px 0 4px;
 }
-.primary:hover{ filter:brightness(.96); }
 
 /* ===== Preview (sticky) ===== */
 .rb-preview .rb-card{ position: relative; }
-#clPreview{
-  width: 100%;
-  height: 80vh;
-  border: 0;
-  background: #fff;
-  display: block;
-  border-radius:8px;
-}
+#clPreview{ width:100%; height:80vh; border:0; background:#fff; display:block; }
 
 /* ===== Delayed watermark overlay for preview wraps ===== */
 .preview-wrap{ position: relative; }
 .preview-wrap iframe{ display:block; width:100%; height:80vh; border:0; background:#fff; }
-
-/* Only shows AFTER JS adds .wm-active */
 .preview-wrap[data-watermark]::after{
   content: attr(data-watermark);
   position:absolute; inset:0;
@@ -200,9 +174,8 @@
 }
 .preview-wrap.wm-active::after{ display:grid; }
 
-/* Optional: small helper for “nocopy” guards (used on free tier) */
+/* Optional “nocopy” guard (free tier) */
 .nocopy, .nocopy * { user-select:none !important; -webkit-user-select:none !important; }
 
-/* ===== Minor utilities used on the page ===== */
+/* Minor utility */
 .rb-row{ display:flex; gap:10px; flex-wrap:wrap; }
-.rb-tab-link--cta{ font-weight:800; }
