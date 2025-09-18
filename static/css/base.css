@@ -347,6 +347,15 @@
 }
 */
 
+/* Sparse canvas watermark overlay (large, few stamps) */
+[data-watermark] { position: relative; }          /* ensure anchoring */
+[data-watermark].wm-sparse::before { content: none !important; } /* hide single-center ::before if present */
+
+.wm-overlay{
+  position:absolute; inset:0;
+  pointer-events:none; user-select:none; z-index:3;
+}
+
 /* -------------------------------------------------------
    Preview wrappers: overlay should appear ONLY after JS
    sets `.wm-active` (post-render). We also suppress the
