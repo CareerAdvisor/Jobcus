@@ -9,6 +9,36 @@
   --radius:14px;
 }
 
+/* ─────────────────────────────────────────
+   Fluid hero typography (shared pattern)
+   ───────────────────────────────────────── */
+#resume-builder .hero{
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  padding: clamp(16px, 4vw, 48px) clamp(10px, 4vw, 24px);
+  background: var(--brand); border-radius: 14px;
+}
+#resume-builder .hero-kicker{
+  color: var(--accent); font-weight:600; letter-spacing:.08em;
+  font-size: clamp(12px, 1.2vw, 18px);
+  margin: 0 0 clamp(6px, .8vw, 10px);
+}
+#resume-builder .hero-title{
+  color:#fff; font-weight:700; line-height:1.15; margin:0;
+  /* 28px on tiny phones → up to 56px on large screens */
+  font-size: clamp(28px, 4.5vw + .25rem, 56px);
+}
+#resume-builder .hero-title .accent{ color: var(--accent); }
+#resume-builder .hero-subtitle{
+  color:#fff; opacity:.95; margin: clamp(8px, 1.5vw, 14px) 0 clamp(18px, 2vw, 24px);
+  max-width: 60ch;
+  /* 16 → 22 */
+  font-size: clamp(16px, 1.2vw + .25rem, 22px);
+  line-height: 1.5;
+}
+@media (min-width: 768px){
+  #resume-builder .hero-subtitle{ max-width: 46rem; }
+}
+
 /* Wrap + container */
 #resume-builder.rb-wrap { background: var(--bg); padding: 1rem; }
 #resume-builder .rb-container { max-width: 940px; margin: 0 auto; padding: 0 12px 24px; }
@@ -39,18 +69,17 @@
 
 #resume-builder .rb-card > header {
   display: flex;
-  flex-direction: column;        /* stack h2 and p vertically */
-  align-items: flex-start;       /* align them to the left */
+  flex-direction: column;
+  align-items: flex-start;
   padding: 18px 18px 14px;
   border-bottom: 1px solid #eef2f7;
-  /* was fixed height:100px; -> allow long headings to wrap */
   min-height: 100px;
   height: auto;
 }
 
 #resume-builder .rb-card > header h2{
   margin:0 0 .4rem;
-  font-size:1.1rem;              /* smaller, tidy */
+  font-size:1.1rem;
   font-weight:700;
 }
 #resume-builder .rb-card > header p{
@@ -83,7 +112,7 @@
   border-radius:10px;
   padding:.85rem .9rem;
   font:inherit;
-  font-size:.9rem;               /* smaller field text */
+  font-size:.9rem;
   background:#fff;
 }
 #resume-builder .rb-panel input::placeholder,
@@ -176,8 +205,8 @@
   filter:brightness(0.98);
 }
 .rb-tabs .rb-tab-link--cta{
-  background:#ffc957;         /* brand gold */
-  color:#fff;                  /* white text */
+  background:#ffc957;
+  color:#fff;
   border-radius:10px;
   padding:.55rem 1rem;
   font-weight:600;
@@ -192,23 +221,19 @@
   outline-offset:2px;
   box-shadow:0 0 0 3px rgba(255,201,87,.6);
 }
-/* keep visited the same color */
 .rb-tabs .rb-tab-link--cta:visited{ color:#fff; }
 
 /* --- Show/Hide Additional details: only one label visible --- */
 .rb-disclosure .label-open { display: none; }
 .rb-disclosure[open] .label-open { display: inline; }
 .rb-disclosure[open] .label-closed { display: none; }
-/* Optional polish: make summary clickable and remove default marker */
 .rb-disclosure > summary { cursor: pointer; list-style: none; }
 .rb-disclosure > summary::-webkit-details-marker { display: none; }
 
 /* --- Make key buttons visible --- */
-
-/* 1) Refresh (gold) */
 #resume-builder .ai-actions .ai-refresh{
-  background: var(--accent);      /* #ffc957 */
-  color: #104879;                 /* brand text */
+  background: var(--accent);
+  color: #104879;
   border: none;
   font-weight: 700;
 }
@@ -216,19 +241,15 @@
 #resume-builder .ai-actions .ai-refresh:focus-visible{
   outline: 2px solid #104879; outline-offset: 2px;
 }
-
-/* 2) Remove (grey) */
 #resume-builder .rb-actions .rb-remove{
-  background: #e5e7eb;            /* grey */
+  background: #e5e7eb;
   color: #111;
   border: 1px solid #d1d5db;
   font-weight: 600;
 }
 #resume-builder .rb-actions .rb-remove:hover{ filter: brightness(.97); }
-
-/* 3) + Add another experience (brand blue) */
 #resume-builder .rb-add{
-  background: var(--brand);       /* #104879 */
+  background: var(--brand);
   color: #fff;
   border: none;
   font-weight: 700;
@@ -238,8 +259,6 @@
   outline: 2px solid #fff; outline-offset: 2px;
   box-shadow: 0 0 0 3px rgba(16,72,121,.35);
 }
-
-/* 4) Back (grey) — override the .ghost default */
 #resume-builder .rb-footer .ghost{
   background: #e5e7eb;
   color: #111;
@@ -248,32 +267,23 @@
 }
 #resume-builder .rb-footer .ghost:hover{ filter: brightness(.97); }
 
-/* --- Small utilities / tweaks --- */
+/* Small utilities / tweaks */
 #resume-builder .rb-row{ display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
 
-/* Certifications textarea sizing (new step) */
-#resume-builder textarea[name="certifications"]{
-  min-height: 140px;
-}
+/* Certifications textarea sizing */
+#resume-builder textarea[name="certifications"]{ min-height: 140px; }
 
-/* Section spacing (already tight) */
+/* Section spacing */
 .resume .section { margin: 10px 0; }
 .resume .rule    { margin: 6px 0 8px; }
 .skills-section  { margin-bottom: 6px; }
 
-/* Let experience content flow across pages (no large white gap) */
+/* Pagination behavior in print */
 .experience-section { break-inside: auto !important; page-break-inside: auto !important; }
-
-/* Allow a single job block to split (so bullets can roll to next page) */
 .experience-section .item { break-inside: auto; page-break-inside: auto; margin-bottom: 10px; }
-
-/* Keep the heading lines together, but let bullets break freely */
 .item-title-line,
 .item-dates { break-after: avoid; page-break-after: avoid; }
-
-/* Bullets may split across pages (this is the key) */
 .experience-section .bullets li { break-inside: auto; page-break-inside: auto; }
-
 .item-title-line{ font-weight:700; font-size:1.05rem; }
 .item-dates{ color:#6b7280; margin:2px 0 6px; }
 
@@ -288,4 +298,3 @@
   transform: rotate(-30deg);
   user-select: none; pointer-events: none;
 }
-
