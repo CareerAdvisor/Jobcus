@@ -352,7 +352,40 @@ body > main {
   }
 }
 
-/* Hide the preview bar on small screens (mobile stays exactly as before) */
+/* ===============================
+   Single-column preview (desktop)
+   =============================== */
+@media (min-width: 1024px) {
+  /* When JS adds .is-preview-full, hide the form column and expand preview */
+  .rb-container.rb-layout.is-preview-full {
+    display: block;                         /* break the two-column grid */
+    width: min(95vw, 1360px) !important;
+    margin: 16px auto !important;
+  }
+  .rb-container.rb-layout.is-preview-full .rb-main {
+    display: none !important;               /* hide the whole form */
+  }
+  .rb-container.rb-layout.is-preview-full .rb-preview {
+    position: static !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Make the iframe comfortable when full width */
+  .rb-container.rb-layout.is-preview-full #clPreview {
+    width: min(100%, 1000px) !important;
+    height: 90vh !important;
+    margin: 0 auto !important;
+    display: block;
+  }
+
+  /* Show the "Back to edit" button only in preview mode (overrides inline display:none) */
+  .rb-container.rb-layout.is-preview-full #cl-back-edit {
+    display: inline-block !important;
+  }
+}
+
+/* Keep mobile/tablet unchanged */
 @media (max-width: 1023.98px) {
-  .preview-head { display: none; }
+  /* no change needed; form/preview stack as before */
 }
