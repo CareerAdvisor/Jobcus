@@ -293,6 +293,24 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 /* Minor utility */
 .rb-row{ display:flex; gap:10px; flex-wrap:wrap; }
 
+/* =========================
+   Page-wide width overrides
+   ========================= */
+
+/* 1) Cover Letter should not inherit the global 800px cap */
+#cover-letter {
+  max-width: none !important;
+  width: 80% !important;
+  margin: 0;             /* keep it full-bleed within the page flow */
+  padding: 0;            /* your inner containers already pad */
+}
+
+/* 2) Let sticky elements work; some ancestors used overflow:hidden */
+.page-container > main,
+body > main {
+  overflow: visible !important;
+}
+
 /* ===============================
    Desktop "Preview replaces form"
    =============================== */
