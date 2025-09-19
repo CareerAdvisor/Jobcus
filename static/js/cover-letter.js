@@ -274,13 +274,16 @@
       steps.forEach((s, k) => {
         const active = k === idx;
         s.classList.toggle("active", active);
-        s.hidden = !active;
+        s.hidden = !active;                    // keep the a11y hint
+        s.style.display = active ? "block" : "none"; // belt & suspenders
       });
       if (back) back.disabled = (idx === 0);
-      if (next) next.textContent = (idx >= steps.length - 1) ? "Generate Cover Letter" : "Next";
+      if (next) next.textContent = (idx >= steps.length - 1)
+        ? "Generate Cover Letter"
+        : "Next";
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-
+    
     back?.addEventListener("click", () => show(idx - 1));
     next?.addEventListener("click", async () => {
       if (idx < steps.length - 1) { show(idx + 1); return; }
@@ -503,14 +506,11 @@
     
     function enterPreviewMode() {
       if (previewWrap) previewWrap.style.display = "block";
-      if (downloads) downloads.style.display = "flex";        // force visible
-      if (backBtn)    backBtn.style.display = "inline-block"; // desktop back link
-    
+      if (downloads)   downloads.style.display = "flex";   // show buttons
       if (window.matchMedia("(min-width:1024px)").matches && container) {
-        container.classList.add("is-preview-full");
+        container.classList.add("is-preview-full");        // single-column on desktop
       }
-    }    
-      // watermark overlay toggle if present
+      // watermark overlay if configured
       try {
         const wm = previewWrap?.dataset?.watermark;
         if (wm && !previewWrap.classList.contains("wm-active")) {
@@ -520,14 +520,11 @@
     }
     
     function exitPreviewMode() {
-      if (container) container.classList.remove("is-preview-full");
-    
-      // Keep downloads row if you want; or hide it here:
-      // if (downloads) downloads.style.display = "none";
-      if (backBtn) backBtn.style.display = "none";
+      container?.classList.remove("is-preview-full");
+      if (downloads) downloads.style.display = "none";      // hide buttons outside preview
+      // No need to touch backBtn here if you use the CSS below
     }
-
-
+    
     // Resize guard: dropping below desktop cancels single-column preview
     window.addEventListener("resize", () => {
       if (!window.matchMedia("(min-width: 1024px)").matches) {
@@ -544,22 +541,26 @@
     // ====== AI refresh / insert ======
     const aiCard = document.getElementById("ai-cl");
     const getAiTextEl = () => aiCard?.querySelector(".ai-text");
-
+    
     aiCard?.addEventListener("click", async (e) => {
-      const btn = e.target.closest(".ai-refresh, .ai-add");
+      const btn = e.target.closest("button.ai-refresh, button.ai-add");
       if (!btn) return;
-
+      e.preventDefault();
+    
       if (btn.classList.contains("ai-refresh")) {
         try {
           btn.disabled = true;
-          const el = getAiTextEl(); if (el) el.textContent = "Thinking…";
+          const el = getAiTextEl();
+          if (el) el.textContent = "Thinking…";
           const draft = await aiSuggestCoverLetter(gatherContext(form));
           if (el) el.textContent = draft || "No draft yet.";
         } catch (err) {
           const el = getAiTextEl(); if (el) el.textContent = err.message || "AI failed.";
-        } finally { btn.disabled = false; }
+        } finally {
+          btn.disabled = false;
+        }
       }
-
+    
       if (btn.classList.contains("ai-add")) {
         const el = getAiTextEl();
         const draft = el ? el.textContent.trim() : "";
