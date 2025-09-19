@@ -376,7 +376,8 @@
               }, { passive: false });
             }
           } catch {}
-          if (dlBar) dlBar.style.display = "";
+          if (dlBar) dlBar.style.display = "flex";
+          if (backBtn) backBtn.style.display = "inline-block";
         }, { once: true });
 
         frame.setAttribute("sandbox", "allow-same-origin");
