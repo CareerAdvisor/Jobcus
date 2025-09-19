@@ -300,7 +300,7 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 /* 1) Cover Letter should not inherit the global 800px cap */
 #cover-letter {
   max-width: none !important;
-  width: 80% !important;
+  width: 100% !important;
   margin: 0;             /* keep it full-bleed within the page flow */
   padding: 0;            /* your inner containers already pad */
 }
@@ -309,47 +309,6 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 .page-container > main,
 body > main {
   overflow: visible !important;
-}
-
-/* ===============================
-   Desktop "Preview replaces form"
-   =============================== */
-
-@media (min-width: 1024px) {
-  /* Wider working area like the screenshot */
-  .rb-container.rb-layout {
-    width: min(92vw, 1360px);  /* a bit wider than before */
-    gap: 24px;
-  }
-
-  /* Ratio similar to the mock: form a little wider than preview */
-  .rb-main    { flex: 0 0 58%; }
-  .rb-preview { flex: 0 0 42%; position: sticky; top: 18px; }
-
-  /* Blue title bar above the preview (rounded like the cards) */
-  .rb-preview .rb-card {
-    overflow: hidden; /* so the bar and card share corners */
-  }
-  .preview-head {
-    background: var(--brand);
-    color: #fff;
-    font-weight: 800;
-    font-size: clamp(16px, 1.6vw, 20px);
-    line-height: 1.2;
-    padding: 14px 18px;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-  }
-
-  /* Let the iframe feel bigger on desktop */
-  #clPreview {
-    width: min(100%, 900px);
-    height: 90vh;
-    margin: 0 auto;
-    display: block;
-    border: 0;
-    background: #fff;
-  }
 }
 
 /* ===============================
