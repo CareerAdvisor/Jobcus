@@ -311,30 +311,36 @@ body > main {
   overflow: visible !important;
 }
 
-/* 3) Desktop two-column layout + sticky preview */
+/* ===============================
+   Desktop "Preview replaces form"
+   =============================== */
 @media (min-width: 1024px) {
-  .rb-container.rb-layout {
+  /* When preview-full mode is on, hide the form column and stretch preview */
+  .rb-container.rb-layout.is-preview-full {
     max-width: 1300px !important;
     width: min(92vw, 1300px) !important;
     margin: 16px auto !important;
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
+    display: block !important;           /* single column */
+  }
+  .rb-container.rb-layout.is-preview-full .rb-main { display: none !important; }
+  .rb-container.rb-layout.is-preview-full .rb-preview {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0;
   }
 
-  .rb-main    { flex: 1 1 55%; min-width: 0; }
-  .rb-preview { flex: 1 1 45%; min-width: 0; position: sticky; top: calc(60px + 16px); }
-
-  /* Your preview iframe: comfortable desktop size */
-  #clPreview {
+  /* Make the iframe comfy and centered */
+  .rb-container.rb-layout.is-preview-full #clPreviewWrap { display: block !important; }
+  .rb-container.rb-layout.is-preview-full #clPreview {
     width: min(100%, 900px) !important;
     height: 90vh !important;
+    margin: 0 auto !important;
     display: block;
-    margin: 0 auto;
     border: 0;
     background: #fff;
   }
 
-  /* If the template keeps style="display:none" on the wrapper, force show it on desktop */
-  #clPreviewWrap { display: block !important; }
+  /* Show the Back button only in preview-full mode */
+  .rb-container.rb-layout.is-preview-full #cl-back-edit { display: inline-block !important; }
 }
