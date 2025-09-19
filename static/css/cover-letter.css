@@ -292,3 +292,47 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 
 /* Minor utility */
 .rb-row{ display:flex; gap:10px; flex-wrap:wrap; }
+
+/* ===== Desktop split layout (keeps mobile unchanged) ===== */
+@media (min-width: 1024px) {
+  /* Wider working area like the screenshot */
+  .rb-container.rb-layout {
+    width: min(92vw, 1360px);  /* a bit wider than before */
+    gap: 24px;
+  }
+
+  /* Ratio similar to the mock: form a little wider than preview */
+  .rb-main    { flex: 0 0 58%; }
+  .rb-preview { flex: 0 0 42%; position: sticky; top: 18px; }
+
+  /* Blue title bar above the preview (rounded like the cards) */
+  .rb-preview .rb-card {
+    overflow: hidden; /* so the bar and card share corners */
+  }
+  .preview-head {
+    background: var(--brand);
+    color: #fff;
+    font-weight: 800;
+    font-size: clamp(16px, 1.6vw, 20px);
+    line-height: 1.2;
+    padding: 14px 18px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
+
+  /* Let the iframe feel bigger on desktop */
+  #clPreview {
+    width: min(100%, 900px);
+    height: 90vh;
+    margin: 0 auto;
+    display: block;
+    border: 0;
+    background: #fff;
+  }
+}
+
+/* Hide the preview bar on small screens (mobile stays exactly as before) */
+@media (max-width: 1023.98px) {
+  .preview-head { display: none; }
+}
+
