@@ -322,25 +322,39 @@
             const d    = frame.contentDocument || frame.contentWindow?.document;
             const host = d?.body || d?.documentElement;
             if (!host) return;
-        
-            /* 🔧 Ensure the letter HTML centers itself and never overflows */
+            
+            /* Ensure the letter column is centered and never clipped */
             try {
               const fix = d.createElement("style");
               fix.textContent = `
-                html, body { margin: 0; padding: 0; width: 100%; box-sizing: border-box; }
-                * { box-sizing: border-box; }
-                /* Center the letter column and cap its width */
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  box-sizing: border-box !important;
+                  /* IMPORTANT: do NOT hide horizontal overflow – allow layout to size naturally */
+                  overflow-x: visible !important;
+                  width: 100% !important;
+                  max-width: 100% !important;
+                }
+                *, *::before, *::after { box-sizing: inherit !important; }
+            
+                /* The A4 content column in your template */
                 .cl {
                   width: 100% !important;
-                  max-width: 740px !important;   /* A4 content column */
+                  max-width: 740px !important;   /* your designed content width */
                   margin: 0 auto !important;     /* center it */
                   padding: 0 18px !important;    /* inner gutter */
                 }
-                img, table { max-width: 100%; height: auto; }
+            
+                /* Be extra safe with long words */
+                .block { overflow-wrap: anywhere !important; word-break: break-word !important; }
+            
+                /* If the watermark canvas exists, ensure it stays as overlay only */
+                .wm-overlay { position: fixed !important; inset: 0 !important; pointer-events: none !important; z-index: 9999 !important; }
               `;
               (d.head || d.documentElement).appendChild(fix);
             } catch {}
-        
+
             __stripWatermarks__(d);
             if (!isPaid && !isSuperadmin) {
               // ⬇️ UPDATED: force 4 very large sparse stamps
