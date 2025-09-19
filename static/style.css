@@ -3973,40 +3973,51 @@ body.has-upgrade-banner {
   display: grid;                /* show only once content is ready */
 }
 
-/* ---------- Full-bleed background for hero ---------- */
-.hero-bleed{
-  /* Make the background reach the edges of the viewport regardless of parent width */
+/* ===========================
+   Full-bleed utilities + hero/footer
+   =========================== */
+
+/* 1) Full-bleed utility (use on any band you want to stretch edge-to-edge) */
+.full-bleed {
   position: relative;
   left: 50%;
   right: 50%;
   margin-left: -50vw;
   margin-right: -50vw;
-  width: 100vw;
-
-  background: #104879;                 /* same blue as before */
-  /* respect device notches/home bar */
+  width: 100vw;                            /* span entire viewport width */
   padding-left: env(safe-area-inset-left, 0);
   padding-right: env(safe-area-inset-right, 0);
 }
 
-/* keep your old hero design, just remove the card radius/background */
+/* Safety: make sure ancestors don't clip the full-bleed band */
+main, .page, .container { overflow: visible; }
+
+/* 2) Hero band background (apply alongside .full-bleed) */
+.hero-bleed {
+  background: #104879;                     /* brand blue */
+  min-height: 60vh;                        /* app-like height but not jumpy */
+}
+@supports (height: 100dvh) {
+  .hero-bleed { min-height: 70dvh; }       /* dynamic viewport on modern browsers */
+}
+
+/* 3) Your original, centered hero content (no background here) */
 .hero.hero--index{
-  max-width: 1100px;                    /* same centered width feel */
+  max-width: 1100px;
   margin: 0 auto;
   text-align: center;
   padding: clamp(24px, 6vw, 64px) clamp(16px, 4vw, 24px);
-  background: transparent;              /* no card background here */
-  border-radius: 0;                      /* no rounded edges (background is full-bleed) */
+  background: transparent;                 /* background lives on the band */
+  border-radius: 0;
 }
 
-/* Typography exactly like your old design but responsive */
+/* 4) Hero typography (unchanged look, responsive sizes) */
 .hero-title{
   color: #fff;
   font-weight: 700;
   line-height: 1.15;
   margin: 0 0 clamp(12px, 2vw, 18px);
-  /* 24px → 50px as requested */
-  font-size: clamp(24px, 4.5vw + .25rem, 50px);
+  font-size: clamp(24px, 4.5vw + .25rem, 50px);  /* 24 → 50 */
 }
 .hero-subtitle{
   color: #fff;
@@ -4016,60 +4027,36 @@ body.has-upgrade-banner {
   font-size: clamp(16px, 1.2vw + .25rem, 22px);
   line-height: 1.5;
 }
-
-/* Keep your existing CTA styles; ensure they sit in a row on larger screens */
-.hero-actions{ display:flex; gap: 18px; justify-content:center; flex-wrap:wrap; }
-
-/* Optional: make the whole hero fill the screen height if you liked the “app-like” feel */
-.hero-bleed{
-  min-height: 60vh;          /* tweakable; avoid 100vh jumps on mobile if you prefer */
-
-}
-@supports (height: 100dvh){
-  .hero-bleed{ min-height: 70dvh; }     /* dynamic viewport on modern browsers */
+.hero-actions{
+  display:flex; gap: 18px; justify-content:center; flex-wrap:wrap;
 }
 
-/* ---------- Full-bleed section utility (hero/footer/etc.) ---------- */
-.full-bleed {
-  position: relative;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
-  width: 100vw;                 /* span the entire viewport */
-  padding-left: env(safe-area-inset-left, 0);
-  padding-right: env(safe-area-inset-right, 0);
-}
-
-/* Footer styling (colors, spacing, responsive type) */
+/* 5) Footer (use with <footer class="full-bleed site-footer"> … </footer>) */
 .site-footer {
-  background:#104879;           /* brand blue */
+  background:#104879;
   color:#fff;
   text-align:center;
   padding: clamp(24px, 5vw, 56px) clamp(16px, 4vw, 24px);
 }
-
 .site-footer a { color:#ffc957; text-decoration:none; }
 .site-footer a:hover { text-decoration:underline; }
 
-.site-footer .footer-title {
+.site-footer .footer-title{
   font-weight: 800;
   margin: 0 0 clamp(8px, 1.5vw, 14px);
   font-size: clamp(22px, 3.8vw, 34px);
 }
-.site-footer .footer-sub {
+.site-footer .footer-sub{
   margin: 0 auto clamp(16px, 2.2vw, 22px);
   max-width: 60ch;
   font-size: clamp(14px, 1.1vw + .25rem, 18px);
   opacity:.95;
 }
-
-/* Stack links neatly with spacing */
-.site-footer .footer-links {
+.site-footer .footer-links{
   display:flex; gap:14px; flex-wrap:wrap; justify-content:center;
   margin-top: clamp(10px, 2vw, 16px);
 }
-.site-footer .footer-links a {
+.site-footer .footer-links a{
   display:inline-block;
   padding:6px 10px;
   border-radius:8px;
