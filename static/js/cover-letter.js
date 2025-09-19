@@ -474,10 +474,52 @@
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("clForm");
 
-    // Wizard: last step triggers preview/generate
-    initWizard(async () => { await previewLetter(gatherContext(form)); });
+    // ====== PREVIEW MODE (replace form on desktop) ======
+    const container   = document.querySelector(".rb-container.rb-layout");
+    const formCol     = document.querySelector(".rb-main");
+    const previewCol  = document.querySelector(".rb-preview");
+    const previewWrap = document.getElementById("clPreviewWrap");
+    const previewBtn  = document.getElementById("cl-preview");
+    const backBtn     = document.getElementById("cl-back-edit");
+    const downloads   = document.getElementById("cl-downloads");
+    const iframe      = document.getElementById("clPreview");
 
-    // AI refresh / insert
+    function enterPreviewMode() {
+      if (previewWrap) previewWrap.style.display = "block";
+      if (downloads) {
+        // show downloads row (flex looks nicer)
+        downloads.style.display = "flex";
+      }
+      if (window.matchMedia("(min-width: 1024px)").matches && container) {
+        container.classList.add("is-preview-full");
+      }
+      try {
+        const wm = previewWrap?.dataset?.watermark;
+        if (wm && !previewWrap.classList.contains("wm-active")) {
+          previewWrap.classList.add("wm-active");
+        }
+      } catch {}
+    }
+
+    function exitPreviewMode() {
+      if (container) container.classList.remove("is-preview-full");
+      // Keep downloads visible; just restore the two-column layout
+    }
+
+    // Resize guard: dropping below desktop cancels single-column preview
+    window.addEventListener("resize", () => {
+      if (!window.matchMedia("(min-width: 1024px)").matches) {
+        exitPreviewMode();
+      }
+    });
+
+    // ====== Wizard: last step triggers preview/generate ======
+    initWizard(async () => {
+      await previewLetter(gatherContext(form));
+      enterPreviewMode();
+    });
+
+    // ====== AI refresh / insert ======
     const aiCard = document.getElementById("ai-cl");
     const getAiTextEl = () => aiCard?.querySelector(".ai-text");
 
@@ -507,12 +549,21 @@
       }
     });
 
-    // Manual preview button
-    document.getElementById("cl-preview")?.addEventListener("click", async () => {
+    // ====== Manual preview button ======
+    document.getElementById("cl-preview")?.addEventListener("click", async (e) => {
+      e.preventDefault();
       await previewLetter(gatherContext(form));
+      enterPreviewMode();
     });
 
-    // Downloads (revealed after preview loads)
+    // ====== Back to edit (desktop-only button shown via CSS in preview mode) ======
+    backBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      exitPreviewMode();
+      try { formCol?.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
+    });
+
+    // ====== Downloads (revealed after preview loads) ======
     document.getElementById("cl-download-pdf")?.addEventListener("click", async () => {
       await downloadPDF(gatherContext(form));
     });
