@@ -53,25 +53,28 @@ function __stripWatermarks__(root = document) {
 function __applySparseWM__(el, text = "JOBCUS.COM", opts = {}) {
   text = __sanitizeWM__(text);
   if (!el || !text) return;
+
+  // clear any previous overlays
   try { el.querySelectorAll(":scope > .wm-overlay").forEach(x => { x._ro?.disconnect?.(); x.remove(); }); } catch {}
+
   const overlay = document.createElement("canvas");
   overlay.className = "wm-overlay";
   el.classList.add("wm-sparse");
   el.appendChild(overlay);
 
-  const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
-  const angle = (opts.rotate != null ? opts.rotate : -30) * Math.PI / 180;
-  const color = opts.color || "rgba(16,72,121,.12)";
-  const baseFont = opts.fontFamily || "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+  const DPR   = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  const angle = (opts.rotate != null ? opts.rotate : -28) * Math.PI / 180;
+  const color = opts.color || "rgba(16,72,121,.08)"; // toned down
+  const base  = opts.fontFamily || "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
 
   function draw() {
     const r = el.getBoundingClientRect();
     const w = Math.max(1, Math.round(r.width));
     const h = Math.max(1, Math.round(el.scrollHeight || r.height));
 
-    overlay.style.width = w + "px";
+    overlay.style.width  = w + "px";
     overlay.style.height = h + "px";
-    overlay.width = Math.round(w * DPR);
+    overlay.width  = Math.round(w * DPR);
     overlay.height = Math.round(h * DPR);
 
     const ctx = overlay.getContext("2d");
@@ -82,18 +85,21 @@ function __applySparseWM__(el, text = "JOBCUS.COM", opts = {}) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    const count = (opts.count ? +opts.count : (h > (opts.threshold || 1200) ? 3 : 2));
-    const fontPx = opts.fontSize || Math.max(96, Math.min(Math.floor((w + h) / 10), 180));
-    ctx.font = `700 ${fontPx}px ${baseFont}`;
+    // cap at 2 big stamps
+    const count  = Math.min(2, (opts.count != null ? +opts.count : (h > (opts.threshold || 1200) ? 2 : 2)));
+    const fontPx = opts.fontSize || Math.max(96, Math.min(Math.floor((w + h) / 10), 160));
+    ctx.font = `700 ${fontPx}px ${base}`;
 
-    const points = (count <= 2)
-      ? [[0.22,0.30],[0.50,0.55],[0.78,0.80]]
-      : [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
+    // precise 2-point layout, keeps text readable
+    const points = (count === 1)
+      ? [[0.5, 0.55]]
+      : [[0.28, 0.32], [0.72, 0.72]];
 
-    points.forEach(([fx,fy]) => {
+    points.forEach(([fx, fy]) => {
       const x = fx * w, y = fy * h;
-      ctx.save(); ctx.translate(x,y); ctx.rotate(angle); ctx.fillText(text,0,0); ctx.restore();
+      ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.fillText(text, 0, 0); ctx.restore();
     });
+
     ctx.restore();
   }
 
@@ -102,6 +108,7 @@ function __applySparseWM__(el, text = "JOBCUS.COM", opts = {}) {
   ro.observe(el);
   overlay._ro = ro;
 }
+
 function __applyTiledWM__(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
   text = __sanitizeWM__(text);
   if (!el || !text) return;
