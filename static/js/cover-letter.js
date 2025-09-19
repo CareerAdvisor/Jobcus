@@ -323,16 +323,16 @@
             try {
               const fix = d.createElement("style");
               fix.textContent = `
-                html, body { margin: 0; padding: 0; }
-                /* Make sure the letter column centers and never exceeds its designed width */
+                html, body { margin: 0; padding: 0; width: 100%; box-sizing: border-box; }
+                * { box-sizing: border-box; }
+                /* Center the letter column and cap its width */
                 .cl {
-                  max-width: 740px !important;   /* the A4 content column */
+                  width: 100% !important;
+                  max-width: 740px !important;   /* A4 content column */
                   margin: 0 auto !important;     /* center it */
-                  padding: 0 18px !important;    /* inner gutter matches template */
-                  box-sizing: border-box;
+                  padding: 0 18px !important;    /* inner gutter */
                 }
-                /* Safety: avoid accidental horizontal clipping */
-                html, body { overflow-x: hidden; }
+                img, table { max-width: 100%; height: auto; }
               `;
               (d.head || d.documentElement).appendChild(fix);
             } catch {}
