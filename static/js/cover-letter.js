@@ -62,6 +62,10 @@
     try { el.querySelectorAll(":scope > .wm-overlay").forEach(x => { x._ro?.disconnect?.(); x.remove(); }); } catch {}
     const overlay = document.createElement("canvas");
     overlay.className = "wm-overlay";
+  
+    /* NEW: keep the canvas out of normal flow */
+    overlay.style.cssText = "position:fixed; inset:0; pointer-events:none; z-index:9999; display:block;";
+  
     el.classList.add("wm-sparse");
     el.appendChild(overlay);
 
