@@ -513,26 +513,25 @@
     // ====== PREVIEW MODE (replace form on desktop) ======
     const container   = document.querySelector(".rb-container.rb-layout");
     const formCol     = document.querySelector(".rb-main");
-    const previewCol  = document.querySelector(".rb-preview");
     const previewWrap = document.getElementById("clPreviewWrap");
     const previewBtn  = document.getElementById("cl-preview");
     const backBtn     = document.getElementById("cl-back-edit");
     const downloads   = document.getElementById("cl-downloads");
     const iframe      = document.getElementById("clPreview");
-
+    
     function enterPreviewMode() {
       if (previewWrap) previewWrap.style.display = "block";
-      if (downloads) downloads.style.display = "flex";
-      if (backBtn) backBtn.style.display = "inline-block";   // <-- show back button
     
-      // Desktop: switch to single-column preview
+      // ✅ force show the downloads row + back button
+      if (downloads) downloads.style.display = "flex";
+      if (backBtn)   backBtn.style.display   = "inline-block";
+    
+      // desktop: single-column preview
       if (window.matchMedia("(min-width: 1024px)").matches && container) {
         container.classList.add("is-preview-full");
-        // jump user to the top of the preview
-        try { previewCol?.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
       }
     
-      // Optional: turn on the watermark overlay style
+      // watermark overlay toggle if present
       try {
         const wm = previewWrap?.dataset?.watermark;
         if (wm && !previewWrap.classList.contains("wm-active")) {
@@ -543,8 +542,12 @@
     
     function exitPreviewMode() {
       if (container) container.classList.remove("is-preview-full");
-      if (backBtn) backBtn.style.display = "none";           // <-- hide back button again
+    
+      // Keep downloads row if you want; or hide it here:
+      // if (downloads) downloads.style.display = "none";
+      if (backBtn) backBtn.style.display = "none";
     }
+
 
     // Resize guard: dropping below desktop cancels single-column preview
     window.addEventListener("resize", () => {
