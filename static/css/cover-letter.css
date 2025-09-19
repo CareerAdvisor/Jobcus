@@ -394,3 +394,8 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 @media (max-width:1023.98px){
   /* nothing special — downloads row wraps and stays below iframe */
 }
+
+/* Wizard visibility – make sure only the active step shows */
+.rb-step { display: none; }
+.rb-step.active { display: block; }
+
