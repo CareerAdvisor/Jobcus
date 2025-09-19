@@ -392,17 +392,10 @@ body > main {
   /* no change needed; form/preview stack as before */
 }
 
-/* Center the iframe inside the card panel */
-.rb-preview .rb-card .rb-panel {
-  display: flex;
-  justify-content: center;
-}
-
 /* Let the iframe breathe and not be clipped by the card */
 .rb-preview .rb-card { overflow: visible; }
 
 /* Constrain + center the iframe itself */
-.preview-wrap { width: 100%; }
 .preview-wrap iframe {
   display: block;
   max-width: 1000px;   /* desktop comfort */
@@ -420,3 +413,25 @@ body > main {
   justify-content: center;
 }
 
+/* ---- Preview container: block layout, centered wrapper ---- */
+.rb-preview .rb-card .rb-panel { 
+  display: block;                /* no flex = no min-content squeezing */
+  padding: 18px;                 /* keep your normal panel padding */
+}
+
+/* A wrapper that we center and size; the iframe fills this */
+.preview-wrap {
+  max-width: 1000px;             /* comfortable desktop width cap */
+  width: 100%;
+  margin: 0 auto;                /* center within the card */
+  overflow: visible;             /* no clipping of shadows, etc. */
+}
+
+/* When single-column preview is active, keep the same centering */
+.rb-container.rb-layout.is-preview-full .rb-preview { 
+  max-width: none; 
+}
+.rb-container.rb-layout.is-preview-full #clPreview { 
+  width: 100% !important;        /* fill the wrapper */
+  max-width: none !important;    /* width is controlled by .preview-wrap now */
+}
