@@ -814,6 +814,10 @@ def privacy_policy():
 def terms_of_service():
     return render_template('terms-of-service.html')
 
+@app.route('/cookies')
+def cookies():
+    return render_template("cookies.html")
+
 @app.route("/pricing")
 def pricing():
     return render_template("pricing.html")
