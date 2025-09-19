@@ -314,59 +314,45 @@ body > main {
 /* ===============================
    Desktop "Preview replaces form"
    =============================== */
+
 @media (min-width: 1024px) {
-  /* give the whole page a bit more breathing room */
+  /* Wider working area like the screenshot */
   .rb-container.rb-layout {
-    width: min(95vw, 1400px) !important;
-    margin: 16px auto !important;
+    width: min(92vw, 1360px);  /* a bit wider than before */
+    gap: 24px;
   }
 
-  /* form column → 80% */
-  .rb-main {
-    flex: 0 0 80% !important;
-    max-width: 80% !important;
-    min-width: 0;
+  /* Ratio similar to the mock: form a little wider than preview */
+  .rb-main    { flex: 0 0 58%; }
+  .rb-preview { flex: 0 0 42%; position: sticky; top: 18px; }
+
+  /* Blue title bar above the preview (rounded like the cards) */
+  .rb-preview .rb-card {
+    overflow: hidden; /* so the bar and card share corners */
+  }
+  .preview-head {
+    background: var(--brand);
+    color: #fff;
+    font-weight: 800;
+    font-size: clamp(16px, 1.6vw, 20px);
+    line-height: 1.2;
+    padding: 14px 18px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
   }
 
-  /* preview column → 20% */
-  .rb-preview {
-    flex: 0 0 20% !important;
-    max-width: 20% !important;
-    min-width: 260px;                /* prevent it from getting comically tiny */
-    position: sticky;
-    top: calc(60px + 16px);          /* stick under your fixed header */
-  }
-
-  /* make the preview fit the narrower column */
+  /* Let the iframe feel bigger on desktop */
   #clPreview {
-    width: 100% !important;
-    height: 65vh !important;         /* shorter so it doesn’t look squished */
-    margin: 0;
+    width: min(100%, 900px);
+    height: 90vh;
+    margin: 0 auto;
     display: block;
     border: 0;
     background: #fff;
   }
 }
 
-/* Keep mobile/tablet as a single column (no change) */
+/* Hide the preview bar on small screens (mobile stays exactly as before) */
 @media (max-width: 1023.98px) {
-  .rb-container.rb-layout { width: calc(100% - 24px); }
-  .rb-preview { position: static; max-width: 100%; }
-  #clPreview { height: 80vh; }
+  .preview-head { display: none; }
 }
-
-/* If you’re using the optional “full preview” mode, let preview take 100% */
-@media (min-width: 1024px) {
-  .rb-container.rb-layout.is-preview-full {
-    display: block;
-    width: min(95vw, 1400px) !important;
-  }
-  .rb-container.rb-layout.is-preview-full .rb-main { display: none !important; }
-  .rb-container.rb-layout.is-preview-full .rb-preview {
-    max-width: 100% !important;
-    flex: 0 0 100% !important;
-    position: static;
-  }
-  .rb-container.rb-layout.is-preview-full #clPreview { height: 90vh !important; }
-}
-
