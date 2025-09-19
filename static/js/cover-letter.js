@@ -309,16 +309,34 @@
       if (frame) {
         frame.addEventListener("load", () => {
           if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
-
+        
           try {
             const plan = (document.body.dataset.plan || "guest").toLowerCase();
             const isPaid       = (plan === "standard" || plan === "premium");
             const isSuperadmin = (document.body.dataset.superadmin === "1");
-
+        
             const d    = frame.contentDocument || frame.contentWindow?.document;
             const host = d?.body || d?.documentElement;
             if (!host) return;
-
+        
+            /* 🔧 Ensure the letter HTML centers itself and never overflows */
+            try {
+              const fix = d.createElement("style");
+              fix.textContent = `
+                html, body { margin: 0; padding: 0; }
+                /* Make sure the letter column centers and never exceeds its designed width */
+                .cl {
+                  max-width: 740px !important;   /* the A4 content column */
+                  margin: 0 auto !important;     /* center it */
+                  padding: 0 18px !important;    /* inner gutter matches template */
+                  box-sizing: border-box;
+                }
+                /* Safety: avoid accidental horizontal clipping */
+                html, body { overflow-x: hidden; }
+              `;
+              (d.head || d.documentElement).appendChild(fix);
+            } catch {}
+        
             __stripWatermarks__(d);
             if (!isPaid && !isSuperadmin) {
               // ⬇️ UPDATED: force 4 very large sparse stamps
@@ -328,7 +346,7 @@
                 count: 4,        // up to 4 stamps
                 rotate: -30
               });
-
+        
               host.classList.add("nocopy");
               const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
               ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
