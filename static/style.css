@@ -3977,69 +3977,62 @@ body.has-upgrade-banner {
    Full-bleed utilities + hero/footer
    =========================== */
 
-/* 1) Full-bleed utility (use on any band you want to stretch edge-to-edge) */
+/* --- Full-bleed utility band you can reuse anywhere --- */
 .full-bleed {
   position: relative;
   left: 50%;
   right: 50%;
   margin-left: -50vw;
   margin-right: -50vw;
-  width: 100vw;                            /* span entire viewport width */
+  width: 100vw;
   padding-left: env(safe-area-inset-left, 0);
   padding-right: env(safe-area-inset-right, 0);
 }
 
-/* Safety: make sure ancestors don't clip the full-bleed band */
-main, .page, .container { overflow: visible; }
+/* Make sure no ancestor clips the bleed */
+main, .page-container, .container { overflow: visible; }
 
-/* 2) Hero band background (apply alongside .full-bleed) */
+/* Blue band behind the hero content */
 .hero-bleed {
-  background: #104879;                     /* brand blue */
-  min-height: 60vh;                        /* app-like height but not jumpy */
+  background: #104879;
+  min-height: 60vh;
 }
 @supports (height: 100dvh) {
-  .hero-bleed { min-height: 70dvh; }       /* dynamic viewport on modern browsers */
+  .hero-bleed { min-height: 70dvh; }
 }
 
-/* 3) Your original, centered hero content (no background here) */
-.hero.hero--index{
+/* Keep the hero content centered like before */
+.hero.hero--index {
   max-width: 1100px;
   margin: 0 auto;
   text-align: center;
   padding: clamp(24px, 6vw, 64px) clamp(16px, 4vw, 24px);
-  background: transparent;                 /* background lives on the band */
-  border-radius: 0;
 }
 
-/* 4) Hero typography (unchanged look, responsive sizes) */
+/* IMPORTANT: remove the card background from .hero itself */
+.hero { background: transparent !important; border-radius: 0 !important; }
+
+/* Typography (unchanged look) */
 .hero-title{
-  color: #fff;
-  font-weight: 700;
-  line-height: 1.15;
-  margin: 0 0 clamp(12px, 2vw, 18px);
-  font-size: clamp(24px, 4.5vw + .25rem, 50px);  /* 24 → 50 */
+  color:#fff; font-weight:700; line-height:1.15;
+  margin:0 0 clamp(12px,2vw,18px);
+  font-size: clamp(24px, 4.5vw + .25rem, 50px);
 }
 .hero-subtitle{
-  color: #fff;
-  opacity: .95;
-  max-width: 60ch;
-  margin: 0 auto clamp(22px, 3vw, 28px);
+  color:#fff; opacity:.95; max-width:60ch;
+  margin:0 auto clamp(22px,3vw,28px);
   font-size: clamp(16px, 1.2vw + .25rem, 22px);
-  line-height: 1.5;
+  line-height:1.5;
 }
-.hero-actions{
-  display:flex; gap: 18px; justify-content:center; flex-wrap:wrap;
-}
+.hero-actions{ display:flex; gap:18px; justify-content:center; flex-wrap:wrap; }
 
-/* 5) Footer (use with <footer class="full-bleed site-footer"> … </footer>) */
+/* Footer as a full-bleed band */
 .site-footer {
-  background:#104879;
-  color:#fff;
-  text-align:center;
+  background:#104879; color:#fff; text-align:center;
   padding: clamp(24px, 5vw, 56px) clamp(16px, 4vw, 24px);
 }
-.site-footer a { color:#ffc957; text-decoration:none; }
-.site-footer a:hover { text-decoration:underline; }
+.site-footer a{ color:#ffc957; text-decoration:none; }
+.site-footer a:hover{ text-decoration:underline; }
 
 .site-footer .footer-title{
   font-weight: 800;
