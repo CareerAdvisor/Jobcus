@@ -151,3 +151,19 @@
   max-width: 100%;
 }
 
+/* Tighter spacing under history and tips */
+#historyPanel { padding-bottom: 8px; }
+#historyPanel .history-entry { margin: 0 0 10px; }
+#historyPanel .history-entry:last-child { margin-bottom: 4px; }
+
+#suggestions-box { margin-bottom: 10px; }
+#suggestions-box ul { margin: 0 0 6px 1.2em; }
+#suggestions-box li { margin: 4px 0; }
+
+/* Make any last blocks end crisply */
+.result-box .ai-response > :last-child,
+#historyPanel .ai-response > :last-child { margin-bottom: 0 !important; }
+
+/* Canvas overlay should never create scroll */
+.wm-overlay { display:block; position:absolute; inset:0; pointer-events:none; }
+
