@@ -4,17 +4,20 @@
 
 {% block content %}
 
-<!-- 🟦 Hero Section -->
-<section class="hero-bleed">
-  <div class="hero hero--index">
+<!-- 🟦 Hero Section (full-bleed background) -->
+<div class="full-bleed hero-bg">
+  <section class="hero hero--index">
     <h1 class="hero-title">AI Resume Builder &amp; Analyzer</h1>
-    <p class="hero-subtitle">Create ATS-ready resumes, analyse your resume and get instant feedback, close skill gaps, prep for interviews, and everything you need to land the right job.</p>
+    <p class="hero-subtitle">
+      Create ATS-ready resumes, analyse your resume and get instant feedback, close skill gaps,
+      prep for interviews, and everything you need to land the right job.
+    </p>
     <div class="hero-actions">
       <a href="/resume-analyzer" class="cta-primary">Analyze my resume now</a>
-      <a href="/resume-builder"  class="cta-secondary">Build my resume</a>
+      <a href="/resume-builder" class="cta-secondary">Build my resume</a>
     </div>
-  </div>
-</section>
+  </section>
+</div>
 
 <!-- ✉️ Cover Letter Builder -->
 <section class="ai-assistance cover-letter" style="background:#f9fafb; margin-bottom: 20px; margin-top:20px;">
@@ -82,15 +85,19 @@
 </section>
 
 <!-- 🤖 AI Assistance -->
-<section class="cta-section ai-assist-cta">
-  <h2>Meet Your Personal AI Career Assistant</h2>
-  <p>
-    Ask anything about resumes, job descriptions, interview prep, or skill gaps, get instant, actionable guidance.
-  </p>
-  <a href="/chat" class="cta-primary">Chat with Jobcus AI</a>
-</section>
+<footer class="full-bleed site-footer">
+  <section class="cta-section ai-assist-cta">
+    <h2>Meet Your Personal AI Career Assistant</h2>
+    <p>
+      Ask anything about resumes, job descriptions, interview prep, or skill gaps, get instant, actionable guidance.
+    </p>
+    <a href="/chat" class="cta-primary">Chat with Jobcus AI</a>
+  </section>
+</footer>
+  
 
 {% endblock %}
+
 
 
 
