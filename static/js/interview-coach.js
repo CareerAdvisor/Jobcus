@@ -238,7 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const d = coachFrame.contentDocument || coachFrame.contentWindow?.document;
         if (d?.body && coachWrap?.dataset?.watermark) {
-          __applyWatermark__(d.body, coachWrap.dataset.watermark, { mode: "sparse", fontSize: 120 });
+          __applyWatermark__(d.body, coachWrap.dataset.watermark, { mode: "sparse", count: 2, fontSize: 120, color: "rgba(16,72,121,.08)" });
         }
       } catch {}
     }, { once: true });
@@ -333,7 +333,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         __stripWatermarks__(feedbackBox);
         if (!isPaid && !isSuperadmin) {
-          __applyWatermark__(feedbackBox, "JOBCUS.COM", { mode: "sparse", fontSize: 150 });
+          __applyWatermark__(feedbackBox, "JOBCUS.COM", { mode: "sparse", count: 2, fontSize: 140, color: "rgba(16,72,121,.08)" });
           feedbackBox.classList.add("nocopy");
           const kill = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
           ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
@@ -385,6 +385,13 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>`;
     }).join("");
     historyContent.innerHTML = entriesHtml;
+    __stripWatermarks__(historyPanel);
+    const plan = (document.body.dataset.plan || "guest").toLowerCase();
+    const isPaid = (plan === "standard" || plan === "premium");
+    const isSuperadmin = document.body.dataset.superadmin === "1";
+    if (!isPaid && !isSuperadmin) {
+      __applyWatermark__(historyPanel, "JOBCUS.COM", { mode: "sparse", count: 2, fontSize: 120, color: "rgba(16,72,121,.08)" });
+    }
   }
 
   if (toggleHistoryBtn && historyContainer) {
