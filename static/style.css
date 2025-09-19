@@ -3977,81 +3977,38 @@ body.has-upgrade-banner {
    Full-bleed utilities + hero/footer
    =========================== */
 
-/* --- Full-bleed utility band you can reuse anywhere --- */
-.full-bleed {
+/* --- Make the band truly full-bleed even inside a .container --- */
+.full-bleed{
   position: relative;
   left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
-  width: 100vw;
+  width: 100vw;                 /* span the viewport */
+  transform: translateX(-50%);  /* recenter */
   padding-left: env(safe-area-inset-left, 0);
   padding-right: env(safe-area-inset-right, 0);
 }
 
-/* Make sure no ancestor clips the bleed */
-main, .page-container, .container { overflow: visible; }
+/* If full-bleed sits inside a padded .container, neutralize side padding effect */
+.container > .full-bleed { padding-left: 0; padding-right: 0; }
 
-/* Blue band behind the hero content */
-.hero-bleed {
-  background: #104879;
-  min-height: 60vh;
-}
-@supports (height: 100dvh) {
-  .hero-bleed { min-height: 70dvh; }
-}
+/* Allow the band to overflow any max-width wrapper */
+.page-container, main, .container { overflow: visible !important; }
 
-/* Keep the hero content centered like before */
-.hero.hero--index {
-  max-width: 1100px;
-  margin: 0 auto;
-  text-align: center;
-  padding: clamp(24px, 6vw, 64px) clamp(16px, 4vw, 24px);
+/* --- Put the blue on the band, NOT the hero block --- */
+.hero { 
+  background: transparent !important; 
+  border-radius: 0 !important; 
+  box-shadow: none !important;
 }
 
-/* IMPORTANT: remove the card background from .hero itself */
-.hero { background: transparent !important; border-radius: 0 !important; }
+/* The blue background and height live here */
+.hero-bleed { background:#104879; min-height:60vh; }
+@supports (height: 100dvh){ .hero-bleed{ min-height:70dvh; } }
 
-/* Typography (unchanged look) */
-.hero-title{
-  color:#fff; font-weight:700; line-height:1.15;
-  margin:0 0 clamp(12px,2vw,18px);
-  font-size: clamp(24px, 4.5vw + .25rem, 50px);
+/* --- Footer: make it full-bleed and blue (override old footer-note card look) --- */
+footer.site-footer.footer-note-static {
+  background:#104879 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color:#fff;
 }
-.hero-subtitle{
-  color:#fff; opacity:.95; max-width:60ch;
-  margin:0 auto clamp(22px,3vw,28px);
-  font-size: clamp(16px, 1.2vw + .25rem, 22px);
-  line-height:1.5;
-}
-.hero-actions{ display:flex; gap:18px; justify-content:center; flex-wrap:wrap; }
-
-/* Footer as a full-bleed band */
-.site-footer {
-  background:#104879; color:#fff; text-align:center;
-  padding: clamp(24px, 5vw, 56px) clamp(16px, 4vw, 24px);
-}
-.site-footer a{ color:#ffc957; text-decoration:none; }
-.site-footer a:hover{ text-decoration:underline; }
-
-.site-footer .footer-title{
-  font-weight: 800;
-  margin: 0 0 clamp(8px, 1.5vw, 14px);
-  font-size: clamp(22px, 3.8vw, 34px);
-}
-.site-footer .footer-sub{
-  margin: 0 auto clamp(16px, 2.2vw, 22px);
-  max-width: 60ch;
-  font-size: clamp(14px, 1.1vw + .25rem, 18px);
-  opacity:.95;
-}
-.site-footer .footer-links{
-  display:flex; gap:14px; flex-wrap:wrap; justify-content:center;
-  margin-top: clamp(10px, 2vw, 16px);
-}
-.site-footer .footer-links a{
-  display:inline-block;
-  padding:6px 10px;
-  border-radius:8px;
-  background: rgba(255,255,255,.06);
-}
+footer.site-footer.footer-note-static a { color:#ffc957; }
