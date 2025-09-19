@@ -322,49 +322,29 @@
             const d    = frame.contentDocument || frame.contentWindow?.document;
             const host = d?.body || d?.documentElement;
             if (!host) return;
-            
-            /* Ensure the letter column is centered and never clipped */
-            try {
-              const fix = d.createElement("style");
-              fix.textContent = `
-                html, body {
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  box-sizing: border-box !important;
-                  /* IMPORTANT: do NOT hide horizontal overflow – allow layout to size naturally */
-                  overflow-x: visible !important;
-                  width: 100% !important;
-                  max-width: 100% !important;
-                }
-                *, *::before, *::after { box-sizing: inherit !important; }
-            
-                /* The A4 content column in your template */
-                .cl {
-                  width: 100% !important;
-                  max-width: 740px !important;   /* your designed content width */
-                  margin: 0 auto !important;     /* center it */
-                  padding: 0 18px !important;    /* inner gutter */
-                }
-            
-                /* Be extra safe with long words */
-                .block { overflow-wrap: anywhere !important; word-break: break-word !important; }
-            
-                /* If the watermark canvas exists, ensure it stays as overlay only */
-                .wm-overlay { position: fixed !important; inset: 0 !important; pointer-events: none !important; z-index: 9999 !important; }
-              `;
-              (d.head || d.documentElement).appendChild(fix);
-            } catch {}
-
+        
+            // 1) Make letter HTML self-center and never overflow (inside iframe)
+            const fix = d.createElement("style");
+            fix.textContent = `
+              html, body { margin:0; padding:0; overflow-x:hidden; }
+              .cl {
+                max-width: 740px !important;
+                margin: 0 auto !important;
+                padding: 0 18px !important;
+                box-sizing: border-box;
+              }
+            `;
+            (d.head || d.documentElement).appendChild(fix);
+        
+            // 2) Your watermark + protection (unchanged)
             __stripWatermarks__(d);
             if (!isPaid && !isSuperadmin) {
-              // ⬇️ UPDATED: force 4 very large sparse stamps
               __applyWatermark__(host, "JOBCUS.COM", {
                 mode: "sparse",
-                fontSize: 200,   // big
-                count: 4,        // up to 4 stamps
+                fontSize: 200,
+                count: 4,
                 rotate: -30
               });
-        
               host.classList.add("nocopy");
               const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
               ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
@@ -376,8 +356,9 @@
               }, { passive: false });
             }
           } catch {}
+        
+          // 3) Make sure the controls row is visible after load
           if (dlBar) dlBar.style.display = "flex";
-          if (backBtn) backBtn.style.display = "inline-block";
         }, { once: true });
 
         frame.setAttribute("sandbox", "allow-same-origin");
@@ -522,16 +503,13 @@
     
     function enterPreviewMode() {
       if (previewWrap) previewWrap.style.display = "block";
+      if (downloads) downloads.style.display = "flex";        // force visible
+      if (backBtn)    backBtn.style.display = "inline-block"; // desktop back link
     
-      // ✅ force show the downloads row + back button
-      if (downloads) downloads.style.display = "flex";
-      if (backBtn)   backBtn.style.display   = "inline-block";
-    
-      // desktop: single-column preview
-      if (window.matchMedia("(min-width: 1024px)").matches && container) {
+      if (window.matchMedia("(min-width:1024px)").matches && container) {
         container.classList.add("is-preview-full");
       }
-    
+    }    
       // watermark overlay toggle if present
       try {
         const wm = previewWrap?.dataset?.watermark;
@@ -615,4 +593,4 @@
       await downloadDOCX(gatherContext(form));
     });
   });
-})();
+();
