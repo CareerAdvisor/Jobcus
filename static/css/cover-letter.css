@@ -293,46 +293,53 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 /* Minor utility */
 .rb-row{ display:flex; gap:10px; flex-wrap:wrap; }
 
-/* ===== Desktop split layout (keeps mobile unchanged) ===== */
+/* ================================
+   Cover Letter page – desktop fixes
+   ================================ */
+
+/* 0) Let sticky elements work (an ancestor had overflow:hidden) */
+.page-container > main,
+body > main {
+  overflow: visible !important;
+}
+
+/* 1) Wider 2-col layout on large screens */
 @media (min-width: 1024px) {
-  /* Wider working area like the screenshot */
+  /* your container is already flex; just cap and center nicely */
   .rb-container.rb-layout {
-    width: min(92vw, 1360px);  /* a bit wider than before */
-    gap: 24px;
+    max-width: 1300px !important;
+    width: min(92vw, 1300px) !important;
+    margin: 16px auto !important;
+    gap: 16px;
   }
+  .rb-main   { flex: 1 1 55%; min-width: 0; }
+  .rb-preview{ flex: 1 1 45%; min-width: 0; }
+}
 
-  /* Ratio similar to the mock: form a little wider than preview */
-  .rb-main    { flex: 0 0 58%; }
-  .rb-preview { flex: 0 0 42%; position: sticky; top: 18px; }
+/* 2) Make the preview column actually sticky under the fixed header */
+.site-header { z-index: 1000; } /* you already have this, keeping for clarity */
+.rb-preview {
+  position: sticky;
+  top: calc(60px + 16px);   /* header height (60) + a little breathing room */
+}
 
-  /* Blue title bar above the preview (rounded like the cards) */
-  .rb-preview .rb-card {
-    overflow: hidden; /* so the bar and card share corners */
+/* 3) The iframe wrapper is inline-hidden in the HTML.
+      Force it visible on desktop so users see it immediately. */
+@media (min-width: 1024px) {
+  #clPreviewWrap {
+    display: block !important;  /* overrides inline style="display:none" */
   }
-  .preview-head {
-    background: var(--brand);
-    color: #fff;
-    font-weight: 800;
-    font-size: clamp(16px, 1.6vw, 20px);
-    line-height: 1.2;
-    padding: 14px 18px;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-  }
+}
 
-  /* Let the iframe feel bigger on desktop */
+/* 4) Give the iframe comfortable dimensions on desktop */
+@media (min-width: 1024px) {
   #clPreview {
-    width: min(100%, 900px);
-    height: 90vh;
+    width: min(100%, 900px) !important;
+    height: 90vh !important;
     margin: 0 auto;
     display: block;
     border: 0;
     background: #fff;
   }
-}
-
-/* Hide the preview bar on small screens (mobile stays exactly as before) */
-@media (max-width: 1023.98px) {
-  .preview-head { display: none; }
 }
 
