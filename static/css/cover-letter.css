@@ -315,32 +315,58 @@ body > main {
    Desktop "Preview replaces form"
    =============================== */
 @media (min-width: 1024px) {
-  /* When preview-full mode is on, hide the form column and stretch preview */
-  .rb-container.rb-layout.is-preview-full {
-    max-width: 1300px !important;
-    width: min(92vw, 1300px) !important;
+  /* give the whole page a bit more breathing room */
+  .rb-container.rb-layout {
+    width: min(95vw, 1400px) !important;
     margin: 16px auto !important;
-    display: block !important;           /* single column */
   }
-  .rb-container.rb-layout.is-preview-full .rb-main { display: none !important; }
-  .rb-container.rb-layout.is-preview-full .rb-preview {
-    position: static !important;
-    width: 100% !important;
-    max-width: none !important;
+
+  /* form column → 80% */
+  .rb-main {
+    flex: 0 0 80% !important;
+    max-width: 80% !important;
     min-width: 0;
   }
 
-  /* Make the iframe comfy and centered */
-  .rb-container.rb-layout.is-preview-full #clPreviewWrap { display: block !important; }
-  .rb-container.rb-layout.is-preview-full #clPreview {
-    width: min(100%, 900px) !important;
-    height: 90vh !important;
-    margin: 0 auto !important;
+  /* preview column → 20% */
+  .rb-preview {
+    flex: 0 0 20% !important;
+    max-width: 20% !important;
+    min-width: 260px;                /* prevent it from getting comically tiny */
+    position: sticky;
+    top: calc(60px + 16px);          /* stick under your fixed header */
+  }
+
+  /* make the preview fit the narrower column */
+  #clPreview {
+    width: 100% !important;
+    height: 65vh !important;         /* shorter so it doesn’t look squished */
+    margin: 0;
     display: block;
     border: 0;
     background: #fff;
   }
-
-  /* Show the Back button only in preview-full mode */
-  .rb-container.rb-layout.is-preview-full #cl-back-edit { display: inline-block !important; }
 }
+
+/* Keep mobile/tablet as a single column (no change) */
+@media (max-width: 1023.98px) {
+  .rb-container.rb-layout { width: calc(100% - 24px); }
+  .rb-preview { position: static; max-width: 100%; }
+  #clPreview { height: 80vh; }
+}
+
+/* If you’re using the optional “full preview” mode, let preview take 100% */
+@media (min-width: 1024px) {
+  .rb-container.rb-layout.is-preview-full {
+    display: block;
+    width: min(95vw, 1400px) !important;
+  }
+  .rb-container.rb-layout.is-preview-full .rb-main { display: none !important; }
+  .rb-container.rb-layout.is-preview-full .rb-preview {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    position: static;
+  }
+  .rb-container.rb-layout.is-preview-full #clPreview { height: 90vh !important; }
+}
+
