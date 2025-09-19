@@ -486,13 +486,17 @@
 
     function enterPreviewMode() {
       if (previewWrap) previewWrap.style.display = "block";
-      if (downloads) {
-        // show downloads row (flex looks nicer)
-        downloads.style.display = "flex";
-      }
+      if (downloads) downloads.style.display = "flex";
+      if (backBtn) backBtn.style.display = "inline-block";   // <-- show back button
+    
+      // Desktop: switch to single-column preview
       if (window.matchMedia("(min-width: 1024px)").matches && container) {
         container.classList.add("is-preview-full");
+        // jump user to the top of the preview
+        try { previewCol?.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
       }
+    
+      // Optional: turn on the watermark overlay style
       try {
         const wm = previewWrap?.dataset?.watermark;
         if (wm && !previewWrap.classList.contains("wm-active")) {
@@ -500,10 +504,10 @@
         }
       } catch {}
     }
-
+    
     function exitPreviewMode() {
       if (container) container.classList.remove("is-preview-full");
-      // Keep downloads visible; just restore the two-column layout
+      if (backBtn) backBtn.style.display = "none";           // <-- hide back button again
     }
 
     // Resize guard: dropping below desktop cancels single-column preview
