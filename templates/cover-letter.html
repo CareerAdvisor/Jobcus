@@ -139,12 +139,13 @@
     <!-- Right: sticky preview + downloads -->
     <aside class="rb-preview">
       <article class="rb-card">
+        <div class="preview-head">Sample Letter</div>   <!-- 👈 add this line -->
         <div class="rb-panel">
           <div id="clPreviewWrap" class="preview-wrap" style="display:none;"
                {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
             <iframe id="clPreview" style="width:100%;height:80vh;border:0;background:#fff;"></iframe>
           </div>
-
+    
           <div id="cl-downloads" class="rb-actions" style="display:none;margin-top:10px;">
             <button type="button" id="cl-download-pdf"  class="cta-secondary">⬇️ Download PDF</button>
             <button type="button" id="cl-download-docx" class="cta-secondary">⬇️ Download Word</button>
