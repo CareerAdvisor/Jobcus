@@ -19,13 +19,6 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
-  
-  const normComma = (s="") =>
-    String(s)
-      .replace(/\s*,+\s*/g, ", ") // any spaces around commas -> a single ", "
-      .replace(/\s+/g, " ")       // collapse double spaces
-      .replace(/(^,|,$)/g, "")    // trim leading/trailing comma
-      .trim();
 
   // ───────────────────────────────────────────────
   // Watermark helpers
@@ -236,96 +229,63 @@
     return paras.slice(0, 3).join("\n\n").trim();
   }
   function gatherContext(form) {
-    // (Assumes normComma() is defined above with the regex cleanup)
-  
-    // Names
     const first = (form.firstName?.value || "").trim();
     const last  = (form.lastName?.value  || "").trim();
     const name  = [first, last].filter(Boolean).join(" ").trim();
-  
-    // Tone + AI draft
     const baseTone = (form.tone?.value || "professional").trim();
     const toneAugmented = `${baseTone}; human-like and natural; concise; maximum 3 short paragraphs`;
     const draft = sanitizeDraft(readDraftFromFormOrAI(form) || "");
-  
-    // Sender/applicant fields (normalize commas/spaces for address bits)
-    const senderAddress1 = normComma(form.senderAddress1?.value || "");
-    const senderCity     = normComma(form.senderCity?.value || "");
-    const senderPostcode = normComma(form.senderPostcode?.value || "");
-    const senderEmail    = (form.senderEmail?.value || "").trim();
-    const senderPhone    = (form.senderPhone?.value || "").trim();
-  
-    // Recipient fields (normalized too)
-    const recName     = (form.recipient?.value || "Hiring Manager").trim();
-    const recCompany  = (form.company?.value || "").trim();
-    const recAddr1    = normComma(form.companyAddress1?.value || "");
-    const recCity     = normComma(form.companyCity?.value || "");
-    const recPostcode = normComma(form.companyPostcode?.value || "");
-    const role        = (form.role?.value || "").trim();
-  
-    // NEW: pre-joined, already-cleaned lines to avoid "City , Postcode"
-    const senderLineCityPost = [senderCity, senderPostcode].filter(Boolean).join(", ");
-    const senderLineFull     = [senderAddress1, senderCity, senderPostcode].filter(Boolean).join(", ");
-    const recipLineCityPost  = [recCity, recPostcode].filter(Boolean).join(", ");
-  
+
     return {
-      /* top-level (templates sometimes read from here) */
+      /* top-level */
       name,
       first_name: first,
       last_name:  last,
       contact: form.contact?.value || "",
-      company: recCompany,
-      role,
+      company: form.company?.value || "",
+      role: form.role?.value || "",
       jobUrl: form.jobUrl?.value || "",
       tone: toneAugmented,
-  
+
       /* applicant block */
       applicant: {
         name, first_name: first, last_name: last,
-        email: senderEmail,
-        phone: senderPhone,
-        address1: senderAddress1,
-        city: senderCity,
-        postcode: senderPostcode,
+        email: form.senderEmail?.value || "",
+        phone: form.senderPhone?.value || "",
+        address1: form.senderAddress1?.value || "",
+        city: form.senderCity?.value || "",
+        postcode: form.senderPostcode?.value || "",
         date: form.letterDate?.value || new Date().toISOString().slice(0,10),
       },
-  
-      /* sender block */
+
+      /* sender/recipient */
       sender: {
-        name, first_name: first, last_name: last,
-        address1: senderAddress1,
-        city:     senderCity,
-        postcode: senderPostcode,
-        email:    senderEmail,
-        phone:    senderPhone,
-        date:     form.letterDate?.value || new Date().toISOString().slice(0,10),
-  
-        // NEW pre-joined helpers
-        line_city_postcode:          senderLineCityPost,
-        line_address_city_postcode:  senderLineFull,
+        name, first_name: first, last_name:  last,
+        address1: form.senderAddress1?.value || "",
+        city:     form.senderCity?.value || "",
+        postcode: form.senderPostcode?.value || "",
+        email:    form.senderEmail?.value || "",
+        phone:    form.senderPhone?.value || "",
+        date:     form.letterDate?.value || new Date().toISOString().slice(0,10)
       },
-  
-      /* recipient block (kept; now normalized) */
       recipient: {
-        name:     recName,
-        company:  recCompany,
-        address1: recAddr1,
-        city:     recCity,
-        postcode: recPostcode,
-        role,
-  
-        // NEW pre-joined helper
-        line_city_postcode: recipLineCityPost,
+        name: form.recipient?.value || "Hiring Manager",
+        company: form.company?.value || "",
+        address1: form.companyAddress1?.value || "",
+        city:     form.companyCity?.value || "",
+        postcode: form.companyPostcode?.value || "",
+        role:     form.role?.value || ""
       },
-  
-      /* body used by preview/generation */
-      cover_body: draft,
+
+      cover_body: draft
     };
   }
 
   /* ---------- Preview (returns when iframe loaded) ---------- */
   async function previewLetter(payload) {
     const wrap  = document.getElementById("clPreviewWrap");
+    the_frame: {
+    }
     const frame = document.getElementById("clPreview");
     const dlBar = document.getElementById("cl-downloads");
     try {
@@ -335,21 +295,21 @@
         body: JSON.stringify({ format: "html", letter_only: true, ...payload })
       });
       await handleCommonErrors(res);
-  
+
       const ct = res.headers.get("content-type") || "";
       if (!ct.includes("text/html")) throw new Error("Unexpected response.");
       const html = await res.text();
-  
+
       if (wrap) { wrap.style.display = "block"; wrap.classList.remove("wm-active"); }
-  
+
       if (frame) {
         frame.addEventListener("load", () => {
           try {
             const d    = frame.contentDocument || frame.contentWindow?.document;
             const host = d?.body || d?.documentElement;
             if (!host) return;
-  
-            // keep the content centered and safe
+
+            // Prevent right cut-off + center
             const fix = d.createElement("style");
             fix.textContent = `
               html, body { margin:0; padding:0; overflow-x:hidden; }
@@ -362,20 +322,23 @@
               img, svg, canvas { max-width:100%; height:auto; }
             `;
             (d.head || d.documentElement).appendChild(fix);
-  
+
             __stripWatermarks__(d);
             const plan = (document.body.dataset.plan || "guest").toLowerCase();
             const isPaid       = (plan === "standard" || plan === "premium");
             const isSuperadmin = (document.body.dataset.superadmin === "1");
-  
+
             if (!isPaid && !isSuperadmin) {
+              // Bigger sparse watermark across the page
               __applyWatermark__(host, "JOBCUS.COM", {
                 mode: "sparse",
-                fontSize: 200,
-                count: 4,
-                rotate: -30
+                fontSize: 320,
+                count: 3,
+                rotate: -28,
+                color: "rgba(16,72,121,.16)",
+                threshold: 1000
               });
-  
+
               host.classList.add("nocopy");
               const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
               ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
@@ -389,20 +352,14 @@
           } catch (e) {
             console.warn("Preview iframe style injection failed:", e);
           }
-  
+
           if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
           if (dlBar) dlBar.style.display = "flex";
         }, { once: true });
-  
-        // ─── INSERTED CLEANUP (fix “City , Postcode” etc.) ──────────────────────
-        const cleaned = html
-          .replace(/\s+,/g, ", ")     // "city , postcode" -> "city, postcode"
-          .replace(/,\s+,/g, ", ")    // stray double comma
-          .replace(/\s+,(\s*<\/)/g, ",$1"); // "city ,</" -> "city,</"
-        // ────────────────────────────────────────────────────────────────────────
-  
+
         frame.setAttribute("sandbox", "allow-same-origin");
-        frame.srcdoc = cleaned;      // use the cleaned HTML
+        frame.srcdoc = html;
+
         try { frame.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
       }
     } catch (err) {
