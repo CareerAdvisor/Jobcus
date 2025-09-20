@@ -312,7 +312,6 @@
             fix.textContent = `
               html, body { margin: 0; padding: 0; overflow-x: hidden; }
               * { box-sizing: border-box; }
-              /* keep a safe max width and center no matter the template root */
               body, #doc, .doc, .letter, .cl, .page, .container, body > div:first-child {
                 max-width: 740px !important;
                 margin: 0 auto !important;
@@ -355,6 +354,9 @@
 
         frame.setAttribute("sandbox", "allow-same-origin");
         frame.srcdoc = html;
+
+        // Scroll preview into view in stacked layout
+        try { frame.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
       }
     } catch (err) {
       console.warn("Cover letter preview error:", err);
@@ -433,10 +435,10 @@
     const sender = ctx.sender || {};
     const recipient = ctx.recipient || {};
 
-    const A4 = { width: 11906, height: 16838 };
-    const M  = 1020;     /* ~18mm margins */
-    const LINE = 276;    /* ~1.5 line height */
-    const NORMAL = { size: 24, font: "Arial" };  /* 12pt */
+    const A4 = { width: 11906, height: 16838 }; // twips
+    const M  = 1020;                             // ~18mm margins
+    const LINE = 276;                            // ~1.5 line height
+    const NORMAL = { size: 24, font: "Arial" };  // 12pt
     const NAME   = { size: 64, font: "Arial", bold: true };
 
     const P = (text, {align="LEFT", run=NORMAL, after=120}={}) =>
@@ -518,10 +520,11 @@
         go(idx + 1);
         return;
       }
+      // last step → build/preview
       try {
         const form = document.getElementById("clForm");
         await previewLetter(gatherContext(form));
-        window.enterPreviewMode?.();
+        enterPreviewMode();
       } catch (err) {
         console.error("[wizard] onFinish error:", err);
         window.showUpgradeBanner?.(err.message || "Couldn’t generate preview.");
@@ -538,7 +541,6 @@
       const form = document.getElementById("clForm");
 
       // ===== PREVIEW MODE bindings =====
-      const container   = document.querySelector(".rb-container.rb-layout");
       const previewWrap = document.getElementById("clPreviewWrap");
       const downloads   = document.getElementById("cl-downloads");
       const backBtn     = document.getElementById("cl-back-edit");
@@ -546,18 +548,12 @@
       function enterPreviewMode() {
         if (previewWrap) previewWrap.style.display = "block";
         if (downloads)   downloads.style.display   = "flex";
-        if (window.matchMedia("(min-width:1024px)").matches && container) {
-          container.classList.add("is-preview-full");
-        }
-        try {
-          const wm = previewWrap?.dataset?.watermark;
-          if (wm && !previewWrap.classList.contains("wm-active")) {
-            previewWrap.classList.add("wm-active");
-          }
-        } catch {}
+
+        // Stacked layout: simply scroll the preview into view
+        try { document.getElementById("clPreview")?.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
       }
       function exitPreviewMode() {
-        container?.classList.remove("is-preview-full");
+        /* no-op in stacked layout */
       }
       window.enterPreviewMode = enterPreviewMode;
       window.exitPreviewMode  = exitPreviewMode;
@@ -593,10 +589,9 @@
         enterPreviewMode();
       });
 
-      // Back to edit
+      // Back to edit (hidden by CSS, but keep safe)
       backBtn?.addEventListener("click", (e) => {
         e.preventDefault();
-        exitPreviewMode();
         try { document.querySelector(".rb-main")?.scrollIntoView({ behavior: "smooth" }); } catch {}
       });
 
@@ -608,10 +603,7 @@
         await downloadDOCX(gatherContext(form));
       });
 
-      // Resize guard: drop single-column when leaving desktop
-      window.addEventListener("resize", () => {
-        if (!window.matchMedia("(min-width:1024px)").matches) exitPreviewMode();
-      });
+      // No resize guards needed for stacked layout
     } catch (e) {
       console.error("[boot] fatal error:", e);
     }
