@@ -487,15 +487,15 @@
     const steps = Array.from(document.querySelectorAll(".rb-step"));
     const back  = document.getElementById("rb-back");
     const next  = document.getElementById("rb-next");
-
+  
     if (!steps.length || !next) {
       console.warn("[wizard] Missing steps or #rb-next");
       return;
     }
-
+  
     let idx = steps.findIndex(s => s.classList.contains("active"));
     if (idx < 0) idx = 0;
-
+  
     function render() {
       steps.forEach((s, k) => {
         const active = (k === idx);
@@ -505,18 +505,28 @@
       if (back) back.disabled = (idx === 0);
       if (next) next.textContent = (idx >= steps.length - 1) ? "Generate Cover Letter" : "Next";
     }
-
+  
+    // ✅ Updated go(to): blur field to collapse iOS zoom, then scroll
     function go(to) {
+      try { if (document.activeElement) document.activeElement.blur(); } catch {}
+  
       idx = Math.max(0, Math.min(to, steps.length - 1));
       render();
-      try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
+  
+      setTimeout(() => {
+        try {
+          document.getElementById("clForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          // Fallback if scrollIntoView is ignored
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch {}
+      }, 0);
     }
-
+  
     back?.addEventListener("click", (e) => {
       e.preventDefault();
       go(idx - 1);
     });
-
+  
     next.addEventListener("click", async (e) => {
       e.preventDefault();
       if (idx < steps.length - 1) {
@@ -533,7 +543,7 @@
         window.showUpgradeBanner?.(err.message || "Couldn’t generate preview.");
       }
     });
-
+  
     steps.forEach((s, k) => { if (k !== idx) s.hidden = true; });
     render();
   }
