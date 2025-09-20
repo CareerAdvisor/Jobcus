@@ -399,3 +399,6 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 .rb-step { display: none; }
 .rb-step.active { display: block; }
 
+.rb-preview .rb-card,
+.preview-wrap { overflow: hidden; border-radius: 16px; }
+
