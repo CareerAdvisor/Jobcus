@@ -24,10 +24,8 @@
 {% set is_paid   = (is_paid if is_paid is defined else (plan_code != 'free')) %}
 {% set free_model    = (free_model if free_model is defined else 'gpt-4o-mini') %}
 {% set model_default = (model_default if model_default is defined else (is_paid and 'gpt-4o-mini' or free_model)) %}
-{# Only used if server didn't pass model_options #}
 {% set model_options = (model_options if model_options is defined else ['gpt-4o','gpt-4o-mini']) %}
 {% set show_upgrade  = (show_upgrade if show_upgrade is defined else (plan_code == 'free')) %}
-{# Cloud history is enabled for Standard/Premium in current flags #}
 {% set cloud_history = 1 if plan_code in ['standard','premium'] else 0 %}
 
 {% block content %}
@@ -47,14 +45,12 @@
       <button id="newChatBtn" class="sb-btn sb-primary" type="button">New chat</button>
     </div>
 
-    <!-- Quick links -->
     <nav class="sb-menu">
       <a class="sb-btn" href="{{ url_for('pricing') }}">View pricing</a>
       <a class="sb-btn" href="{{ url_for('dashboard') }}">Back to dashboard</a>
       <button id="clearChatBtn" class="sb-btn" type="button">Clear conversation</button>
     </nav>
 
-    <!-- Credits card -->
     <section class="credits-panel is-card" aria-labelledby="credits-title">
       <h2 id="credits-title" class="credits-title">AI Chat credits &amp; fair-use</h2>
 
@@ -110,7 +106,6 @@
       </details>
     </section>
 
-    <!-- History (synced when cloud history is enabled; server no-ops when disabled) -->
     <section class="history-panel">
       <h3 class="history-title">Conversation history</h3>
       <ul id="chatHistory" class="history-list" aria-live="polite"></ul>
@@ -121,6 +116,7 @@
 
   <!-- RIGHT: chat content pane -->
   <section class="chat-main">
+    <!-- IMPORTANT: keep both id AND class so chat.css selectors apply -->
     <div class="chatbox" id="chatbox" aria-live="polite">
       <div id="welcomeBanner" class="welcome">
         {% set first_name = (current_user.fullname.split(' ')[0] if (current_user.is_authenticated and current_user.fullname) else (current_user.email.split('@')[0] if current_user.is_authenticated else '')) %}
@@ -138,7 +134,6 @@
       </div>
     </div>
 
-    <!-- Error/notice rail (populated by JS) -->
     <div id="chatNotice" class="chat-notice" hidden role="alert"></div>
 
     <!-- Bottom docked input -->
@@ -165,9 +160,20 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  {# Self-hosted libs so CSP 'script-src self' passes #}
+  <script src="{{ url_for('static', filename='vendor/marked/marked.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/dompurify/purify.min.js') }}"></script>
+
+  {# Harden: sanitize whatever marked renders #}
+  <script>
+    (function () {
+      if (window.marked && window.DOMPurify) {
+        const origParse = marked.parse.bind(marked);
+        marked.parse = function(md){ return DOMPurify.sanitize(origParse(md)); };
+      }
+    })();
+  </script>
+
   <!-- DO NOT include base.js here if it’s already in base.html -->
   <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% endblock %}
-
-
