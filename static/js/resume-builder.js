@@ -463,7 +463,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     const txt = await res.text().catch(() => "");
     throw new Error(`Preview failed. ${txt ? "Server said: " + txt : ""}`);
   }
-} // END renderWithTemplateFromContext
+// END renderWithTemplateFromContext
 
 // ───────────────────────────────────────────────
 // Wizard
