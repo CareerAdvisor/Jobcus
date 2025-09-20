@@ -182,7 +182,7 @@
     const ct = (res.headers.get("content-type") || "").toLowerCase();
     let j=null, t="";
     try { if (ct.includes("application/json")) j=await res.json(); else t=await res.text(); } catch {}
-    const msg = (j && (j.message or j.error)) || t || `Request failed (${res.status})`;
+    const msg = (j && (j.message || j.error)) || t || `Request failed (${res.status})`;
 
     if (res.status === 402 || (j && (j.error === "upgrade_required" || j.error === "quota_exceeded"))) {
       const url  = j?.pricing_url || PRICING_URL;
