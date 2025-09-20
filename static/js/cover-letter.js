@@ -307,14 +307,11 @@
             const host = d?.body || d?.documentElement;
             if (!host) return;
 
-            /* Center ANY plausible root; prevent right cut-off */
-            // Inside frame.addEventListener("load", () => { ... })
+            // Center ANY plausible root; prevent right cut-off
             const fix = d.createElement("style");
             fix.textContent = `
               html, body { margin:0; padding:0; overflow-x:hidden; }
               * { box-sizing:border-box; }
-              /* Center the letter but allow it to use the full iframe width.
-                 This matches the outer 80% page width. */
               body, #doc, .doc, .letter, .cl, .page, .container, body > div:first-child {
                 max-width: 100% !important;
                 margin: 0 auto !important;
@@ -330,11 +327,14 @@
             const isSuperadmin = (document.body.dataset.superadmin === "1");
 
             if (!isPaid && !isSuperadmin) {
+              /* 🔊 Bigger sparse watermark across the page */
               __applyWatermark__(host, "JOBCUS.COM", {
                 mode: "sparse",
-                fontSize: 200,
-                count: 4,
-                rotate: -30
+                fontSize: 320,                     // bigger text
+                count: 3,                          // fewer, larger stamps
+                rotate: -28,
+                color: "rgba(16,72,121,.16)",
+                threshold: 1000
               });
 
               host.classList.add("nocopy");
@@ -467,7 +467,7 @@
 
     lines.push(P(`Dear ${recipient.name || "Hiring Manager"},`));
     body.forEach(p => lines.push(P(p || "")));
-    lines.push(P(""));
+    lines.push(P("");
     lines.push(P("Yours sincerely,"));
     lines.push(P(ctx.name || "", { after: 0 }));
 
@@ -487,15 +487,15 @@
     const steps = Array.from(document.querySelectorAll(".rb-step"));
     const back  = document.getElementById("rb-back");
     const next  = document.getElementById("rb-next");
-  
+
     if (!steps.length || !next) {
       console.warn("[wizard] Missing steps or #rb-next");
       return;
     }
-  
+
     let idx = steps.findIndex(s => s.classList.contains("active"));
     if (idx < 0) idx = 0;
-  
+
     function render() {
       steps.forEach((s, k) => {
         const active = (k === idx);
@@ -505,28 +505,27 @@
       if (back) back.disabled = (idx === 0);
       if (next) next.textContent = (idx >= steps.length - 1) ? "Generate Cover Letter" : "Next";
     }
-  
-    // ✅ Updated go(to): blur field to collapse iOS zoom, then scroll
+
+    // Updated go(to): blur field to collapse iOS zoom, then scroll
     function go(to) {
       try { if (document.activeElement) document.activeElement.blur(); } catch {}
-  
+
       idx = Math.max(0, Math.min(to, steps.length - 1));
       render();
-  
+
       setTimeout(() => {
         try {
           document.getElementById("clForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
-          // Fallback if scrollIntoView is ignored
           window.scrollTo({ top: 0, behavior: "smooth" });
         } catch {}
       }, 0);
     }
-  
+
     back?.addEventListener("click", (e) => {
       e.preventDefault();
       go(idx - 1);
     });
-  
+
     next.addEventListener("click", async (e) => {
       e.preventDefault();
       if (idx < steps.length - 1) {
@@ -543,7 +542,7 @@
         window.showUpgradeBanner?.(err.message || "Couldn’t generate preview.");
       }
     });
-  
+
     steps.forEach((s, k) => { if (k !== idx) s.hidden = true; });
     render();
   }
@@ -553,7 +552,7 @@
     try {
       const form = document.getElementById("clForm");
 
-      // ===== PREVIEW MODE bindings =====
+      // PREVIEW MODE bindings (stacked layout)
       const previewWrap = document.getElementById("clPreviewWrap");
       const downloads   = document.getElementById("cl-downloads");
       const backBtn     = document.getElementById("cl-back-edit");
@@ -561,20 +560,16 @@
       function enterPreviewMode() {
         if (previewWrap) previewWrap.style.display = "block";
         if (downloads)   downloads.style.display   = "flex";
-
-        // Stacked layout: simply scroll the preview into view
         try { document.getElementById("clPreview")?.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
       }
-      function exitPreviewMode() {
-        /* no-op in stacked layout */
-      }
+      function exitPreviewMode() { /* no-op */ }
       window.enterPreviewMode = enterPreviewMode;
       window.exitPreviewMode  = exitPreviewMode;
 
-      // ===== Wizard =====
+      // Wizard
       initWizard();
 
-      // ===== AI Suggest wiring =====
+      // AI Suggest wiring
       const aiBox   = document.getElementById("ai-cl");
       const aiText  = aiBox?.querySelector(".ai-text");
       const aiRef   = aiBox?.querySelector(".ai-refresh");
@@ -595,14 +590,14 @@
         if (v) ta.value = v;
       });
 
-      // Manual preview button
+      // Manual preview
       document.getElementById("cl-preview")?.addEventListener("click", async (e) => {
         e.preventDefault();
         await previewLetter(gatherContext(form));
         enterPreviewMode();
       });
 
-      // Back to edit (hidden by CSS, but keep safe)
+      // Back to edit (hidden by CSS; safe listener)
       backBtn?.addEventListener("click", (e) => {
         e.preventDefault();
         try { document.querySelector(".rb-main")?.scrollIntoView({ behavior: "smooth" }); } catch {}
@@ -616,7 +611,6 @@
         await downloadDOCX(gatherContext(form));
       });
 
-      // No resize guards needed for stacked layout
     } catch (e) {
       console.error("[boot] fatal error:", e);
     }
