@@ -1567,7 +1567,6 @@ Return only the letter body text (no greeting/closing signatures).
 
     return jsonify(draft=draft), 200
 
-app = Flask(__name__)
 app.register_blueprint(ai_bp)
 
 @app.after_request
