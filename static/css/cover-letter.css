@@ -312,6 +312,7 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 
 /* The wrapper that controls the iframe width & centering */
 .preview-wrap{
+  box-sizing: border-box;
   width: 100%;
   max-width: 860px;              /* desktop comfort width for A4 letter */
   margin: 0 auto;                /* center it in the card */
@@ -322,6 +323,7 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 /* The iframe itself fills the wrapper and never overflows */
 .preview-wrap iframe{
   display: block;
+  box-sizing: border-box;
   width: 100% !important;
   max-width: 860px !important;   /* keep content safely inside */
   height: 90vh !important;       /* tall preview */
