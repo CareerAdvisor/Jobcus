@@ -1,299 +1,127 @@
 /* ===== Cover Letter (page-specific) ===== */
 :root{
-  --brand: #104879;   /* brand blue */
-  --brand-2:#0b355a;
-  --gold:  #ffc957;
-  --ink:   #0f172a;
-  --muted: #475569;
-  --bg:    #f5f8fc;
-  --card:  #ffffff;
-  --stroke:#e5e7ee;
-  --radius:12px;
-  --shadow:0 6px 18px rgba(16,72,121,.06);
+  --brand:#104879; --brand-2:#0b355a; --gold:#ffc957;
+  --ink:#0f172a; --muted:#475569; --bg:#f5f8fc; --card:#fff;
+  --stroke:#e5e7ee; --radius:12px; --shadow:0 6px 18px rgba(16,72,121,.06);
   --font-hero: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* ---- Fluid hero (shared across pages) ---- */
-.hero{
-  display:flex; flex-direction:column; align-items:center; text-align:center;
-  padding: clamp(16px, 4vw, 48px) clamp(12px, 4vw, 24px);
-  background:#104879; border-radius:14px;
-}
-.hero-kicker{
-  color:#ffc957; font-weight:700; letter-spacing:.08em;
-  font-size: clamp(12px, 1.2vw, 18px);
-  margin: 0 0 clamp(6px, .8vw, 10px);
-}
-.hero-title{
-  color:#fff; font-weight:800; line-height:1.15; margin: 0;
-  font-size: clamp(28px, 4.5vw + .25rem, 60px);
-}
-.hero-title .accent{ color:#ffc957; }
-.hero-subtitle{
-  color:#fff; opacity:.95;
-  margin: clamp(8px, 1.5vw, 14px) 0 clamp(18px, 2vw, 24px);
-  max-width: 60ch;
-  font-size: clamp(16px, 1.2vw + .25rem, 22px);
-  line-height: 1.5;
-}
-@media (min-width:768px){
-  .hero-subtitle{ max-width:46rem; }
-}
+/* ---- Hero ---- */
+.hero{display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:clamp(16px,4vw,48px) clamp(12px,4vw,24px);background:#104879;border-radius:14px}
+.hero-kicker{color:#ffc957;font-weight:700;letter-spacing:.08em;font-size:clamp(12px,1.2vw,18px);margin:0 0 clamp(6px,.8vw,10px)}
+.hero-title{color:#fff;font-weight:800;line-height:1.15;margin:0;font-size:clamp(28px,4.5vw + .25rem,60px)}
+.hero-title .accent{color:#ffc957}
+.hero-subtitle{color:#fff;opacity:.95;margin:clamp(8px,1.5vw,14px) 0 clamp(18px,2vw,24px);max-width:60ch;font-size:clamp(16px,1.2vw + .25rem,22px);line-height:1.5}
 
-/* (legacy cl-hero styles for backward compatibility) */
-.cl-hero{ width:100%; background:#f6fafc; padding:22px 0 10px; }
-.cl-hero-card{
-  width:min(820px, calc(100% - 32px));
-  margin:0 auto;
-  background: var(--brand);
-  border-radius:22px;
-  padding:32px 28px;
-  color:#fff; text-align:center;
-  box-shadow:0 10px 30px rgba(16,72,121,.18);
-}
-.cl-hero-eyebrow{
-  color:var(--gold); font-weight:800; letter-spacing:.12em; font-size:14px;
-  text-transform:uppercase; margin-bottom:10px;
-  font-family: var(--font-hero);
-}
-.cl-hero-title{
-  margin:0 0 12px; font-weight:800;
-  font-size:clamp(26px, 5vw, 36px); line-height:1.2;
-  font-family: var(--font-hero);
-}
-.cl-hero-title span{ color:var(--gold); }
-.cl-hero-subtitle{
-  margin:0; font-size:clamp(14px, 2.4vw, 18px); color:#e9eef6; max-width:60ch; margin-inline:auto;
-  font-family: var(--font-hero);
-}
+/* ------- Card headers ------- */
+.rb-card>header{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:18px 20px;min-height:96px;background:#fff;border-bottom:1px solid var(--stroke)}
+.rb-card>header h2{margin:0;color:#104879;font-weight:800;line-height:1.2;font-size:clamp(18px,2.2vw,24px)}
+.rb-card>header p{margin:0;color:var(--muted);font-size:16px;line-height:1.35;max-width:60ch}
 
-/* ------- Card headers (title + subheader) ------- */
-.rb-card > header{
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 18px 20px;
-  min-height: 96px;
-  background: #fff;
-  border-bottom: 1px solid var(--stroke);
-}
-.rb-card > header h2{
-  margin: 0;
-  color: #104879;
-  font-weight: 800;
-  line-height: 1.2;
-  font-size: clamp(18px, 2.2vw, 24px);
-}
-.rb-card > header p{
-  margin: 0;
-  color: var(--muted);
-  font-size: 16px;
-  line-height: 1.35;
-  max-width: 60ch;
-}
-.rb-card > header[style]{ height: auto !important; }
+/* ===== One-column page layout ===== */
+.rb-wrap{background:#f8fcff}
 
-/* ===== ONE-COLUMN LAYOUT (desktop too) ===== */
-.rb-wrap{ background: #f8fcff; }
-
-/* Container becomes single column, centered with side padding */
+/* Container is full-width; children decide their own widths */
 .rb-container.rb-layout{
-  width: 100%;
-  max-width: 1600px;
-  margin: 16px auto;
-  display: block;
-  padding-inline: clamp(12px, 3vw, 32px);
+  width:100%; max-width:1600px; margin:16px auto; display:block;
+  padding-inline:clamp(12px,3vw,32px);
 }
 
-/* Form takes 80% width on desktop, 100% on mobile */
+/* Form: 80% of page width on desktop, 100% on mobile */
 .rb-main{
-  width: min(80%, 1100px);
-  margin: 0 auto;
-  min-width: 0;
+  width:80%; margin:0 auto; min-width:0;
 }
 
-/* Preview sits BELOW the form, also at 80% width */
+/* Preview sits below the form and matches width */
 .rb-preview{
-  width: min(80%, 1100px);
-  margin: 18px auto 0;
-  position: static !important;
-  max-width: none !important;
-  flex: 0 0 auto !important;
-  min-width: 0;
+  width:80%; margin:18px auto 0; position:static !important; flex:0 0 auto !important;
+}
+
+/* Mobile: always 100% (no page “expanding”) */
+@media (max-width:1023.98px){
+  .rb-main,.rb-preview{ width:100%; }
 }
 
 /* Cards & panels */
-.rb-card{
-  background: var(--card);
-  border: 1px solid var(--stroke);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-.rb-panel{ padding: 18px; }
+.rb-card{background:var(--card);border:1px solid var(--stroke);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.rb-panel{padding:18px}
 
 /* ===== Form grid ===== */
-.rb-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.rb-grid .full{ grid-column: 1 / -1; }
-.rb-minihead{ margin-top:6px; font-weight:700; color:var(--brand-2); }
+.rb-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rb-grid .full{grid-column:1/-1}
+.rb-grid label{display:block;font-weight:600;color:var(--brand-2)}
+.rb-grid input,.rb-grid select,.rb-grid textarea{
+  width:100%;margin-top:6px;border:1px solid var(--stroke);border-radius:10px;background:#fff;color:var(--ink);
+  padding:12px 14px;font:16px/1.3 inherit; /* >=16px avoids iOS zoom that changes layout width */
+  transition:box-shadow .15s ease,border-color .15s ease;
+}
+.rb-grid textarea{min-height:120px}
+.rb-grid input:focus,.rb-grid select:focus,.rb-grid textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(16,72,121,.15);outline:0}
+@media (max-width:720px){.rb-grid{grid-template-columns:1fr}}
 
-.rb-grid label{ display: block; font-weight: 600; color: var(--brand-2); }
-.rb-grid input, .rb-grid select, .rb-grid textarea{
-  width: 100%; margin-top: 6px;
-  border: 1px solid var(--stroke); border-radius: 10px;
-  background: #fff; color: var(--ink);
-  padding: 12px 14px; font: 16px/1.3 inherit;
-  transition: box-shadow .15s ease, border-color .15s ease;
-}
-.rb-grid textarea{ min-height: 120px; }
-.rb-grid input:focus, .rb-grid select:focus, .rb-grid textarea:focus{
-  border-color: var(--brand); box-shadow: 0 0 0 3px rgba(16,72,121,.15); outline: 0;
-}
-@media (max-width:720px){ .rb-grid{ grid-template-columns: 1fr; } }
+/* Keep mobile page size consistent while stepping (prevents “expanding”) */
+#clForm{min-height:60vh}                       /* base height */
+@media (max-width:720px){#clForm{min-height:72vh}} /* a bit taller on phones */
 
-/* ===== AI suggestion box ===== */
-.ai-suggest{
-  margin-top: 12px;
-  border: 1px dashed var(--stroke);
-  border-radius: 10px;
-  background: #fffdfa;
-  padding: 12px;
-}
-.ai-suggest .ai-title{ font-weight: 800; color: var(--brand); margin-bottom: 6px; }
-.ai-suggest .ai-text{ margin: 0 0 8px; color: var(--muted); }
-.ai-suggest .ai-actions{ display: flex; gap: 8px; flex-wrap: wrap; }
-.ai-suggest .btn{
-  border: 1px solid var(--stroke);
-  background: #fff; color: var(--brand);
-  border-radius: 10px; padding: 8px 12px; font-weight: 700; cursor: pointer;
-}
-.ai-suggest .btn:hover{ background:#f7fbff; }
-.ai-suggest .btn.btn-primary{
-  background: var(--brand); color:#fff; border-color: var(--brand);
-}
-.ai-suggest .btn.btn-primary:hover{ filter: brightness(.96); }
-/* gold refresh */
-.ai-suggest .ai-refresh{
-  background: #ffc957;
-  border: 1px solid #ffc957;
-  color: #104879;
-}
-.ai-suggest .ai-refresh:hover { filter: brightness(0.95); }
-.ai-suggest .ai-refresh:focus { outline: 2px solid #104879; outline-offset: 2px; }
+/* ===== AI box ===== */
+.ai-suggest{margin-top:12px;border:1px dashed var(--stroke);border-radius:10px;background:#fffdfa;padding:12px}
+.ai-suggest .ai-title{font-weight:800;color:var(--brand);margin-bottom:6px}
+.ai-suggest .ai-text{margin:0 0 8px;color:var(--muted)}
+.ai-suggest .ai-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ai-suggest .btn{border:1px solid var(--stroke);background:#fff;color:var(--brand);border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+.ai-suggest .btn:hover{background:#f7fbff}
+.ai-suggest .btn.btn-primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+.ai-suggest .btn.btn-primary:hover{filter:brightness(.96)}
+.ai-suggest .ai-refresh{background:#ffc957;border:1px solid #ffc957;color:#104879}
 
 /* ===== Buttons & footer ===== */
-.cta-primary{
-  appearance:none; border:0; border-radius:10px;
-  padding:12px 16px; background: var(--brand);
-  color:#fff; font-weight:800; cursor:pointer;
-  transition: transform .06s ease, filter .15s ease;
-}
-.cta-primary.alt{ background:#0b355a; }
-.cta-primary:hover{ filter: brightness(.96); }
-.cta-primary:active{ transform: translateY(1px); }
+.cta-primary{appearance:none;border:0;border-radius:10px;padding:12px 16px;background:var(--brand);color:#fff;font-weight:800;cursor:pointer;transition:transform .06s ease,filter .15s ease}
+.cta-primary:hover{filter:brightness(.96)} .cta-primary:active{transform:translateY(1px)}
+.cta-secondary{border:1px solid var(--brand);background:#fff;color:var(--brand);border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}
+.cta-secondary:hover{background:var(--brand);color:#fff}
+.ghost{color:var(--brand);text-decoration:none;font-weight:700;border:0;background:transparent;padding:8px 0}
+.ghost:hover{color:var(--brand);text-decoration:underline}
+.rb-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.rb-footer{display:flex;gap:10px;justify-content:space-between;padding:10px 0 4px}
 
-.cta-secondary{
-  border:1px solid var(--brand); background:#fff; color: var(--brand);
-  border-radius:10px; padding:10px 14px; font-weight:800; cursor:pointer;
-}
-.cta-secondary:hover{ background: var(--brand); color:#fff; }
+/* ===== Preview (stacked, matches 80% width) ===== */
+.rb-preview .rb-card{position:relative;overflow:hidden;border-radius:16px}
+.rb-preview .rb-card .rb-panel{display:flex;flex-direction:column;align-items:center;gap:12px}
 
-/* “Back” simple */
-.ghost{
-  color: var(--brand); text-decoration:none; font-weight:700;
-  border:0; background:transparent; padding:8px 0;
-}
-.ghost:hover, .ghost:focus, .ghost:active{
-  background:transparent; color:var(--brand); text-decoration:underline;
-}
-
-.rb-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-.rb-footer{
-  display:flex; gap:10px; justify-content:space-between; padding: 10px 0 4px;
-}
-
-/* ===== Preview block (no sidebar; below form) ===== */
-.rb-preview .rb-card{ position: relative; overflow: hidden; border-radius: 16px; }
-
-/* Wrapper that controls iframe width & centering */
+/* Wrapper controlling iframe width & centering */
 .preview-wrap{
-  position: relative;
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 860px;
-  margin: 0 auto;
-  border-radius: 16px;
-  overflow: hidden;
+  position:relative;box-sizing:border-box;width:100%;
+  /* match the parent .rb-preview (80% of page) */
+  margin:0 auto;border-radius:16px;overflow:hidden;background:#fff;
 }
 
-/* Iframe fills the wrapper and never overflows */
+/* Iframe fills wrapper; no horizontal scroll */
 .preview-wrap iframe{
-  display: block;
-  box-sizing: border-box;
-  width: 100% !important;
-  max-width: 860px !important;
-  height: 90vh !important;
-  margin: 0 auto;
-  border: 0;
-  background: #fff;
+  display:block;box-sizing:border-box;width:100% !important;height:90vh !important;margin:0 auto;border:0;background:#fff;
 }
 
-/* Download bar lives directly under the preview */
+/* Downloads under the preview */
 #cl-downloads{
-  width: 100%;
-  max-width: 860px;
-  margin: 8px auto 0;
-  display: flex !important;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  position: static;            /* no sticky */
-  background: #fff;
-  border: 1px solid var(--stroke);
-  border-radius: 12px;
-  padding: 10px;
-  z-index: 1;
+  width:100%;margin:8px auto 0;display:flex !important;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;
+  position:static;background:#fff;border:1px solid var(--stroke);border-radius:12px;padding:10px;z-index:1
 }
 
-/* Back-to-edit not needed in stacked layout */
-#cl-back-edit{ display: none !important; }
+/* Back-to-edit hidden (stacked layout) */
+#cl-back-edit{display:none !important}
 
-/* Watermark overlay for preview wraps */
+/* Watermark overlay (when used) */
 .preview-wrap[data-watermark]::after{
-  content: attr(data-watermark);
-  position:absolute; inset:0;
-  display:none;
-  place-items:center;
-  font: 700 28px/1 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: rgba(16,72,121,.10);
-  transform: rotate(-28deg);
-  letter-spacing:.08em;
-  user-select:none; pointer-events:none;
-  z-index: 3;
+  content:attr(data-watermark);position:absolute;inset:0;display:none;place-items:center;
+  font:700 28px/1 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,sans-serif;color:rgba(16,72,121,.10);
+  transform:rotate(-28deg);letter-spacing:.08em;user-select:none;pointer-events:none;z-index:3
 }
-.preview-wrap.wm-active::after{ display:grid; }
+.preview-wrap.wm-active::after{display:grid}
 
-/* Optional “nocopy” guard (free tier) */
-.nocopy, .nocopy * { user-select:none !important; -webkit-user-select:none !important; }
+/* Wizard: only active step shows */
+.rb-step{display:none}
+.rb-step.active{display:block}
 
-/* ===== Letter-only preview styles (SCOPED inside iframe) ===== */
-@page { size:A4; margin:18mm 18mm; } /* print only; harmless on screen */
-
-/* Minor utility */
-.rb-row{ display:flex; gap:10px; flex-wrap:wrap; }
-
-/* Mobile naturally becomes 100% width */
-@media (max-width: 1023.98px){
-  .rb-main, .rb-preview{ width: 100%; }
-}
-
-/* Wizard visibility – only the active step shows */
-.rb-step { display: none; }
-.rb-step.active { display: block; }
-
-/* Global container fixes that used to cause clipping */
-#cover-letter{ max-width:none !important; width:100% !important; margin:0; padding:0; }
-.page-container > main, body > main{ overflow: visible !important; }
+/* Global container fixes */
+#cover-letter{max-width:none !important;width:100% !important;margin:0;padding:0}
+.page-container>main,body>main{overflow:visible !important}
