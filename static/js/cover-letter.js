@@ -139,11 +139,11 @@
       return c.toDataURL("image/png");
     }
     const urls = angles.map(a => makeTile(text, a));
-    const sz = size + "px " + size + "px";
+    const sz = size + "px " + "px";
     el.classList.remove("wm-sparse");
     el.classList.add("wm-tiled");
     el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
-    el.style.backgroundSize = urls.map(() => sz).join(", ");
+    el.style.backgroundSize = urls.map(() => `${size}px ${size}px`).join(", ");
     el.style.backgroundBlendMode = "multiply, multiply";
     el.style.backgroundRepeat = "repeat";
   }
@@ -247,7 +247,7 @@
       jobUrl: form.jobUrl?.value || "",
       tone: toneAugmented,
 
-      /* applicant block (extra compatibility) */
+      /* applicant block */
       applicant: {
         name, first_name: first, last_name: last,
         email: form.senderEmail?.value || "",
@@ -284,6 +284,8 @@
   /* ---------- Preview (returns when iframe loaded) ---------- */
   async function previewLetter(payload) {
     const wrap  = document.getElementById("clPreviewWrap");
+    the_frame: {
+    }
     const frame = document.getElementById("clPreview");
     const dlBar = document.getElementById("cl-downloads");
     try {
@@ -307,7 +309,7 @@
             const host = d?.body || d?.documentElement;
             if (!host) return;
 
-            // Center ANY plausible root; prevent right cut-off
+            // Prevent right cut-off + center
             const fix = d.createElement("style");
             fix.textContent = `
               html, body { margin:0; padding:0; overflow-x:hidden; }
@@ -327,11 +329,11 @@
             const isSuperadmin = (document.body.dataset.superadmin === "1");
 
             if (!isPaid && !isSuperadmin) {
-              /* 🔊 Bigger sparse watermark across the page */
+              // Bigger sparse watermark across the page
               __applyWatermark__(host, "JOBCUS.COM", {
                 mode: "sparse",
-                fontSize: 320,                     // bigger text
-                count: 3,                          // fewer, larger stamps
+                fontSize: 320,
+                count: 3,
                 rotate: -28,
                 color: "rgba(16,72,121,.16)",
                 threshold: 1000
@@ -352,13 +354,12 @@
           }
 
           if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
-          if (dlBar) dlBar.style.display = "flex"; // ensure downloads visible after load
+          if (dlBar) dlBar.style.display = "flex";
         }, { once: true });
 
         frame.setAttribute("sandbox", "allow-same-origin");
         frame.srcdoc = html;
 
-        // Scroll preview into view in stacked layout
         try { frame.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
       }
     } catch (err) {
@@ -402,7 +403,7 @@
 
   async function downloadDOCX(ctx) {
     const plan = (document.body.dataset.plan || "guest").toLowerCase();
-    const isPaid = (plan === "standard" || plan === "premium");
+    const isPaid = (plan === "standard" || "premium");
     const isSuperadmin = (document.body.dataset.superadmin === "1");
     if (!isPaid && !isSuperadmin) {
       const html = `File downloads are available on Standard and Premium. <a href="${PRICING_URL}">Upgrade now →</a>`;
@@ -467,7 +468,7 @@
 
     lines.push(P(`Dear ${recipient.name || "Hiring Manager"},`));
     body.forEach(p => lines.push(P(p || "")));
-    lines.push(P("");
+    lines.push(P(""));                 // ✅ fixed line (this was the syntax error)
     lines.push(P("Yours sincerely,"));
     lines.push(P(ctx.name || "", { after: 0 }));
 
@@ -506,13 +507,10 @@
       if (next) next.textContent = (idx >= steps.length - 1) ? "Generate Cover Letter" : "Next";
     }
 
-    // Updated go(to): blur field to collapse iOS zoom, then scroll
     function go(to) {
       try { if (document.activeElement) document.activeElement.blur(); } catch {}
-
       idx = Math.max(0, Math.min(to, steps.length - 1));
       render();
-
       setTimeout(() => {
         try {
           document.getElementById("clForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -532,11 +530,10 @@
         go(idx + 1);
         return;
       }
-      // last step → build/preview
       try {
         const form = document.getElementById("clForm");
         await previewLetter(gatherContext(form));
-        enterPreviewMode();
+        window.enterPreviewMode?.();
       } catch (err) {
         console.error("[wizard] onFinish error:", err);
         window.showUpgradeBanner?.(err.message || "Couldn’t generate preview.");
