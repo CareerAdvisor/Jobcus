@@ -308,16 +308,19 @@
             if (!host) return;
 
             /* Center ANY plausible root; prevent right cut-off */
+            // Inside frame.addEventListener("load", () => { ... })
             const fix = d.createElement("style");
             fix.textContent = `
-              html, body { margin: 0; padding: 0; overflow-x: hidden; }
-              * { box-sizing: border-box; }
+              html, body { margin:0; padding:0; overflow-x:hidden; }
+              * { box-sizing:border-box; }
+              /* Center the letter but allow it to use the full iframe width.
+                 This matches the outer 80% page width. */
               body, #doc, .doc, .letter, .cl, .page, .container, body > div:first-child {
-                max-width: 740px !important;
+                max-width: 100% !important;
                 margin: 0 auto !important;
-                padding: 0 18px !important;
+                padding: 0 16px !important;
               }
-              img, svg, canvas { max-width: 100%; height: auto; }
+              img, svg, canvas { max-width:100%; height:auto; }
             `;
             (d.head || d.documentElement).appendChild(fix);
 
