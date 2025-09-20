@@ -62,10 +62,6 @@
     try { el.querySelectorAll(":scope > .wm-overlay").forEach(x => { x._ro?.disconnect?.(); x.remove(); }); } catch {}
     const overlay = document.createElement("canvas");
     overlay.className = "wm-overlay";
-  
-    /* NEW: keep the canvas out of normal flow */
-    overlay.style.cssText = "position:fixed; inset:0; pointer-events:none; z-index:9999; display:block;";
-  
     el.classList.add("wm-sparse");
     el.appendChild(overlay);
 
@@ -186,7 +182,7 @@
     const ct = (res.headers.get("content-type") || "").toLowerCase();
     let j=null, t="";
     try { if (ct.includes("application/json")) j=await res.json(); else t=await res.text(); } catch {}
-    const msg = (j && (j.message || j.error)) || t || `Request failed (${res.status})`;
+    const msg = (j && (j.message or j.error)) || t || `Request failed (${res.status})`;
 
     if (res.status === 402 || (j && (j.error === "upgrade_required" || j.error === "quota_exceeded"))) {
       const url  = j?.pricing_url || PRICING_URL;
@@ -261,39 +257,6 @@
     };
   }
 
-  /* ---------- Wizard ---------- */
-  function initWizard(onFinish) {
-    const steps = Array.from(document.querySelectorAll(".rb-step"));
-    const back  = document.getElementById("rb-back");
-    const next  = document.getElementById("rb-next");
-    let idx = Math.max(0, steps.findIndex(s => s.classList.contains("active")));
-    if (idx < 0) idx = 0;
-
-    function show(i) {
-      idx = Math.max(0, Math.min(i, steps.length - 1));
-      steps.forEach((s, k) => {
-        const active = k === idx;
-        s.classList.toggle("active", active);
-        s.hidden = !active;                    // keep the a11y hint
-        s.style.display = active ? "block" : "none"; // belt & suspenders
-      });
-      if (back) back.disabled = (idx === 0);
-      if (next) next.textContent = (idx >= steps.length - 1)
-        ? "Generate Cover Letter"
-        : "Next";
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    
-    back?.addEventListener("click", () => show(idx - 1));
-    next?.addEventListener("click", async () => {
-      if (idx < steps.length - 1) { show(idx + 1); return; }
-      try { await onFinish?.(); } catch {}
-    });
-
-    steps.forEach((s, k) => { if (k !== idx) s.hidden = true; });
-    show(idx);
-  }
-
   /* ---------- Preview (returns when iframe loaded) ---------- */
   async function previewLetter(payload) {
     const wrap  = document.getElementById("clPreviewWrap");
@@ -315,21 +278,16 @@
 
       if (frame) {
         frame.addEventListener("load", () => {
-          if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
-        
+          // Inject centering & overflow safety into the iframe document
           try {
-            const plan = (document.body.dataset.plan || "guest").toLowerCase();
-            const isPaid       = (plan === "standard" || plan === "premium");
-            const isSuperadmin = (document.body.dataset.superadmin === "1");
-        
             const d    = frame.contentDocument || frame.contentWindow?.document;
             const host = d?.body || d?.documentElement;
             if (!host) return;
-        
-            // 1) Make letter HTML self-center and never overflow (inside iframe)
+
+            // Centering/safety CSS inside iframe to prevent right cut-off
             const fix = d.createElement("style");
             fix.textContent = `
-              html, body { margin:0; padding:0; overflow-x:hidden; }
+              html, body { margin: 0; padding: 0; overflow-x: hidden; }
               .cl {
                 max-width: 740px !important;
                 margin: 0 auto !important;
@@ -338,9 +296,12 @@
               }
             `;
             (d.head || d.documentElement).appendChild(fix);
-        
-            // 2) Your watermark + protection (unchanged)
+
             __stripWatermarks__(d);
+            const plan = (document.body.dataset.plan || "guest").toLowerCase();
+            const isPaid       = (plan === "standard" || plan === "premium");
+            const isSuperadmin = (document.body.dataset.superadmin === "1");
+
             if (!isPaid && !isSuperadmin) {
               __applyWatermark__(host, "JOBCUS.COM", {
                 mode: "sparse",
@@ -348,6 +309,7 @@
                 count: 4,
                 rotate: -30
               });
+
               host.classList.add("nocopy");
               const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
               ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
@@ -358,10 +320,12 @@
                 if ((e.ctrlKey || e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
               }, { passive: false });
             }
-          } catch {}
-        
-          // 3) Make sure the controls row is visible after load
-          if (dlBar) dlBar.style.display = "flex";
+          } catch (e) {
+            console.warn("Preview iframe style injection failed:", e);
+          }
+
+          if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
+          if (dlBar) dlBar.style.display = "flex"; // ensure downloads visible after load
         }, { once: true });
 
         frame.setAttribute("sandbox", "allow-same-origin");
@@ -491,107 +455,129 @@
     URL.revokeObjectURL(url);
   }
 
+  /* ---------- Wizard (robust) ---------- */
+  function initWizard() {
+    const steps = Array.from(document.querySelectorAll(".rb-step"));
+    const back  = document.getElementById("rb-back");
+    const next  = document.getElementById("rb-next");
+
+    if (!steps.length || !next) {
+      console.warn("[wizard] Missing steps or #rb-next");
+      return;
+    }
+
+    // ensure only one step is visible initially
+    let idx = steps.findIndex(s => s.classList.contains("active"));
+    if (idx < 0) idx = 0;
+
+    function render() {
+      steps.forEach((s, k) => {
+        const active = (k === idx);
+        s.classList.toggle("active", active);
+        s.hidden = !active;
+      });
+      if (back) back.disabled = (idx === 0);
+      if (next) next.textContent = (idx >= steps.length - 1) ? "Generate Cover Letter" : "Next";
+    }
+
+    function go(to) {
+      idx = Math.max(0, Math.min(to, steps.length - 1));
+      render();
+      try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
+    }
+
+    back?.addEventListener("click", (e) => {
+      e.preventDefault();
+      go(idx - 1);
+    });
+
+    next.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (idx < steps.length - 1) {
+        go(idx + 1);
+        return;
+      }
+      // last step → build/preview
+      try {
+        const form = document.getElementById("clForm");
+        await previewLetter(gatherContext(form));
+        enterPreviewMode();
+      } catch (err) {
+        console.error("[wizard] onFinish error:", err);
+        window.showUpgradeBanner?.(err.message || "Couldn’t generate preview.");
+      }
+    });
+
+    // Initialize visibility
+    steps.forEach((s, k) => { if (k !== idx) s.hidden = true; });
+    render();
+  }
+
   /* ---------- Boot ---------- */
   document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("clForm");
+    try {
+      const form = document.getElementById("clForm");
 
-    // ====== PREVIEW MODE (replace form on desktop) ======
-    const container   = document.querySelector(".rb-container.rb-layout");
-    const formCol     = document.querySelector(".rb-main");
-    const previewWrap = document.getElementById("clPreviewWrap");
-    const previewBtn  = document.getElementById("cl-preview");
-    const backBtn     = document.getElementById("cl-back-edit");
-    const downloads   = document.getElementById("cl-downloads");
-    const iframe      = document.getElementById("clPreview");
-    
-    function enterPreviewMode() {
-      if (previewWrap) previewWrap.style.display = "block";
-      if (downloads)   downloads.style.display = "flex";   // show buttons
-      if (window.matchMedia("(min-width:1024px)").matches && container) {
-        container.classList.add("is-preview-full");        // single-column on desktop
-      }
-      // watermark overlay if configured
-      try {
-        const wm = previewWrap?.dataset?.watermark;
-        if (wm && !previewWrap.classList.contains("wm-active")) {
-          previewWrap.classList.add("wm-active");
+      // ===== PREVIEW MODE bindings =====
+      const container   = document.querySelector(".rb-container.rb-layout");
+      const previewWrap = document.getElementById("clPreviewWrap");
+      const downloads   = document.getElementById("cl-downloads");
+      const backBtn     = document.getElementById("cl-back-edit");
+
+      function enterPreviewMode() {
+        if (previewWrap) previewWrap.style.display = "block";
+        if (downloads)   downloads.style.display   = "flex";
+        if (window.matchMedia("(min-width:1024px)").matches && container) {
+          container.classList.add("is-preview-full"); // single-column desktop
         }
-      } catch {}
-    }
-    
-    function exitPreviewMode() {
-      container?.classList.remove("is-preview-full");
-      if (downloads) downloads.style.display = "none";      // hide buttons outside preview
-      // No need to touch backBtn here if you use the CSS below
-    }
-    
-    // Resize guard: dropping below desktop cancels single-column preview
-    window.addEventListener("resize", () => {
-      if (!window.matchMedia("(min-width: 1024px)").matches) {
-        exitPreviewMode();
-      }
-    });
-
-    // ====== Wizard: last step triggers preview/generate ======
-    initWizard(async () => {
-      await previewLetter(gatherContext(form));
-      enterPreviewMode();
-    });
-
-    // ====== AI refresh / insert ======
-    const aiCard = document.getElementById("ai-cl");
-    const getAiTextEl = () => aiCard?.querySelector(".ai-text");
-    
-    aiCard?.addEventListener("click", async (e) => {
-      const btn = e.target.closest("button.ai-refresh, button.ai-add");
-      if (!btn) return;
-      e.preventDefault();
-    
-      if (btn.classList.contains("ai-refresh")) {
         try {
-          btn.disabled = true;
-          const el = getAiTextEl();
-          if (el) el.textContent = "Thinking…";
-          const draft = await aiSuggestCoverLetter(gatherContext(form));
-          if (el) el.textContent = draft || "No draft yet.";
-        } catch (err) {
-          const el = getAiTextEl(); if (el) el.textContent = err.message || "AI failed.";
-        } finally {
-          btn.disabled = false;
-        }
+          const wm = previewWrap?.dataset?.watermark;
+          if (wm && !previewWrap.classList.contains("wm-active")) {
+            previewWrap.classList.add("wm-active");
+          }
+        } catch {}
       }
-    
-      if (btn.classList.contains("ai-add")) {
-        const el = getAiTextEl();
-        const draft = el ? el.textContent.trim() : "";
-        const bodyEl = form?.querySelector('textarea[name="body"]');
-        if (draft && bodyEl) {
-          bodyEl.value = sanitizeDraft(draft);
-          bodyEl.dispatchEvent(new Event("input", { bubbles: true }));
-        }
+      function exitPreviewMode() {
+        container?.classList.remove("is-preview-full");
+        // keep downloads visible if you like; or hide:
+        // if (downloads) downloads.style.display = "none";
+        // ensure back button display is handled by CSS
       }
-    });
+      // expose (optional)
+      window.enterPreviewMode = enterPreviewMode;
+      window.exitPreviewMode  = exitPreviewMode;
 
-    // ====== Manual preview button ======
-    document.getElementById("cl-preview")?.addEventListener("click", async (e) => {
-      e.preventDefault();
-      await previewLetter(gatherContext(form));
-      enterPreviewMode();
-    });
+      // ===== Wizard (Next/Back wiring) =====
+      initWizard();
 
-    // ====== Back to edit (desktop-only button shown via CSS in preview mode) ======
-    backBtn?.addEventListener("click", (e) => {
-      e.preventDefault();
-      exitPreviewMode();
-      try { formCol?.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
-    });
+      // ===== Manual preview button (optional) =====
+      document.getElementById("cl-preview")?.addEventListener("click", async (e) => {
+        e.preventDefault();
+        await previewLetter(gatherContext(form));
+        enterPreviewMode();
+      });
 
-    // ====== Downloads (revealed after preview loads) ======
-    document.getElementById("cl-download-pdf")?.addEventListener("click", async () => {
-      await downloadPDF(gatherContext(form));
-    });
-    document.getElementById("cl-download-docx")?.addEventListener("click", async () => {
-      await downloadDOCX(gatherContext(form));
-    });
+      // Back to edit
+      backBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        exitPreviewMode();
+        try { document.querySelector(".rb-main")?.scrollIntoView({ behavior: "smooth" }); } catch {}
+      });
+
+      // Downloads
+      document.getElementById("cl-download-pdf")?.addEventListener("click", async () => {
+        await downloadPDF(gatherContext(form));
+      });
+      document.getElementById("cl-download-docx")?.addEventListener("click", async () => {
+        await downloadDOCX(gatherContext(form));
+      });
+
+      // Resize guard: drop single-column when leaving desktop
+      window.addEventListener("resize", () => {
+        if (!window.matchMedia("(min-width:1024px)").matches) exitPreviewMode();
+      });
+    } catch (e) {
+      console.error("[boot] fatal error:", e);
+    }
   });
-();
+})();
