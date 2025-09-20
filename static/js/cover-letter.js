@@ -402,35 +402,45 @@
   }
 
   async function downloadDOCX(ctx) {
+    // Correct plan check
     const plan = (document.body.dataset.plan || "guest").toLowerCase();
-    const isPaid = (plan === "standard" || "premium");
+    const isPaid = (plan === "standard" || plan === "premium");
     const isSuperadmin = (document.body.dataset.superadmin === "1");
+  
+    // Free users → show the same upgrade prompt used elsewhere and exit
     if (!isPaid && !isSuperadmin) {
       const html = `File downloads are available on Standard and Premium. <a href="${PRICING_URL}">Upgrade now →</a>`;
       window.upgradePrompt?.(html, PRICING_URL, 1200);
       return;
     }
-
+  
+    // Try the server route first; if it responds with 402/limits, handleCommonErrors shows the banner
     try {
       const res = await fetch("/build-cover-letter-docx", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/json"
+        },
         body: JSON.stringify({ letter_only: true, ...ctx })
       });
+  
+      // 404 means route not present → we’ll fall back to client-side; other errors show the upgrade/limit banner
       if (res.status === 404) throw new Error("route_404");
       if (!res.ok) await handleCommonErrors(res);
-
+  
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = "cover-letter.docx"; a.click();
       URL.revokeObjectURL(url);
       return;
-    } catch (err) { /* fall through to client mode */ }
-
-    try { await ensureDocxBundle(); } catch (e) {
-      window.showUpgradeBanner?.(e.message || "DOCX library not loaded.");
-      return;
+    } catch (err) {
+      // If the route is missing or something else failed, surface the message
+      if (err?.message !== "route_404") {
+        window.showUpgradeBanner?.(err.message || "Download failed.");
+        return;
+      }
     }
     const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
 
