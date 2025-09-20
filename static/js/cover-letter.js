@@ -236,61 +236,78 @@
     return paras.slice(0, 3).join("\n\n").trim();
   }
   function gatherContext(form) {
+    // (Assumes normComma() is defined above with the regex cleanup)
+  
+    // Names
     const first = (form.firstName?.value || "").trim();
     const last  = (form.lastName?.value  || "").trim();
     const name  = [first, last].filter(Boolean).join(" ").trim();
+  
+    // Tone + AI draft
     const baseTone = (form.tone?.value || "professional").trim();
     const toneAugmented = `${baseTone}; human-like and natural; concise; maximum 3 short paragraphs`;
     const draft = sanitizeDraft(readDraftFromFormOrAI(form) || "");
-
+  
+    // Sender/applicant fields (normalize commas/spaces for address bits)
     const senderAddress1 = normComma(form.senderAddress1?.value || "");
     const senderCity     = normComma(form.senderCity?.value || "");
     const senderPostcode = normComma(form.senderPostcode?.value || "");
     const senderEmail    = (form.senderEmail?.value || "").trim();
     const senderPhone    = (form.senderPhone?.value || "").trim();
   
+    // Recipient fields (normalized too)
+    const recName     = (form.recipient?.value || "Hiring Manager").trim();
+    const recCompany  = (form.company?.value || "").trim();
+    const recAddr1    = normComma(form.companyAddress1?.value || "");
+    const recCity     = normComma(form.companyCity?.value || "");
+    const recPostcode = normComma(form.companyPostcode?.value || "");
+    const role        = (form.role?.value || "").trim();
+  
     return {
-      /* top-level */
+      /* top-level (templates sometimes read from here) */
       name,
       first_name: first,
       last_name:  last,
       contact: form.contact?.value || "",
-      company: form.company?.value || "",
-      role: form.role?.value || "",
+      company: recCompany,
+      role,
       jobUrl: form.jobUrl?.value || "",
       tone: toneAugmented,
-
+  
       /* applicant block */
       applicant: {
         name, first_name: first, last_name: last,
-        email: form.senderEmail?.value || "",
-        phone: form.senderPhone?.value || "",
-        address1: form.senderAddress1?.value || "",
-        city: form.senderCity?.value || "",
-        postcode: form.senderPostcode?.value || "",
+        email: senderEmail,
+        phone: senderPhone,
+        address1: senderAddress1,
+        city: senderCity,
+        postcode: senderPostcode,
         date: form.letterDate?.value || new Date().toISOString().slice(0,10),
       },
-
-      /* sender/recipient */
+  
+      /* sender block */
       sender: {
-        name, first_name: first, last_name:  last,
-        address1: form.senderAddress1?.value || "",
-        city:     form.senderCity?.value || "",
-        postcode: form.senderPostcode?.value || "",
-        email:    form.senderEmail?.value || "",
-        phone:    form.senderPhone?.value || "",
-        date:     form.letterDate?.value || new Date().toISOString().slice(0,10)
+        name, first_name: first, last_name: last,
+        address1: senderAddress1,
+        city:     senderCity,
+        postcode: senderPostcode,
+        email:    senderEmail,
+        phone:    senderPhone,
+        date:     form.letterDate?.value || new Date().toISOString().slice(0,10),
       },
+  
+      /* recipient block (kept; now normalized) */
       recipient: {
-        name: form.recipient?.value || "Hiring Manager",
-        company: form.company?.value || "",
-        address1: form.companyAddress1?.value || "",
-        city:     form.companyCity?.value || "",
-        postcode: form.companyPostcode?.value || "",
-        role:     form.role?.value || ""
+        name:     recName,
+        company:  recCompany,
+        address1: recAddr1,
+        city:     recCity,
+        postcode: recPostcode,
+        role,
       },
-
-      cover_body: draft
+  
+      /* body used by preview/generation */
+      cover_body: draft,
     };
   }
 
