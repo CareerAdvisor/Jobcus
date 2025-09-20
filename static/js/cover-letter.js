@@ -139,7 +139,7 @@
       return c.toDataURL("image/png");
     }
     const urls = angles.map(a => makeTile(text, a));
-    const sz = size + "px " + " " + size + "px";
+    const sz = size + "px " + size + "px";
     el.classList.remove("wm-sparse");
     el.classList.add("wm-tiled");
     el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
@@ -312,6 +312,7 @@
             fix.textContent = `
               html, body { margin: 0; padding: 0; overflow-x: hidden; }
               * { box-sizing: border-box; }
+              /* keep a safe max width and center no matter the template root */
               body, #doc, .doc, .letter, .cl, .page, .container, body > div:first-child {
                 max-width: 740px !important;
                 margin: 0 auto !important;
@@ -349,7 +350,7 @@
           }
 
           if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
-          if (dlBar) dlBar.style.display = "flex";
+          if (dlBar) dlBar.style.display = "flex"; // ensure downloads visible after load
         }, { once: true });
 
         frame.setAttribute("sandbox", "allow-same-origin");
@@ -432,10 +433,10 @@
     const sender = ctx.sender || {};
     const recipient = ctx.recipient || {};
 
-    const A4 = { width: 11906, height: 16838 }; // twips
-    const M  = 1020;                             // ~18mm margins
-    const LINE = 276;                            // ~1.5 line height
-    const NORMAL = { size: 24, font: "Arial" };  // 12pt
+    const A4 = { width: 11906, height: 16838 };
+    const M  = 1020;     /* ~18mm margins */
+    const LINE = 276;    /* ~1.5 line height */
+    const NORMAL = { size: 24, font: "Arial" };  /* 12pt */
     const NAME   = { size: 64, font: "Arial", bold: true };
 
     const P = (text, {align="LEFT", run=NORMAL, after=120}={}) =>
@@ -575,7 +576,7 @@
           const draft = await aiSuggestCoverLetter(gatherContext(form));
           if (aiText) aiText.textContent = draft || "No suggestion returned.";
         } catch (e) {
-        if (aiText) aiText.textContent = "Couldn’t generate a suggestion.";
+          if (aiText) aiText.textContent = "Couldn’t generate a suggestion.";
         }
       });
       aiAdd?.addEventListener("click", () => {
