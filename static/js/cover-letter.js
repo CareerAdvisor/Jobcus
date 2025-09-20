@@ -19,6 +19,13 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  
+  const normComma = (s="") =>
+    String(s)
+      .replace(/\s*,+\s*/g, ", ") // any spaces around commas -> a single ", "
+      .replace(/\s+/g, " ")       // collapse double spaces
+      .replace(/(^,|,$)/g, "")    // trim leading/trailing comma
+      .trim();
 
   // ───────────────────────────────────────────────
   // Watermark helpers
@@ -236,6 +243,12 @@
     const toneAugmented = `${baseTone}; human-like and natural; concise; maximum 3 short paragraphs`;
     const draft = sanitizeDraft(readDraftFromFormOrAI(form) || "");
 
+    const senderAddress1 = normComma(form.senderAddress1?.value || "");
+    const senderCity     = normComma(form.senderCity?.value || "");
+    const senderPostcode = normComma(form.senderPostcode?.value || "");
+    const senderEmail    = (form.senderEmail?.value || "").trim();
+    const senderPhone    = (form.senderPhone?.value || "").trim();
+  
     return {
       /* top-level */
       name,
@@ -320,6 +333,8 @@
                 padding: 0 16px !important;
               }
               img, svg, canvas { max-width:100%; height:auto; }
+              /* normalize any accidental spaces around commas */
+              .cl-header, .contact, .recipient { white-space:pre-wrap; }
             `;
             (d.head || d.documentElement).appendChild(fix);
 
