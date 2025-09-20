@@ -1567,9 +1567,24 @@ Return only the letter body text (no greeting/closing signatures).
 
     return jsonify(draft=draft), 200
 
-# after app = Flask(__name__)
+app = Flask(__name__)
 app.register_blueprint(ai_bp)
 
+@app.after_request
+def set_security_headers(resp):
+    csp = (
+        "default-src 'self'; "
+        "img-src 'self' data: https:; "
+        "style-src 'self' 'unsafe-inline' https:; "
+        "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; "
+        "connect-src 'self' https:; "
+        "font-src 'self' https: data:; "
+        "frame-ancestors 'self'; "
+        "base-uri 'self'; "
+        "upgrade-insecure-requests"
+    )
+    resp.headers['Content-Security-Policy'] = csp
+    return resp
 
 @app.route("/api/skill-gap", methods=["POST"])
 @login_required
