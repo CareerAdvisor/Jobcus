@@ -101,10 +101,11 @@
 /* ===== Layout (wider container) ===== */
 .rb-wrap{ background: #f8fcff; }
 .rb-container.rb-layout{
-  width: min(90vw, 1300px);
+  width: 100%;
+  max-width: 1600px;  /* keep a sensible hard cap */
   margin: 16px auto;
-  display: flex; gap: 16px;
-  align-items: flex-start;
+  display: block;     /* one column — no side-by-side */
+  padding-inline: clamp(12px, 3vw, 32px);
 }
 .rb-main{ flex: 1 1 55%; min-width: 0; }
 .rb-preview{ flex: 1 1 45%; min-width: 0; position: sticky; top: 16px; }
@@ -332,25 +333,22 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
   background: #fff;
 }
 
-/* The downloads bar: full width of the preview column,
-   centered, wraps on small screens, and stays visible */
+/* Download bar lives directly under the preview */
 #cl-downloads{
   width: 100%;
   max-width: 860px;
-  margin: 4px auto 8px;
-  display: flex !important;      /* force visible even if inline style lingered */
+  margin: 8px auto 0;
+  display: flex !important;
   justify-content: center;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  position: sticky;              /* keep it in view while page scrolls */
-  bottom: 10px;
-  background: rgba(248,252,255,.92);
-  backdrop-filter: blur(6px);
+  position: static;          /* no sticky, no sidebar */
+  background: #fff;
   border: 1px solid var(--stroke);
   border-radius: 12px;
   padding: 10px;
-  z-index: 2;
+  z-index: 1;
 }
 
 /* Show Back button when we’re in preview-full mode */
@@ -410,3 +408,33 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 .rb-preview .rb-card { overflow: hidden !important; border-radius: 16px !important; }
 .preview-wrap { overflow: hidden !important; }
 .preview-wrap iframe { width: 100% !important; }
+
+/* =============== */
+/* One-column layout (desktop too) */
+/* =============== */
+
+/* Form takes 80% width on desktop, 100% on mobile */
+.rb-main{
+  width: min(80%, 1100px);
+  margin: 0 auto;
+}
+
+/* Preview sits BELOW the form, also at 80% width */
+.rb-preview{
+  width: min(80%, 1100px);
+  margin: 18px auto 0;
+  position: static !important;   /* no sticky at all */
+  max-width: none !important;    /* ensure the 80% rule wins */
+  flex: 0 0 auto !important;
+}
+
+/* Back-to-edit isn’t needed in stacked layout; hide by default */
+#cl-back-edit{ display: none !important; }
+
+/* Mobile naturally becomes 100% width */
+@media (max-width: 1023.98px){
+  .rb-main, .rb-preview{ width: 100%; }
+}
+
+/* Ensure nothing fights our new one-column rules */
+.rb-container.rb-layout.is-preview-full { display: block !important; }
