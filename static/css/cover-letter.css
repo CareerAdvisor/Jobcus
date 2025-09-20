@@ -245,3 +245,43 @@ html { -webkit-text-size-adjust: 100%; }
   color: rgba(16,72,121,.14);
   transform: rotate(-30deg) scale(1.1);
 }
+
+/* Keep form & preview at the same page width (80%) */
+.rb-main,
+.rb-preview{
+  width: min(80%, 1100px);
+  margin-inline: auto;
+}
+
+/* Make every card inside .rb-main use the full column width */
+.rb-main .rb-card{
+  width: 100%;
+  max-width: none;    /* no hidden smaller cap for the 3rd card */
+}
+
+/* Ensure the textarea section doesn't look narrower before AI renders */
+.rb-main .rb-card .rb-panel,
+.rb-main .rb-card .rb-panel > *{
+  max-width: 100%;
+}
+
+/* Textareas should truly span the panel */
+.rb-grid textarea,
+.rb-panel textarea{
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* AI suggestion box should not change the card width when it mounts */
+.ai-suggest{
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Optional: if you have a specific hook for the 3rd card */
+.rb-main .rb-card.letter-body,
+#letter-body-card{
+  width: 100%;
+  max-width: none;
+}
+
