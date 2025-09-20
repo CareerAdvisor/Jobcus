@@ -225,7 +225,10 @@
     return paras.slice(0, 3).join("\n\n").trim();
   }
   function gatherContext(form) {
-    const name = [form.firstName?.value, form.lastName?.value].filter(Boolean).join(" ").trim();
+    function gatherContext(form){
+    const first = (form.firstName?.value || "").trim();
+    const last  = (form.lastName?.value  || "").trim();
+    const name  = [first, last].filter(Boolean).join(" ").trim();
     const baseTone = (form.tone?.value || "professional").trim();
     const toneAugmented = `${baseTone}; human-like and natural; concise; maximum 3 short paragraphs`;
     const draft = sanitizeDraft(readDraftFromFormOrAI(form) || "");
@@ -238,20 +241,22 @@
       jobUrl: form.jobUrl?.value || "",
       tone: toneAugmented,
       sender: {
-        name,
+        first_name: first,         // <— add
+        last_name:  last,          // <— add
         address1: form.senderAddress1?.value || "",
-        city: form.senderCity?.value || "",
+        city:     form.senderCity?.value || "",
         postcode: form.senderPostcode?.value || "",
-        email: form.senderEmail?.value || "",
-        phone: form.senderPhone?.value || "",
-        date: form.letterDate?.value || new Date().toISOString().slice(0,10)
+        email:    form.senderEmail?.value || "",
+        phone:    form.senderPhone?.value || "",
+        date:     form.letterDate?.value || new Date().toISOString().slice(0,10)
       },
       recipient: {
         name: form.recipient?.value || "Hiring Manager",
         company: form.company?.value || "",
         address1: form.companyAddress1?.value || "",
-        city: form.companyCity?.value || "",
-        postcode: form.companyPostcode?.value || ""
+        city:     form.companyCity?.value || "",
+        postcode: form.companyPostcode?.value || "",
+        role:     form.role?.value || ""            // <— helps the prompt
       },
       cover_body: draft
     };
@@ -549,6 +554,25 @@
 
       // ===== Wizard (Next/Back wiring) =====
       initWizard();
+      const aiBox   = document.getElementById("ai-cl");
+      const aiText  = aiBox?.querySelector(".ai-text");
+      const aiRef   = aiBox?.querySelector(".ai-refresh");
+      const aiAdd   = aiBox?.querySelector(".ai-add");
+      aiRef?.addEventListener("click", async () => {
+        aiText.textContent = "Generating…";
+        try {
+          const draft = await aiSuggestCoverLetter(gatherContext(form));
+          aiText.textContent = draft || "No suggestion returned.";
+        } catch (e) {
+          aiText.textContent = "Couldn’t generate a suggestion.";
+        }
+      });
+      aiAdd?.addEventListener("click", () => {
+        const ta = form.querySelector('textarea[name="body"]');
+        if (!ta || !aiText) return;
+        const v = aiText.textContent?.trim() || "";
+        if (v) ta.value = v;
+      });
 
       // ===== Manual preview button (optional) =====
       document.getElementById("cl-preview")?.addEventListener("click", async (e) => {
