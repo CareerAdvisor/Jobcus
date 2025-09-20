@@ -299,27 +299,32 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 
 /* The preview card content is a vertical stack:
    [iframe] on top, [downloads row] pinned under it */
-.rb-preview .rb-card { overflow: visible; }
+.rb-preview .rb-card{
+  overflow: hidden;              /* contain iframe; keep rounded corners */
+  border-radius: 16px;
+}
 .rb-preview .rb-card .rb-panel{
   display: flex;
   flex-direction: column;
-  align-items: center;          /* center the inner column */
+  align-items: center;           /* center the inner column */
   gap: 12px;
 }
 
 /* The wrapper that controls the iframe width & centering */
 .preview-wrap{
   width: 100%;
-  max-width: 860px;             /* desktop comfort width for A4 letter */
-  margin: 0 auto;               /* center it in the card */
+  max-width: 860px;              /* desktop comfort width for A4 letter */
+  margin: 0 auto;                /* center it in the card */
+  border-radius: 16px;
+  overflow: hidden;              /* no bleed past the corners */
 }
 
 /* The iframe itself fills the wrapper and never overflows */
 .preview-wrap iframe{
   display: block;
   width: 100% !important;
-  max-width: 860px !important;  /* keep content safely inside */
-  height: 90vh !important;      /* tall preview */
+  max-width: 860px !important;   /* keep content safely inside */
+  height: 90vh !important;       /* tall preview */
   margin: 0 auto;
   border: 0;
   background: #fff;
@@ -331,12 +336,12 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
   width: 100%;
   max-width: 860px;
   margin: 4px auto 8px;
-  display: flex !important;     /* force visible even if inline style lingered */
+  display: flex !important;      /* force visible even if inline style lingered */
   justify-content: center;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  position: sticky;             /* keep it in view while page scrolls */
+  position: sticky;              /* keep it in view while page scrolls */
   bottom: 10px;
   background: rgba(248,252,255,.92);
   backdrop-filter: blur(6px);
@@ -370,7 +375,7 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 /* Single-column “preview replaces form” */
 @media (min-width:1024px){
   .rb-container.rb-layout.is-preview-full{
-    display: block;
+    display: block !important;
     width: min(95vw, 1360px) !important;
     margin: 16px auto !important;
   }
@@ -399,6 +404,7 @@ body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
 .rb-step { display: none; }
 .rb-step.active { display: block; }
 
-.rb-preview .rb-card,
-.preview-wrap { overflow: hidden; border-radius: 16px; }
-
+/* --- FINAL OVERRIDES (ensure our containment wins) --- */
+.rb-preview .rb-card { overflow: hidden !important; border-radius: 16px !important; }
+.preview-wrap { overflow: hidden !important; }
+.preview-wrap iframe { width: 100% !important; }
