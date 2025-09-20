@@ -139,7 +139,7 @@
       return c.toDataURL("image/png");
     }
     const urls = angles.map(a => makeTile(text, a));
-    const sz = size + "px " + size + "px";
+    const sz = size + "px " + " " + size + "px";
     el.classList.remove("wm-sparse");
     el.classList.add("wm-tiled");
     el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
@@ -237,19 +237,30 @@
     const draft = sanitizeDraft(readDraftFromFormOrAI(form) || "");
 
     return {
-      // top-level fields (used by template + DOC/PDF fallbacks)
+      /* top-level */
       name,
+      first_name: first,
+      last_name:  last,
       contact: form.contact?.value || "",
       company: form.company?.value || "",
       role: form.role?.value || "",
       jobUrl: form.jobUrl?.value || "",
       tone: toneAugmented,
 
-      // structured
+      /* applicant block (extra compatibility) */
+      applicant: {
+        name, first_name: first, last_name: last,
+        email: form.senderEmail?.value || "",
+        phone: form.senderPhone?.value || "",
+        address1: form.senderAddress1?.value || "",
+        city: form.senderCity?.value || "",
+        postcode: form.senderPostcode?.value || "",
+        date: form.letterDate?.value || new Date().toISOString().slice(0,10),
+      },
+
+      /* sender/recipient */
       sender: {
-        first_name: first,
-        last_name:  last,
-        name, // <- make it explicit so templates that expect sender.name work
+        name, first_name: first, last_name:  last,
         address1: form.senderAddress1?.value || "",
         city:     form.senderCity?.value || "",
         postcode: form.senderPostcode?.value || "",
@@ -291,18 +302,16 @@
 
       if (frame) {
         frame.addEventListener("load", () => {
-          // Inject centering & overflow safety into the iframe document
           try {
             const d    = frame.contentDocument || frame.contentWindow?.document;
             const host = d?.body || d?.documentElement;
             if (!host) return;
 
-            // Center ANY plausible root container; prevent right cut-off
+            /* Center ANY plausible root; prevent right cut-off */
             const fix = d.createElement("style");
             fix.textContent = `
               html, body { margin: 0; padding: 0; overflow-x: hidden; }
               * { box-sizing: border-box; }
-              /* keep a safe max width and center no matter the template root */
               body, #doc, .doc, .letter, .cl, .page, .container, body > div:first-child {
                 max-width: 740px !important;
                 margin: 0 auto !important;
@@ -340,7 +349,7 @@
           }
 
           if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
-          if (dlBar) dlBar.style.display = "flex"; // ensure downloads visible after load
+          if (dlBar) dlBar.style.display = "flex";
         }, { once: true });
 
         frame.setAttribute("sandbox", "allow-same-origin");
@@ -386,7 +395,6 @@
   }
 
   async function downloadDOCX(ctx) {
-    // Same plan gate as PDF
     const plan = (document.body.dataset.plan || "guest").toLowerCase();
     const isPaid = (plan === "standard" || plan === "premium");
     const isSuperadmin = (document.body.dataset.superadmin === "1");
@@ -396,7 +404,6 @@
       return;
     }
 
-    // Try server route first
     try {
       const res = await fetch("/build-cover-letter-docx", {
         method: "POST",
@@ -414,7 +421,6 @@
       return;
     } catch (err) { /* fall through to client mode */ }
 
-    // Client-side fallback using docx — styled to match the PDF
     try { await ensureDocxBundle(); } catch (e) {
       window.showUpgradeBanner?.(e.message || "DOCX library not loaded.");
       return;
@@ -481,7 +487,6 @@
       return;
     }
 
-    // ensure only one step is visible initially
     let idx = steps.findIndex(s => s.classList.contains("active"));
     if (idx < 0) idx = 0;
 
@@ -512,7 +517,6 @@
         go(idx + 1);
         return;
       }
-      // last step → build/preview
       try {
         const form = document.getElementById("clForm");
         await previewLetter(gatherContext(form));
@@ -523,7 +527,6 @@
       }
     });
 
-    // Initialize visibility
     steps.forEach((s, k) => { if (k !== idx) s.hidden = true; });
     render();
   }
@@ -543,7 +546,7 @@
         if (previewWrap) previewWrap.style.display = "block";
         if (downloads)   downloads.style.display   = "flex";
         if (window.matchMedia("(min-width:1024px)").matches && container) {
-          container.classList.add("is-preview-full"); // single-column desktop
+          container.classList.add("is-preview-full");
         }
         try {
           const wm = previewWrap?.dataset?.watermark;
@@ -572,7 +575,7 @@
           const draft = await aiSuggestCoverLetter(gatherContext(form));
           if (aiText) aiText.textContent = draft || "No suggestion returned.";
         } catch (e) {
-          if (aiText) aiText.textContent = "Couldn’t generate a suggestion.";
+        if (aiText) aiText.textContent = "Couldn’t generate a suggestion.";
         }
       });
       aiAdd?.addEventListener("click", () => {
@@ -582,7 +585,7 @@
         if (v) ta.value = v;
       });
 
-      // ===== Manual preview button (optional) =====
+      // Manual preview button
       document.getElementById("cl-preview")?.addEventListener("click", async (e) => {
         e.preventDefault();
         await previewLetter(gatherContext(form));
