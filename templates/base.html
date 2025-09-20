@@ -45,6 +45,11 @@
   <meta name="theme-color" content="#104879">
   <meta name="color-scheme" content="light dark">
   <meta name="msapplication-TileColor" content="#104879">
+
+  <!-- Core CSS + AOS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   
   <!-- ====== PWA / iOS Web App (optional) ====== -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -69,7 +74,6 @@
     script-src 'self' 'unsafe-inline' https://www.googletagmanager.com;
     connect-src 'self' https:;
     font-src 'self' https:;
-    frame-ancestors 'self';
     base-uri 'self';
   ">
   <meta name="referrer" content="strict-origin-when-cross-origin">
