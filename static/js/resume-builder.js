@@ -416,9 +416,25 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
             } catch {}
           })(d);
 
-          // apply JOBCUS.COM overlay only outside superadmin (if you also want it only for free, add !isPaid)
-          if (!isSuperadmin && window.applyTiledWatermark) {
-            window.applyTiledWatermark(host, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+          // apply JOBCUS.COM sparse watermark (big, across the page) for free users
+          if (!isSuperadmin) {
+            try {
+              if (window.__applyWatermark__) {
+                window.__applyWatermark__(host, "JOBCUS.COM", {
+                  mode: "sparse",
+                  fontSize: 320,
+                  count: 3,
+                  rotate: -28,
+                  color: "rgba(16,72,121,.16)",
+                  threshold: 1000
+                });
+              } else if (window.applyTiledWatermark) {
+                // fallback to tiled if sparse not available
+                window.applyTiledWatermark(host, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+              }
+            } catch (e) {
+              console.warn("Resume watermark failed:", e);
+            }
           }
 
           host.classList.add("nocopy");
@@ -437,7 +453,8 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
       frame.addEventListener("load", onLoadOnce, { once: true });
       frame.srcdoc = html;
     }
-
+  }
+  
   } else if (ct.includes("application/json")) {
     const data = await res.json().catch(() => ({}));
     if (data?.message) window.showUpgradeBanner?.(data.message);
