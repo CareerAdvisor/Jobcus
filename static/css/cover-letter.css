@@ -126,20 +126,31 @@
 #cover-letter{max-width:none !important;width:100% !important;margin:0;padding:0}
 .page-container>main,body>main{overflow:visible !important}
 
-/* Make the main form column 80% of the page, centered */
-#cover-letter .rb-main{
+/* Stop iOS from auto-zooming inputs (which makes the next step look “expanded”) */
+@supports (-webkit-touch-callout: none) {
+  /* iOS specific */
+  input, select, textarea {
+    font-size: 16px !important;          /* >=16px prevents the zoom */
+  }
+}
+
+/* Also ensure our form/preview still use the intended widths */
+#cover-letter .rb-main,
+#cover-letter .rb-preview {
   width: 80%;
   margin: 0 auto;
 }
-
-/* (optional) keep the preview the same width so they align */
-#cover-letter .rb-preview{
-  width: 80%;
-  margin: 18px auto 0;
-}
-
-/* On phones, use full width */
-@media (max-width:1023.98px){
+@media (max-width: 1023.98px){
   #cover-letter .rb-main,
-  #cover-letter .rb-preview{ width: 100%; }
+  #cover-letter .rb-preview { width: 100%; }
 }
+
+/* Keep a steady page height on phones so the layout doesn't reflow wildly between steps */
+#clForm { min-height: 60vh; }
+@media (max-width: 720px){
+  #clForm { min-height: 72vh; }
+}
+
+/* Helpful global */
+html { -webkit-text-size-adjust: 100%; }
+
