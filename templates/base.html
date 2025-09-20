@@ -259,9 +259,6 @@
       window.USER_AUTHENTICATED = {{ (current_user.is_authenticated)|tojson }};
       window.AUTH_ID = {{ (current_user.id if current_user.is_authenticated else None)|tojson }};
     </script>
-
-    <!-- AOS -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   
     <!-- Base JS -->
     <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
