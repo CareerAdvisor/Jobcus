@@ -326,8 +326,6 @@
   /* ---------- Preview (returns when iframe loaded) ---------- */
   async function previewLetter(payload) {
     const wrap  = document.getElementById("clPreviewWrap");
-    the_frame: {
-    }
     const frame = document.getElementById("clPreview");
     const dlBar = document.getElementById("cl-downloads");
     try {
@@ -337,21 +335,21 @@
         body: JSON.stringify({ format: "html", letter_only: true, ...payload })
       });
       await handleCommonErrors(res);
-
+  
       const ct = res.headers.get("content-type") || "";
       if (!ct.includes("text/html")) throw new Error("Unexpected response.");
       const html = await res.text();
-
+  
       if (wrap) { wrap.style.display = "block"; wrap.classList.remove("wm-active"); }
-
+  
       if (frame) {
         frame.addEventListener("load", () => {
           try {
             const d    = frame.contentDocument || frame.contentWindow?.document;
             const host = d?.body || d?.documentElement;
             if (!host) return;
-
-            // Prevent right cut-off + center
+  
+            // keep the content centered and safe
             const fix = d.createElement("style");
             fix.textContent = `
               html, body { margin:0; padding:0; overflow-x:hidden; }
@@ -362,27 +360,22 @@
                 padding: 0 16px !important;
               }
               img, svg, canvas { max-width:100%; height:auto; }
-              /* normalize any accidental spaces around commas */
-              .cl-header, .contact, .recipient { white-space:pre-wrap; }
             `;
             (d.head || d.documentElement).appendChild(fix);
-
+  
             __stripWatermarks__(d);
             const plan = (document.body.dataset.plan || "guest").toLowerCase();
             const isPaid       = (plan === "standard" || plan === "premium");
             const isSuperadmin = (document.body.dataset.superadmin === "1");
-
+  
             if (!isPaid && !isSuperadmin) {
-              // Bigger sparse watermark across the page
               __applyWatermark__(host, "JOBCUS.COM", {
                 mode: "sparse",
-                fontSize: 320,
-                count: 3,
-                rotate: -28,
-                color: "rgba(16,72,121,.16)",
-                threshold: 1000
+                fontSize: 200,
+                count: 4,
+                rotate: -30
               });
-
+  
               host.classList.add("nocopy");
               const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
               ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
@@ -396,14 +389,20 @@
           } catch (e) {
             console.warn("Preview iframe style injection failed:", e);
           }
-
+  
           if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
           if (dlBar) dlBar.style.display = "flex";
         }, { once: true });
-
+  
+        // ─── INSERTED CLEANUP (fix “City , Postcode” etc.) ──────────────────────
+        const cleaned = html
+          .replace(/\s+,/g, ", ")     // "city , postcode" -> "city, postcode"
+          .replace(/,\s+,/g, ", ")    // stray double comma
+          .replace(/\s+,(\s*<\/)/g, ",$1"); // "city ,</" -> "city,</"
+        // ────────────────────────────────────────────────────────────────────────
+  
         frame.setAttribute("sandbox", "allow-same-origin");
-        frame.srcdoc = html;
-
+        frame.srcdoc = cleaned;      // use the cleaned HTML
         try { frame.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
       }
     } catch (err) {
