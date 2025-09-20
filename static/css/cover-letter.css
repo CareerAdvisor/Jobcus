@@ -1,6 +1,6 @@
 /* ===== Cover Letter (page-specific) ===== */
 :root{
-  --brand: #104879;   /* brand blue to match screenshot */
+  --brand: #104879;   /* brand blue */
   --brand-2:#0b355a;
   --gold:  #ffc957;
   --ink:   #0f172a;
@@ -26,7 +26,6 @@
 }
 .hero-title{
   color:#fff; font-weight:800; line-height:1.15; margin: 0;
-  /* 28px on tiny phones → up to 56px on large screens */
   font-size: clamp(28px, 4.5vw + .25rem, 60px);
 }
 .hero-title .accent{ color:#ffc957; }
@@ -34,7 +33,6 @@
   color:#fff; opacity:.95;
   margin: clamp(8px, 1.5vw, 14px) 0 clamp(18px, 2vw, 24px);
   max-width: 60ch;
-  /* 16 → 22 */
   font-size: clamp(16px, 1.2vw + .25rem, 22px);
   line-height: 1.5;
 }
@@ -42,8 +40,7 @@
   .hero-subtitle{ max-width:46rem; }
 }
 
-/* (legacy cl-hero styles kept for backward compatibility)
-   Remove if unused elsewhere. */
+/* (legacy cl-hero styles for backward compatibility) */
 .cl-hero{ width:100%; background:#f6fafc; padding:22px 0 10px; }
 .cl-hero-card{
   width:min(820px, calc(100% - 32px));
@@ -51,8 +48,7 @@
   background: var(--brand);
   border-radius:22px;
   padding:32px 28px;
-  color:#fff;
-  text-align:center;
+  color:#fff; text-align:center;
   box-shadow:0 10px 30px rgba(16,72,121,.18);
 }
 .cl-hero-eyebrow{
@@ -98,23 +94,36 @@
 }
 .rb-card > header[style]{ height: auto !important; }
 
-/* ===== Layout (wider container) ===== */
+/* ===== ONE-COLUMN LAYOUT (desktop too) ===== */
 .rb-wrap{ background: #f8fcff; }
+
+/* Container becomes single column, centered with side padding */
 .rb-container.rb-layout{
   width: 100%;
-  max-width: 1600px;  /* keep a sensible hard cap */
+  max-width: 1600px;
   margin: 16px auto;
-  display: block;     /* one column — no side-by-side */
+  display: block;
   padding-inline: clamp(12px, 3vw, 32px);
 }
-.rb-main{ flex: 1 1 55%; min-width: 0; }
-.rb-preview{ flex: 1 1 45%; min-width: 0; position: sticky; top: 16px; }
-@media (max-width: 960px){
-  .rb-container.rb-layout{ width: calc(100% - 24px); flex-direction: column; }
-  .rb-preview{ position: static; }
+
+/* Form takes 80% width on desktop, 100% on mobile */
+.rb-main{
+  width: min(80%, 1100px);
+  margin: 0 auto;
+  min-width: 0;
 }
 
-/* ===== Cards & panels ===== */
+/* Preview sits BELOW the form, also at 80% width */
+.rb-preview{
+  width: min(80%, 1100px);
+  margin: 18px auto 0;
+  position: static !important;
+  max-width: none !important;
+  flex: 0 0 auto !important;
+  min-width: 0;
+}
+
+/* Cards & panels */
 .rb-card{
   background: var(--card);
   border: 1px solid var(--stroke);
@@ -124,21 +133,6 @@
   margin-bottom: 16px;
 }
 .rb-panel{ padding: 18px; }
-
-/* Stacked header (title then subtitle) */
-.stacked-hero{
-  display:flex; flex-direction:column; gap:6px;
-  padding:16px 18px; background:#f6fbff;
-  border-bottom:1px solid var(--stroke);
-}
-.stacked-hero h2{
-  margin:0; color:var(--brand);
-  font-weight:800; font-size:clamp(20px, 2.6vw, 24px);
-}
-.stacked-hero p{
-  margin:0; color:var(--muted);
-  font-size:clamp(14px, 1.9vw, 16px);
-}
 
 /* ===== Form grid ===== */
 .rb-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -220,28 +214,54 @@
   display:flex; gap:10px; justify-content:space-between; padding: 10px 0 4px;
 }
 
-/* ===== Preview (sticky) ===== */
-.rb-preview .rb-card{ position: relative; }
-#clPreview{ width:100%; height:80vh; border:0; background:#fff; display:block; }
+/* ===== Preview block (no sidebar; below form) ===== */
+.rb-preview .rb-card{ position: relative; overflow: hidden; border-radius: 16px; }
 
-/* --- Wide desktop preview --- */
-@media (min-width: 1024px) {
-  .rb-container.rb-layout { max-width: 1300px; }
-  .rb-preview { max-width: none; }
-  #clPreviewWrap { max-width: none; }
-  #clPreview {
-    width: min(100%, 900px);
-    height: 90vh;
-    margin: 0 auto;
-    display: block;
-    border: 0;
-    background: #fff;
-  }
+/* Wrapper that controls iframe width & centering */
+.preview-wrap{
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
-/* ===== Delayed watermark overlay for preview wraps ===== */
-.preview-wrap{ position: relative; }
-.preview-wrap iframe{ display:block; width:100%; height:80vh; border:0; background:#fff; }
+/* Iframe fills the wrapper and never overflows */
+.preview-wrap iframe{
+  display: block;
+  box-sizing: border-box;
+  width: 100% !important;
+  max-width: 860px !important;
+  height: 90vh !important;
+  margin: 0 auto;
+  border: 0;
+  background: #fff;
+}
+
+/* Download bar lives directly under the preview */
+#cl-downloads{
+  width: 100%;
+  max-width: 860px;
+  margin: 8px auto 0;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  position: static;            /* no sticky */
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 10px;
+  z-index: 1;
+}
+
+/* Back-to-edit not needed in stacked layout */
+#cl-back-edit{ display: none !important; }
+
+/* Watermark overlay for preview wraps */
 .preview-wrap[data-watermark]::after{
   content: attr(data-watermark);
   position:absolute; inset:0;
@@ -259,182 +279,21 @@
 /* Optional “nocopy” guard (free tier) */
 .nocopy, .nocopy * { user-select:none !important; -webkit-user-select:none !important; }
 
-/* ===== Letter-only preview styles (SCOPED) ===== */
-body.cl-letter-only header,
-body.cl-letter-only nav,
-body.cl-letter-only footer,
-body.cl-letter-only .site-header,
-body.cl-letter-only .site-footer,
-body.cl-letter-only .navbar,
-body.cl-letter-only .topbar,
-body.cl-letter-only .app-footer,
-body.cl-letter-only .chat-widget,
-body.cl-letter-only .floating-chat,
-body.cl-letter-only .intercom-lightweight-app { display:none !important; }
-
-body.cl-letter-only,
-body.cl-letter-only html { background:#fff; margin:0; }
-
-body.cl-letter-only .cl{
-  max-width: clamp(680px, 84vw, 860px);
-  margin: 36px auto;
-  padding: 0 16px;
-  color:#111;
-  font: 12pt/1.55 Arial, Helvetica, sans-serif;
-}
-body.cl-letter-only .cl-header { text-align:center; margin: 0 auto 14pt; }
-body.cl-letter-only .cl-header .name { font-weight:800; font-size:32pt; margin:0; }
-body.cl-letter-only .cl-header .contact { margin-top:4pt; }
-body.cl-letter-only .date { margin: 12pt 0 14pt; }
-body.cl-letter-only .recipient { margin: 0 0 12pt; }
-body.cl-letter-only .salutation { margin: 0 0 10pt; }
-body.cl-letter-only .block { white-space:pre-wrap; overflow-wrap:anywhere; }
-@page { size:A4; margin:18mm 18mm; }
+/* ===== Letter-only preview styles (SCOPED inside iframe) ===== */
+@page { size:A4; margin:18mm 18mm; } /* print only; harmless on screen */
 
 /* Minor utility */
 .rb-row{ display:flex; gap:10px; flex-wrap:wrap; }
-
-/* =========================
-   Preview column & iframe
-   ========================= */
-
-/* The preview card content is a vertical stack:
-   [iframe] on top, [downloads row] pinned under it */
-.rb-preview .rb-card{
-  overflow: hidden;              /* contain iframe; keep rounded corners */
-  border-radius: 16px;
-}
-.rb-preview .rb-card .rb-panel{
-  display: flex;
-  flex-direction: column;
-  align-items: center;           /* center the inner column */
-  gap: 12px;
-}
-
-/* The wrapper that controls the iframe width & centering */
-.preview-wrap{
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 860px;              /* desktop comfort width for A4 letter */
-  margin: 0 auto;                /* center it in the card */
-  border-radius: 16px;
-  overflow: hidden;              /* no bleed past the corners */
-}
-
-/* The iframe itself fills the wrapper and never overflows */
-.preview-wrap iframe{
-  display: block;
-  box-sizing: border-box;
-  width: 100% !important;
-  max-width: 860px !important;   /* keep content safely inside */
-  height: 90vh !important;       /* tall preview */
-  margin: 0 auto;
-  border: 0;
-  background: #fff;
-}
-
-/* Download bar lives directly under the preview */
-#cl-downloads{
-  width: 100%;
-  max-width: 860px;
-  margin: 8px auto 0;
-  display: flex !important;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  position: static;          /* no sticky, no sidebar */
-  background: #fff;
-  border: 1px solid var(--stroke);
-  border-radius: 12px;
-  padding: 10px;
-  z-index: 1;
-}
-
-/* Show Back button when we’re in preview-full mode */
-@media (min-width:1024px){
-  .rb-container.rb-layout.is-preview-full #cl-back-edit{
-    display: inline-block !important;
-  }
-}
-
-/* ================
-   Layout widths
-   ================ */
-
-@media (min-width:1024px){
-  /* normal two-column (form + preview) */
-  .rb-container.rb-layout{
-    width: min(92vw, 1360px);
-    gap: 24px;
-  }
-  .rb-main    { flex: 0 0 58%; }
-  .rb-preview { flex: 0 0 42%; position: sticky; top: 18px; }
-}
-
-/* Single-column “preview replaces form” */
-@media (min-width:1024px){
-  .rb-container.rb-layout.is-preview-full{
-    display: block !important;
-    width: min(95vw, 1360px) !important;
-    margin: 16px auto !important;
-  }
-  .rb-container.rb-layout.is-preview-full .rb-main{ display:none !important; }
-  .rb-container.rb-layout.is-preview-full .rb-preview{
-    position: static !important;
-    max-width: 100% !important;
-    flex: 0 0 100% !important;
-  }
-}
-
-/* Global container fixes that used to cause clipping */
-#cover-letter{ max-width:none !important; width:100% !important; margin:0; padding:0; }
-.page-container > main, body > main{ overflow: visible !important; }
-
-/* Watermark layer remains centered */
-.preview-wrap[data-watermark]::after{ display:none; }
-.preview-wrap.wm-active::after{ display:grid; }
-
-/* Mobile keeps stacking normally */
-@media (max-width:1023.98px){
-  /* nothing special — downloads row wraps and stays below iframe */
-}
-
-/* Wizard visibility – make sure only the active step shows */
-.rb-step { display: none; }
-.rb-step.active { display: block; }
-
-/* --- FINAL OVERRIDES (ensure our containment wins) --- */
-.rb-preview .rb-card { overflow: hidden !important; border-radius: 16px !important; }
-.preview-wrap { overflow: hidden !important; }
-.preview-wrap iframe { width: 100% !important; }
-
-/* =============== */
-/* One-column layout (desktop too) */
-/* =============== */
-
-/* Form takes 80% width on desktop, 100% on mobile */
-.rb-main{
-  width: min(80%, 1100px);
-  margin: 0 auto;
-}
-
-/* Preview sits BELOW the form, also at 80% width */
-.rb-preview{
-  width: min(80%, 1100px);
-  margin: 18px auto 0;
-  position: static !important;   /* no sticky at all */
-  max-width: none !important;    /* ensure the 80% rule wins */
-  flex: 0 0 auto !important;
-}
-
-/* Back-to-edit isn’t needed in stacked layout; hide by default */
-#cl-back-edit{ display: none !important; }
 
 /* Mobile naturally becomes 100% width */
 @media (max-width: 1023.98px){
   .rb-main, .rb-preview{ width: 100%; }
 }
 
-/* Ensure nothing fights our new one-column rules */
-.rb-container.rb-layout.is-preview-full { display: block !important; }
+/* Wizard visibility – only the active step shows */
+.rb-step { display: none; }
+.rb-step.active { display: block; }
+
+/* Global container fixes that used to cause clipping */
+#cover-letter{ max-width:none !important; width:100% !important; margin:0; padding:0; }
+.page-container > main, body > main{ overflow: visible !important; }
