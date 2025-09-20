@@ -116,7 +116,6 @@
   font:700 28px/1 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,sans-serif;color:rgba(16,72,121,.10);
   transform:rotate(-28deg);letter-spacing:.08em;user-select:none;pointer-events:none;z-index:3
 }
-.preview-wrap.wm-active::after{display:grid}
 
 /* Wizard: only active step shows */
 .rb-step{display:none}
@@ -221,3 +220,28 @@ html { -webkit-text-size-adjust: 100%; }
 /* Only active wizard step is visible */
 .rb-step{ display:none; }
 .rb-step.active{ display:block; }
+
+/* Keep this one as-is somewhere above */
+.preview-wrap[data-watermark]::after{
+  content: attr(data-watermark);
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  font: 700 28px/1 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: rgba(16,72,121,.10);
+  transform: rotate(-28deg);
+  letter-spacing: .08em;
+  user-select: none; pointer-events: none;
+  z-index: 3;
+}
+
+/* 🔁 REPLACE your existing `.preview-wrap.wm-active::after{ display:grid }` with this: */
+.preview-wrap.wm-active::after{
+  display: grid;
+  font-weight: 900;
+  font-size: clamp(42px, 8vw, 96px);   /* bigger responsive text */
+  letter-spacing: .12em;
+  color: rgba(16,72,121,.14);
+  transform: rotate(-30deg) scale(1.1);
+}
