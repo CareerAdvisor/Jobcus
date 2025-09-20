@@ -125,3 +125,21 @@
 /* Global container fixes */
 #cover-letter{max-width:none !important;width:100% !important;margin:0;padding:0}
 .page-container>main,body>main{overflow:visible !important}
+
+/* Make the main form column 80% of the page, centered */
+#cover-letter .rb-main{
+  width: 80%;
+  margin: 0 auto;
+}
+
+/* (optional) keep the preview the same width so they align */
+#cover-letter .rb-preview{
+  width: 80%;
+  margin: 18px auto 0;
+}
+
+/* On phones, use full width */
+@media (max-width:1023.98px){
+  #cover-letter .rb-main,
+  #cover-letter .rb-preview{ width: 100%; }
+}
