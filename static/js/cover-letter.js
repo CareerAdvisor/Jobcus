@@ -263,6 +263,11 @@
     const recPostcode = normComma(form.companyPostcode?.value || "");
     const role        = (form.role?.value || "").trim();
   
+    // NEW: pre-joined, already-cleaned lines to avoid "City , Postcode"
+    const senderLineCityPost = [senderCity, senderPostcode].filter(Boolean).join(", ");
+    const senderLineFull     = [senderAddress1, senderCity, senderPostcode].filter(Boolean).join(", ");
+    const recipLineCityPost  = [recCity, recPostcode].filter(Boolean).join(", ");
+  
     return {
       /* top-level (templates sometimes read from here) */
       name,
@@ -294,6 +299,10 @@
         email:    senderEmail,
         phone:    senderPhone,
         date:     form.letterDate?.value || new Date().toISOString().slice(0,10),
+  
+        // NEW pre-joined helpers
+        line_city_postcode:          senderLineCityPost,
+        line_address_city_postcode:  senderLineFull,
       },
   
       /* recipient block (kept; now normalized) */
@@ -304,6 +313,9 @@
         city:     recCity,
         postcode: recPostcode,
         role,
+  
+        // NEW pre-joined helper
+        line_city_postcode: recipLineCityPost,
       },
   
       /* body used by preview/generation */
