@@ -26,17 +26,14 @@
   const __EMAIL_RE__ = /@.+\./;
   function __sanitizeWM__(t) {
     const raw = String(t || "").trim();
-    return !raw || __EMAIL_RE__.test(raw) ? "JOBCUS.COM" : raw;
+    return (!raw || __EMAIL_RE__.test(raw)) ? "JOBCUS.COM" : raw;
   }
   function __stripWatermarks__(root = document) {
     if (typeof window.stripExistingWatermarks === "function") {
-      try {
-        window.stripExistingWatermarks(root);
-        return;
-      } catch {}
+      try { window.stripExistingWatermarks(root); return; } catch {}
     }
     try {
-      const doc = root.ownerDocument || root;
+      const doc = (root.ownerDocument || root);
       if (doc && !doc.getElementById("wm-nuke-style")) {
         const st = doc.createElement("style");
         st.id = "wm-nuke-style";
@@ -46,52 +43,36 @@
         `;
         (doc.head || doc.documentElement).appendChild(st);
       }
-      (root.querySelectorAll
-        ? root.querySelectorAll(
-            "[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']"
-          )
-        : []
-      ).forEach((el) => {
+      (root.querySelectorAll ? root.querySelectorAll(
+        "[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']"
+      ) : []).forEach(el => {
         el.removeAttribute?.("data-watermark-tile");
-        el.classList?.remove("wm-tiled", "wm-sparse");
+        el.classList?.remove("wm-tiled","wm-sparse");
         if (el.style) {
           el.style.backgroundImage = "";
           el.style.backgroundSize = "";
           el.style.backgroundBlendMode = "";
         }
       });
-      (root.querySelectorAll ? root.querySelectorAll(".wm-overlay") : []).forEach(
-        (n) => {
-          try {
-            n._ro?.disconnect?.();
-          } catch {}
-          n.remove();
-        }
-      );
+      (root.querySelectorAll ? root.querySelectorAll(".wm-overlay") : []).forEach(n => {
+        try { n._ro?.disconnect?.(); } catch {}
+        n.remove();
+      });
     } catch {}
   }
   function __applySparseWM__(el, text = "JOBCUS.COM", opts = {}) {
     text = __sanitizeWM__(text);
     if (!el || !text) return;
-    try {
-      el
-        .querySelectorAll(":scope > .wm-overlay")
-        .forEach((x) => {
-          x._ro?.disconnect?.();
-          x.remove();
-        });
-    } catch {}
+    try { el.querySelectorAll(":scope > .wm-overlay").forEach(x => { x._ro?.disconnect?.(); x.remove(); }); } catch {}
     const overlay = document.createElement("canvas");
     overlay.className = "wm-overlay";
     el.classList.add("wm-sparse");
     el.appendChild(overlay);
 
     const DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
-    const angle = ((opts.rotate != null ? opts.rotate : -30) * Math.PI) / 180;
+    const angle = (opts.rotate != null ? opts.rotate : -30) * Math.PI / 180;
     const color = opts.color || "rgba(16,72,121,.12)";
-    const baseFont =
-      opts.fontFamily ||
-      "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+    const baseFont = opts.fontFamily || "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
 
     function draw() {
       const r = el.getBoundingClientRect();
@@ -99,46 +80,31 @@
       const h = Math.max(1, Math.round(el.scrollHeight || r.height));
       overlay.style.width = w + "px";
       overlay.style.height = h + "px";
-      overlay.width = Math.round(w * DPR);
+      overlay.width  = Math.round(w * DPR);
       overlay.height = Math.round(h * DPR);
 
       const ctx = overlay.getContext("2d");
-      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      ctx.clearRect(0,0,overlay.width, overlay.height);
       ctx.save();
       ctx.scale(DPR, DPR);
       ctx.fillStyle = color;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      const count = opts.count ? +opts.count : h > (opts.threshold || 1400) ? 4 : 3;
-      const fontPx =
-        opts.fontSize || Math.max(96, Math.min(Math.floor((w + h) / 10), 180));
+      const count = (opts.count ? +opts.count : (h > (opts.threshold || 1400) ? 4 : 3));
+      const fontPx = opts.fontSize || Math.max(96, Math.min(Math.floor((w + h) / 10), 180));
       ctx.font = `700 ${fontPx}px ${baseFont}`;
 
       let points;
       if (count <= 3) {
-        points = [
-          [0.22, 0.3],
-          [0.5, 0.55],
-          [0.78, 0.8],
-        ];
+        points = [[0.22,0.30],[0.50,0.55],[0.78,0.80]];
       } else {
-        points = [
-          [0.28, 0.3],
-          [0.72, 0.3],
-          [0.28, 0.72],
-          [0.72, 0.72],
-        ];
+        points = [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
       }
 
       points.forEach(([fx, fy]) => {
-        const x = fx * w,
-          y = fy * h;
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle);
-        ctx.fillText(text, 0, 0);
-        ctx.restore();
+        const x = fx * w, y = fy * h;
+        ctx.save(); ctx.translate(x,y); ctx.rotate(angle); ctx.fillText(text,0,0); ctx.restore();
       });
       ctx.restore();
     }
@@ -148,42 +114,35 @@
     ro.observe(el);
     overlay._ro = ro;
   }
-  function __applyTiledWM__(
-    el,
-    text = "JOBCUS.COM",
-    opts = { size: 460, alpha: 0.16, angles: [-32, 32] }
-  ) {
+  function __applyTiledWM__(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
     text = __sanitizeWM__(text);
     if (!el || !text) return;
     __stripWatermarks__(el);
     const size = opts.size || 540;
-    const angles =
-      Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
+    const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
     function makeTile(t, angle, alpha = 0.18) {
       const c = document.createElement("canvas");
-      c.width = size;
-      c.height = size;
+      c.width = size; c.height = size;
       const ctx = c.getContext("2d");
-      ctx.clearRect(0, 0, size, size);
-      ctx.globalAlpha = opts.alpha ?? alpha;
-      ctx.translate(size / 2, size / 2);
-      ctx.rotate((angle * Math.PI) / 180);
+      ctx.clearRect(0,0,size,size);
+      ctx.globalAlpha = (opts.alpha ?? alpha);
+      ctx.translate(size/2, size/2);
+      ctx.rotate((angle * Math.PI)/180);
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.font =
-        "bold 48px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+      ctx.font = 'bold 48px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
       ctx.fillStyle = "#000";
       const L = String(t).toUpperCase();
       const gap = 56;
-      ctx.fillText(L, 0, -gap / 2);
-      ctx.fillText(L, 0, gap / 2);
+      ctx.fillText(L, 0, -gap/2);
+      ctx.fillText(L, 0,  gap/2);
       return c.toDataURL("image/png");
     }
-    const urls = angles.map((a) => makeTile(text, a));
+    const urls = angles.map(a => makeTile(text, a));
     const sz = size + "px " + size + "px";
     el.classList.remove("wm-sparse");
     el.classList.add("wm-tiled");
-    el.style.backgroundImage = urls.map((u) => `url(${u})`).join(", ");
+    el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
     el.style.backgroundSize = urls.map(() => sz).join(", ");
     el.style.backgroundBlendMode = "multiply, multiply";
     el.style.backgroundRepeat = "repeat";
@@ -211,10 +170,8 @@
       try {
         await new Promise((resolve, reject) => {
           const s = document.createElement("script");
-          s.src = src;
-          s.async = true;
-          s.crossOrigin = "anonymous";
-          s.onload = () => (window.docx ? resolve() : reject());
+          s.src = src; s.async = true; s.crossOrigin = "anonymous";
+          s.onload = () => window.docx ? resolve() : reject();
           s.onerror = reject;
           document.head.appendChild(s);
         });
@@ -227,40 +184,24 @@
   async function handleCommonErrors(res) {
     if (res.ok) return null;
     const ct = (res.headers.get("content-type") || "").toLowerCase();
-    let j = null,
-      t = "";
-    try {
-      if (ct.includes("application/json")) j = await res.json();
-      else t = await res.text();
-    } catch {}
-    const msg =
-      (j && (j.message || j.error)) || t || `Request failed (${res.status})`;
+    let j=null, t="";
+    try { if (ct.includes("application/json")) j=await res.json(); else t=await res.text(); } catch {}
+    const msg = (j && (j.message || j.error)) || t || `Request failed (${res.status})`;
 
-    if (
-      res.status === 402 ||
-      (j && (j.error === "upgrade_required" || j.error === "quota_exceeded"))
-    ) {
-      const url = j?.pricing_url || PRICING_URL;
-      const html =
-        j?.message_html ||
-        `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`;
+    if (res.status === 402 || (j && (j.error === "upgrade_required" || j.error === "quota_exceeded"))) {
+      const url  = j?.pricing_url || PRICING_URL;
+      const html = j?.message_html || `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`;
       window.upgradePrompt?.(html, url, 1200);
       throw new Error(j?.message || "Upgrade required");
     }
     if (res.status === 401 || res.status === 403) {
       const authMsg = j?.message || "Please sign up or log in to use this feature.";
       window.showUpgradeBanner?.(authMsg);
-      setTimeout(() => {
-        window.location.href = "/account?mode=login";
-      }, 800);
+      setTimeout(()=>{ window.location.href = "/account?mode=login"; }, 800);
       throw new Error(authMsg);
     }
-    if (
-      res.status === 429 &&
-      (j?.error === "too_many_free_accounts" || j?.error === "device_limit")
-    ) {
-      const ab =
-        j?.message || "Too many free accounts detected from your network/device.";
+    if (res.status === 429 && (j?.error === "too_many_free_accounts" || j?.error === "device_limit")) {
+      const ab = j?.message || "Too many free accounts detected from your network/device.";
       window.showUpgradeBanner?.(ab);
       throw new Error(ab);
     }
@@ -270,9 +211,7 @@
 
   /* ---------- Gather + sanitize form context ---------- */
   function readDraftFromFormOrAI(form) {
-    const ta = form?.querySelector(
-      'textarea[name="body"], textarea[name="draft"], textarea[name="cover_body"], #body, #letterBody'
-    );
+    const ta = form?.querySelector('textarea[name="body"], textarea[name="draft"], textarea[name="cover_body"], #body, #letterBody');
     let val = ta?.value || "";
     if (!val) {
       const aiText = document.querySelector("#ai-cl .ai-text");
@@ -284,64 +223,63 @@
     if (!text) return text;
     let t = String(text).trim();
     t = t.replace(/^dear[^\n]*\n(\s*\n)*/i, "");
-    t = t.replace(
-      /\n+\s*(yours\s+sincerely|sincerely|kind\s+regards|best\s+regards|regards)[\s\S]*$/i,
-      ""
-    );
+    t = t.replace(/\n+\s*(yours\s+sincerely|sincerely|kind\s+regards|best\s+regards|regards)[\s\S]*$/i, "");
     t = t.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
-    const paras = t.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+    const paras = t.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
     return paras.slice(0, 3).join("\n\n").trim();
   }
   function gatherContext(form) {
     const first = (form.firstName?.value || "").trim();
-    const last = (form.lastName?.value || "").trim();
-    const name = [first, last].filter(Boolean).join(" ").trim();
+    const last  = (form.lastName?.value  || "").trim();
+    const name  = [first, last].filter(Boolean).join(" ").trim();
     const baseTone = (form.tone?.value || "professional").trim();
     const toneAugmented = `${baseTone}; human-like and natural; concise; maximum 3 short paragraphs`;
     const draft = sanitizeDraft(readDraftFromFormOrAI(form) || "");
 
     return {
+      // top-level fields (used by template + DOC/PDF fallbacks)
       name,
       contact: form.contact?.value || "",
       company: form.company?.value || "",
       role: form.role?.value || "",
       jobUrl: form.jobUrl?.value || "",
       tone: toneAugmented,
+
+      // structured
       sender: {
         first_name: first,
-        last_name: last,
+        last_name:  last,
+        name, // <- make it explicit so templates that expect sender.name work
         address1: form.senderAddress1?.value || "",
-        city: form.senderCity?.value || "",
+        city:     form.senderCity?.value || "",
         postcode: form.senderPostcode?.value || "",
-        email: form.senderEmail?.value || "",
-        phone: form.senderPhone?.value || "",
-        date: form.letterDate?.value || new Date().toISOString().slice(0, 10),
+        email:    form.senderEmail?.value || "",
+        phone:    form.senderPhone?.value || "",
+        date:     form.letterDate?.value || new Date().toISOString().slice(0,10)
       },
       recipient: {
         name: form.recipient?.value || "Hiring Manager",
         company: form.company?.value || "",
         address1: form.companyAddress1?.value || "",
-        city: form.companyCity?.value || "",
+        city:     form.companyCity?.value || "",
         postcode: form.companyPostcode?.value || "",
-        role: form.role?.value || "",
+        role:     form.role?.value || ""
       },
-      cover_body: draft,
+
+      cover_body: draft
     };
   }
 
   /* ---------- Preview (returns when iframe loaded) ---------- */
   async function previewLetter(payload) {
-    const wrap = document.getElementById("clPreviewWrap");
+    const wrap  = document.getElementById("clPreviewWrap");
     const frame = document.getElementById("clPreview");
     const dlBar = document.getElementById("cl-downloads");
     try {
       const res = await fetch("/build-cover-letter", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "text/html,application/json",
-        },
-        body: JSON.stringify({ format: "html", letter_only: true, ...payload }),
+        headers: { "Content-Type": "application/json", "Accept": "text/html,application/json" },
+        body: JSON.stringify({ format: "html", letter_only: true, ...payload })
       });
       await handleCommonErrors(res);
 
@@ -349,75 +287,61 @@
       if (!ct.includes("text/html")) throw new Error("Unexpected response.");
       const html = await res.text();
 
-      if (wrap) {
-        wrap.style.display = "block";
-        wrap.classList.remove("wm-active");
-      }
+      if (wrap) { wrap.style.display = "block"; wrap.classList.remove("wm-active"); }
 
       if (frame) {
-        frame.addEventListener(
-          "load",
-          () => {
-            // Inject centering & overflow safety into the iframe document
-            try {
-              const d = frame.contentDocument || frame.contentWindow?.document;
-              const host = d?.body || d?.documentElement;
-              if (!host) return;
+        frame.addEventListener("load", () => {
+          // Inject centering & overflow safety into the iframe document
+          try {
+            const d    = frame.contentDocument || frame.contentWindow?.document;
+            const host = d?.body || d?.documentElement;
+            if (!host) return;
 
-              // Centering/safety CSS inside iframe to prevent right cut-off
-              const fix = d.createElement("style");
-              fix.textContent = `
-                html, body { margin: 0; padding: 0; overflow-x: hidden; }
-                * { box-sizing: border-box; }
-                .cl {
-                  max-width: 740px !important;
-                  margin: 0 auto !important;
-                  padding: 0 18px !important;
-                }
-              `;
-              (d.head || d.documentElement).appendChild(fix);
-
-              __stripWatermarks__(d);
-              const plan = (document.body.dataset.plan || "guest").toLowerCase();
-              const isPaid = plan === "standard" || plan === "premium";
-              const isSuperadmin =
-                document.body.dataset.superadmin === "1";
-
-              if (!isPaid && !isSuperadmin) {
-                __applyWatermark__(host, "JOBCUS.COM", {
-                  mode: "sparse",
-                  fontSize: 200,
-                  count: 4,
-                  rotate: -30,
-                });
-
-                host.classList.add("nocopy");
-                const kill = (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                };
-                ["copy", "cut", "dragstart", "contextmenu", "selectstart"].forEach(
-                  (ev) => host.addEventListener(ev, kill, { passive: false })
-                );
-                d.addEventListener(
-                  "keydown",
-                  (e) => {
-                    const k = (e.key || "").toLowerCase();
-                    if ((e.ctrlKey || e.metaKey) && ["c", "x", "s", "p"].includes(k))
-                      return kill(e);
-                  },
-                  { passive: false }
-                );
+            // Center ANY plausible root container; prevent right cut-off
+            const fix = d.createElement("style");
+            fix.textContent = `
+              html, body { margin: 0; padding: 0; overflow-x: hidden; }
+              * { box-sizing: border-box; }
+              /* keep a safe max width and center no matter the template root */
+              body, #doc, .doc, .letter, .cl, .page, .container, body > div:first-child {
+                max-width: 740px !important;
+                margin: 0 auto !important;
+                padding: 0 18px !important;
               }
-            } catch (e) {
-              console.warn("Preview iframe style injection failed:", e);
-            }
+              img, svg, canvas { max-width: 100%; height: auto; }
+            `;
+            (d.head || d.documentElement).appendChild(fix);
 
-            if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
-            if (dlBar) dlBar.style.display = "flex"; // ensure downloads visible after load
-          },
-          { once: true }
-        );
+            __stripWatermarks__(d);
+            const plan = (document.body.dataset.plan || "guest").toLowerCase();
+            const isPaid       = (plan === "standard" || plan === "premium");
+            const isSuperadmin = (document.body.dataset.superadmin === "1");
+
+            if (!isPaid && !isSuperadmin) {
+              __applyWatermark__(host, "JOBCUS.COM", {
+                mode: "sparse",
+                fontSize: 200,
+                count: 4,
+                rotate: -30
+              });
+
+              host.classList.add("nocopy");
+              const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
+              ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
+                host.addEventListener(ev, kill, { passive: false })
+              );
+              d.addEventListener("keydown", (e) => {
+                const k = (e.key || "").toLowerCase();
+                if ((e.ctrlKey || e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
+              }, { passive: false });
+            }
+          } catch (e) {
+            console.warn("Preview iframe style injection failed:", e);
+          }
+
+          if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
+          if (dlBar) dlBar.style.display = "flex"; // ensure downloads visible after load
+        }, { once: true });
 
         frame.setAttribute("sandbox", "allow-same-origin");
         frame.srcdoc = html;
@@ -432,12 +356,9 @@
   async function aiSuggestCoverLetter(ctx) {
     const res = await fetch("/ai/cover-letter", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
       credentials: "same-origin",
-      body: JSON.stringify(ctx),
+      body: JSON.stringify(ctx)
     });
     await handleCommonErrors(res);
     const json = await res.json().catch(() => ({}));
@@ -450,19 +371,14 @@
     try {
       const res = await fetch("/build-cover-letter", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/pdf,application/json",
-        },
-        body: JSON.stringify({ format: "pdf", letter_only: true, ...ctx }),
+        headers: { "Content-Type": "application/json", "Accept": "application/pdf,application/json" },
+        body: JSON.stringify({ format: "pdf", letter_only: true, ...ctx })
       });
       if (!res.ok) await handleCommonErrors(res);
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const url  = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = "cover-letter.pdf";
-      a.click();
+      a.href = url; a.download = "cover-letter.pdf"; a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
       window.showUpgradeBanner?.(err.message || "Download failed.");
@@ -472,8 +388,8 @@
   async function downloadDOCX(ctx) {
     // Same plan gate as PDF
     const plan = (document.body.dataset.plan || "guest").toLowerCase();
-    const isPaid = plan === "standard" || plan === "premium";
-    const isSuperadmin = document.body.dataset.superadmin === "1";
+    const isPaid = (plan === "standard" || plan === "premium");
+    const isSuperadmin = (document.body.dataset.superadmin === "1");
     if (!isPaid && !isSuperadmin) {
       const html = `File downloads are available on Standard and Premium. <a href="${PRICING_URL}">Upgrade now →</a>`;
       window.upgradePrompt?.(html, PRICING_URL, 1200);
@@ -484,32 +400,22 @@
     try {
       const res = await fetch("/build-cover-letter-docx", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept:
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/json",
-        },
-        body: JSON.stringify({ letter_only: true, ...ctx }),
+        headers: { "Content-Type": "application/json", "Accept": "application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/json" },
+        body: JSON.stringify({ letter_only: true, ...ctx })
       });
       if (res.status === 404) throw new Error("route_404");
       if (!res.ok) await handleCommonErrors(res);
 
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const url  = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = "cover-letter.docx";
-      a.click();
+      a.href = url; a.download = "cover-letter.docx"; a.click();
       URL.revokeObjectURL(url);
       return;
-    } catch (err) {
-      /* fall through to client mode */
-    }
+    } catch (err) { /* fall through to client mode */ }
 
     // Client-side fallback using docx — styled to match the PDF
-    try {
-      await ensureDocxBundle();
-    } catch (e) {
+    try { await ensureDocxBundle(); } catch (e) {
       window.showUpgradeBanner?.(e.message || "DOCX library not loaded.");
       return;
     }
@@ -521,67 +427,54 @@
     const recipient = ctx.recipient || {};
 
     const A4 = { width: 11906, height: 16838 }; // twips
-    const M = 1020; // ~18mm margins
-    const LINE = 276; // ~1.5 line height
-    const NORMAL = { size: 24, font: "Arial" }; // 12pt
-    const NAME = { size: 64, font: "Arial", bold: true };
+    const M  = 1020;                             // ~18mm margins
+    const LINE = 276;                            // ~1.5 line height
+    const NORMAL = { size: 24, font: "Arial" };  // 12pt
+    const NAME   = { size: 64, font: "Arial", bold: true };
 
-    const P = (text, { align = "LEFT", run = NORMAL, after = 120 } = {}) =>
+    const P = (text, {align="LEFT", run=NORMAL, after=120}={}) =>
       new Paragraph({
         alignment: AlignmentType[align],
         spacing: { line: LINE, after },
-        children: [new TextRun(Object.assign({ text }, run))],
+        children: [ new TextRun(Object.assign({ text }, run)) ],
       });
 
-    if (ctx.name) lines.push(P(ctx.name, { align: "CENTER", run: NAME, after: 80 }));
-    const contact = [sender.address1, sender.city, sender.postcode]
-      .filter(Boolean)
-      .join(", ");
-    if (contact) lines.push(P(contact, { align: "CENTER" }));
+    if (ctx.name) lines.push(P(ctx.name, { align:"CENTER", run: NAME, after: 80 }));
+    const contact = [sender.address1, sender.city, sender.postcode].filter(Boolean).join(", ");
+    if (contact)  lines.push(P(contact, { align:"CENTER" }));
     const reach = [sender.email, sender.phone].filter(Boolean).join(" | ");
-    if (reach) lines.push(P(reach, { align: "CENTER", after: 160 }));
+    if (reach)   lines.push(P(reach, { align:"CENTER", after: 160 }));
 
     if (sender.date) lines.push(P(sender.date));
     const recLines = [
-      recipient.name,
-      recipient.company,
-      recipient.address1,
-      [recipient.city, recipient.postcode].filter(Boolean).join(", "),
+      recipient.name, recipient.company, recipient.address1,
+      [recipient.city, recipient.postcode].filter(Boolean).join(", ")
     ].filter(Boolean);
-    recLines.forEach((l) => lines.push(P(l)));
+    recLines.forEach(l => lines.push(P(l)));
     lines.push(P("", { after: 80 }));
 
     lines.push(P(`Dear ${recipient.name || "Hiring Manager"},`));
-    body.forEach((p) => lines.push(P(p || "")));
+    body.forEach(p => lines.push(P(p || "")));
     lines.push(P(""));
     lines.push(P("Yours sincerely,"));
     lines.push(P(ctx.name || "", { after: 0 }));
 
     const doc = new Document({
-      sections: [
-        {
-          properties: {
-            page: { size: A4, margin: { top: M, bottom: M, left: M, right: M } },
-          },
-          children: lines,
-        },
-      ],
+      sections: [{ properties:{ page:{ size:A4, margin:{ top:M, bottom:M, left:M, right:M } } }, children: lines }]
     });
 
     const blob = await Packer.toBlob(doc);
-    const url = URL.createObjectURL(blob);
+    const url  = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = "cover-letter.docx";
-    a.click();
+    a.href = url; a.download = "cover-letter.docx"; a.click();
     URL.revokeObjectURL(url);
   }
 
   /* ---------- Wizard (robust) ---------- */
   function initWizard() {
     const steps = Array.from(document.querySelectorAll(".rb-step"));
-    const back = document.getElementById("rb-back");
-    const next = document.getElementById("rb-next");
+    const back  = document.getElementById("rb-back");
+    const next  = document.getElementById("rb-next");
 
     if (!steps.length || !next) {
       console.warn("[wizard] Missing steps or #rb-next");
@@ -589,26 +482,23 @@
     }
 
     // ensure only one step is visible initially
-    let idx = steps.findIndex((s) => s.classList.contains("active"));
+    let idx = steps.findIndex(s => s.classList.contains("active"));
     if (idx < 0) idx = 0;
 
     function render() {
       steps.forEach((s, k) => {
-        const active = k === idx;
+        const active = (k === idx);
         s.classList.toggle("active", active);
         s.hidden = !active;
       });
-      if (back) back.disabled = idx === 0;
-      if (next)
-        next.textContent = idx >= steps.length - 1 ? "Generate Cover Letter" : "Next";
+      if (back) back.disabled = (idx === 0);
+      if (next) next.textContent = (idx >= steps.length - 1) ? "Generate Cover Letter" : "Next";
     }
 
     function go(to) {
       idx = Math.max(0, Math.min(to, steps.length - 1));
       render();
-      try {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } catch {}
+      try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
     }
 
     back?.addEventListener("click", (e) => {
@@ -626,7 +516,6 @@
       try {
         const form = document.getElementById("clForm");
         await previewLetter(gatherContext(form));
-        // call via window to avoid scope issues
         window.enterPreviewMode?.();
       } catch (err) {
         console.error("[wizard] onFinish error:", err);
@@ -635,9 +524,7 @@
     });
 
     // Initialize visibility
-    steps.forEach((s, k) => {
-      if (k !== idx) s.hidden = true;
-    });
+    steps.forEach((s, k) => { if (k !== idx) s.hidden = true; });
     render();
   }
 
@@ -647,14 +534,14 @@
       const form = document.getElementById("clForm");
 
       // ===== PREVIEW MODE bindings =====
-      const container = document.querySelector(".rb-container.rb-layout");
+      const container   = document.querySelector(".rb-container.rb-layout");
       const previewWrap = document.getElementById("clPreviewWrap");
-      const downloads = document.getElementById("cl-downloads");
-      const backBtn = document.getElementById("cl-back-edit");
+      const downloads   = document.getElementById("cl-downloads");
+      const backBtn     = document.getElementById("cl-back-edit");
 
       function enterPreviewMode() {
         if (previewWrap) previewWrap.style.display = "block";
-        if (downloads) downloads.style.display = "flex";
+        if (downloads)   downloads.style.display   = "flex";
         if (window.matchMedia("(min-width:1024px)").matches && container) {
           container.classList.add("is-preview-full"); // single-column desktop
         }
@@ -668,19 +555,17 @@
       function exitPreviewMode() {
         container?.classList.remove("is-preview-full");
       }
-      // expose for wizard
       window.enterPreviewMode = enterPreviewMode;
-      window.exitPreviewMode = exitPreviewMode;
+      window.exitPreviewMode  = exitPreviewMode;
 
-      // ===== Wizard (Next/Back wiring) =====
+      // ===== Wizard =====
       initWizard();
 
       // ===== AI Suggest wiring =====
-      const aiBox = document.getElementById("ai-cl");
-      const aiText = aiBox?.querySelector(".ai-text");
-      const aiRef = aiBox?.querySelector(".ai-refresh");
-      const aiAdd = aiBox?.querySelector(".ai-add");
-
+      const aiBox   = document.getElementById("ai-cl");
+      const aiText  = aiBox?.querySelector(".ai-text");
+      const aiRef   = aiBox?.querySelector(".ai-refresh");
+      const aiAdd   = aiBox?.querySelector(".ai-add");
       aiRef?.addEventListener("click", async () => {
         if (aiText) aiText.textContent = "Generating…";
         try {
@@ -690,7 +575,6 @@
           if (aiText) aiText.textContent = "Couldn’t generate a suggestion.";
         }
       });
-
       aiAdd?.addEventListener("click", () => {
         const ta = form.querySelector('textarea[name="body"]');
         if (!ta || !aiText) return;
@@ -709,9 +593,7 @@
       backBtn?.addEventListener("click", (e) => {
         e.preventDefault();
         exitPreviewMode();
-        try {
-          document.querySelector(".rb-main")?.scrollIntoView({ behavior: "smooth" });
-        } catch {}
+        try { document.querySelector(".rb-main")?.scrollIntoView({ behavior: "smooth" }); } catch {}
       });
 
       // Downloads
