@@ -537,3 +537,5 @@ html { -webkit-text-size-adjust: 100%; }
   padding: 12px;
   z-index: 2;
 }
+
+[data-aos]{ opacity:1 !important; transform:none !important; }
