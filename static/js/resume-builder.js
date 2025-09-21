@@ -407,11 +407,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
             } catch {}
           }
           
-          // 3) Apply BIG sparse watermark to each page container (fallback to body)
-          const plan = (document.body.dataset.plan || "guest").toLowerCase();
-          const isPaid = (plan === "standard" || plan === "premium");
-          const isSuperadmin = (document.body.dataset.superadmin === "1");
-          
+          // 3) Apply BIG sparse watermark to each page container (fallback to body)          
           if (!isPaid && !isSuperadmin) {
             const targets = d.querySelectorAll(".page, #doc, .doc, .resume, body > div:first-child");
             const nodes = targets.length ? Array.from(targets) : [host];
