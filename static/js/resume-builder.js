@@ -27,10 +27,10 @@ const PRICING_URL = (window.PRICING_URL || "/pricing");
 // Softer (but still big) sparse watermark preset
 const WM_OPTS_SOFT = {
   mode: "sparse",
-  fontSize: 300,                 // big text, just a touch smaller than 320
-  count: 2,                      // fewer stamps per page
+  fontSize: 300,                // big text, slightly smaller than 320
+  count: 2,                     // fewer stamps per page
   rotate: -28,
-  color: "rgba(16,72,121,.10)",  // lower opacity (was .16)
+  color: "rgba(16,72,121,.10)", // lower opacity
   threshold: 1400
 };
 
@@ -236,7 +236,7 @@ function addExperienceFromObj(obj = {}) {
   const g = (n) => qs(node, `[name="${n}"]`);
   if (g("role"))     g("role").value     = obj.role || "";
   if (g("company"))  g("company").value  = obj.company || "";
-  if (g("start"))    g("start").value    = obj.start || ""
+  if (g("start"))    g("start").value    = obj.start || "";
   if (g("end"))      g("end").value      = obj.end || "";
   if (g("location")) g("location").value = obj.location || "";
   const bullets = g("bullets");
@@ -365,17 +365,16 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
 
       const onLoadOnce = () => {
         try {
+          // Compute plan ONCE here
           const plan = (document.body.dataset.plan || "guest").toLowerCase();
           const isPaid       = (plan === "standard" || plan === "premium");
           const isSuperadmin = (document.body.dataset.superadmin === "1");
-      
+
           const d    = frame.contentDocument || frame.contentWindow?.document;
           const host = d?.body || d?.documentElement;
-          
-          // after: const host = d?.body || d?.documentElement;
           if (!host || !d) return;
-          
-          // 1) Same small layout fix we use in cover-letter to avoid late zoom/scale
+
+          // 1) Prevent late scale/zoom that can shrink watermark
           const fix = d.createElement("style");
           fix.textContent = `
             html, body { margin:0; padding:0; overflow-x:hidden; }
@@ -390,13 +389,12 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
             img, svg, canvas { max-width:100%; height:auto; }
           `;
           (d.head || d.documentElement).appendChild(fix);
-          
-          // 2) Strip any template watermarks (same as cover-letter helpers)
-          if (typeof window.__stripWatermarks__ === "function") {
-            try { window.__stripWatermarks__(d); } catch {}
-          } else {
-            try {
-              // light inline fallback
+
+          // 2) Strip any template watermarks
+          try {
+            if (typeof window.__stripWatermarks__ === "function") {
+              window.__stripWatermarks__(d);
+            } else {
               d.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']")
                 .forEach(el => {
                   el.removeAttribute?.("data-watermark");
@@ -414,46 +412,40 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
                 st.textContent = `*::before,*::after{background-image:none !important;content:'' !important;}`;
                 (d.head || d.documentElement).appendChild(st);
               }
-            } catch {}
-          }
-          
-          // 3) Apply BIG sparse watermark to each page container (fallback to body)          
+            }
+          } catch {}
+
+          // 3) Apply BIG (but softer) sparse watermark to page containers (fallback to body)
           if (!isPaid && !isSuperadmin) {
             try {
-              // Prefer page-like containers; fall back to body if none
               const targets = d.querySelectorAll(".page, #doc, .doc, .resume, body > div:first-child");
               const nodes = targets.length ? Array.from(targets) : [host];
-          
               nodes.forEach((node) => {
                 try {
                   if (window.__applyWatermark__) {
-                    // ✅ Softer, still large
                     window.__applyWatermark__(node, "JOBCUS.COM", WM_OPTS_SOFT);
                   } else if (window.applyTiledWatermark) {
-                    // fallback to tiled — also toned down
                     window.applyTiledWatermark(node, "JOBCUS.COM", {
                       size: 460,
-                      alpha: 0.08,        // was 0.16
+                      alpha: 0.08,
                       angles: [-32, 32]
                     });
                   }
-                } catch (e) {
-                  console.warn("Resume watermark failed:", e);
-                }
+                } catch (e) { console.warn("Resume watermark failed:", e); }
               });
             } catch (e) {
               console.warn("Watermark application error:", e);
             }
           }
-      
-          // 4) nocopy/keyboard guards (unchanged)
+
+          // 4) nocopy/keyboard guards
           const baseStyle = d.createElement("style");
           baseStyle.textContent = `
             .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
             @media print { body { background-image: none !important; } }
           `;
           d.head.appendChild(baseStyle);
-      
+
           host.classList.add("nocopy");
           const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
           ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
@@ -513,12 +505,12 @@ function initWizard() {
   function updateButtons() {
     const lastIndex = steps.length - 1;
     const onLast = idx === lastIndex;
-  
+
     if (back) back.disabled = idx === 0;
-  
+
     // Show Next unless we're on the last step
     if (next) next.style.display = onLast ? "none" : "inline-block";
-  
+
     // Show Submit only if this step contains the submit button
     const thisStepHasSubmit = !!steps[idx]?.querySelector?.("#rb-submit");
     if (submitBtn) submitBtn.style.display = thisStepHasSubmit ? "inline-block" : "none";
