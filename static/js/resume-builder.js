@@ -500,9 +500,17 @@ function initWizard() {
   }
 
   function updateButtons() {
+    const lastIndex = steps.length - 1;
+    const onLast = idx === lastIndex;
+  
     if (back) back.disabled = idx === 0;
-    if (next) next.style.display = idx >= steps.length - 2 ? "none" : "inline-block";
-    if (submitBtn) submitBtn.style.display = (idx === steps.length - 2) ? "inline-block" : "none";
+  
+    // Show Next unless we're on the last step
+    if (next) next.style.display = onLast ? "none" : "inline-block";
+  
+    // Show Submit only if this step contains the submit button
+    const thisStepHasSubmit = !!steps[idx]?.querySelector?.("#rb-submit");
+    if (submitBtn) submitBtn.style.display = thisStepHasSubmit ? "inline-block" : "none";
   }
 
   async function onEnterStep(i) {
