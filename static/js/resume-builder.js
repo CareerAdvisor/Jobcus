@@ -358,68 +358,85 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           const plan = (document.body.dataset.plan || "guest").toLowerCase();
           const isPaid       = (plan === "standard" || plan === "premium");
           const isSuperadmin = (document.body.dataset.superadmin === "1");
-
+      
           const d    = frame.contentDocument || frame.contentWindow?.document;
           const host = d?.body || d?.documentElement;
           if (!host || !d) return;
-
-          // basic style for nocopy & print
-          const baseStyle = d.createElement("style");
-          baseStyle.textContent = `
-            .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
-            @media print { body { background-image: none !important; } }
+      
+          // 1) Prevent any template "fit-to-A4" scaling from shrinking the overlay
+          const fix = d.createElement("style");
+          fix.textContent = `
+            html, body { margin:0; padding:0; overflow-x:hidden; }
+            * { box-sizing:border-box; }
+            /* common wrappers used by templates */
+            body, #doc, .doc, .page, .container, body > div:first-child {
+              max-width: 100% !important;
+              margin: 0 auto !important;
+              padding: 0 16px !important;
+              transform: none !important;
+            }
+            img, svg, canvas { max-width:100%; height:auto; }
           `;
-          d.head.appendChild(baseStyle);
-
-          // strip any watermark the template may add
-          (function stripAllWatermarks(doc){
-            try {
-              doc.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [class*='watermark'], [id*='watermark']")
-                .forEach(el => {
-                  el.removeAttribute?.("data-watermark");
-                  el.removeAttribute?.("data-watermark-tile");
-                  el.classList?.remove("wm-tiled");
-                  if (el.style) {
-                    el.style.backgroundImage = "";
-                    el.style.backgroundSize = "";
-                    el.style.backgroundBlendMode = "";
+          (d.head || d.documentElement).appendChild(fix);
+      
+          // 2) Strip any pre-existing/tiled watermarks (prefer the shared helper)
+          if (typeof window.__stripWatermarks__ === "function") {
+            try { window.__stripWatermarks__(d); } catch {}
+          } else {
+            (function stripAllWatermarks(doc){
+              try {
+                doc.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [class*='watermark'], [id*='watermark']")
+                  .forEach(el => {
+                    el.removeAttribute?.("data-watermark");
+                    el.removeAttribute?.("data-watermark-tile");
+                    el.classList?.remove("wm-tiled","wm-sparse");
+                    if (el.style) {
+                      el.style.backgroundImage = "";
+                      el.style.backgroundSize = "";
+                      el.style.backgroundBlendMode = "";
+                    }
+                  });
+      
+                Array.from(doc.styleSheets).forEach(sheet => {
+                  let rules;
+                  try { rules = sheet.cssRules || sheet.rules; } catch { rules = null; }
+                  if (!rules) return;
+                  for (let i = rules.length - 1; i >= 0; i--) {
+                    const css = String(rules[i].cssText || "").toLowerCase();
+                    if (/watermark/.test(css) ||
+                        (/::before|::after/.test(css) && /content\s*:/.test(css) && (/@/.test(css) || /attr\(/.test(css)))) {
+                      try { sheet.deleteRule(i); } catch {}
+                    }
                   }
                 });
-
-              Array.from(doc.styleSheets).forEach(sheet => {
-                let rules;
-                try { rules = sheet.cssRules || sheet.rules; } catch { rules = null; }
-                if (!rules) return;
-                for (let i = rules.length - 1; i >= 0; i--) {
-                  const css = String(rules[i].cssText || "").toLowerCase();
-                  if (/watermark/.test(css) ||
-                      (/::before|::after/.test(css) && /content\s*:/.test(css) && (/@/.test(css) || /attr\(/.test(css)))) {
-                    try { sheet.deleteRule(i); } catch {}
-                  }
+      
+                if (!doc.getElementById("wm-nuke-style")) {
+                  const st = doc.createElement("style");
+                  st.id = "wm-nuke-style";
+                  st.textContent = `
+                    [data-watermark], [data-watermark-tile],
+                    [class*="watermark"], [id*="watermark"],
+                    body::before, body::after,
+                    *::before, *::after {
+                      background-image: none !important;
+                      content: "" !important;
+                    }
+                  `;
+                  doc.head.appendChild(st);
                 }
-              });
-
-              if (!doc.getElementById("wm-nuke-style")) {
-                const st = doc.createElement("style");
-                st.id = "wm-nuke-style";
-                st.textContent = `
-                  [data-watermark], [data-watermark-tile],
-                  [class*="watermark"], [id*="watermark"],
-                  body::before, body::after,
-                  *::before, *::after {
-                    background-image: none !important;
-                    content: "" !important;
-                  }
-                `;
-                doc.head.appendChild(st);
-              }
-            } catch {}
-          })(d);
-
-          // apply JOBCUS.COM sparse watermark (big, across the page) for free users
-          if (!isSuperadmin) {
+              } catch {}
+            })(d);
+          }
+      
+          // 3) Apply the SAME big sparse watermark used by cover-letter
+          if (!isPaid && !isSuperadmin) {
             try {
-              if (window.__applyWatermark__) {
+              // make sure overlay isn't affected by ancestor transforms
+              if (host instanceof HTMLElement && getComputedStyle(host).position === "static") {
+                host.style.position = "relative";
+              }
+      
+              if (typeof window.__applyWatermark__ === "function") {
                 window.__applyWatermark__(host, "JOBCUS.COM", {
                   mode: "sparse",
                   fontSize: 320,
@@ -428,15 +445,23 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
                   color: "rgba(16,72,121,.16)",
                   threshold: 1000
                 });
-              } else if (window.applyTiledWatermark) {
-                // fallback to tiled if sparse not available
+              } else if (typeof window.applyTiledWatermark === "function") {
+                // fallback (won’t look as good, but keeps behavior)
                 window.applyTiledWatermark(host, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
               }
             } catch (e) {
               console.warn("Resume watermark failed:", e);
             }
           }
-
+      
+          // 4) nocopy/keyboard guards (unchanged)
+          const baseStyle = d.createElement("style");
+          baseStyle.textContent = `
+            .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
+            @media print { body { background-image: none !important; } }
+          `;
+          d.head.appendChild(baseStyle);
+      
           host.classList.add("nocopy");
           const kill = (e) => { e.preventDefault(); e.stopPropagation(); };
           ["copy","cut","dragstart","contextmenu","selectstart"].forEach(ev =>
