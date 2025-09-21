@@ -452,9 +452,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
 
       frame.addEventListener("load", onLoadOnce, { once: true });
       frame.srcdoc = html;
-    }
-  }
-  
+
   } else if (ct.includes("application/json")) {
     const data = await res.json().catch(() => ({}));
     if (data?.message) window.showUpgradeBanner?.(data.message);
@@ -463,7 +461,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     const txt = await res.text().catch(() => "");
     throw new Error(`Preview failed. ${txt ? "Server said: " + txt : ""}`);
   }
-// END renderWithTemplateFromContext
+}// END renderWithTemplateFromContext
 
 // ───────────────────────────────────────────────
 // Wizard
