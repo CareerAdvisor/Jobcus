@@ -6,18 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <link rel="canonical" href="{{ request.url if request else '' }}">
-  
+
   <!-- ====== Basic SEO ====== -->
   <title>{% block title %}Jobcus – AI Resume Builder & Analyzer{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}Create ATS-ready resumes, analyze your resume, close skill gaps, prep for interviews, and land the right job with Jobcus.{% endblock %}">
   <meta name="keywords" content="resume builder, resume analyzer, cover letter, interview coach, skill gap, ATS, job search, Jobcus">
   <meta name="author" content="Jobcus">
   <meta name="robots" content="index,follow,max-image-preview:large">
-  
-  <!-- Optional regional targeting -->
-  <!-- <meta name="geo.region" content="GB"> -->
-  <!-- <meta name="geo.placename" content="London"> -->
-  
+
   <!-- ====== Social / Open Graph ====== -->
   <meta property="og:site_name" content="Jobcus">
   <meta property="og:type" content="website">
@@ -28,63 +24,39 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Jobcus – AI Resume Builder & Analyzer">
-  
+
   <!-- ====== Twitter Cards ====== -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@jobcus">
   <meta name="twitter:title" content="{% block tw_title %}Jobcus – AI Resume Builder & Analyzer{% endblock %}">
   <meta name="twitter:description" content="{% block tw_description %}AI tools to build and analyze resumes, create cover letters, and prep for interviews.{% endblock %}">
   <meta name="twitter:image" content="{{ url_for('static', filename='images/og/jobcus-og.jpg', _external=True) if url_for else '' }}">
-  
+
   <!-- ====== App Icons / Favicons ====== -->
   <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" />
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/favicon-32x32.png') }}">
   <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icons/favicon-16x16.png') }}">
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
   <link rel="mask-icon" href="{{ url_for('static', filename='icons/safari-pinned-tab.svg') }}" color="#104879">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
   <meta name="theme-color" content="#104879">
   <meta name="color-scheme" content="light dark">
   <meta name="msapplication-TileColor" content="#104879">
-  
 
-  <!-- Core CSS + AOS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  
-  <!-- unpkg -->
-  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
-  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
-  
-  <!-- cdnjs -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
-  
-  <!-- jsDelivr -->
-  <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+  <!-- ====== Fonts ====== -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
 
+  <!-- ====== Core CSS ====== -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/aos/aos.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-
-  {# Page-scoped CSS (e.g., account.css) #}
   {% block extra_css %}{% endblock %}
-  
-  <!-- ====== PWA / iOS Web App (optional) ====== -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Jobcus">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="format-detection" content="telephone=no">
-  
-  <!-- ====== Performance Hints (adjust domains as needed) ====== -->
+
+  <!-- ====== Performance Hints ====== -->
   <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
   <link rel="dns-prefetch" href="//www.googletagmanager.com">
-  <!-- Example font host:
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="dns-prefetch" href="//fonts.gstatic.com">
-  -->
-  
-  <!-- ====== Security (headers preferred; meta is fallback) ====== -->
-  <!-- Best set via HTTP response headers. Meta is a lightweight fallback. -->
+
+  <!-- ====== Security (prefer HTTP headers; meta as fallback) ====== -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
     img-src 'self' data: https:;
@@ -95,12 +67,12 @@
     base-uri 'self';
   ">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  
+
   <!-- CSRF token (Flask/WTF example) -->
   {% if csrf_token %}
     <meta name="csrf-token" content="{{ csrf_token() }}">
   {% endif %}
-  
+
   <!-- ====== Structured Data (JSON-LD) ====== -->
   <script type="application/ld+json">
   {
@@ -115,7 +87,6 @@
     }
   }
   </script>
-  
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -123,15 +94,11 @@
     "name": "Jobcus",
     "url": "https://www.jobcus.com",
     "logo": "https://www.jobcus.com{{ url_for('static', filename='images/logo.png') if url_for else '/static/images/logo.png' }}",
-    "sameAs": [
-      "https://twitter.com/jobcus"
-      /* add LinkedIn, GitHub, etc. */
-    ]
+    "sameAs": ["https://twitter.com/jobcus"]
   }
   </script>
 </head>
 
-{# put these near the top of <body> or just before it #}
 {% set _plan = (current_user.plan | default('free', true)) %}
 {% set _role = (current_user.role | default('', true)) %}
 {% set _is_superadmin = current_user.is_authenticated and (_role | lower == 'superadmin') %}
@@ -173,7 +140,7 @@
             <a href="/employers">Partner with Us</a>
           </nav>
 
-          {# --- Avatar + dropdown (header) --- #}
+          {# Avatar + dropdown #}
           {% set _first = None %}
           {% set _lasti = '' %}
           {% set _name  = None %}
@@ -187,7 +154,7 @@
             {% set _name  = _first ~ ((' ' ~ current_user.last_name) if current_user.last_name else '') %}
           {% endif %}
           {% set _initials = ((_first[:1] ~ _lasti)|upper) if _first else '' %}
-          
+
           <div class="user-menu">
             <button id="userMenuBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false">
               {% if current_user.is_authenticated %}
@@ -196,13 +163,10 @@
                 <img class="avatar-icon" src="{{ url_for('static', filename='icons/user.svg') }}" alt="Profile">
               {% endif %}
             </button>
-          
             <div id="userDropdown" class="user-dropdown">
               {% if current_user.is_authenticated %}
-                          
                 <div class="ud-email">{{ _email }}</div>
                 <hr class="ud-sep">
-          
                 <a class="ud-item" href="{{ url_for('pricing') }}">⬆️ Upgrade plan</a>
                 <a class="ud-item" href="{{ url_for('dashboard') }}">👤 {{ _name }}</a>
                 <a class="ud-item" href="{{ url_for('logout') }}">📦 Log out</a>
@@ -271,11 +235,16 @@
       window.USER_AUTHENTICATED = {{ (current_user.is_authenticated)|tojson }};
       window.AUTH_ID = {{ (current_user.id if current_user.is_authenticated else None)|tojson }};
     </script>
-  
+
     <!-- Base JS -->
     <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
 
-    {# Page-scoped scripts #}
+    <!-- Self-hosted AOS (CSP-safe) -->
+    <script src="{{ url_for('static', filename='vendor/aos/aos.js') }}"></script>
+    <script>
+      if (window.AOS && typeof AOS.init === 'function') AOS.init();
+    </script>
+
     {% block scripts %}{% endblock %}
   {% endif %}
 </body>
