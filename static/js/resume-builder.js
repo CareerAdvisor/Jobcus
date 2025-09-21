@@ -418,10 +418,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           }
           
           // 3) Apply BIG sparse watermark to each page container (fallback to body)          
-          const plan = (document.body.dataset.plan || "guest").toLowerCase();
-          const isPaid = (plan === "standard" || plan === "premium");
-          const isSuperadmin = (document.body.dataset.superadmin === "1");
-          
           if (!isPaid && !isSuperadmin) {
             try {
               // Prefer page-like containers; fall back to body if none
