@@ -24,6 +24,16 @@ const escapeHtml = (s="") =>
 // ✅ Single source of truth for Pricing URL
 const PRICING_URL = (window.PRICING_URL || "/pricing");
 
+// Softer (but still big) sparse watermark preset
+const WM_OPTS_SOFT = {
+  mode: "sparse",
+  fontSize: 300,                 // big text, just a touch smaller than 320
+  count: 2,                      // fewer stamps per page
+  rotate: -28,
+  color: "rgba(16,72,121,.10)",  // lower opacity (was .16)
+  threshold: 1400
+};
+
 // Centralized server-response handling
 async function handleCommonErrors(res) {
   if (res.ok) return null;
@@ -408,27 +418,36 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           }
           
           // 3) Apply BIG sparse watermark to each page container (fallback to body)          
-          if (!isPaid && !isSuperadmin) {
-            const targets = d.querySelectorAll(".page, #doc, .doc, .resume, body > div:first-child");
-            const nodes = targets.length ? Array.from(targets) : [host];
+          const plan = (document.body.dataset.plan || "guest").toLowerCase();
+          const isPaid = (plan === "standard" || plan === "premium");
+          const isSuperadmin = (document.body.dataset.superadmin === "1");
           
-            nodes.forEach(node => {
-              try {
-                if (window.__applyWatermark__) {
-                  window.__applyWatermark__(node, "JOBCUS.COM", {
-                    mode: "sparse",
-                    fontSize: 320,        // keep it big like cover-letter
-                    count: 3,
-                    rotate: -28,
-                    color: "rgba(16,72,121,.16)",
-                    threshold: 1000
-                  });
-                } else if (window.applyTiledWatermark) {
-                  // fallback only if sparse helper is missing
-                  window.applyTiledWatermark(node, "JOBCUS.COM", { size: 460, alpha: 0.16, angles: [-32, 32] });
+          if (!isPaid && !isSuperadmin) {
+            try {
+              // Prefer page-like containers; fall back to body if none
+              const targets = d.querySelectorAll(".page, #doc, .doc, .resume, body > div:first-child");
+              const nodes = targets.length ? Array.from(targets) : [host];
+          
+              nodes.forEach((node) => {
+                try {
+                  if (window.__applyWatermark__) {
+                    // ✅ Softer, still large
+                    window.__applyWatermark__(node, "JOBCUS.COM", WM_OPTS_SOFT);
+                  } else if (window.applyTiledWatermark) {
+                    // fallback to tiled — also toned down
+                    window.applyTiledWatermark(node, "JOBCUS.COM", {
+                      size: 460,
+                      alpha: 0.08,        // was 0.16
+                      angles: [-32, 32]
+                    });
+                  }
+                } catch (e) {
+                  console.warn("Resume watermark failed:", e);
                 }
-              } catch (e) { console.warn("Resume watermark failed:", e); }
-            });
+              });
+            } catch (e) {
+              console.warn("Watermark application error:", e);
+            }
           }
       
           // 4) nocopy/keyboard guards (unchanged)
