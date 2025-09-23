@@ -123,6 +123,23 @@ window.apiFetch = async function apiFetch(url, options = {}) {
 };
 
 /* ─────────────────────────────────────────────────────────────
+ * 0.35) Plan & role bootstrap for the UI (sets data attributes)
+ *       Lets page scripts/CSS key off plan/role without reloading
+ * ───────────────────────────────────────────────────────────── */
+(function () {
+  // If the server already rendered data attributes in <body>, this is harmless.
+  // It also refreshes values on client-side nav or cached pages.
+  fetch("/api/me", { credentials: "same-origin" })
+    .then((r) => r.ok ? r.json() : null)
+    .then((u) => {
+      if (!u) return;
+      document.body.dataset.plan = (u.plan || "free");
+      document.body.dataset.superadmin = (u.role === "superadmin" ? "1" : "0");
+    })
+    .catch(() => {});
+})();
+
+/* ─────────────────────────────────────────────────────────────
  * 1) Centered Upgrade Modal (replaces old sticky banner)
  *    Exposes: window.showUpgradeBanner(html), window.hideUpgradeBanner()
  * ───────────────────────────────────────────────────────────── */
@@ -175,8 +192,29 @@ window.apiFetch = async function apiFetch(url, options = {}) {
   };
 })();
 
-// -- show banner, then auto-redirect to pricing
+/* ─────────────────────────────────────────────────────────────
+ * 1.1) Upgrade redirect helpers (append ?next= to URLs)
+ * ───────────────────────────────────────────────────────────── */
 (function () {
+  function withNext(url) {
+    try {
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      // if URL already has a next=, leave it
+      if (/[?&]next=/.test(url)) return url;
+      const sep = url.includes("?") ? "&" : "?";
+      return url + sep + "next=" + next;
+    } catch {
+      return url;
+    }
+  }
+
+  // expose if you want to deep-link to a specific plan from anywhere
+  window.goToUpgrade = function goToUpgrade(plan /* "standard" | "premium" | "weekly" */) {
+    const p = plan || "premium";
+    window.location.href = withNext(`/subscribe?plan=${encodeURIComponent(p)}`);
+  };
+
+  // -- show banner, then auto-redirect to pricing/subscribe with ?next=
   const DEFAULT_PRICING_URL = window.PRICING_URL || "/pricing";
   let timer = null;
 
@@ -186,10 +224,10 @@ window.apiFetch = async function apiFetch(url, options = {}) {
     delayMs = 1200 // adjust if you want longer/shorter view time
   ) {
     window.showUpgradeBanner?.(
-      html || `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`
+      html || `You’ve reached your plan limit. <a href="${withNext(url)}">Upgrade now →</a>`
     );
     if (timer) clearTimeout(timer);
-    timer = setTimeout(() => { window.location.href = url; }, delayMs);
+    timer = setTimeout(() => { window.location.href = withNext(url); }, delayMs);
   };
 })();
 
@@ -530,103 +568,102 @@ function applyConsent(consent) {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closePanel();
   });
-  })();
-  
-  /* ── Watermark helper (global; add once) ───────────────────── */
-  (function () {
-    if (window.__wm_inited__) return;
-    window.__wm_inited__ = true;
-  
-    const EMAIL_RE = /@.+\./;
-  
-    function sanitizeWatermarkText(t) {
-      const raw = String(t || "").trim();
-      // Never allow emails or empty strings to become the watermark
-      if (!raw || EMAIL_RE.test(raw)) return "JOBCUS.COM";
-      return raw;
-    }
-  
-    // Remove any prior watermarks/inline backgrounds in a document or subtree
-    function stripExistingWatermarks(root = document) {
-      try {
-        const doc = root.ownerDocument || root; // works for iframes, too
-        // 1) Brutal CSS override to kill pseudo-element watermarks & tiled bg
-        if (!doc.getElementById("wm-nuke-style")) {
-          const st = doc.createElement("style");
-          st.id = "wm-nuke-style";
-          st.textContent = `
-            * { background-image: none !important; }
-            *::before, *::after { background-image: none !important; content: '' !important; }
-          `;
-          (doc.head || doc.documentElement).appendChild(st);
-        }
-        // 2) Remove attributes/classes our or server code might have set
-        (root.querySelectorAll
-          ? root.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']")
-          : []
-        ).forEach(el => {
-          el.removeAttribute?.("data-watermark");
-          el.removeAttribute?.("data-watermark-tile");
-          el.classList?.remove("wm-tiled");
-          el.style && (el.style.backgroundImage = el.style.backgroundSize = el.style.backgroundBlendMode = "");
-        });
-      } catch {}
-    }
-  
-    // Make a single tile
-    function makeTile(text, { size=420, alpha=0.18, angle=-30, font='bold 36px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif'}={}) {
-      const c = document.createElement('canvas');
-      c.width = size; c.height = size;
-      const ctx = c.getContext('2d');
-      ctx.clearRect(0,0,size,size);
-      ctx.globalAlpha = alpha;
-      ctx.translate(size/2, size/2);
-      ctx.rotate((angle * Math.PI)/180);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.font = font;
-      ctx.fillStyle = '#000';
-      const L = String(text).toUpperCase();
-      const gap = 44;
-      ctx.fillText(L, 0, -gap/2);
-      ctx.fillText(L, 0,  gap/2);
-      return c.toDataURL('image/png');
-    }
-  
-    // Public: apply tiled watermark
-    function applyTiledWatermark(el, text, opts={}) {
-      text = sanitizeWatermarkText(text);
-      if (!el || !text) return;
-  
-      // clean any previous backgrounds first
-      stripExistingWatermarks(el);
-  
-      const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
-      const urls   = angles.map(a => makeTile(text, { ...opts, angle:a }));
-      const sizePx = (opts.size || 420) + 'px ' + (opts.size || 420) + 'px';
-  
-      el.classList.add('wm-tiled');
-      el.style.backgroundImage = urls.map(u => `url(${u})`).join(', ');
-      el.style.backgroundSize  = urls.map(() => sizePx).join(', ');
-      el.style.backgroundBlendMode = 'multiply, multiply';
-      el.style.backgroundRepeat = 'repeat';
-    }
-  
-    // Auto-apply for declarative elements but never allow emails
-    function scan(root) {
-      if (!root || typeof root.querySelectorAll !== "function") root = document;
-      root.querySelectorAll('[data-watermark][data-watermark-tile="1"]').forEach(el => {
-        if (el.__wm_applied__) return;
-        el.__wm_applied__ = true;
-        applyTiledWatermark(el, sanitizeWatermarkText(el.getAttribute('data-watermark') || 'JOBCUS.COM'));
-      });
-    }
-  
-    // Helper you can call anywhere (answers, previews, etc.)
-    window.stripExistingWatermarks = stripExistingWatermarks;
-    window.applyTiledWatermark     = applyTiledWatermark;
-  
-    document.addEventListener('DOMContentLoaded', () => scan(document));
-    new MutationObserver(() => scan()).observe(document.documentElement, { childList: true, subtree: true });
-  })();
+})();
 
+/* ── Watermark helper (global; add once) ───────────────────── */
+(function () {
+  if (window.__wm_inited__) return;
+  window.__wm_inited__ = true;
+
+  const EMAIL_RE = /@.+\./;
+
+  function sanitizeWatermarkText(t) {
+    const raw = String(t || "").trim();
+    // Never allow emails or empty strings to become the watermark
+    if (!raw || EMAIL_RE.test(raw)) return "JOBCUS.COM";
+    return raw;
+  }
+
+  // Remove any prior watermarks/inline backgrounds in a document or subtree
+  function stripExistingWatermarks(root = document) {
+    try {
+      const doc = root.ownerDocument || root; // works for iframes, too
+      // 1) Brutal CSS override to kill pseudo-element watermarks & tiled bg
+      if (!doc.getElementById("wm-nuke-style")) {
+        const st = doc.createElement("style");
+        st.id = "wm-nuke-style";
+        st.textContent = `
+          * { background-image: none !important; }
+          *::before, *::after { background-image: none !important; content: '' !important; }
+        `;
+        (doc.head || doc.documentElement).appendChild(st);
+      }
+      // 2) Remove attributes/classes our or server code might have set
+      (root.querySelectorAll
+        ? root.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']")
+        : []
+      ).forEach(el => {
+        el.removeAttribute?.("data-watermark");
+        el.removeAttribute?.("data-watermark-tile");
+        el.classList?.remove("wm-tiled");
+        el.style && (el.style.backgroundImage = el.style.backgroundSize = el.style.backgroundBlendMode = "");
+      });
+    } catch {}
+  }
+
+  // Make a single tile
+  function makeTile(text, { size=420, alpha=0.18, angle=-30, font='bold 36px Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif'}={}) {
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0,0,size,size);
+    ctx.globalAlpha = alpha;
+    ctx.translate(size/2, size/2);
+    ctx.rotate((angle * Math.PI)/180);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = font;
+    ctx.fillStyle = '#000';
+    const L = String(text).toUpperCase();
+    const gap = 44;
+    ctx.fillText(L, 0, -gap/2);
+    ctx.fillText(L, 0,  gap/2);
+    return c.toDataURL('image/png');
+  }
+
+  // Public: apply tiled watermark
+  function applyTiledWatermark(el, text, opts={}) {
+    text = sanitizeWatermarkText(text);
+    if (!el || !text) return;
+
+    // clean any previous backgrounds first
+    stripExistingWatermarks(el);
+
+    const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
+    const urls   = angles.map(a => makeTile(text, { ...opts, angle:a }));
+    const sizePx = (opts.size || 420) + 'px ' + (opts.size || 420) + 'px';
+
+    el.classList.add('wm-tiled');
+    el.style.backgroundImage = urls.map(u => `url(${u})`).join(', ');
+    el.style.backgroundSize  = urls.map(() => sizePx).join(', ');
+    el.style.backgroundBlendMode = 'multiply, multiply';
+    el.style.backgroundRepeat = 'repeat';
+  }
+
+  // Auto-apply for declarative elements but never allow emails
+  function scan(root) {
+    if (!root || typeof root.querySelectorAll !== "function") root = document;
+    root.querySelectorAll('[data-watermark][data-watermark-tile="1"]').forEach(el => {
+      if (el.__wm_applied__) return;
+      el.__wm_applied__ = true;
+      applyTiledWatermark(el, sanitizeWatermarkText(el.getAttribute('data-watermark') || 'JOBCUS.COM'));
+    });
+  }
+
+  // Helper you can call anywhere (answers, previews, etc.)
+  window.stripExistingWatermarks = stripExistingWatermarks;
+  window.applyTiledWatermark     = applyTiledWatermark;
+
+  document.addEventListener('DOMContentLoaded', () => scan(document));
+  new MutationObserver(() => scan()).observe(document.documentElement, { childList: true, subtree: true });
+})();
