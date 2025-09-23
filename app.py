@@ -1158,6 +1158,15 @@ def stripe_webhook():
 
     return ("OK", 200)
 
+@app.get("/api/me")
+@login_required
+def api_me():
+    return jsonify({
+        "email": current_user.email,
+        "plan": getattr(current_user, "plan", "free"),
+        "role": getattr(current_user, "role", "user"),
+    })
+
 # ----------------------------
 # Email confirmation
 # ----------------------------
