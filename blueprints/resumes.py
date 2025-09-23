@@ -13,7 +13,7 @@ from weasyprint import HTML, CSS
 from docxtpl import DocxTemplate
 from PyPDF2 import PdfReader
 from jinja2 import TemplateNotFound
-from app import require_plan
+from authz import require_plan
 
 # OpenAI SDKs have changed slightly across versions; this keeps RateLimitError optional.
 try:
