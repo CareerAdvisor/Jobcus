@@ -183,18 +183,6 @@ PLAN_TO_PRICE = {
     "standard": os.getenv("STRIPE_PRICE_STANDARD"),
     "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
 }
-
-def require_plan(min_plan):
-    def wrapper(fn):
-        @wraps(fn)
-        def inner(*args, **kwargs):
-            user_plan = (getattr(current_user, "plan", "free") or "free").lower()
-            if PLAN_RANK.get(user_plan, 0) >= PLAN_RANK[min_plan]:
-                return fn(*args, **kwargs)
-            # 402 is important because your frontend looks for it to show the upgrade flow
-            return jsonify({"error": "upgrade_required", "message": "Upgrade to continue."}), 402
-        return inner
-    return wrapper
     
 # ---- Model selection helpers ----
 def _dedupe(seq):
