@@ -37,6 +37,7 @@ from limits import (
 from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
 from abuse_guard import allow_free_use
+from urllib.parse import quote, urlparse
 
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
