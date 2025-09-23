@@ -22,7 +22,7 @@ except Exception:  # pragma: no cover
     class RateLimitError(Exception):  # fallback so except still works
         pass
 
-resumes_bp = Blueprint("resumes_bp", __name__, url_prefix="/")
+resumes_bp = Blueprint("resumes", __name__)
 
 # -------------------------------------------------------------------
 # Print/PDF overrides (reduce WeasyPrint warnings, enforce margins)
@@ -43,7 +43,7 @@ PDF_CSS_OVERRIDES = """
 
 # ---------- Helper: fallback context if OpenAI is unavailable ----------
 def naive_context(data: dict) -> dict:
-    """Fallback: coerce raw form fields into your template context."""
+    import re as _re
     first = (data.get("firstName") or "").strip()
     last  = (data.get("lastName") or "").strip()
     derived = " ".join([p for p in (first, last) if p]).strip()
@@ -69,7 +69,7 @@ def naive_context(data: dict) -> dict:
 
     experience = []
     if exp_txt:
-        bullets = [re.sub(r'^[\-\•]\s*', '', ln).strip()
+        bullets = [_re.sub(r'^[\-\•]\s*', '', ln).strip()
                    for ln in exp_txt.splitlines() if ln.strip()]
         experience = [{
             "role": title or "Experience",
@@ -89,10 +89,7 @@ def naive_context(data: dict) -> dict:
 
 # ---------- Helper: normalize context coming from the UI ----------
 def _normalize_ctx(data: dict) -> dict:
-    """
-    Make sure template fields are present and in the correct types,
-    no matter how the client sent them.
-    """
+    import re as _re
     first = (data.get("firstName") or "").strip()
     last  = (data.get("lastName") or "").strip()
     derived = " ".join([p for p in (first, last) if p]).strip()
@@ -103,19 +100,19 @@ def _normalize_ctx(data: dict) -> dict:
     ctx["fullName"] = name
     ctx["full_name"] = name
 
-    # ---- Skills: allow CSV/newlines or list ----
+    # Skills: allow CSV/newlines or list
     skills = ctx.get("skills") or []
     if isinstance(skills, str):
-        skills = [s.strip() for s in re.split(r"[,\n]", skills) if s.strip()]
+        skills = [s.strip() for s in _re.split(r"[,\n]", skills) if s.strip()]
     ctx["skills"] = skills
 
-    # ---- Certifications: allow newlines or list ----
+    # Certifications: allow newlines or list
     certs = ctx.get("certifications") or []
     if isinstance(certs, str):
         certs = [c.strip() for c in certs.splitlines() if c.strip()]
     ctx["certifications"] = certs
 
-    # Ensure arrays exist (templates expect iterables)
+    # Ensure arrays exist
     ctx["experience"] = ctx.get("experience") or []
     ctx["education"]  = ctx.get("education")  or []
     ctx["links"]      = ctx.get("links")      or []
@@ -124,17 +121,10 @@ def _normalize_ctx(data: dict) -> dict:
 
 # ---------- Smart picker: normalize first, fall back to naive ----------
 def build_context(data: dict) -> dict:
-    """
-    Prefer the richer _normalize_ctx you already have; if it still
-    leaves experience/education empty, fall back to naive_context.
-    """
     data = data or {}
     ctx = _normalize_ctx(data)
-
-    # If both are empty, try to salvage from free-text with naive_context
     if not ctx.get("experience") and not ctx.get("education"):
         return naive_context(data)
-
     return ctx
 
 
@@ -721,10 +711,10 @@ def build_resume():
 # ---------- 2) Template-based resume (DOCX) ----------
 @resumes_bp.post("/build-resume-docx")
 @login_required
-@require_plan("standard")   # gate at Standard/Premium
+@require_plan("standard")   # gate this route to Standard/Premium
 def build_resume_docx():
     data = request.get_json(force=True) or {}
-    ctx  = build_context(data)  # ← use the smart picker
+    ctx  = build_context(data)
 
     tpl_path = os.path.join(current_app.root_path, "templates", "resumes", "clean.docx")
     tpl = DocxTemplate(tpl_path)
