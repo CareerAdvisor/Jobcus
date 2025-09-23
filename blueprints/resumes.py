@@ -14,6 +14,10 @@ from docxtpl import DocxTemplate
 from PyPDF2 import PdfReader
 from jinja2 import TemplateNotFound
 
+from app import require_plan
+# (or, if you moved it to its own module:)
+# from authz import require_plan
+
 # OpenAI SDKs changed a bit across versions; this keeps RateLimitError optional.
 try:
     from openai import RateLimitError  # v0.x and v1.x expose this
@@ -21,7 +25,7 @@ except Exception:  # pragma: no cover
     class RateLimitError(Exception):  # fallback so except still works
         pass
 
-resumes_bp = Blueprint("resumes", __name__)
+resumes_bp = Blueprint("resumes_bp", __name__, url_prefix="/")
 
 # -------------------------------------------------------------------
 # Print/PDF overrides (reduce WeasyPrint warnings, enforce margins)
@@ -120,6 +124,22 @@ def _normalize_ctx(data: dict) -> dict:
     ctx["links"]      = ctx.get("links")      or []
 
     return ctx
+
+# ---------- Smart picker: normalize first, fall back to naive ----------
+def build_context(data: dict) -> dict:
+    """
+    Prefer the richer _normalize_ctx you already have; if it still
+    leaves experience/education empty, fall back to naive_context.
+    """
+    data = data or {}
+    ctx = _normalize_ctx(data)
+
+    # If both are empty, try to salvage from free-text with naive_context
+    if not ctx.get("experience") and not ctx.get("education"):
+        return naive_context(data)
+
+    return ctx
+
 
 # === ATS model: weights and deterministic checks ===
 import math, datetime, collections, statistics, itertools
@@ -704,16 +724,10 @@ def build_resume():
 # ---------- 2) Template-based resume (DOCX) ----------
 @resumes_bp.post("/build-resume-docx")
 @login_required
+@require_plan("standard")   # gate at Standard/Premium
 def build_resume_docx():
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-    if not feature_enabled(plan, "downloads"):
-        return jsonify(
-            error="upgrade_required",
-            message="File downloads are available on Standard and Premium."
-        ), 403
-
     data = request.get_json(force=True) or {}
-    ctx  = _normalize_ctx(data)
+    ctx  = build_context(data)  # ← use the smart picker
 
     tpl_path = os.path.join(current_app.root_path, "templates", "resumes", "clean.docx")
     tpl = DocxTemplate(tpl_path)
@@ -733,7 +747,7 @@ def build_resume_docx():
     tpl.save(buf)
     buf.seek(0)
     return send_file(buf, as_attachment=True, download_name="resume.docx")
-
+    
 # ---------- 4) AI resume optimisation ----------
 @resumes_bp.route("/api/optimize-resume", methods=["POST"])
 @login_required
