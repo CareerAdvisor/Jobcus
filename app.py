@@ -241,6 +241,17 @@ def choose_model(requested: str | None) -> str:
     req = (requested or "").strip()
     return req if req in allowed else default
 
+# --- helpers: safe next ---
+def _is_safe_next(url: str) -> bool:
+    try:
+        if not url:
+            return False
+        u = urlparse(url)
+        # allow only same-site relative paths like "/resume-builder?x=1"
+        return (not u.scheme) and (not u.netloc) and url.startswith("/")
+    except Exception:
+        return False
+
 # --- Local fallbacks to remove services/* dependency -------------------------
 def get_or_bootstrap_user(supabase_admin, auth_id: str, email: str | None):
     """
@@ -890,6 +901,10 @@ def subscribe():
     if plan_code not in plans:
         return redirect(url_for("pricing"))
 
+    # pick up ?next=... from query/form and validate it
+    raw_next = request.args.get("next") or request.form.get("next") or ""
+    next_url = raw_next if _is_safe_next(raw_next) else None
+
     plan_data = plans[plan_code]
 
     # --- FREE: do it locally (no Stripe) ---
@@ -904,6 +919,10 @@ def subscribe():
             current_app.logger.exception("Could not activate free plan")
             flash("Could not activate free plan. Please try again.", "error")
             return redirect(url_for("pricing"))
+
+        # if we have a safe next, jump back to what the user was doing
+        if next_url:
+            return redirect(next_url)
 
         return render_template(
             "subscribe-success.html",
@@ -931,22 +950,30 @@ def subscribe():
             flash("We couldn't start checkout. Please contact support.", "error")
             return redirect(url_for("pricing"))
 
-        success_url = url_for("stripe_success", _external=True) + "?session_id={CHECKOUT_SESSION_ID}"
+        # success url always lands on /subscribe/success, we pass session_id (Stripe fills)
+        # and we also pass-through our 'next' if present so success handler can redirect back.
+        base_success = url_for("stripe_success", _external=True)
+        qs = {"session_id": "{CHECKOUT_SESSION_ID}"}
+        if next_url:
+            qs["next"] = next_url
+        success_url = f"{base_success}?{urlencode(qs)}"
+
         cancel_url  = url_for("pricing", _external=True) + "?cancelled=1"
 
         session = stripe.checkout.Session.create(
             mode="subscription",
-            customer=customer_id,  # ← attach customer so future webhooks & portal map to this user
+            customer=customer_id,                  # tie session to this user
             line_items=[{"price": price_id, "quantity": 1}],
             success_url=success_url,
             cancel_url=cancel_url,
             allow_promotion_codes=True,
-            client_reference_id=str(current_user.id),                 # ← backup join key
-            metadata={"user_id": str(current_user.id), "plan_code": plan_code},  # ← primary join keys
+            client_reference_id=str(current_user.id),    # backup join key
+            metadata={"user_id": str(current_user.id), "plan_code": plan_code},
         )
         return redirect(session.url, code=303)
 
     # GET: confirm page
+    # make sure your subscribe.html has a hidden <input name="next" value="{{ request.args.get('next', '') }}">
     return render_template("subscribe.html", plan_data=plan_data)
 
 
@@ -968,6 +995,11 @@ def stripe_success():
     subscription_id = cs.subscription.id if getattr(cs, "subscription", None) else None
 
     _activate_user_plan_by_metadata(supabase, metadata, customer_id, subscription_id)
+
+    # redirect back if we got a safe next
+    raw_next = request.args.get("next")
+    if _is_safe_next(raw_next):
+        return redirect(raw_next)
 
     plan_code = metadata.get("plan_code", "")
     plan_name = _plans().get(plan_code, {}).get("title", "Your plan")
