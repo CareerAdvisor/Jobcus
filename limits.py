@@ -30,20 +30,20 @@ def _normalize_feature(feature: str) -> str:
 # limits.py  (PLAN_QUOTAS)  ← add these lines
 PLAN_QUOTAS = {
     "free": {
-        "chat_messages":   Quota("total", 15),
-        "resume_analyzer": Quota("month", 3),
-        "cover_letter":    Quota("month", 2),
+        "chat_messages":   Quota("total", 5),
+        "resume_analyzer": Quota("month", 2),
+        "cover_letter":    Quota("month", 1),
         "skill_gap":       Quota("month", 1),
         "interview_coach": Quota("month", 1),   # NEW
         "resume_builder":  Quota("month", 1),   # NEW (if you want it metered)
     },
     "weekly": {
-        "chat_messages":   Quota("week", 200),
+        "chat_messages":   Quota("week", 50),
         "resume_analyzer": Quota("week", 10),
         "cover_letter":    Quota("week", 5),
         "skill_gap":       Quota("week", None),
         "interview_coach": Quota("week", None),   # NEW (or set a number)
-        "resume_builder":  Quota("week", None),   # NEW (or set a number)
+        "resume_builder":  Quota("week", 5),   # NEW (or set a number)
     },
     "standard": {
         "chat_messages":   Quota("month", 800),
@@ -51,7 +51,7 @@ PLAN_QUOTAS = {
         "cover_letter":    Quota("month", 20),
         "skill_gap":       Quota("month", None),
         "interview_coach": Quota("month", None),  # NEW
-        "resume_builder":  Quota("month", None),  # NEW
+        "resume_builder":  Quota("month", 20),  # NEW
     },
     "premium": {
         "chat_messages":   Quota("year", 12000),
