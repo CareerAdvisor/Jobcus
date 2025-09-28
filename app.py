@@ -961,6 +961,8 @@ def subscribe():
             success_url += f"&next={quote(next_url, safe='/:?&=')}"
     
         cancel_url = url_for("pricing", _external=True) + "?cancelled=1"
+
+        current_app.logger.info("Checkout success_url: %s", success_url)
     
         session = stripe.checkout.Session.create(
             mode="subscription",
@@ -982,9 +984,63 @@ def subscribe():
 @login_required
 def stripe_success():
     session_id = request.args.get("session_id")
-    if not session_id:
+
+    # Fallback: if session_id is missing or it's the literal placeholder (encoded or not)
+    placeholder_vals = {"{CHECKOUT_SESSION_ID}", "%7BCHECKOUT_SESSION_ID%7D"}
+    if (not session_id) or (session_id in placeholder_vals):
+        # Try to recover by looking up the user's latest paid Checkout Session
+        supabase = current_app.config["SUPABASE"]
+        try:
+            r = (
+                supabase.table("users")
+                .select("stripe_customer_id")
+                .eq("auth_id", current_user.id)
+                .single()
+                .execute()
+            )
+            scid = (r.data or {}).get("stripe_customer_id")
+        except Exception:
+            scid = None
+
+        if scid:
+            try:
+                # Get the most recent session for this customer
+                sessions = stripe.checkout.Session.list(customer=scid, limit=1)
+                if sessions.data:
+                    cs = sessions.data[0]
+                    # If paid, proceed as usual
+                    if cs.payment_status == "paid":
+                        metadata = cs.metadata or {}
+                        customer_id = cs.customer
+                        subscription_id = (
+                            cs.subscription.id
+                            if getattr(cs, "subscription", None)
+                            else None
+                        )
+                        _activate_user_plan_by_metadata(
+                            supabase, metadata, customer_id, subscription_id
+                        )
+
+                        # Handle ?next=... redirect if safe
+                        raw_next = request.args.get("next")
+                        if _is_safe_next(raw_next):
+                            return redirect(raw_next)
+
+                        plan_code = metadata.get("plan_code", "")
+                        plan_name = _plans().get(plan_code, {}).get("title", "Your plan")
+                        return render_template(
+                            "subscribe-success.html",
+                            plan_human=plan_name,
+                            plan_json=plan_code,
+                        )
+            except Exception:
+                current_app.logger.exception("Could not recover Checkout session")
+
+        # As a last resort, just show a generic success page; webhooks will have activated the plan.
+        flash("Payment completed. If features aren’t unlocked yet, they’ll be within a minute.", "info")
         return redirect(url_for("pricing"))
 
+    # Normal path with a valid real session id
     cs = stripe.checkout.Session.retrieve(session_id, expand=["subscription"])
     if cs.payment_status != "paid":
         flash("Payment not completed yet. If this persists, contact support.", "error")
@@ -1005,7 +1061,6 @@ def stripe_success():
     plan_code = metadata.get("plan_code", "")
     plan_name = _plans().get(plan_code, {}).get("title", "Your plan")
     return render_template("subscribe-success.html", plan_human=plan_name, plan_json=plan_code)
-
 
 @app.get("/subscribe/free/success")
 @login_required
