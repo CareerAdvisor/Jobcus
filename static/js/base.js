@@ -231,6 +231,14 @@ window.apiFetch = async function apiFetch(url, options = {}) {
   };
 })();
 
+// 1.1b) One-liner you can call from anywhere to push users to pricing carrying ?next=
+(function () {
+  window.forceUpgrade = function forceUpgrade(plan = "premium") {
+    const next = encodeURIComponent(location.pathname + location.search);
+    window.location.href = `/pricing?plan=${encodeURIComponent(plan)}&next=${next}`;
+  };
+})();
+
 /* ─────────────────────────────────────────────────────────────
  * 2) User menu (avatar) & general UI toggles
  *     + Chat sidebar open/close (a11y-safe: focus + inert)
