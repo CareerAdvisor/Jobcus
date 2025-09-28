@@ -6,6 +6,8 @@
 {% endblock %}
 
 {% block content %}
+{% set forwarded_next = request.args.get('next','') %}
+
 <section class="pricing-wrap">
   <!-- Hero -->
   <header class="pricing-head">
@@ -68,7 +70,10 @@
       </ul>
 
       <footer class="plan__foot">
-        <a class="btn btn-primary w-full" href="/subscribe?plan=weekly">Get Weekly Pass</a>
+        <a class="btn btn-primary w-full"
+           href="{{ url_for('subscribe') }}?plan=weekly&next={{ forwarded_next|urlencode }}">
+          Get Weekly Pass
+        </a>
       </footer>
     </article>
 
@@ -100,7 +105,11 @@
       </ul>
 
       <footer class="plan__foot">
-        <a class="btn btn-primary w-full" href="/subscribe?plan=standard">Get Standard</a>
+        <a class="btn btn-primary w-full"
+           <a class="btn btn-primary w-full"
+           href="{{ url_for('subscribe') }}?plan=premium&next={{ forwarded_next|urlencode }}">
+          Get Premium
+        </a>
       </footer>
     </article>
 
