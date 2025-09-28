@@ -1707,31 +1707,22 @@ from flask import request
 def set_security_headers(resp):
     csp = (
         "default-src 'self'; "
-        # images: allow data URLs and any https host
         "img-src 'self' data: https:; "
-        # styles: allow inline + any https (for Google Fonts CSS)
         "style-src 'self' 'unsafe-inline' https:; "
-        # scripts: allow your own + inline + the few CDNs you actually use
         "script-src 'self' 'unsafe-inline' "
             "https://www.googletagmanager.com "
             "https://cdn.jsdelivr.net "
             "https://cdnjs.cloudflare.com "
             "https://unpkg.com; "
-        # some browsers check script-src-elem for <script src=...>
         "script-src-elem 'self' 'unsafe-inline' "
             "https://www.googletagmanager.com "
             "https://cdn.jsdelivr.net "
             "https://cdnjs.cloudflare.com "
             "https://unpkg.com; "
-        # XHR/Fetch/WebSocket endpoints
         "connect-src 'self' https:; "
-        # fonts: Google Fonts uses fonts.gstatic.com; also permit data: for embedded fonts
         "font-src 'self' https: data:; "
-        # prevent framing by other sites
         "frame-ancestors 'self'; "
-        # disallow <base> that points off-site
         "base-uri 'self'; "
-        # upgrade http->https
         "upgrade-insecure-requests"
     )
     resp.headers["Content-Security-Policy"] = csp
