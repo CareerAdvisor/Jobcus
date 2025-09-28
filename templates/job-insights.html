@@ -45,6 +45,9 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='js/job-insights.js') }}"></script>
+<!-- Load UMD build so window.Chart exists -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+
+<!-- Your script that uses Chart must come AFTER the library -->
+<script src="{{ url_for('static', filename='js/job-insights.js') }}" defer></script>
 {% endblock %}
