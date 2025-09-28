@@ -844,13 +844,13 @@ def _plans():
             "code":"free", "title":"Free", "amount":"0", "period":"/mo",
             "tagline":"Great for a quick check",
             "features":[
-                "<strong>3</strong> resume analyses / month (basic score + tips)",
-                "<strong>2</strong> AI cover letters / month",
-                "AI Resume Builder (basic templates)",
-                "Skill-Gap snapshot (1 basic analysis)",
+                "<strong>2</strong> resume analyses / month (basic score + tips)",
+                "<strong>1</strong> AI cover letter / month",
+                "AI Resume Builder (basic templates; <strong>1</strong> download / month)",
+                "Skill-Gap snapshot (1 basic analysis / month)",
                 "Job Insights (basic charts)",
-                "Interview Coach (limited practice)",
-                "AI Chat trial: <strong>15 messages</strong> total",
+                "Interview Coach (limited practice; <strong>1</strong> / month)",
+                "AI Chat trial: <strong>5 messages</strong> total",
                 "Local device history",
             ],
         },
@@ -858,9 +858,10 @@ def _plans():
             "code":"weekly", "title":"Weekly Pass", "amount":"7<span class='cents'>.99</span>", "period":"/week",
             "tagline":"For urgent applications",
             "features":[
-                "AI Chat credits: <strong>200 messages</strong> / week",
+                "AI Chat credits: <strong>50 messages</strong> / week",
                 "<strong>10</strong> resume analyses / week",
                 "<strong>5</strong> AI cover letters / week",
+                "Resume Builder: <strong>5 downloads</strong> / week",
                 "“Rebuild with AI” for resumes",
                 "Skill-Gap (standard)",
                 "Job Insights (full access)",
@@ -875,6 +876,7 @@ def _plans():
                 "AI Chat credits: <strong>800 messages</strong> / month",
                 "<strong>50</strong> resume analyses / month (deep ATS + JD match)",
                 "<strong>20</strong> AI cover letters / month",
+                "Resume Builder: <strong>20 downloads</strong> / month",
                 "AI Optimize + Rebuild with AI",
                 "Interview Coach sessions",
                 "Skill-Gap (pro)",
@@ -891,6 +893,7 @@ def _plans():
                 "AI Chat credits: <strong>12,000 messages</strong> / year (~1,000 / mo)",
                 "<strong>Unlimited*</strong> resume analyses (fair use)",
                 "<strong>Unlimited</strong> AI cover letters (fair use)",
+                "Resume Builder: <strong>unlimited</strong> downloads (fair use)",
                 "All Standard features + multi-resume versions & template pack",
                 "Priority support & early access to new AI tools",
             ],
@@ -955,10 +958,10 @@ def subscribe():
             return redirect(url_for("pricing"))
     
         base_success = url_for("stripe_success", _external=True)
-        success_url  = f"{base_success}?session_id={{CHECKOUT_SESSION_ID}}"
+        qs = {"session_id": "{CHECKOUT_SESSION_ID}"}
         if next_url:
-            # encode only the value; keep braces untouched
-            success_url += f"&next={quote(next_url, safe='/:?&=')}"
+            qs["next"] = next_url
+        success_url = f"{base_success}?{urlencode(qs)}"
     
         cancel_url = url_for("pricing", _external=True) + "?cancelled=1"
 
