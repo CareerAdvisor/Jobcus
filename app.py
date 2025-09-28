@@ -790,6 +790,10 @@ def api_state():
         # do not break the UI
     return ("", 204)
 
+@app.get("/favicon.ico")
+def favicon():
+    return redirect(url_for("static", filename="icons/favicon.ico"), code=302)
+
 @app.get("/resume-analyzer")
 def page_resume_analyzer():
     return render_template("resume-analyzer.html")
