@@ -25,7 +25,182 @@ function insertSuggestion(text) {
   input.focus();
   window.autoResize?.(input);
 }
-function autoResize(textarea) {
+function autoResize(textarea) {# ----------------------------
+# Ask
+# ----------------------------
+ask_bp = Blueprint("ask", __name__)
+
+# --- OpenAI (v1) ---
+_oai_client = None
+def _client():
+    global _oai_client
+    if _oai_client is None:
+        _oai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    return _oai_client
+
+CAREER_SYSTEM_PROMPT = (
+    "You are Jobcus Assistant — an expert career coach. "
+    "You help with: careers, job search, resumes, cover letters, interview prep, "
+    "compensation and negotiation, education programs, schools, job roles and duties, "
+    "career paths, upskilling, labor-market insights, and workplace advice. "
+    "Be clear, practical, and encouraging; structure answers with short sections or bullets; "
+    "when useful, include brief examples or templates. If a request is outside career/education, "
+    "politely steer the user back to career-relevant guidance."
+)
+
+def _first_name_fallback():
+    # Use the name “ThankGod” only if that’s actually the logged-in user’s first name;
+    # otherwise use the best available first name.
+    if getattr(current_user, "is_authenticated", False):
+        # try first piece of fullname, else the local-part of email, else 'there'
+        fn = (getattr(current_user, "fullname", "") or "").strip().split(" ")[0]
+        if not fn:
+            email = getattr(current_user, "email", "") or ""
+            fn = (email.split("@")[0] if "@" in email else "").strip()
+        return fn or "there"
+    return "there"
+
+def _chat_completion(model: str, user_msg: str, history=None) -> str:
+    """
+    Minimal OpenAI wrapper. `history` can be a list of {role, content}.
+    """
+    msgs = [{"role": "system", "content": CAREER_SYSTEM_PROMPT}]
+    if history:
+        # keep a small sliding window
+        for m in history[-6:]:
+            if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str):
+                msgs.append({"role": m["role"], "content": m["content"]})
+    msgs.append({"role": "user", "content": user_msg})
+
+    try:
+        resp = _client().chat.completions.create(
+            model=model or "gpt-4o-mini",
+            messages=msgs,
+            temperature=0.4,
+        )
+        return (resp.choices[0].message.content or "").strip()
+    except Exception:
+        # Log if you want: current_app.logger.exception("OpenAI error")
+        return "Sorry—I'm having trouble reaching the AI right now. Please try again."
+
+@app.post("/api/ask")
+@api_login_required
+def api_ask():
+    data = request.get_json(silent=True) or {}
+    message = (data.get("message") or "").strip()
+    model   = (data.get("model")   or "gpt-4o-mini").strip()
+    conv_id = data.get("conversation_id")  # may be None on first message
+
+    if not message:
+        return jsonify(error="bad_request", message="message is required"), 400
+
+    auth_id = current_user.id  # your User.id = auth_id
+
+    # 1) Ensure conversation
+    if not conv_id:
+        # Optional: try to title from first user message (truncate)
+        title = (message[:60] + "…") if len(message) > 60 else message
+        row = supabase_admin.table("conversations").insert({
+            "auth_id": auth_id,
+            "title": title or "Conversation",
+        }).execute()
+        conv_id = row.data[0]["id"]
+
+    # 2) Persist user message
+    supabase_admin.table("conversation_messages").insert({
+        "conversation_id": conv_id,
+        "role": "user",
+        "content": message
+    }).execute()
+
+    # 3) (Optional) fetch a short context window from DB
+    # Keep it small to control token cost
+    ctx = supabase_admin.table("conversation_messages")\
+        .select("role,content")\
+        .eq("conversation_id", conv_id)\
+        .order("created_at", desc=True)\
+        .limit(8).execute().data or []
+    history = list(reversed(ctx))  # oldest first
+
+    # 4) Call model
+    ai_reply = _chat_completion(model=model, user_msg=message, history=history)
+
+    # 5) Persist assistant message
+    supabase_admin.table("conversation_messages").insert({
+        "conversation_id": conv_id,
+        "role": "assistant",
+        "content": ai_reply
+    }).execute()
+
+    return jsonify(reply=ai_reply, modelUsed=model, conversation_id=conv_id), 200
+
+@app.get("/api/conversations")
+@api_login_required
+def list_conversations():
+    rows = supabase_admin.table("conversations")\
+        .select("id,title,created_at")\
+        .eq("auth_id", current_user.id)\
+        .order("created_at", desc=True).execute().data or []
+    return jsonify(rows)
+
+@app.get("/api/conversations/<uuid:conv_id>/messages")
+@api_login_required
+def list_messages(conv_id):
+    rows = supabase_admin.table("conversation_messages")\
+        .select("id,role,content,created_at")\
+        .eq("conversation_id", str(conv_id))\
+        .order("created_at", asc=True).execute().data or []
+    return jsonify(rows)
+
+@app.route("/api/ask", methods=["POST"])
+@api_login_required
+def ask():
+    data = request.get_json()
+    message = data.get("message", "")
+    user = current_user.first_name if current_user.is_authenticated else "there"
+
+    # 👇 Replace this with your actual AI integration
+    if not message.strip():
+        reply = f"Hello {user}, how can I assist you today!"
+    else:
+        reply = run_model("gpt-4", message)  # example AI call
+
+    return jsonify(reply=reply, modelUsed="gpt-4")
+
+
+@app.get("/api/credits")
+@login_required
+def api_credits():
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+
+    # example: chat credits
+    q = quota_for(plan, "chat_messages")  # Quota(period_kind, limit)
+    if q.limit is None:
+        return jsonify(plan=plan, used=None, max=None, left=None)
+
+    key   = period_key(q.period_kind)
+    used  = get_usage_count(supabase_admin, current_user.id, "chat_messages", q.period_kind, key)
+    left  = max(q.limit - used, 0)
+    return jsonify(plan=plan, used=used, max=q.limit, left=left,
+                   period_kind=q.period_kind, period_key=key)
+
+# NEW: expose limits for all features so UI can pre-lock actions nicely
+@app.get("/api/limits")
+@login_required
+def api_limits():
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    features = ["chat_messages", "resume_builder", "resume_analyzer", "interview_coach", "cover_letter", "skill_gap"]
+    data = {"plan": plan, "features": {}}
+    for f in features:
+        q = quota_for(plan, f)  # -> Quota(period_kind, limit)
+        if q.limit is None:
+            data["features"][f] = {"used": None, "max": None, "left": None, "period_kind": q.period_kind}
+            continue
+        key = period_key(q.period_kind)
+        used = get_usage_count(supabase_admin, current_user.id, f, q.period_kind, key)
+        left = max(q.limit - used, 0)
+        data["features"][f] = {"used": used, "max": q.limit, "left": left, "period_kind": q.period_kind, "period_key": key}
+    return jsonify(data)
   if (!textarea) return;
   textarea.style.height = "auto";
   textarea.style.height = textarea.scrollHeight + "px";
@@ -321,10 +496,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (serverPlan) localStorage.setItem("userPlan", serverPlan);
 
     const QUOTAS = {
-      free:     { label: "Free",     reset: "Trial",           max: 15 },
-      weekly:   { label: "Weekly",   reset: "Resets weekly",   max: 200 },
-      standard: { label: "Standard", reset: "Resets monthly",  max: 800 },
-      premium:  { label: "Premium",  reset: "Resets yearly",   max: 12000 }
+      free:     { label: "Free",     reset: "Trial",           max: 5 },
+      weekly:   { label: "Weekly",   reset: "Resets weekly",   max: 100 },
+      standard: { label: "Standard", reset: "Resets monthly",  max: 600 },
+      premium:  { label: "Premium",  reset: "Resets yearly",   max: 10800 }
     };
     const q    = QUOTAS[PLAN] || QUOTAS.free;
     const used = Number(localStorage.getItem("chatUsed") || 0);
