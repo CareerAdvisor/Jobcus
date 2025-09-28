@@ -37,7 +37,7 @@ from limits import (
 from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
 from abuse_guard import allow_free_use
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, urlencode, urlparse
 
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
@@ -960,22 +960,26 @@ def subscribe():
 
         cancel_url  = url_for("pricing", _external=True) + "?cancelled=1"
 
-        session = stripe.checkout.Session.create(
-            mode="subscription",
-            customer=customer_id,                  # tie session to this user
-            line_items=[{"price": price_id, "quantity": 1}],
-            success_url=success_url,
-            cancel_url=cancel_url,
-            allow_promotion_codes=True,
-            client_reference_id=str(current_user.id),    # backup join key
-            metadata={"user_id": str(current_user.id), "plan_code": plan_code},
-        )
+        try:
+            session = stripe.checkout.Session.create(
+                mode="subscription",
+                customer=customer_id,
+                line_items=[{"price": price_id, "quantity": 1}],
+                success_url=success_url,
+                cancel_url=cancel_url,
+                allow_promotion_codes=True,
+                client_reference_id=str(current_user.id),
+                metadata={"user_id": str(current_user.id), "plan_code": plan_code},
+            )
+        except Exception:
+            current_app.logger.exception("Stripe checkout Session.create failed")
+            flash("Billing is temporarily unavailable. Please contact support if this persists.", "error")
+            return redirect(url_for("pricing"))
         return redirect(session.url, code=303)
 
     # GET: confirm page
     # make sure your subscribe.html has a hidden <input name="next" value="{{ request.args.get('next', '') }}">
     return render_template("subscribe.html", plan_data=plan_data)
-
 
 @app.get("/subscribe/success")
 @login_required
