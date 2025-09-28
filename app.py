@@ -945,40 +945,33 @@ def subscribe():
         if not price_id:
             flash("Billing not configured for this plan.", "error")
             return redirect(url_for("pricing"))
-
-        # ensure the user has a Stripe customer and store it in DB if new
+    
+        # ensure the user has a Stripe customer
         try:
             customer_id = _get_or_create_stripe_customer(current_user)
         except Exception:
             current_app.logger.exception("Could not get/create Stripe customer")
             flash("We couldn't start checkout. Please contact support.", "error")
             return redirect(url_for("pricing"))
-
-        # success url always lands on /subscribe/success, we pass session_id (Stripe fills)
-        # and we also pass-through our 'next' if present so success handler can redirect back.
+    
         base_success = url_for("stripe_success", _external=True)
-        qs = {"session_id": "{CHECKOUT_SESSION_ID}"}
+        success_url  = f"{base_success}?session_id={{CHECKOUT_SESSION_ID}}"
         if next_url:
-            qs["next"] = next_url
-        success_url = f"{base_success}?{urlencode(qs)}"
-
-        cancel_url  = url_for("pricing", _external=True) + "?cancelled=1"
-
-        try:
-            session = stripe.checkout.Session.create(
-                mode="subscription",
-                customer=customer_id,
-                line_items=[{"price": price_id, "quantity": 1}],
-                success_url=success_url,
-                cancel_url=cancel_url,
-                allow_promotion_codes=True,
-                client_reference_id=str(current_user.id),
-                metadata={"user_id": str(current_user.id), "plan_code": plan_code},
-            )
-        except Exception:
-            current_app.logger.exception("Stripe checkout Session.create failed")
-            flash("Billing is temporarily unavailable. Please contact support if this persists.", "error")
-            return redirect(url_for("pricing"))
+            # encode only the value; keep braces untouched
+            success_url += f"&next={quote(next_url, safe='/:?&=')}"
+    
+        cancel_url = url_for("pricing", _external=True) + "?cancelled=1"
+    
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            customer=customer_id,
+            line_items=[{"price": price_id, "quantity": 1}],
+            success_url=success_url,
+            cancel_url=cancel_url,
+            allow_promotion_codes=True,
+            client_reference_id=str(current_user.id),
+            metadata={"user_id": str(current_user.id), "plan_code": plan_code},
+        )
         return redirect(session.url, code=303)
 
     # GET: confirm page
