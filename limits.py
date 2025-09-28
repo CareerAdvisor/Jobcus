@@ -38,7 +38,7 @@ PLAN_QUOTAS = {
         "resume_builder":  Quota("month", 1),   # NEW (if you want it metered)
     },
     "weekly": {
-        "chat_messages":   Quota("week", 50),
+        "chat_messages":   Quota("week", 100),
         "resume_analyzer": Quota("week", 10),
         "cover_letter":    Quota("week", 5),
         "skill_gap":       Quota("week", None),
@@ -46,7 +46,7 @@ PLAN_QUOTAS = {
         "resume_builder":  Quota("week", 5),   # NEW (or set a number)
     },
     "standard": {
-        "chat_messages":   Quota("month", 800),
+        "chat_messages":   Quota("month", 600),
         "resume_analyzer": Quota("month", 50),
         "cover_letter":    Quota("month", 20),
         "skill_gap":       Quota("month", None),
@@ -54,7 +54,7 @@ PLAN_QUOTAS = {
         "resume_builder":  Quota("month", 20),  # NEW
     },
     "premium": {
-        "chat_messages":   Quota("year", 12000),
+        "chat_messages":   Quota("year", 10800),
         "resume_analyzer": Quota("month", None),
         "cover_letter":    Quota("month", None),
         "skill_gap":       Quota("month", None),
