@@ -57,7 +57,11 @@
     default-src 'self';
     img-src 'self' data: https:;
     style-src 'self' 'unsafe-inline' https:;
-    script-src 'self' 'unsafe-inline' https://www.googletagmanager.com;
+    script-src 'self' 'unsafe-inline'
+               https://www.googletagmanager.com
+               https://cdnjs.cloudflare.com
+               https://cdn.jsdelivr.net
+               https://unpkg.com;
     connect-src 'self' https:;
     font-src 'self' https:;
     base-uri 'self';
