@@ -858,7 +858,7 @@ def _plans():
             "code":"weekly", "title":"Weekly Pass", "amount":"7<span class='cents'>.99</span>", "period":"/week",
             "tagline":"For urgent applications",
             "features":[
-                "AI Chat credits: <strong>50 messages</strong> / week",
+                "AI Chat credits: <strong>100 messages</strong> / week",
                 "<strong>10</strong> resume analyses / week",
                 "<strong>5</strong> AI cover letters / week",
                 "Resume Builder: <strong>5 downloads</strong> / week",
@@ -873,7 +873,7 @@ def _plans():
             "code":"standard", "title":"Standard", "amount":"23<span class='cents'>.99</span>", "period":"/mo",
             "tagline":"Serious applications, smarter tools",
             "features":[
-                "AI Chat credits: <strong>800 messages</strong> / month",
+                "AI Chat credits: <strong>600 messages</strong> / month",
                 "<strong>50</strong> resume analyses / month (deep ATS + JD match)",
                 "<strong>20</strong> AI cover letters / month",
                 "Resume Builder: <strong>20 downloads</strong> / month",
@@ -890,7 +890,7 @@ def _plans():
             "code":"premium", "title":"Premium", "amount":"229", "period":"/yr",
             "tagline":"Best value for ongoing career growth",
             "features":[
-                "AI Chat credits: <strong>12,000 messages</strong> / year (~1,000 / mo)",
+                "AI Chat credits: <strong>10,800 messages</strong> / year (~1,000 / mo)",
                 "<strong>Unlimited*</strong> resume analyses (fair use)",
                 "<strong>Unlimited</strong> AI cover letters (fair use)",
                 "Resume Builder: <strong>unlimited</strong> downloads (fair use)",
