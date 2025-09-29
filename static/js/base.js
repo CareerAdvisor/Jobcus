@@ -70,13 +70,22 @@ window.autoResize = window.autoResize || function (ta) {
 /* ─────────────────────────────────────────────────────────────
  * 0.2) Global fetch wrapper to always send cookies
  * ───────────────────────────────────────────────────────────── */
-(function(){
-  const _fetch = window.fetch.bind(window);
-  window.fetch = (input, init = {}) => {
-    if (!("credentials" in init)) init.credentials = "same-origin";
-    return _fetch(input, init);
-  };
-})();
+
+window.fetch = (input, init = {}) => {
+  init.credentials = init.credentials || 'include';  // <-- important
+  init.headers = Object.assign(
+    { 'X-CSRF-Token': getCSRFToken() },  // if you use CSRF
+    init.headers || {}
+  );
+  return originalFetch(input, init).then(async (res) => {
+    if (res.status === 401) {
+      // optional: redirect to login
+      location.href = '/account?next=' + encodeURIComponent(location.pathname + location.search);
+      return res;
+    }
+    return res;
+  });
+};
 
 /* ─────────────────────────────────────────────────────────────
  * 0.3) Centralized API fetch (401 handling + JSON/HTML guard)
