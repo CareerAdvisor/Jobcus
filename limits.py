@@ -29,36 +29,74 @@ def _normalize_feature(feature: str) -> str:
 # limits.py  (PLAN_QUOTAS)  ← add these lines
 PLAN_QUOTAS = {
     "free": {
+        # your existing keys
         "chat_messages":   Quota("total", 10),
         "resume_analyzer": Quota("month", 2),
         "cover_letter":    Quota("month", 1),
         "skill_gap":       Quota("month", 1),
-        "interview_coach": Quota("month", 1),   # NEW
-        "resume_builder":  Quota("month", 1),   # NEW (if you want it metered)
+        "interview_coach": Quota("month", 1),
+        "resume_builder":  Quota("month", 1),
+
+        # ⬇️ NEW: hourly/daily call caps for chat
+        "chat_messages_hour": Quota("hour", 6),
+        "chat_messages_day":  Quota("day", 40),
+
+        # ⬇️ NEW: word budgets (use token budgets if you prefer)
+        "chat_words_hour":    Quota("hour", 1500),
+        "chat_words_day":     Quota("day", 8000),
+
+        # ⬇️ (Optional) add hourly/daily for analyzer if you’ll enforce them
+        "resume_analyzer_hour": Quota("hour", 2),
+        "resume_analyzer_day":  Quota("day", 4),
     },
+
     "weekly": {
         "chat_messages":   Quota("week", 100),
         "resume_analyzer": Quota("week", 10),
         "cover_letter":    Quota("week", 5),
         "skill_gap":       Quota("week", None),
-        "interview_coach": Quota("week", None),   # NEW (or set a number)
-        "resume_builder":  Quota("week", 5),   # NEW (or set a number)
+        "interview_coach": Quota("week", None),
+        "resume_builder":  Quota("week", 5),
+
+        # (Optional) add hour/day for chat if you want them on weekly plan too
+        "chat_messages_hour": Quota("hour", 12),
+        "chat_messages_day":  Quota("day", 80),
+        "chat_words_hour":    Quota("hour", 3000),
+        "chat_words_day":     Quota("day", 15000),
     },
+
     "standard": {
         "chat_messages":   Quota("month", 600),
         "resume_analyzer": Quota("month", 50),
         "cover_letter":    Quota("month", 20),
         "skill_gap":       Quota("month", None),
-        "interview_coach": Quota("month", None),  # NEW
-        "resume_builder":  Quota("month", 20),  # NEW
+        "interview_coach": Quota("month", None),
+        "resume_builder":  Quota("month", 20),
+
+        "chat_messages_hour": Quota("hour", 30),
+        "chat_messages_day":  Quota("day", 200),
+        "chat_words_hour":    Quota("hour", 6000),
+        "chat_words_day":     Quota("day", 30000),
+
+        "resume_analyzer_hour": Quota("hour", 6),
+        "resume_analyzer_day":  Quota("day", 20),
     },
+
     "premium": {
         "chat_messages":   Quota("year", 10800),
         "resume_analyzer": Quota("month", None),
         "cover_letter":    Quota("month", None),
         "skill_gap":       Quota("month", None),
-        "interview_coach": Quota("month", None),  # NEW
-        "resume_builder":  Quota("month", None),  # NEW
+        "interview_coach": Quota("month", None),
+        "resume_builder":  Quota("month", None),
+
+        "chat_messages_hour": Quota("hour", 60),
+        "chat_messages_day":  Quota("day", 500),
+        "chat_words_hour":    Quota("hour", 12000),
+        "chat_words_day":     Quota("day", 60000),
+
+        "resume_analyzer_hour": Quota("hour", None),
+        "resume_analyzer_day":  Quota("day", None),
     },
 }
 
@@ -217,6 +255,48 @@ def check_and_increment(
         "period_kind": kind,
         "period_key": key,
         "feature": f,
+    }
+
+
+def check_and_add(
+    supabase_admin, user_id: str, plan: str, feature: str,
+    amount: int, period_kind_override: str | None = None, limit_override: int | None = None
+) -> tuple[bool, dict]:
+    """
+    Like check_and_increment, but adds an arbitrary 'amount' to the counter.
+    Optional: override the quota's period kind or limit for ad-hoc features.
+    """
+    f = _normalize_feature(feature)
+    q = quota_for(plan, f)
+    kind = (period_kind_override or q.period_kind)
+    limit = q.limit if limit_override is None else limit_override
+    key = period_key(kind)
+
+    if limit is None:
+        # Unlimited for this feature
+        return True, {"limit": None, "period_kind": kind, "period_key": key, "feature": f}
+
+    used = get_usage_count(supabase_admin, user_id, f, kind, key)
+    if used + amount > limit:
+        return False, {
+            "error": "quota_exceeded",
+            "feature": f,
+            "limit": limit,
+            "period_kind": kind,
+            "period_key": key,
+            "used": used,
+            "attempted_add": amount,
+            "message": "You’ve reached your plan limit for this feature.",
+        }
+
+    increment_usage(supabase_admin, user_id, f, kind, key, used + amount)
+    return True, {
+        "used": used + amount,
+        "limit": limit,
+        "period_kind": kind,
+        "period_key": key,
+        "feature": f,
+        "added": amount,
     }
 
 
