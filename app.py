@@ -850,7 +850,7 @@ def _plans():
                 "Skill-Gap snapshot (1 basic analysis / month)",
                 "Job Insights (basic charts)",
                 "Interview Coach (limited practice; <strong>1</strong> / month)",
-                "AI Chat trial: <strong>5 messages</strong> total",
+                "AI Chat trial: <strong>10 messages</strong> total",
                 "Local device history",
             ],
         },
