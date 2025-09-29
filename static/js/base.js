@@ -71,21 +71,22 @@ window.autoResize = window.autoResize || function (ta) {
  * 0.2) Global fetch wrapper to always send cookies
  * ───────────────────────────────────────────────────────────── */
 
-window.fetch = (input, init = {}) => {
-  init.credentials = init.credentials || 'include';  // <-- important
-  init.headers = Object.assign(
-    { 'X-CSRF-Token': getCSRFToken() },  // if you use CSRF
-    init.headers || {}
-  );
-  return originalFetch(input, init).then(async (res) => {
-    if (res.status === 401) {
-      // optional: redirect to login
-      location.href = '/account?next=' + encodeURIComponent(location.pathname + location.search);
-      return res;
+(function () {
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => {
+    init.credentials = init.credentials || 'include'; // send cookies
+
+    const token = (typeof getCSRFToken === 'function') ? getCSRFToken() : null;
+    if (token) {
+      init.headers = Object.assign(
+        { 'X-CSRF-Token': token },   // or 'X-CSRFToken' / 'X-XSRF-TOKEN' based on your server
+        init.headers || {}
+      );
     }
-    return res;
-  });
-};
+
+    return originalFetch(input, init);
+  };
+})();
 
 /* ─────────────────────────────────────────────────────────────
  * 0.3) Centralized API fetch (401 handling + JSON/HTML guard)
@@ -106,12 +107,22 @@ function getCookie(name) {
   return null;
 }
 
+// Add this just below getCookie(...)
+function getCSRFToken() {
+  // Try a <meta name="csrf-token" content="..."> if you set one
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  if (meta && meta.content) return meta.content;
+
+  // Try common cookie names (Flask-WTF / many setups)
+  return getCookie('csrf_token') || getCookie('XSRF-TOKEN') || null;
+}
+
 window.apiFetch = async function apiFetch(url, options = {}) {
   const merged = {
     headers: { 'Accept': 'application/json', ...(options.headers || {}) },
     ...options
   };
-
+ 
   // Inject CSRF header if a token is present
   const csrf = getCookie('csrf_token') || getCookie('XSRF-TOKEN');
   if (csrf) merged.headers['X-CSRFToken'] = csrf;
