@@ -1695,41 +1695,11 @@ def ask():
     message = (data.get("message") or "").strip()
     model   = (data.get("model")   or "gpt-4o-mini").strip()
 
-    # Friendly greeting for empty input (no quota consumed)
     user_name = getattr(current_user, "first_name", None) if current_user.is_authenticated else None
     if not message:
         reply = f"Hello {user_name or 'there'}, how can I assist you today!"
         return jsonify(reply=reply, modelUsed=model), 200
 
-    # ---- Quota prep ----
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-    supabase_admin = current_app.config["SUPABASE_ADMIN"]
-
-    # ---- Pre-call quotas: calls/hour, calls/day, words/hour, words/day ----
-    from limits import check_and_increment, check_and_add  # ensure imported at file top in prod
-
-    def count_words(s: str) -> int:
-        return len((s or "").split())
-
-    words = count_words(message)
-
-    # Call caps
-    ok, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages_hour")
-    if not ok:
-        return jsonify(info), 429
-    ok, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages_day")
-    if not ok:
-        return jsonify(info), 429
-
-    # Word budgets
-    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_words_hour", words)
-    if not ok:
-        return jsonify(info), 429
-    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_words_day", words)
-    if not ok:
-        return jsonify(info), 429
-
-    # ---- Real model call ----
     try:
         resp = client.chat.completions.create(
             model=model,
@@ -1738,24 +1708,10 @@ def ask():
             max_tokens=600,
         )
         reply = (resp.choices[0].message.content or "").strip()
+        return jsonify(reply=reply, modelUsed=model), 200
     except Exception as e:
-        current_app.logger.exception("ask() model error")
+        current_app.logger.exception("/api/ask failed")
         return jsonify(error="ai_error", message=str(e)), 500
-
-    # ---- Post-call token budgets: tokens/hour, tokens/day ----
-    pt = getattr(resp.usage, "prompt_tokens", None) or 0
-    ct = getattr(resp.usage, "completion_tokens", None) or 0
-    total_tokens = int(pt) + int(ct)
-
-    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_tokens_hour", total_tokens)
-    if not ok:
-        return jsonify(info), 429
-    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_tokens_day", total_tokens)
-    if not ok:
-        return jsonify(info), 429
-
-    return jsonify(reply=reply, modelUsed=model), 200
-
 
 @app.get("/api/credits")
 @login_required
