@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from dataclasses import dataclass
 from datetime import date
 from typing import Optional
@@ -105,12 +104,17 @@ def _plan_code(plan: str | None) -> str:
 def period_key(kind: str, d: date | None = None) -> str:
     """
     Return a stable key for counters depending on the period kind.
-    Kind: 'total' | 'week' | 'month' | 'year'
+    Kind: 'total' | 'hour' | 'day' | 'week' | 'month' | 'year'
     """
-    d = d or date.today()
-    k = kind.lower()
+    k = (kind or "total").lower()
     if k == "total":
         return "all"
+    now = datetime.utcnow()
+    if k == "hour":
+        return now.strftime("%Y-%m-%dT%H")   # e.g., 2025-09-29T14 (UTC)
+    if k == "day":
+        return now.strftime("%Y-%m-%d")
+    d = d or date.today()
     if k == "week":
         iso = d.isocalendar()
         year = getattr(iso, "year", iso[0])
@@ -120,7 +124,6 @@ def period_key(kind: str, d: date | None = None) -> str:
         return d.strftime("%Y-%m")
     if k == "year":
         return d.strftime("%Y")
-    # Fallback: treat unknown kinds as total
     return "all"
 
 
