@@ -1695,23 +1695,27 @@ def ask():
     message = (data.get("message") or "").strip()
     model   = (data.get("model")   or "gpt-4o-mini").strip()
 
-    user_name = getattr(current_user, "first_name", None) if current_user.is_authenticated else None
+    # pin free users to the cheap model
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    if plan == "free":
+        model = "gpt-4o-mini"
+
+    # (optional) fetch the client from config if you didn’t use a global)
+    client = current_app.config["OPENAI_CLIENT"]
+
     if not message:
+        user_name = getattr(current_user, "first_name", None) if current_user.is_authenticated else None
         reply = f"Hello {user_name or 'there'}, how can I assist you today!"
         return jsonify(reply=reply, modelUsed=model), 200
 
-    try:
-        resp = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": message}],
-            temperature=0.3,
-            max_tokens=600,
-        )
-        reply = (resp.choices[0].message.content or "").strip()
-        return jsonify(reply=reply, modelUsed=model), 200
-    except Exception as e:
-        current_app.logger.exception("/api/ask failed")
-        return jsonify(error="ai_error", message=str(e)), 500
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": message}],
+        temperature=0.3,
+        max_tokens=600,
+    )
+    reply = (resp.choices[0].message.content or "").strip()
+    return jsonify(reply=reply, modelUsed=model), 200
 
 @app.get("/api/credits")
 @login_required
