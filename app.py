@@ -28,6 +28,7 @@ from datetime import datetime, timedelta, timezone, date
 from auth_utils import require_superadmin, is_staff, is_superadmin, api_login_required
 from limits import (
     check_and_increment,
+    check_and_add,
     get_usage_count,
     job_insights_level,
     feature_enabled,
@@ -1593,50 +1594,81 @@ def api_ask():
     data = request.get_json(silent=True) or {}
     message = (data.get("message") or "").strip()
     model   = (data.get("model")   or "gpt-4o-mini").strip()
-    conv_id = data.get("conversation_id")  # may be None on first message
+    conv_id = data.get("conversation_id")
 
     if not message:
         return jsonify(error="bad_request", message="message is required"), 400
 
-    auth_id = current_user.id  # your User.id = auth_id
+    supabase_admin = current_app.config["SUPABASE_ADMIN"]
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    auth_id = current_user.id
 
-    # 1) Ensure conversation
+    # Ensure conversation
     if not conv_id:
-        # Optional: try to title from first user message (truncate)
         title = (message[:60] + "…") if len(message) > 60 else message
         row = supabase_admin.table("conversations").insert({
-            "auth_id": auth_id,
-            "title": title or "Conversation",
+            "auth_id": auth_id, "title": title or "Conversation",
         }).execute()
         conv_id = row.data[0]["id"]
 
-    # 2) Persist user message
+    # Persist user message
     supabase_admin.table("conversation_messages").insert({
-        "conversation_id": conv_id,
-        "role": "user",
-        "content": message
+        "conversation_id": conv_id, "role": "user", "content": message
     }).execute()
 
-    # 3) (Optional) fetch a short context window from DB
-    # Keep it small to control token cost
+    # Fetch short history (oldest first)
     ctx = supabase_admin.table("conversation_messages")\
         .select("role,content")\
         .eq("conversation_id", conv_id)\
         .order("created_at", desc=True)\
         .limit(8).execute().data or []
-    history = list(reversed(ctx))  # oldest first
+    history = list(reversed(ctx))
 
-    # 4) Call model
-    ai_reply = _chat_completion(model=model, user_msg=message, history=history)
+    # ---- Pre-call quotas (same as ask()) ----
+    def count_words(s: str) -> int:
+        return len((s or "").split())
+    words = count_words(message)
 
-    # 5) Persist assistant message
+    ok, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages_hour")
+    if not ok: return jsonify(info), 429
+    ok, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages_day")
+    if not ok: return jsonify(info), 429
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_words_hour", words)
+    if not ok: return jsonify(info), 429
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_words_day", words)
+    if not ok: return jsonify(info), 429
+
+    # Build messages with history
+    msgs = [{"role": m["role"], "content": m["content"]} for m in history] + [
+        {"role": "user", "content": message}
+    ]
+
+    # Call model
+    resp = client.chat.completions.create(
+        model=model,
+        messages=msgs,
+        temperature=0.3,
+        max_tokens=600,
+    )
+    ai_reply = (resp.choices[0].message.content or "").strip()
+
+    # Persist assistant message
     supabase_admin.table("conversation_messages").insert({
-        "conversation_id": conv_id,
-        "role": "assistant",
-        "content": ai_reply
+        "conversation_id": conv_id, "role": "assistant", "content": ai_reply
     }).execute()
 
+    # ---- Post-call token budgets (same as ask()) ----
+    pt = getattr(resp.usage, "prompt_tokens", None) or 0
+    ct = getattr(resp.usage, "completion_tokens", None) or 0
+    total_tokens = int(pt) + int(ct)
+
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_tokens_hour", total_tokens)
+    if not ok: return jsonify(info), 429
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_tokens_day", total_tokens)
+    if not ok: return jsonify(info), 429
+
     return jsonify(reply=ai_reply, modelUsed=model, conversation_id=conv_id), 200
+
 
 @app.get("/api/conversations")
 @api_login_required
@@ -1659,17 +1691,70 @@ def list_messages(conv_id):
 @app.route("/api/ask", methods=["POST"])
 @api_login_required
 def ask():
-    data = request.get_json()
-    message = data.get("message", "")
-    user = current_user.first_name if current_user.is_authenticated else "there"
+    data = request.get_json(silent=True) or {}
+    message = (data.get("message") or "").strip()
+    model   = (data.get("model")   or "gpt-4o-mini").strip()
 
-    # 👇 Replace this with your actual AI integration
-    if not message.strip():
-        reply = f"Hello {user}, how can I assist you today!"
-    else:
-        reply = run_model("gpt-4", message)  # example AI call
+    # Friendly greeting for empty input (no quota consumed)
+    user_name = getattr(current_user, "first_name", None) if current_user.is_authenticated else None
+    if not message:
+        reply = f"Hello {user_name or 'there'}, how can I assist you today!"
+        return jsonify(reply=reply, modelUsed=model), 200
 
-    return jsonify(reply=reply, modelUsed="gpt-4")
+    # ---- Quota prep ----
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    supabase_admin = current_app.config["SUPABASE_ADMIN"]
+
+    # ---- Pre-call quotas: calls/hour, calls/day, words/hour, words/day ----
+    from limits import check_and_increment, check_and_add  # ensure imported at file top in prod
+
+    def count_words(s: str) -> int:
+        return len((s or "").split())
+
+    words = count_words(message)
+
+    # Call caps
+    ok, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages_hour")
+    if not ok:
+        return jsonify(info), 429
+    ok, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages_day")
+    if not ok:
+        return jsonify(info), 429
+
+    # Word budgets
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_words_hour", words)
+    if not ok:
+        return jsonify(info), 429
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_words_day", words)
+    if not ok:
+        return jsonify(info), 429
+
+    # ---- Real model call ----
+    try:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": message}],
+            temperature=0.3,
+            max_tokens=600,
+        )
+        reply = (resp.choices[0].message.content or "").strip()
+    except Exception as e:
+        current_app.logger.exception("ask() model error")
+        return jsonify(error="ai_error", message=str(e)), 500
+
+    # ---- Post-call token budgets: tokens/hour, tokens/day ----
+    pt = getattr(resp.usage, "prompt_tokens", None) or 0
+    ct = getattr(resp.usage, "completion_tokens", None) or 0
+    total_tokens = int(pt) + int(ct)
+
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_tokens_hour", total_tokens)
+    if not ok:
+        return jsonify(info), 429
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_tokens_day", total_tokens)
+    if not ok:
+        return jsonify(info), 429
+
+    return jsonify(reply=reply, modelUsed=model), 200
 
 
 @app.get("/api/credits")
