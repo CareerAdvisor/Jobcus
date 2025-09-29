@@ -30,7 +30,7 @@ def _normalize_feature(feature: str) -> str:
 # limits.py  (PLAN_QUOTAS)  ← add these lines
 PLAN_QUOTAS = {
     "free": {
-        "chat_messages":   Quota("total", 5),
+        "chat_messages":   Quota("total", 10),
         "resume_analyzer": Quota("month", 2),
         "cover_letter":    Quota("month", 1),
         "skill_gap":       Quota("month", 1),
