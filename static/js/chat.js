@@ -322,7 +322,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (serverPlan) localStorage.setItem("userPlan", serverPlan);
 
     const QUOTAS = {
-      free:     { label: "Free",     reset: "Trial",           max: 5 },
+      free:     { label: "Free",     reset: "Trial",           max: 10 },
       weekly:   { label: "Weekly",   reset: "Resets weekly",   max: 100 },
       standard: { label: "Standard", reset: "Resets monthly",  max: 600 },
       premium:  { label: "Premium",  reset: "Resets yearly",   max: 10800 }
