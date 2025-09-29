@@ -316,7 +316,6 @@ def call_ai(model: str, prompt: str) -> str:
 
 # --- Metric helpers ---
 def _device_cookie():
-    from flask import request
     c = (request.cookies or {}).get("jobcus_device")
     return c or None
 
