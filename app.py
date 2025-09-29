@@ -241,6 +241,22 @@ def choose_model(requested: str | None) -> str:
     req = (requested or "").strip()
     return req if req in allowed else default
 
+# ---- Token pricing & cost in GBP ----
+GBP_PER_USD = float(os.getenv("GBP_PER_USD", "0.78"))  # set via env
+
+MODEL_PRICES_USD = {
+  # per 1K tokens (USD)
+  "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
+  "gpt-4o":      {"input": 0.005,   "output": 0.015},  # example; adjust to your contract
+}
+
+def estimate_cost_gbp(model: str, prompt_tok: int | None, completion_tok: int | None) -> float | None:
+    p = MODEL_PRICES_USD.get(model)
+    if not p or prompt_tok is None or completion_tok is None:
+        return None
+    usd = (prompt_tok/1000.0)*p["input"] + (completion_tok/1000.0)*p["output"]
+    return round(usd * GBP_PER_USD, 6)
+
 # --- helpers: safe next ---
 def _is_safe_next(url: str) -> bool:
     try:
@@ -1691,6 +1707,24 @@ def api_limits():
         data["features"][f] = {"used": used, "max": q.limit, "left": left, "period_kind": q.period_kind, "period_key": key}
     return jsonify(data)
 
+@app.get("/api/admin/ai-usage/top")
+@require_superadmin
+def admin_ai_usage_top():
+    # last 7 days, top users by tokens
+    q = """
+      select
+        user_id,
+        sum(coalesce(total_tokens,0)) as tokens,
+        count(*) as calls
+      from ai_usage
+      where created_at >= now() - interval '7 days'
+      group by user_id
+      order by tokens desc
+      limit 50
+    """
+    res = current_app.config["SUPABASE_ADMIN"].rpc("exec_sql", {"q": q}).execute()
+    return jsonify(res.data or [])
+
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
     try:
@@ -1918,6 +1952,21 @@ Example format:
             max_tokens=600,
         )
         reply = (resp.choices[0].message.content or "").strip()
+
+        # NEW: log usage (+ optional £ estimate)
+        log_ai_usage(
+            feature="skill_gap",
+            model="gpt-4o-mini",
+            resp=resp,
+            extra={
+                "status": "ok",
+                "cost_gbp": estimate_cost_gbp(
+                    "gpt-4o-mini",
+                    getattr(resp.usage, "prompt_tokens", None),
+                    getattr(resp.usage, "completion_tokens", None),
+                )
+            }
+        )
         return jsonify(result=reply, aiUsed=True), 200
     except Exception as e:
         current_app.logger.exception("skill-gap: OpenAI call failed")
