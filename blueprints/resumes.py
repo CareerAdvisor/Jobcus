@@ -789,6 +789,22 @@ def optimize_resume():
             temperature=0.3
         )
         optimized = (resp.choices[0].message.content or "").strip()
+
+        # Log usage (optimize resume LLM pass)
+        log_ai_usage(
+            feature="optimize_resume",
+            model="gpt-4o",
+            resp=resp,
+            extra={
+                "status": "ok",
+                "cost_gbp": estimate_cost_gbp(
+                    "gpt-4o",
+                    getattr(resp.usage, "prompt_tokens", None),
+                    getattr(resp.usage, "completion_tokens", None),
+                )
+            }
+        )
+
         optimized = re.sub(r"```(?:[\s\S]*?)```", "", optimized).strip()
         return jsonify({"optimized": optimized})
     except Exception:
@@ -846,6 +862,21 @@ portfolio: {data.get('portfolio',"")}
             temperature=0.2
         )
         content = resp.choices[0].message.content.strip()
+
+        # Log usage (resume builder LLM pass)
+        log_ai_usage(
+            feature="resume_builder",
+            model="gpt-4o",
+            resp=resp,
+            extra={
+                "status": "ok",
+                "cost_gbp": estimate_cost_gbp(
+                    "gpt-4o",
+                    getattr(resp.usage, "prompt_tokens", None),
+                    getattr(resp.usage, "completion_tokens", None),
+                )
+            }
+        )
         content = re.sub(r"```(?:json)?", "", content).strip()
         ctx = json.loads(content)
 
@@ -1299,6 +1330,21 @@ Resume:
                 temperature=0.0
             )
             content = (resp.choices[0].message.content or "").strip()
+
+            # Log usage (resume analyzer LLM pass)
+            log_ai_usage(
+                feature="resume_analyzer",
+                model="gpt-4o",
+                resp=resp,
+                extra={
+                    "status": "ok",
+                    "cost_gbp": estimate_cost_gbp(
+                        "gpt-4o",
+                        getattr(resp.usage, "prompt_tokens", None),
+                        getattr(resp.usage, "completion_tokens", None),
+                    )
+                }
+            )
             content = re.sub(r"```(?:json)?", "", content)
             s,e = content.find("{"), content.rfind("}")
             if s>=0 and e>s:
