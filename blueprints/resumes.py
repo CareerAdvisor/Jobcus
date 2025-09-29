@@ -1187,6 +1187,15 @@ def resume_analysis():
         info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
 
+    # Additional hour/day call caps
+    okh, infh = check_and_increment(supabase_admin, current_user.id, plan, "resume_analyzer_hour")
+    if not okh:
+        return jsonify(infh), 429
+    
+    okd, infd = check_and_increment(supabase_admin, current_user.id, plan, "resume_analyzer_day")
+    if not okd:
+        return jsonify(infd), 429
+
     """
     ATS scoring model (100 pts) + penalties, aligned to industry best practice.
     Preserves your existing response shape for the dashboard.
