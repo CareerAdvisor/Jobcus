@@ -298,6 +298,148 @@ def call_ai(model: str, prompt: str) -> str:
     )
     return (resp.choices[0].message.content or "").strip()
 
+# --- Metric helpers ---
+def _device_cookie():
+    from flask import request
+    c = (request.cookies or {}).get("jobcus_device")
+    return c or None
+
+def log_ai_usage(feature: str, model: str, resp, extra: dict | None = None):
+    """
+    resp: OpenAI response object (expects .usage.* if available)
+    """
+    try:
+        supabase = current_app.config.get("SUPABASE_ADMIN")
+        if not supabase or not getattr(current_user, "is_authenticated", False):
+            return
+
+        usage = getattr(resp, "usage", None) or {}
+        row = {
+            "user_id": current_user.id,
+            "feature": feature,
+            "endpoint": request.path,
+            "model": model,
+            "prompt_tokens": usage.get("prompt_tokens"),
+            "completion_tokens": usage.get("completion_tokens"),
+            "total_tokens": usage.get("total_tokens"),
+            "estimated_cost_usd": None,   # fill if you want (see note below)
+            "session_id": (g.get("session_id") or None),
+            "device_cookie": _device_cookie(),
+            "ip_hash": ip_hash_from_request(request),
+            "meta": {
+                "plan": getattr(current_user, "plan", "free"),
+                **(extra or {})
+            }
+        }
+        supabase.table("ai_usage").insert(row).execute()
+    except Exception:
+        current_app.logger.warning("log_ai_usage failed", exc_info=True)
+
+# --- checkout helpers ---
+def _activate_user_plan_by_metadata(supabase, metadata, customer_id=None, subscription_id=None):
+    """Use metadata we set during Checkout to know who & what to update."""
+    if not metadata:
+        return
+    user_id   = metadata.get("user_id")
+    plan_code = metadata.get("plan_code")
+    if not user_id or not plan_code:
+        return
+    try:
+        supabase.table("users").update({
+            "plan": plan_code,
+            "plan_status": "active",
+            "stripe_customer_id": customer_id,
+            "stripe_subscription_id": subscription_id
+        }).eq("auth_id", user_id).execute()
+    except Exception:
+        current_app.logger.exception("Failed to update user plan from webhook")
+
+
+def _deactivate_user_plan_by_customer(supabase, customer_id):
+    try:
+        supabase.table("users").update({
+            "plan": "free",
+            "plan_status": "canceled"
+        }).eq("stripe_customer_id", customer_id).execute()
+    except Exception:
+        current_app.logger.exception("Failed to downgrade after cancel")
+
+
+# Map Stripe Price IDs -> your internal plan codes
+PRICE_TO_PLAN = {
+    os.getenv("STRIPE_PRICE_WEEKLY"):   "weekly",
+    os.getenv("STRIPE_PRICE_STANDARD"): "standard",
+    os.getenv("STRIPE_PRICE_PREMIUM"):  "premium",
+}
+
+
+def _find_user_id_by_customer(supabase, customer_id: str):
+    if not customer_id:
+        return None
+    try:
+        r = (
+            supabase.table("users")
+            .select("auth_id")
+            .eq("stripe_customer_id", customer_id)
+            .single()
+            .execute()
+        )
+        return (r.data or {}).get("auth_id")
+    except Exception:
+        current_app.logger.exception("find user by customer failed")
+        return None
+
+
+def _update_user_plan_from_subscription(supabase, sub):
+    """
+    Keep the users table in sync with the Stripe subscription object.
+    Handles plan mapping, status, and next renewal / expiry timestamps.
+    """
+    customer_id = sub.get("customer")
+    user_id = _find_user_id_by_customer(supabase, customer_id)
+    if not user_id:
+        current_app.logger.warning("No user for customer %s", customer_id)
+        return
+
+    # price -> plan (use first item)
+    items = sub.get("items", {}).get("data", [])
+    price_id = items[0]["price"]["id"] if items else None
+    plan_code = PRICE_TO_PLAN.get(price_id, "free")
+
+    status = sub.get("status")  # active, trialing, past_due, canceled, unpaid, ...
+    period_end = sub.get("current_period_end")  # epoch seconds
+    ends_at = (
+        None
+        if not period_end
+        else time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(period_end))
+    )
+
+    db_update = {
+        "stripe_subscription_id": sub.get("id"),
+        "plan_status": status,
+        "stripe_customer_id": customer_id,
+    }
+
+    if status in ("active", "trialing", "past_due"):
+        # keep access (you can gate features separately if past_due)
+        db_update.update({
+            "plan": plan_code,
+            "plan_renews_at": ends_at if status in ("active", "trialing") else None,
+            "plan_expires_at": None if status in ("active", "trialing") else ends_at,
+        })
+    elif status in ("canceled", "unpaid", "incomplete_expired"):
+        # allow access until end of period, then fall back to free
+        db_update.update({
+            "plan": plan_code if (period_end and period_end > time.time()) else "free",
+            "plan_renews_at": None,
+            "plan_expires_at": ends_at,
+        })
+
+    try:
+        supabase.table("users").update(db_update).eq("auth_id", user_id).execute()
+    except Exception:
+        current_app.logger.exception("Failed updating user from subscription")
+
 # --- User model ---
 class User(UserMixin):
     def __init__(
@@ -1071,113 +1213,6 @@ def free_success():
     return render_template("subscribe-success.html",
                            plan_human=_plans()["free"]["title"],
                            plan_json="free")
-
-
-# --- checkout helpers ---
-def _activate_user_plan_by_metadata(supabase, metadata, customer_id=None, subscription_id=None):
-    """Use metadata we set during Checkout to know who & what to update."""
-    if not metadata:
-        return
-    user_id   = metadata.get("user_id")
-    plan_code = metadata.get("plan_code")
-    if not user_id or not plan_code:
-        return
-    try:
-        supabase.table("users").update({
-            "plan": plan_code,
-            "plan_status": "active",
-            "stripe_customer_id": customer_id,
-            "stripe_subscription_id": subscription_id
-        }).eq("auth_id", user_id).execute()
-    except Exception:
-        current_app.logger.exception("Failed to update user plan from webhook")
-
-
-def _deactivate_user_plan_by_customer(supabase, customer_id):
-    try:
-        supabase.table("users").update({
-            "plan": "free",
-            "plan_status": "canceled"
-        }).eq("stripe_customer_id", customer_id).execute()
-    except Exception:
-        current_app.logger.exception("Failed to downgrade after cancel")
-
-
-# Map Stripe Price IDs -> your internal plan codes
-PRICE_TO_PLAN = {
-    os.getenv("STRIPE_PRICE_WEEKLY"):   "weekly",
-    os.getenv("STRIPE_PRICE_STANDARD"): "standard",
-    os.getenv("STRIPE_PRICE_PREMIUM"):  "premium",
-}
-
-
-def _find_user_id_by_customer(supabase, customer_id: str):
-    if not customer_id:
-        return None
-    try:
-        r = (
-            supabase.table("users")
-            .select("auth_id")
-            .eq("stripe_customer_id", customer_id)
-            .single()
-            .execute()
-        )
-        return (r.data or {}).get("auth_id")
-    except Exception:
-        current_app.logger.exception("find user by customer failed")
-        return None
-
-
-def _update_user_plan_from_subscription(supabase, sub):
-    """
-    Keep the users table in sync with the Stripe subscription object.
-    Handles plan mapping, status, and next renewal / expiry timestamps.
-    """
-    customer_id = sub.get("customer")
-    user_id = _find_user_id_by_customer(supabase, customer_id)
-    if not user_id:
-        current_app.logger.warning("No user for customer %s", customer_id)
-        return
-
-    # price -> plan (use first item)
-    items = sub.get("items", {}).get("data", [])
-    price_id = items[0]["price"]["id"] if items else None
-    plan_code = PRICE_TO_PLAN.get(price_id, "free")
-
-    status = sub.get("status")  # active, trialing, past_due, canceled, unpaid, ...
-    period_end = sub.get("current_period_end")  # epoch seconds
-    ends_at = (
-        None
-        if not period_end
-        else time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(period_end))
-    )
-
-    db_update = {
-        "stripe_subscription_id": sub.get("id"),
-        "plan_status": status,
-        "stripe_customer_id": customer_id,
-    }
-
-    if status in ("active", "trialing", "past_due"):
-        # keep access (you can gate features separately if past_due)
-        db_update.update({
-            "plan": plan_code,
-            "plan_renews_at": ends_at if status in ("active", "trialing") else None,
-            "plan_expires_at": None if status in ("active", "trialing") else ends_at,
-        })
-    elif status in ("canceled", "unpaid", "incomplete_expired"):
-        # allow access until end of period, then fall back to free
-        db_update.update({
-            "plan": plan_code if (period_end and period_end > time.time()) else "free",
-            "plan_renews_at": None,
-            "plan_expires_at": ends_at,
-        })
-
-    try:
-        supabase.table("users").update(db_update).eq("auth_id", user_id).execute()
-    except Exception:
-        current_app.logger.exception("Failed updating user from subscription")
-
 
 @app.post("/stripe/webhook")
 def stripe_webhook():
