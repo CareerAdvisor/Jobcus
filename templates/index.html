@@ -1,232 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Jobcus — AI Career Chat</title>
-<style>
-  :root{
-    --brand:#104879;        /* headings / brand */
-    --ink:#0e1e36;          /* body text */
-    --muted:#5b6b83;
-    --blue:#1e72ff;         /* CTA / accents */
-    --bg:#f7fafc;           /* section bg */
-    --card:#ffffff;         /* card bg */
-    --ring:#e8eef5;         /* subtle borders */
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.55;color:var(--ink);background:#fff}
-  a{color:var(--blue);text-decoration:none}
-  img{max-width:100%;display:block}
-  .container{width:min(1150px,92%);margin:auto}
-  .btn{display:inline-block;background:var(--blue);color:#fff;padding:14px 20px;border-radius:12px;font-weight:700}
-  .btn.outline{background:transparent;color:var(--blue);border:2px solid var(--blue)}
-  /* Header */
-  header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--ring);z-index:10}
-  .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
-  .brand{display:flex;gap:12px;align-items:center}
-  .brand img{height:34px;width:auto}
-  .brand span{font-weight:800;font-size:20px;color:var(--ink)}
-  .navlinks a{margin:0 12px;color:var(--muted);font-weight:600}
-  /* Hero */
-  .hero{background:linear-gradient(180deg,#f7fbff,#ffffff);padding:64px 0 28px}
-  .hero-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:center}
-  .eyebrow{color:var(--blue);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px}
-  h1{font-size:48px;line-height:1.1;margin:.3em 0 .4em;color:var(--ink)}
-  .lead{font-size:18px;color:#334155;max-width:62ch}
-  .cta{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
-  /* Chat mock */
-  .chat{background:#0e1e36;border-radius:16px;padding:18px;box-shadow:0 14px 34px rgba(16,72,121,.18);color:#fff}
-  .chat h3{margin:0 0 12px 0;font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:#9cc0ff}
-  .bubble{background:#173250;border-radius:14px;padding:12px 14px;margin:10px 0;max-width:95%}
-  .bubble.ai{background:#0c2d4f;border-left:4px solid #4aa3ff}
-  .bubble.user{background:#173b63;border-left:4px solid #8dd0ff;margin-left:auto}
-  .input{display:flex;margin-top:12px;background:#0b2540;border:1px solid #1f4570;border-radius:12px;overflow:hidden}
-  .input input{flex:1;border:0;background:transparent;color:#e6f0ff;padding:12px 14px;font-size:15px}
-  .input button{border:0;background:var(--blue);color:#fff;padding:0 16px;font-weight:700}
-  /* Trust strip */
-  .trust{padding:28px 0;border-top:1px solid var(--ring);border-bottom:1px solid var(--ring);background:#fbfdff}
-  .trust .row{display:flex;gap:28px;flex-wrap:wrap;align-items:center;justify-content:center;color:#6b7f99;font-weight:700}
-  .pill{display:inline-block;padding:6px 12px;border-radius:999px;background:#eef5ff;color:#1b5ad6;font-weight:700;font-size:12px}
-  /* Sections */
-  section{padding:70px 0}
-  .section-title{font-size:28px;margin:0 0 12px;color:var(--brand)}
-  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-  .card{background:var(--card);border:1px solid var(--ring);border-radius:16px;padding:22px;box-shadow:0 8px 20px rgba(16,72,121,.05)}
-  .card h4{margin:6px 0 8px;color:var(--ink)}
-  .card p{color:#42526b}
-  /* Pricing */
-  .pricing{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-  .plan{border:1px solid var(--ring);border-radius:16px;padding:20px}
-  .plan h5{margin:0 0 6px;color:var(--ink)}
-  .price{font-size:28px;font-weight:800;color:var(--brand)}
-  .plan ul{margin:10px 0 0;padding-left:18px;color:#475569}
-  /* Footer */
-  footer{background:#0b2540;color:#cbd7e7;padding:34px 0;margin-top:24px}
-  footer a{color:#9cc0ff}
-  /* Responsive */
-  @media (max-width:980px){
-    .hero-grid{grid-template-columns:1fr}
-    .cards{grid-template-columns:1fr 1fr}
-    .pricing{grid-template-columns:1fr 1fr}
-    h1{font-size:40px}
-  }
-  @media (max-width:640px){
-    .cards{grid-template-columns:1fr}
-    .pricing{grid-template-columns:1fr}
-    h1{font-size:34px}
-  }
-</style>
-</head>
-<body>
+{% extends "base.html" %}
 
-<header>
-  <div class="container nav">
-    <div class="brand">
-      <!-- Replace with your actual logo path -->
-      <img src="jobcus-logo.png" alt="Jobcus logo" />
-      <span>Jobcus</span>
-    </div>
-    <nav class="navlinks">
-      <a href="#features">Features</a>
-      <a href="#how">How it Works</a>
-      <a href="#pricing">Pricing</a>
-      <a href="#faq">FAQ</a>
-      <a class="btn" href="#get-started">Get Started</a>
-    </nav>
-  </div>
-</header>
+{% block title %}Jobcus – AI Resume Builder & Analyzer{% endblock %}
 
-<!-- HERO: AI Career Chat as the core -->
-<section class="hero">
-  <div class="container hero-grid">
-    <div>
-      <div class="eyebrow">AI Career Chat • Built for Job Seekers</div>
-      <h1>Your personal AI career advisor — in one simple chat</h1>
-      <div class="cta">
-        <a class="btn" href="#get-started">Try the AI Career Chat</a>
-        <a class="btn outline" href="#watch">Watch a 60-sec demo</a>
-      </div>
-    </div>
+{% block content %}
 
-    <!-- Chat demo card -->
-    <div>
-      <div class="chat" aria-label="AI Career Chat demo">
-        <h3>AI Career Chat</h3>
-        <div class="bubble user">Can you analyse my resume for a UX Designer role?</div>
-        <div class="bubble ai">Sure — I’ll scan for ATS keywords, structure and gaps. Do you have the job link?</div>
-        <div class="bubble user">Here’s the JD. Also, what skills am I missing for Senior UX?</div>
-        <div class="bubble ai">You’re strong on research. Add “Design Systems”, “A/B testing”, and “Figma Auto Layout”. I can generate a cover letter too.</div>
-        <div class="input">
-          <input placeholder="Ask your career question…" aria-label="chat input" />
-          <button>Send</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Trust / quick capabilities -->
-<div class="trust">
-  <div class="container row">
-    <span class="pill">ATS-friendly resumes</span>
-    <span class="pill">Interview practice with Jeni</span>
-    <span class="pill">Real-time job insights</span>
-    <span class="pill">Skill-gap guidance</span>
-    <span class="pill">Multi-currency, global</span>
-  </div>
-</div>
-
-<!-- FEATURES -->
-<section id="features">
-  <div class="container">
-    <h2 class="section-title">Everything flows from the chat</h2>
-    <p class="lead">Ask one question. Jobcus routes you to the right tool — no menus, no friction.</p>
-    <div class="cards">
-      <div class="card">
-        <h4>Resume Builder & Analyzer</h4>
-        <p>Create or upload a resume and get instant ATS checks, keyword alignment, and role-specific suggestions.</p>
-      </div>
-      <div class="card">
-        <h4>Cover Letter Generator</h4>
-        <p>Turn your resume + job link into a polished, tailored letter in seconds. Choose tone and refine with AI.</p>
-      </div>
-      <div class="card">
-        <h4>Interview Coach (Jeni)</h4>
-        <p>Practice role-specific questions and receive feedback on clarity, tone, and confidence — anytime.</p>
-      </div>
-      <div class="card">
-        <h4>Skill-Gap Analyzer</h4>
-        <p>Compare your skills to target roles and get a step-by-step upskilling plan with course suggestions.</p>
-      </div>
-      <div class="card">
-        <h4>Job Insights Dashboard</h4>
-        <p>See live salary ranges, demand by location, and trending skills powered by global job APIs.</p>
-      </div>
-      <div class="card">
-        <h4>Employer Tools (Phased)</h4>
-        <p>Start with AI Job Description Generator. Grow into posting, matching, and talent insights over time.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section id="how" style="background:var(--bg)">
-  <div class="container">
-    <h2 class="section-title">How Jobcus works</h2>
-    <div class="cards">
-      <div class="card">
-        <h4>1) Ask in natural language</h4>
-        <p>Type, paste a JD, or upload a resume. The AI understands your goal without special prompts.</p>
-      </div>
-      <div class="card">
-        <h4>2) Chat orchestrates tools</h4>
-        <p>The AI routes you to the right module — analyse resume, generate cover letter, practise interviews, or explore insights.</p>
-      </div>
-      <div class="card">
-        <h4>3) Get results you can use</h4>
-        <p>Export optimised PDFs/DOCX, save versions, and track progress across devices.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-  <!-- FAQ -->
-  <section id="faq" style="background:var(--bg)">
-    <div class="container">
-      <h2 class="section-title">FAQ</h2>
-      <div class="cards">
-        <div class="card">
-          <h4>Is Jobcus a job board?</h4>
-          <p>No. Jobcus is a career advisor. We help you prepare smarter and apply better; we also surface insights from job APIs.</p>
-        </div>
-        <div class="card">
-          <h4>How is this different from ChatGPT?</h4>
-          <p>Jobcus is domain-specific with structured modules (ATS checks, interview simulator, skill-gap engine) routed by the chat.</p>
-        </div>
-        <div class="card">
-          <h4>Can employers use Jobcus?</h4>
-          <p>Yes. Today we offer an AI Job Description Generator; over time this grows into posting, matching, and talent insights.</p>
-        </div>
-      </div>
-      <div style="margin-top:20px">
-        <a class="btn" id="get-started" href="#">Create your account</a>
-      </div>
+<!-- 🟦 Hero Section (full-bleed background) -->
+<div class="full-bleed hero-bleed">
+  <section class="hero hero--index">
+    <h1 class="hero-title">AI Resume Builder &amp; Analyzer</h1>
+    <p class="hero-subtitle">
+      Create ATS-ready resumes, analyse your resume and get instant feedback, close skill gaps,
+      prep for interviews, and everything you need to land the right job.
+    </p>
+    <div class="hero-actions">
+      <a href="/resume-analyzer" class="cta-primary">Analyze my resume now</a>
+      <a href="/resume-builder" class="cta-secondary">Build my resume</a>
     </div>
   </section>
-  
-<footer>
-  <div class="container" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px">
-    <div>© 2025 Jobcus — Your AI Career Advisor</div>
-    <div>
-      <a href="#">Privacy</a> ·
-      <a href="#">Terms</a> ·
-      <a href="#">Contact</a>
+</div>
+
+<!-- ✉️ Cover Letter Builder -->
+<section class="ai-assistance cover-letter" style="background:#f9fafb; margin-bottom: 20px; margin-top:20px;">
+  <h2>Stand Out with Tailored Cover Letters</h2>
+  <p>
+    Use your resume details and AI assistance to create personalised, job-specific cover letters that recruiters notice.
+  </p>
+  <a href="/cover-letter" class="cta-secondary">Create your letter</a>
+</section>
+
+<!-- 💡 Feature Highlights -->
+<section class="features">
+  <a href="/resume-analyzer" class="feature-link" data-aos="fade-up" data-aos-delay="300">
+    <div class="feature-box">
+      <h3>🧰 Resume Analyzer</h3>
+      <p>Improve your resume with instant feedback.</p>
     </div>
-  </div>
+  </a>
+  
+  <a href="/resume-builder" class="feature-link" data-aos="fade-up">
+    <div class="feature-box">
+      <h3>📄 Resume Builder</h3>
+      <p>Create ATS-friendly resumes in minutes.</p>
+    </div>
+  </a>
+
+  <a href="/cover-letter" class="feature-link" data-aos="fade-up" data-aos-delay="50">
+    <div class="feature-box">
+      <h3>✉️ Cover Letter Builder</h3>
+      <p>Generate tailored cover letters to match each job.</p>
+    </div>
+  </a>
+
+  <a href="/interview-coach" class="feature-link" data-aos="fade-up" data-aos-delay="100">
+    <div class="feature-box">
+      <h3>🧠 Interview Coach</h3>
+      <p>Practice questions and boost confidence.</p>
+    </div>
+  </a>
+
+  <a href="/skill-gap" class="feature-link" data-aos="fade-up" data-aos-delay="75">
+    <div class="feature-box">
+      <h3>📊 Skill Gap Analyzer</h3>
+      <p>Identify missing skills and boost your employability.</p>
+    </div>
+  </a>
+
+  <!-- NEW: Employers -->
+  <a href="/employers" class="feature-link" data-aos="fade-up" data-aos-delay="150">
+    <div class="feature-box">
+      <h3>🏢 Employers</h3>
+      <p>Post roles, collect inquiries, and reach qualified talent.</p>
+    </div>
+  </a>
+</section>
+
+<!-- 🧠 Interview Coach -->
+<section class="ai-assistance interview-coach">
+  <img src="{{ url_for('static', filename='images/ai-assist.png') }}" alt="Interview Coach" />
+  <h2>Ace Your Interviews with Our AI Coach</h2>
+  <p>
+    Practice tailored questions, get STAR-based feedback, and polish your answers with real-time coaching.
+  </p>
+  <a href="/interview-coach" class="cta-secondary">Practice now</a>
+</section>
+
+<!-- 🤖 AI Assistance -->
+<footer class="full-bleed site-footer footer-note-static">
+  <section class="cta-section ai-assist-cta">
+    <h2>Meet Your Personal AI Career Assistant</h2>
+    <p>
+      Ask anything about resumes, job descriptions, interview prep, or skill gaps, get instant, actionable guidance.
+    </p>
+    <a href="/chat" class="cta-primary">Chat with Jobcus AI</a>
+  </section>
 </footer>
 
-</body>
-</html>
+{% endblock %}
 
