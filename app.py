@@ -128,9 +128,9 @@ def inject_supabase_public():
 
 # Session cookie hardening
 app.config.update(
-  SESSION_COOKIE_SAMESITE="Lax",
-  SESSION_COOKIE_SECURE=True,
-  SESSION_PERMANENT=False,  # reduce churn
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_DOMAIN=".jobcus.com",  # note leading dot to cover www + apex
 )
 
 CORS(app)
