@@ -168,19 +168,19 @@ function detectJobsIntent(raw) {
   if (!raw) return null;
   const message = String(raw).toLowerCase().trim();
 
-  // quick pre-filter to avoid false positives
+  // broader verbs so "provide/give/suggest" also trigger
   const hasJobsWord = /\b(job|jobs|role|roles|position|positions|openings|vacancies)\b/.test(message);
-  const hasVerb = /\b(find|show|search|look|get|list|any|recommend)\b/.test(message);
+  const hasVerb = /\b(find|show|search|look|get|list|provide|give|suggest|recommend)\b/.test(message);
   if (!(hasJobsWord && hasVerb)) return null;
 
-  // extract a simple "role" and "location"
+  // --- extract a simple role and (first) location ---
   const inLoc = /\b(in|near|around|at)\s+([a-z0-9\s\-,'\.]+)/i;
   const remote = /\b(remote|work from home|hybrid)\b/i;
 
   let role = message
-    .replace(/\b(find|show|search|look|get|list)\b/g, "")
+    .replace(/\b(find|show|search|look|get|list|provide|give|suggest|recommend)\b/g, "")
     .replace(/\b(job|jobs|role|roles|position|positions|openings|vacancies)\b/g, "")
-    .replace(/\bin\s+[a-z0-9\s\-,'\.]+$/i, "")
+    .replace(/\bin\s+[a-z0-9\s\-,'\.]+$/i, "") // strip trailing "in <place>"
     .replace(/\s+/g, " ")
     .trim();
 
@@ -194,12 +194,33 @@ function detectJobsIntent(raw) {
 
   if (!role || role.length < 3) role = null;
 
-  let query = "";
-  if (role) query += role;
-  if (location) query += (query ? " " : "") + location;
+  // --- multi-location support: "in london and nottingham" ---
+  let locations = [];
+  const andSplit = message.match(/\bin\s+([a-z0-9\s\-,'\.]+(?:\s+and\s+[a-z0-9\s\-,'\.]+)+)/i);
+  if (andSplit && andSplit[1]) {
+    locations = andSplit[1].split(/\s+and\s+/i).map(s => s.trim()).filter(Boolean);
+  } else if (location) {
+    locations = [location];
+  }
 
-  if (!query) return null;
-  return { query, role: role || null, location: location || null };
+  // Build one or many queries
+  let queries = [];
+  if (locations.length) {
+    queries = locations.map(loc => [role, loc].filter(Boolean).join(" ").trim());
+  } else {
+    const q = [role, location].filter(Boolean).join(" ").trim();
+    if (q) queries = [q];
+  }
+
+  if (!queries.length) return null;
+
+  // Keep compatibility: provide a single joined query + full list
+  return {
+    query: queries.join(" | "),
+    queries,
+    role: role || null,
+    location: location || null
+  };
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -450,18 +471,36 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       if (jobIntent) {
-        const jobs = await apiFetch("/jobs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: jobIntent.query })
-        });
+        let jobs;
+        if (Array.isArray(jobIntent.queries) && jobIntent.queries.length > 1) {
+          // fetch each location and merge
+          const results = await Promise.all(jobIntent.queries.map(q =>
+            apiFetch("/jobs", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ query: q })
+            }).catch(() => ({ remotive:[], adzuna:[], jsearch:[] }))
+          ));
+          // merge arrays
+          jobs = results.reduce((acc, r) => ({
+            remotive: [...(acc.remotive||[]), ...(r.remotive||[])],
+            adzuna:   [...(acc.adzuna  ||[]), ...(r.adzuna  ||[])],
+            jsearch:  [...(acc.jsearch ||[]), ...(r.jsearch ||[])],
+          }), {remotive:[], adzuna:[], jsearch:[]});
+        } else {
+          jobs = await apiFetch("/jobs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: jobIntent.query })
+          });
+        }
+      
         displayJobs(jobs, aiBlock);
-        // Show a friendly fallback if nothing came back
         if (![...(jobs?.remotive||[]), ...(jobs?.adzuna||[]), ...(jobs?.jsearch||[])].length) {
           aiBlock.insertAdjacentHTML('beforeend',
             `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
         }
-        saveMessage("assistant", `Here are jobs for “${jobIntent.query}”.`);
+        saveMessage("assistant", `Here are jobs for “${(jobIntent.queries || [jobIntent.query]).join(' | ')}”.`);
         refreshCreditsPanel?.();
         window.syncState?.();
         scrollToBottom();
