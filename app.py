@@ -1695,35 +1695,17 @@ def list_messages(conv_id):
 @app.route("/api/ask", methods=["POST"])
 @api_login_required
 def ask():
-    data = request.get_json(silent=True) or {}
-    message = (data.get("message") or "").strip()
-    requested_model = (data.get("model") or "gpt-4o-mini").strip()
+    data = request.get_json()
+    message = data.get("message", "")
+    user = current_user.first_name if current_user.is_authenticated else "there"
 
-    # Friendly greeting if empty
-    user_name = getattr(current_user, "first_name", None) if current_user.is_authenticated else None
-    if not message:
-        reply = f"Hello {user_name or 'there'}, how can I assist you today!"
-        return jsonify(reply=reply, modelUsed=requested_model), 200
+    # 👇 Replace this with your actual AI integration
+    if not message.strip():
+        reply = f"Hello {user}, how can I assist you today!"
+    else:
+        reply = run_model("gpt-4", message)  # example AI call  ❌ NOT DEFINED
 
-    # Force free plan to the cheap model
-    plan = (getattr(current_user, "plan", "free") or "free").lower()
-    model = "gpt-4o-mini" if plan == "free" else requested_model
-
-    # Get the shared OpenAI client you already initialized
-    client = current_app.config["OPENAI_CLIENT"]
-
-    try:
-        resp = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": message}],
-            temperature=0.3,
-            max_tokens=600,
-        )
-        reply = (resp.choices[0].message.content or "").strip()
-        return jsonify(reply=reply, modelUsed=model), 200
-    except Exception as e:
-        current_app.logger.exception("/api/ask failed")
-        return jsonify(error="ai_error", message=str(e)), 500
+    return jsonify(reply=reply, modelUsed="gpt-4")
 
 @app.get("/api/credits")
 @login_required
