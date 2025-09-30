@@ -1,5 +1,13 @@
 // /static/js/chat.js
 
+window.insertSuggestion ||= function (text) {
+  const el = document.getElementById('userInput');
+  if (!el) return;
+  el.value = text;
+  el.focus();
+  window.autoResize?.(el);
+};
+
 // ──────────────────────────────────────────────────────────────
 // Ensure cookies (SameSite/Lax) are sent on all fetches
 // ──────────────────────────────────────────────────────────────
