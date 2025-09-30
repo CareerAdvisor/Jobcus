@@ -1680,8 +1680,6 @@ def list_messages(conv_id):
         .order("created_at", asc=True).execute().data or []
     return jsonify(rows)
 
-from limits import check_and_increment, check_and_add  # <-- make sure this import is at the top
-
 @app.route("/api/ask", methods=["POST"])
 @api_login_required
 def ask():
