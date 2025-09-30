@@ -112,10 +112,6 @@ if resumes_bp is None:
 # --- Environment & app setup ---
 load_dotenv()
 
-def init_openai():
-    # Reuse your lazy _client() so there’s a single source of truth
-    return _client()
-
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
     
@@ -1539,24 +1535,6 @@ def verify_token():
 # ----------------------------
 ask_bp = Blueprint("ask", __name__)
 
-# --- OpenAI (v1) ---
-_oai_client = None
-def _client():
-    global _oai_client
-    if _oai_client is None:
-        _oai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-    return _oai_client
-
-CAREER_SYSTEM_PROMPT = (
-    "You are Jobcus Assistant — an expert career coach. "
-    "You help with: careers, job search, resumes, cover letters, interview prep, "
-    "compensation and negotiation, education programs, schools, job roles and duties, "
-    "career paths, upskilling, labor-market insights, and workplace advice. "
-    "Be clear, practical, and encouraging; structure answers with short sections or bullets; "
-    "when useful, include brief examples or templates. If a request is outside career/education, "
-    "politely steer the user back to career-relevant guidance."
-)
-
 def _first_name_fallback():
     # Use the name “ThankGod” only if that’s actually the logged-in user’s first name;
     # otherwise use the best available first name.
@@ -1692,24 +1670,53 @@ def list_messages(conv_id):
         .order("created_at", asc=True).execute().data or []
     return jsonify(rows)
 
+from limits import check_and_increment, check_and_add  # <-- make sure this import is at the top
+
 @app.route("/api/ask", methods=["POST"])
 @api_login_required
 def ask():
     data = request.get_json(silent=True) or {}
     message = (data.get("message") or "").strip()
-    requested_model = (data.get("model") or "gpt-4o-mini").strip()
+    model   = (data.get("model")   or "gpt-4o-mini").strip()
 
-    # Friendly greeting if empty
-    user_name = getattr(current_user, "first_name", None) if current_user.is_authenticated else None
     if not message:
-        reply = f"Hello {user_name or 'there'}, how can I assist you today!"
-        return jsonify(reply=reply, modelUsed=requested_model), 200
+        return jsonify(error="bad_request", message="message is required"), 400
 
-    # Force free plan to the cheap model
     plan = (getattr(current_user, "plan", "free") or "free").lower()
-    model = "gpt-4o-mini" if plan == "free" else requested_model
+
+    # IMPORTANT: use the same key you set at startup.
+    # If you did: app.config["SUPABASE"] = init_supabase()
+    # then read it as SUPABASE, not SUPABASE_ADMIN
+    supabase_admin = current_app.config.get("SUPABASE")
+
+    # ---- Pre-call quotas: calls/hour, calls/day, words/hour, words/day ----
+    def count_words(s: str) -> int:
+        return len((s or "").split())
+
+    words = count_words(message)
+
+    ok, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages_hour")
+    if not ok:
+        return jsonify(info), 429
+
+    ok, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages_day")
+    if not ok:
+        return jsonify(info), 429
+
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_words_hour", words)
+    if not ok:
+        return jsonify(info), 429
+
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_words_day", words)
+    if not ok:
+        return jsonify(info), 429
+
+    # Pin free users to the cheap model (saves cost)
+    if plan == "free":
+        model = "gpt-4o-mini"
 
     client = current_app.config["OPENAI_CLIENT"]
+
     try:
         resp = client.chat.completions.create(
             model=model,
@@ -1718,10 +1725,25 @@ def ask():
             max_tokens=600,
         )
         reply = (resp.choices[0].message.content or "").strip()
-        return jsonify(reply=reply, modelUsed=model), 200
     except Exception as e:
-        current_app.logger.exception("/api/ask failed")
+        current_app.logger.exception("ask() model error")
         return jsonify(error="ai_error", message=str(e)), 500
+
+    # ---- Post-call token budgets: tokens/hour, tokens/day ----
+    pt = getattr(resp.usage, "prompt_tokens", None) or 0
+    ct = getattr(resp.usage, "completion_tokens", None) or 0
+    total_tokens = int(pt) + int(ct)
+
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_tokens_hour", total_tokens)
+    if not ok:
+        return jsonify(info), 429
+
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_tokens_day", total_tokens)
+    if not ok:
+        return jsonify(info), 429
+
+    return jsonify(reply=reply, modelUsed=model), 200
+
 
 @app.get("/api/credits")
 @login_required
