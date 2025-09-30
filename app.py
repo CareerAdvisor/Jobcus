@@ -28,6 +28,7 @@ from datetime import datetime, timedelta, timezone, date
 from auth_utils import require_superadmin, is_staff, is_superadmin, api_login_required
 from limits import (
     check_and_increment,
+    check_and_add,
     get_usage_count,
     job_insights_level,
     feature_enabled,
@@ -111,6 +112,10 @@ if resumes_bp is None:
 # --- Environment & app setup ---
 load_dotenv()
 
+def init_openai():
+    # Reuse your lazy _client() so there’s a single source of truth
+    return _client()
+
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
     
@@ -127,9 +132,9 @@ def inject_supabase_public():
 
 # Session cookie hardening
 app.config.update(
-  SESSION_COOKIE_SAMESITE="Lax",
-  SESSION_COOKIE_SECURE=True,
-  SESSION_PERMANENT=False,  # reduce churn
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_DOMAIN=".jobcus.com",  # note leading dot to cover www + apex
 )
 
 CORS(app)
@@ -241,6 +246,22 @@ def choose_model(requested: str | None) -> str:
     req = (requested or "").strip()
     return req if req in allowed else default
 
+# ---- Token pricing & cost in GBP ----
+GBP_PER_USD = float(os.getenv("GBP_PER_USD", "0.78"))  # set via env
+
+MODEL_PRICES_USD = {
+  # per 1K tokens (USD)
+  "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
+  "gpt-4o":      {"input": 0.005,   "output": 0.015},  # example; adjust to your contract
+}
+
+def estimate_cost_gbp(model: str, prompt_tok: int | None, completion_tok: int | None) -> float | None:
+    p = MODEL_PRICES_USD.get(model)
+    if not p or prompt_tok is None or completion_tok is None:
+        return None
+    usd = (prompt_tok/1000.0)*p["input"] + (completion_tok/1000.0)*p["output"]
+    return round(usd * GBP_PER_USD, 6)
+
 # --- helpers: safe next ---
 def _is_safe_next(url: str) -> bool:
     try:
@@ -297,6 +318,147 @@ def call_ai(model: str, prompt: str) -> str:
         temperature=0.2,
     )
     return (resp.choices[0].message.content or "").strip()
+
+# --- Metric helpers ---
+def _device_cookie():
+    c = (request.cookies or {}).get("jobcus_device")
+    return c or None
+
+def log_ai_usage(feature: str, model: str, resp, extra: dict | None = None):
+    """
+    resp: OpenAI response object (expects .usage.* if available)
+    """
+    try:
+        supabase = current_app.config.get("SUPABASE_ADMIN")
+        if not supabase or not getattr(current_user, "is_authenticated", False):
+            return
+
+        usage = getattr(resp, "usage", None) or {}
+        row = {
+            "user_id": current_user.id,
+            "feature": feature,
+            "endpoint": request.path,
+            "model": model,
+            "prompt_tokens": usage.get("prompt_tokens"),
+            "completion_tokens": usage.get("completion_tokens"),
+            "total_tokens": usage.get("total_tokens"),
+            "estimated_cost_usd": None,   # fill if you want (see note below)
+            "session_id": (g.get("session_id") or None),
+            "device_cookie": _device_cookie(),
+            "ip_hash": ip_hash_from_request(request),
+            "meta": {
+                "plan": getattr(current_user, "plan", "free"),
+                **(extra or {})
+            }
+        }
+        supabase.table("ai_usage").insert(row).execute()
+    except Exception:
+        current_app.logger.warning("log_ai_usage failed", exc_info=True)
+
+# --- checkout helpers ---
+def _activate_user_plan_by_metadata(supabase, metadata, customer_id=None, subscription_id=None):
+    """Use metadata we set during Checkout to know who & what to update."""
+    if not metadata:
+        return
+    user_id   = metadata.get("user_id")
+    plan_code = metadata.get("plan_code")
+    if not user_id or not plan_code:
+        return
+    try:
+        supabase.table("users").update({
+            "plan": plan_code,
+            "plan_status": "active",
+            "stripe_customer_id": customer_id,
+            "stripe_subscription_id": subscription_id
+        }).eq("auth_id", user_id).execute()
+    except Exception:
+        current_app.logger.exception("Failed to update user plan from webhook")
+
+
+def _deactivate_user_plan_by_customer(supabase, customer_id):
+    try:
+        supabase.table("users").update({
+            "plan": "free",
+            "plan_status": "canceled"
+        }).eq("stripe_customer_id", customer_id).execute()
+    except Exception:
+        current_app.logger.exception("Failed to downgrade after cancel")
+
+
+# Map Stripe Price IDs -> your internal plan codes
+PRICE_TO_PLAN = {
+    os.getenv("STRIPE_PRICE_WEEKLY"):   "weekly",
+    os.getenv("STRIPE_PRICE_STANDARD"): "standard",
+    os.getenv("STRIPE_PRICE_PREMIUM"):  "premium",
+}
+
+
+def _find_user_id_by_customer(supabase, customer_id: str):
+    if not customer_id:
+        return None
+    try:
+        r = (
+            supabase.table("users")
+            .select("auth_id")
+            .eq("stripe_customer_id", customer_id)
+            .single()
+            .execute()
+        )
+        return (r.data or {}).get("auth_id")
+    except Exception:
+        current_app.logger.exception("find user by customer failed")
+        return None
+
+
+def _update_user_plan_from_subscription(supabase, sub):
+    """
+    Keep the users table in sync with the Stripe subscription object.
+    Handles plan mapping, status, and next renewal / expiry timestamps.
+    """
+    customer_id = sub.get("customer")
+    user_id = _find_user_id_by_customer(supabase, customer_id)
+    if not user_id:
+        current_app.logger.warning("No user for customer %s", customer_id)
+        return
+
+    # price -> plan (use first item)
+    items = sub.get("items", {}).get("data", [])
+    price_id = items[0]["price"]["id"] if items else None
+    plan_code = PRICE_TO_PLAN.get(price_id, "free")
+
+    status = sub.get("status")  # active, trialing, past_due, canceled, unpaid, ...
+    period_end = sub.get("current_period_end")  # epoch seconds
+    ends_at = (
+        None
+        if not period_end
+        else time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(period_end))
+    )
+
+    db_update = {
+        "stripe_subscription_id": sub.get("id"),
+        "plan_status": status,
+        "stripe_customer_id": customer_id,
+    }
+
+    if status in ("active", "trialing", "past_due"):
+        # keep access (you can gate features separately if past_due)
+        db_update.update({
+            "plan": plan_code,
+            "plan_renews_at": ends_at if status in ("active", "trialing") else None,
+            "plan_expires_at": None if status in ("active", "trialing") else ends_at,
+        })
+    elif status in ("canceled", "unpaid", "incomplete_expired"):
+        # allow access until end of period, then fall back to free
+        db_update.update({
+            "plan": plan_code if (period_end and period_end > time.time()) else "free",
+            "plan_renews_at": None,
+            "plan_expires_at": ends_at,
+        })
+
+    try:
+        supabase.table("users").update(db_update).eq("auth_id", user_id).execute()
+    except Exception:
+        current_app.logger.exception("Failed updating user from subscription")
 
 # --- User model ---
 class User(UserMixin):
@@ -526,7 +688,7 @@ def enforce_single_active_session():
     except Exception:
         current_app.logger.exception("session check failed")
         return end_current_session()
-
+    
 @app.before_request
 def log_ask_calls():
     if request.path == "/api/ask" and request.method == "POST":
@@ -1082,113 +1244,6 @@ def free_success():
                            plan_human=_plans()["free"]["title"],
                            plan_json="free")
 
-
-# --- checkout helpers ---
-def _activate_user_plan_by_metadata(supabase, metadata, customer_id=None, subscription_id=None):
-    """Use metadata we set during Checkout to know who & what to update."""
-    if not metadata:
-        return
-    user_id   = metadata.get("user_id")
-    plan_code = metadata.get("plan_code")
-    if not user_id or not plan_code:
-        return
-    try:
-        supabase.table("users").update({
-            "plan": plan_code,
-            "plan_status": "active",
-            "stripe_customer_id": customer_id,
-            "stripe_subscription_id": subscription_id
-        }).eq("auth_id", user_id).execute()
-    except Exception:
-        current_app.logger.exception("Failed to update user plan from webhook")
-
-
-def _deactivate_user_plan_by_customer(supabase, customer_id):
-    try:
-        supabase.table("users").update({
-            "plan": "free",
-            "plan_status": "canceled"
-        }).eq("stripe_customer_id", customer_id).execute()
-    except Exception:
-        current_app.logger.exception("Failed to downgrade after cancel")
-
-
-# Map Stripe Price IDs -> your internal plan codes
-PRICE_TO_PLAN = {
-    os.getenv("STRIPE_PRICE_WEEKLY"):   "weekly",
-    os.getenv("STRIPE_PRICE_STANDARD"): "standard",
-    os.getenv("STRIPE_PRICE_PREMIUM"):  "premium",
-}
-
-
-def _find_user_id_by_customer(supabase, customer_id: str):
-    if not customer_id:
-        return None
-    try:
-        r = (
-            supabase.table("users")
-            .select("auth_id")
-            .eq("stripe_customer_id", customer_id)
-            .single()
-            .execute()
-        )
-        return (r.data or {}).get("auth_id")
-    except Exception:
-        current_app.logger.exception("find user by customer failed")
-        return None
-
-
-def _update_user_plan_from_subscription(supabase, sub):
-    """
-    Keep the users table in sync with the Stripe subscription object.
-    Handles plan mapping, status, and next renewal / expiry timestamps.
-    """
-    customer_id = sub.get("customer")
-    user_id = _find_user_id_by_customer(supabase, customer_id)
-    if not user_id:
-        current_app.logger.warning("No user for customer %s", customer_id)
-        return
-
-    # price -> plan (use first item)
-    items = sub.get("items", {}).get("data", [])
-    price_id = items[0]["price"]["id"] if items else None
-    plan_code = PRICE_TO_PLAN.get(price_id, "free")
-
-    status = sub.get("status")  # active, trialing, past_due, canceled, unpaid, ...
-    period_end = sub.get("current_period_end")  # epoch seconds
-    ends_at = (
-        None
-        if not period_end
-        else time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(period_end))
-    )
-
-    db_update = {
-        "stripe_subscription_id": sub.get("id"),
-        "plan_status": status,
-        "stripe_customer_id": customer_id,
-    }
-
-    if status in ("active", "trialing", "past_due"):
-        # keep access (you can gate features separately if past_due)
-        db_update.update({
-            "plan": plan_code,
-            "plan_renews_at": ends_at if status in ("active", "trialing") else None,
-            "plan_expires_at": None if status in ("active", "trialing") else ends_at,
-        })
-    elif status in ("canceled", "unpaid", "incomplete_expired"):
-        # allow access until end of period, then fall back to free
-        db_update.update({
-            "plan": plan_code if (period_end and period_end > time.time()) else "free",
-            "plan_renews_at": None,
-            "plan_expires_at": ends_at,
-        })
-
-    try:
-        supabase.table("users").update(db_update).eq("auth_id", user_id).execute()
-    except Exception:
-        current_app.logger.exception("Failed updating user from subscription")
-
-
 @app.post("/stripe/webhook")
 def stripe_webhook():
     supabase = current_app.config["SUPABASE"]
@@ -1553,50 +1608,81 @@ def api_ask():
     data = request.get_json(silent=True) or {}
     message = (data.get("message") or "").strip()
     model   = (data.get("model")   or "gpt-4o-mini").strip()
-    conv_id = data.get("conversation_id")  # may be None on first message
+    conv_id = data.get("conversation_id")
 
     if not message:
         return jsonify(error="bad_request", message="message is required"), 400
 
-    auth_id = current_user.id  # your User.id = auth_id
+    supabase_admin = current_app.config["SUPABASE_ADMIN"]
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    auth_id = current_user.id
 
-    # 1) Ensure conversation
+    # Ensure conversation
     if not conv_id:
-        # Optional: try to title from first user message (truncate)
         title = (message[:60] + "…") if len(message) > 60 else message
         row = supabase_admin.table("conversations").insert({
-            "auth_id": auth_id,
-            "title": title or "Conversation",
+            "auth_id": auth_id, "title": title or "Conversation",
         }).execute()
         conv_id = row.data[0]["id"]
 
-    # 2) Persist user message
+    # Persist user message
     supabase_admin.table("conversation_messages").insert({
-        "conversation_id": conv_id,
-        "role": "user",
-        "content": message
+        "conversation_id": conv_id, "role": "user", "content": message
     }).execute()
 
-    # 3) (Optional) fetch a short context window from DB
-    # Keep it small to control token cost
+    # Fetch short history (oldest first)
     ctx = supabase_admin.table("conversation_messages")\
         .select("role,content")\
         .eq("conversation_id", conv_id)\
         .order("created_at", desc=True)\
         .limit(8).execute().data or []
-    history = list(reversed(ctx))  # oldest first
+    history = list(reversed(ctx))
 
-    # 4) Call model
-    ai_reply = _chat_completion(model=model, user_msg=message, history=history)
+    # ---- Pre-call quotas (same as ask()) ----
+    def count_words(s: str) -> int:
+        return len((s or "").split())
+    words = count_words(message)
 
-    # 5) Persist assistant message
+    ok, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages_hour")
+    if not ok: return jsonify(info), 429
+    ok, info = check_and_increment(supabase_admin, current_user.id, plan, "chat_messages_day")
+    if not ok: return jsonify(info), 429
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_words_hour", words)
+    if not ok: return jsonify(info), 429
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_words_day", words)
+    if not ok: return jsonify(info), 429
+
+    # Build messages with history
+    msgs = [{"role": m["role"], "content": m["content"]} for m in history] + [
+        {"role": "user", "content": message}
+    ]
+
+    # Call model
+    resp = client.chat.completions.create(
+        model=model,
+        messages=msgs,
+        temperature=0.3,
+        max_tokens=600,
+    )
+    ai_reply = (resp.choices[0].message.content or "").strip()
+
+    # Persist assistant message
     supabase_admin.table("conversation_messages").insert({
-        "conversation_id": conv_id,
-        "role": "assistant",
-        "content": ai_reply
+        "conversation_id": conv_id, "role": "assistant", "content": ai_reply
     }).execute()
 
+    # ---- Post-call token budgets (same as ask()) ----
+    pt = getattr(resp.usage, "prompt_tokens", None) or 0
+    ct = getattr(resp.usage, "completion_tokens", None) or 0
+    total_tokens = int(pt) + int(ct)
+
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_tokens_hour", total_tokens)
+    if not ok: return jsonify(info), 429
+    ok, info = check_and_add(supabase_admin, current_user.id, plan, "chat_tokens_day", total_tokens)
+    if not ok: return jsonify(info), 429
+
     return jsonify(reply=ai_reply, modelUsed=model, conversation_id=conv_id), 200
+
 
 @app.get("/api/conversations")
 @api_login_required
@@ -1619,18 +1705,35 @@ def list_messages(conv_id):
 @app.route("/api/ask", methods=["POST"])
 @api_login_required
 def ask():
-    data = request.get_json()
-    message = data.get("message", "")
-    user = current_user.first_name if current_user.is_authenticated else "there"
+    data = request.get_json(silent=True) or {}
+    message = (data.get("message") or "").strip()
+    requested_model = (data.get("model") or "gpt-4o-mini").strip()
 
-    # 👇 Replace this with your actual AI integration
-    if not message.strip():
-        reply = f"Hello {user}, how can I assist you today!"
-    else:
-        reply = run_model("gpt-4", message)  # example AI call
+    # Friendly greeting if empty
+    user_name = getattr(current_user, "first_name", None) if current_user.is_authenticated else None
+    if not message:
+        reply = f"Hello {user_name or 'there'}, how can I assist you today!"
+        return jsonify(reply=reply, modelUsed=requested_model), 200
 
-    return jsonify(reply=reply, modelUsed="gpt-4")
+    # Force free plan to the cheap model
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    model = "gpt-4o-mini" if plan == "free" else requested_model
 
+    # Get the shared OpenAI client you already initialized
+    client = current_app.config["OPENAI_CLIENT"]
+
+    try:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": message}],
+            temperature=0.3,
+            max_tokens=600,
+        )
+        reply = (resp.choices[0].message.content or "").strip()
+        return jsonify(reply=reply, modelUsed=model), 200
+    except Exception as e:
+        current_app.logger.exception("/api/ask failed")
+        return jsonify(error="ai_error", message=str(e)), 500
 
 @app.get("/api/credits")
 @login_required
@@ -1665,6 +1768,24 @@ def api_limits():
         left = max(q.limit - used, 0)
         data["features"][f] = {"used": used, "max": q.limit, "left": left, "period_kind": q.period_kind, "period_key": key}
     return jsonify(data)
+
+@app.get("/api/admin/ai-usage/top")
+@require_superadmin
+def admin_ai_usage_top():
+    # last 7 days, top users by tokens
+    q = """
+      select
+        user_id,
+        sum(coalesce(total_tokens,0)) as tokens,
+        count(*) as calls
+      from ai_usage
+      where created_at >= now() - interval '7 days'
+      group by user_id
+      order by tokens desc
+      limit 50
+    """
+    res = current_app.config["SUPABASE_ADMIN"].rpc("exec_sql", {"q": q}).execute()
+    return jsonify(res.data or [])
 
 @app.route("/jobs", methods=["POST"])
 def get_jobs():
@@ -1893,6 +2014,21 @@ Example format:
             max_tokens=600,
         )
         reply = (resp.choices[0].message.content or "").strip()
+
+        # NEW: log usage (+ optional £ estimate)
+        log_ai_usage(
+            feature="skill_gap",
+            model="gpt-4o-mini",
+            resp=resp,
+            extra={
+                "status": "ok",
+                "cost_gbp": estimate_cost_gbp(
+                    "gpt-4o-mini",
+                    getattr(resp.usage, "prompt_tokens", None),
+                    getattr(resp.usage, "completion_tokens", None),
+                )
+            }
+        )
         return jsonify(result=reply, aiUsed=True), 200
     except Exception as e:
         current_app.logger.exception("skill-gap: OpenAI call failed")
