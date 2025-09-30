@@ -112,6 +112,10 @@ if resumes_bp is None:
 # --- Environment & app setup ---
 load_dotenv()
 
+def init_openai():
+    # Reuse your lazy _client() so there’s a single source of truth
+    return _client()
+
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
     
@@ -1693,29 +1697,33 @@ def list_messages(conv_id):
 def ask():
     data = request.get_json(silent=True) or {}
     message = (data.get("message") or "").strip()
-    model   = (data.get("model")   or "gpt-4o-mini").strip()
+    requested_model = (data.get("model") or "gpt-4o-mini").strip()
 
-    # pin free users to the cheap model
+    # Friendly greeting if empty
+    user_name = getattr(current_user, "first_name", None) if current_user.is_authenticated else None
+    if not message:
+        reply = f"Hello {user_name or 'there'}, how can I assist you today!"
+        return jsonify(reply=reply, modelUsed=requested_model), 200
+
+    # Force free plan to the cheap model
     plan = (getattr(current_user, "plan", "free") or "free").lower()
-    if plan == "free":
-        model = "gpt-4o-mini"
+    model = "gpt-4o-mini" if plan == "free" else requested_model
 
-    # (optional) fetch the client from config if you didn’t use a global)
+    # Get the shared OpenAI client you already initialized
     client = current_app.config["OPENAI_CLIENT"]
 
-    if not message:
-        user_name = getattr(current_user, "first_name", None) if current_user.is_authenticated else None
-        reply = f"Hello {user_name or 'there'}, how can I assist you today!"
+    try:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": message}],
+            temperature=0.3,
+            max_tokens=600,
+        )
+        reply = (resp.choices[0].message.content or "").strip()
         return jsonify(reply=reply, modelUsed=model), 200
-
-    resp = client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": message}],
-        temperature=0.3,
-        max_tokens=600,
-    )
-    reply = (resp.choices[0].message.content or "").strip()
-    return jsonify(reply=reply, modelUsed=model), 200
+    except Exception as e:
+        current_app.logger.exception("/api/ask failed")
+        return jsonify(error="ai_error", message=str(e)), 500
 
 @app.get("/api/credits")
 @login_required
