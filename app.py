@@ -527,6 +527,16 @@ def enforce_single_active_session():
         current_app.logger.exception("session check failed")
         return end_current_session()
 
+@app.before_request
+def log_ask_calls():
+    if request.path == "/api/ask" and request.method == "POST":
+        current_app.logger.info(
+            "ASK call by %s ip=%s ua=%s",
+            getattr(current_user, "id", None),
+            request.headers.get("X-Forwarded-For", request.remote_addr),
+            request.headers.get("User-Agent", "")[:200]
+        )
+
 # --- Error Handler ---#
 def _wants_json():
     return "application/json" in (request.headers.get("Accept") or "")
@@ -1585,6 +1595,16 @@ def api_ask():
         "role": "assistant",
         "content": ai_reply
     }).execute()
+
+    # 6) COUNT ONE MESSAGE USAGE (post-success)
+    if q.limit is not None:
+        record_usage(
+            supabase_admin,
+            current_user.id,
+            feature="chat_messages",
+            period_kind=q.period_kind,
+            period_key=pk
+        )
 
     return jsonify(reply=ai_reply, modelUsed=model, conversation_id=conv_id), 200
 
