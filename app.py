@@ -527,16 +527,6 @@ def enforce_single_active_session():
         current_app.logger.exception("session check failed")
         return end_current_session()
 
-@app.before_request
-def log_ask_calls():
-    if request.path == "/api/ask" and request.method == "POST":
-        current_app.logger.info(
-            "ASK call by %s ip=%s ua=%s",
-            getattr(current_user, "id", None),
-            request.headers.get("X-Forwarded-For", request.remote_addr),
-            request.headers.get("User-Agent", "")[:200]
-        )
-
 # --- Error Handler ---#
 def _wants_json():
     return "application/json" in (request.headers.get("Accept") or "")
