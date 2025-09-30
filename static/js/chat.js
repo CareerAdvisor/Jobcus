@@ -1,5 +1,6 @@
 // /static/js/chat.js
 
+// ——— Safe global for inline onclick="insertSuggestion(...)" ———
 window.insertSuggestion ||= function (text) {
   const el = document.getElementById('userInput');
   if (!el) return;
@@ -33,7 +34,6 @@ function insertSuggestion(text) {
   input.focus();
   window.autoResize?.(input);
 }
-
 function autoResize(textarea) {
   if (!textarea) return;
   textarea.style.height = "auto";
@@ -111,6 +111,8 @@ window.handleAttach     = handleAttach;
 window.removeWelcome    = removeWelcome;
 
 // ──────────────────────────────────────────────────────────────
+// Model controls
+// ──────────────────────────────────────────────────────────────
 function initModelControls() {
   const shell = document.getElementById("chatShell");
   const modelSelect = document.getElementById("modelSelect");
@@ -160,6 +162,47 @@ async function sendMessageToAPI(payload) {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Detect if a message is about job search (natural language)
+// ──────────────────────────────────────────────────────────────
+function detectJobsIntent(raw) {
+  if (!raw) return null;
+  const message = String(raw).toLowerCase().trim();
+
+  // quick pre-filter to avoid false positives
+  const hasJobsWord = /\b(job|jobs|role|roles|position|positions|openings|vacancies)\b/.test(message);
+  const hasVerb = /\b(find|show|search|look|get|list|any|recommend)\b/.test(message);
+  if (!(hasJobsWord && hasVerb)) return null;
+
+  // extract a simple "role" and "location"
+  const inLoc = /\b(in|near|around|at)\s+([a-z0-9\s\-,'\.]+)/i;
+  const remote = /\b(remote|work from home|hybrid)\b/i;
+
+  let role = message
+    .replace(/\b(find|show|search|look|get|list)\b/g, "")
+    .replace(/\b(job|jobs|role|roles|position|positions|openings|vacancies)\b/g, "")
+    .replace(/\bin\s+[a-z0-9\s\-,'\.]+$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  let location = null;
+  const m = message.match(inLoc);
+  if (m && m[2]) {
+    location = m[2].trim();
+  } else if (remote.test(message)) {
+    location = "remote";
+  }
+
+  if (!role || role.length < 3) role = null;
+
+  let query = "";
+  if (role) query += role;
+  if (location) query += (query ? " " : "") + location;
+
+  if (!query) return null;
+  return { query, role: role || null, location: location || null };
+}
+
+// ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   // Init model UI/logic first
   const modelCtl = initModelControls();
@@ -187,7 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.autoResize?.(input);
 
   const escapeHtml = (s='') => s
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/&/g,'&amp;').replace(/<//g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
   const getCurrent = () => JSON.parse(localStorage.getItem(STORAGE.current) || "[]");
@@ -401,16 +444,24 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       disableComposer(true);
 
-      // Jobs quick-intent
-      if (/^\s*jobs?:/i.test(message)) {
-        const query = message.replace(/^\s*jobs?:/i, "").trim() || message.trim();
+      // Jobs quick-intent (supports natural language + "jobs:" shortcut)
+      const jobIntent = detectJobsIntent(message) || (
+        (/^\s*jobs?:/i.test(message) ? { query: message.replace(/^\s*jobs?:/i, "").trim() || message.trim() } : null)
+      );
+
+      if (jobIntent) {
         const jobs = await apiFetch("/jobs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query })
+          body: JSON.stringify({ query: jobIntent.query })
         });
         displayJobs(jobs, aiBlock);
-        saveMessage("assistant", `Found ${Array.isArray(jobs) ? jobs.length : 0} jobs for “${query}”.`);
+        // Show a friendly fallback if nothing came back
+        if (![...(jobs?.remotive||[]), ...(jobs?.adzuna||[]), ...(jobs?.jsearch||[])].length) {
+          aiBlock.insertAdjacentHTML('beforeend',
+            `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
+        }
+        saveMessage("assistant", `Here are jobs for “${jobIntent.query}”.`);
         refreshCreditsPanel?.();
         window.syncState?.();
         scrollToBottom();
@@ -419,16 +470,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Normal AI chat
       const data = await apiFetch("/api/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
-    });
-    
-    // Save conv id after first reply
-    if (data.conversation_id && data.conversation_id !== conversationId) {
-      conversationId = data.conversation_id;
-      localStorage.setItem("chat:conversationId", conversationId);
-    }
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
+      });
+
+      // Save conv id after first reply
+      if (data.conversation_id && data.conversation_id !== conversationId) {
+        conversationId = data.conversation_id;
+        localStorage.setItem("chat:conversationId", conversationId);
+      }
 
       finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
     } catch (err) {
@@ -515,6 +566,11 @@ async function fetchJobs(query, aiBlock) {
     });
     const data = await res.json();
     displayJobs(data, aiBlock);
+    // Also show a friendly fallback if nothing came back when called directly
+    if (![...(data?.remotive||[]), ...(data?.adzuna||[]), ...(data?.jsearch||[])].length) {
+      aiBlock.insertAdjacentHTML('beforeend',
+        `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
+    }
   } catch (err) {
     console.error("Job fetch error:", err);
   }
