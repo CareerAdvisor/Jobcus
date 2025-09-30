@@ -251,8 +251,11 @@ document.addEventListener("DOMContentLoaded", () => {
   window.autoResize?.(input);
 
   const escapeHtml = (s='') => s
-    .replace(/&/g,'&amp;').replace(/<//g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')     // ← correct
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
   const getCurrent = () => JSON.parse(localStorage.getItem(STORAGE.current) || "[]");
   const setCurrent = (arr) => localStorage.setItem(STORAGE.current, JSON.stringify(arr));
