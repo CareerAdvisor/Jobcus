@@ -386,29 +386,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  function refreshCreditsPanel() {
+  // 🔁 UPDATED: server-truth credits panel (USED of MAX)
+  async function refreshCreditsPanel() {
     const planEl  = document.getElementById("credits-plan");
     const leftEl  = document.getElementById("credits-left");
     const resetEl = document.getElementById("credits-reset");
     if (!planEl && !leftEl && !resetEl) return;
 
-    const serverPlan = planEl?.dataset.plan;
-    const PLAN = (serverPlan || localStorage.getItem("userPlan") || "free");
-    if (serverPlan) localStorage.setItem("userPlan", serverPlan);
+    try {
+      const c = await apiFetch("/api/credits"); // { plan, used, max, left, period_kind, period_key }
+      const used = typeof c.used === "number" ? c.used : 0;
+      const max  = typeof c.max  === "number" ? c.max  : 0;
 
-    const QUOTAS = {
-      free:     { label: "Free",     reset: "Trial",           max: 10 },
-      weekly:   { label: "Weekly",   reset: "Resets weekly",   max: 100 },
-      standard: { label: "Standard", reset: "Resets monthly",  max: 600 },
-      premium:  { label: "Premium",  reset: "Resets yearly",   max: 10800 }
-    };
-    const q    = QUOTAS[PLAN] || QUOTAS.free;
-    const used = Number(localStorage.getItem("chatUsed") || 0);
-    const left = Math.max(q.max - used, 0);
+      // Show USED of MAX (or Unlimited if max falsy)
+      planEl  && (planEl.textContent  = (c.plan || "free").replace(/^\w/, s => s.toUpperCase()));
+      leftEl  && (leftEl.textContent  = (max ? `${used} of ${max}` : "Unlimited"));
 
-    planEl  && (planEl.textContent  = q.label);
-    leftEl  && (leftEl.textContent  = `${left} of ${q.max}`);
-    resetEl && (resetEl.textContent = q.reset);
+      const resets = { total: "Trial", week: "Resets weekly", month: "Resets monthly", year: "Resets yearly", day: "Resets daily", hour: "Resets hourly" };
+      resetEl && (resetEl.textContent = resets[c.period_kind] || "");
+    } catch (e) {
+      // Keep UI from breaking on error; do nothing
+    }
   }
 
   // Sidebar open/close (use functions exposed by base.js)
@@ -504,7 +502,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
         }
         saveMessage("assistant", `Here are jobs for “${(jobIntent.queries || [jobIntent.query]).join(' | ')}”.`);
-        refreshCreditsPanel?.();
+        await refreshCreditsPanel?.();
         window.syncState?.();
         scrollToBottom();
         return;
@@ -568,9 +566,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         saveMessage("assistant", finalReply);
 
-        const usedNow = Number(localStorage.getItem("chatUsed") || 0) + 1;
-        localStorage.setItem("chatUsed", usedNow);
-        refreshCreditsPanel?.();
+        // 🔁 UPDATED: refresh from server instead of local "chatUsed"
+        (async () => { await refreshCreditsPanel?.(); })();
         window.syncState?.();
 
         scrollToAI(aiBlock);
