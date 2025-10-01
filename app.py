@@ -1548,17 +1548,18 @@ def oauth_start(provider):
     if not p:
         return "Unsupported provider", 404
 
-    # ✅ read values from app.config at runtime
-    supabase_url = current_app.config["SUPABASE_URL"]
-    base_url     = current_app.config["BASE_URL"]
+    supabase_url = current_app.config.get("SUPABASE_URL")
+    base_url     = current_app.config.get("BASE_URL")
 
-    url = (
-        f"{supabase_url}/auth/v1/authorize?"
-        + urlencode({
-            "provider": p,
-            "redirect_to": f"{base_url}/auth/callback",
-        })
-    )
+    if not supabase_url or not base_url:
+        current_app.logger.error("Missing SUPABASE_URL or BASE_URL in app.config")
+        return "Server misconfigured", 500
+
+    params = {
+        "provider": p,
+        "redirect_to": f"{base_url}/auth/callback",  # <- must be allowed in Supabase
+    }
+    url = f"{supabase_url}/auth/v1/authorize?{urlencode(params)}"
     return redirect(url, code=302)
 
 @app.get("/auth/callback")
