@@ -38,6 +38,7 @@ from itsdangerous import URLSafeSerializer, BadSignature
 from supabase import create_client
 from abuse_guard import allow_free_use
 from urllib.parse import quote, urlencode, urlparse
+import httpx
 
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
@@ -115,8 +116,18 @@ app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
     
 # Public Supabase values from env
-app.config["SUPABASE_URL"] = os.getenv("SUPABASE_URL")
-app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY")
+app.config["SUPABASE_URL"]  = os.getenv("SUPABASE_URL", "").rstrip("/")
+app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY", "")
+app.config["BASE_URL"]      = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
+
+# --- OAuth provider mapping (insert this block here) ---
+OAUTH_ALLOWED = {
+    # map pretty urls -> supabase provider names
+    "google":   "google",
+    "facebook": "facebook",
+    "linkedin": "linkedin_oidc",  # Supabase uses linkedin_oidc
+    "apple":    "apple",
+}
     
 @app.context_processor
 def inject_supabase_public():
@@ -1308,7 +1319,12 @@ def confirm_page():
 def account():
     if request.method == "GET":
         mode = request.args.get("mode", "signup")
-        free_used = bool(getattr(current_user, "free_plan_used", False)) if getattr(current_user, "is_authenticated", False) else False
+        free_used = False
+        try:
+            if current_user.is_authenticated:
+                free_used = bool(getattr(current_user, "free_plan_used", False))
+        except Exception:
+            free_used = False
         return render_template("account.html", mode=mode, free_used=free_used)
 
     # ---- Robust input parsing (JSON OR form) ----
@@ -1518,6 +1534,128 @@ def verify_token():
     except Exception as e:
         print("verify_token error:", e)
         return jsonify(ok=False, error="Token verification failed"), 400
+
+# ----------------------------
+# OAUTH
+# ----------------------------
+@app.get("/oauth/<provider>")
+def oauth_start(provider):
+    """Kick off OAuth by redirecting to Supabase Auth authorize endpoint."""
+    p = OAUTH_ALLOWED.get(provider.lower())
+    if not p:
+        return "Unsupported provider", 404
+
+    # You can request extra scopes if needed:
+    scopes = ""
+    if p == "linkedin_oidc":
+        # email & basic profile are standard via OIDC; extra scopes are usually not needed
+        scopes = ""  # e.g. "r_liteprofile r_emailaddress"
+
+    params = {
+        "provider": p,
+        "redirect_to": f"{BASE_URL}/auth/callback",
+        # "scopes": scopes,  # uncomment if you set any
+    }
+    url = f"{SUPABASE_URL}/auth/v1/authorize?{urlencode(params)}"
+    return redirect(url, code=302)
+
+@app.get("/auth/callback")
+def oauth_callback():
+    """
+    Supabase redirects here with tokens in the URL fragment (#access_token=...).
+    The fragment is not visible to the server, so return a tiny page that grabs
+    tokens with JS and posts them to /auth/complete.
+    """
+    # A minimal HTML/JS bridge page:
+    html = f"""
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Signing you in…</title></head>
+  <body style="font-family:system-ui;margin:40px">
+    <p>Signing you in…</p>
+    <script>
+      (function() {{
+        const h = new URLSearchParams(location.hash.slice(1));
+        const access_token  = h.get("access_token");
+        const refresh_token = h.get("refresh_token");
+        const provider_token = h.get("provider_token"); // sometimes present
+
+        if(!access_token){{
+          location.replace("/account?mode=login&error=oauth_no_token");
+          return;
+        }}
+
+        fetch("/auth/complete", {{
+          method: "POST",
+          headers: {{ "Content-Type": "application/json" }},
+          credentials: "same-origin",
+          body: JSON.stringify({{ access_token, refresh_token, provider_token }})
+        }}).then(r => r.json()).then(j => {{
+          if (j && j.success) {{
+            location.replace(j.redirect || "/dashboard");
+          }} else {{
+            location.replace("/account?mode=login&error=" + encodeURIComponent(j.message || "oauth_failed"));
+          }}
+        }}).catch(() => {{
+          location.replace("/account?mode=login&error=oauth_failed");
+        }});
+      }})();
+    </script>
+  </body>
+</html>
+"""
+    return html
+
+@app.post("/auth/complete")
+def oauth_complete():
+    """
+    Finish OAuth: verify the Supabase access token, upsert user row, create Jobcus session.
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        access_token = (data.get("access_token") or "").strip()
+        if not access_token:
+            return jsonify(success=False, message="Missing access token"), 400
+
+        # Ask Supabase Auth who this token belongs to
+        # (Equivalent to supabase.auth.get_user(access_token) in JS)
+        with httpx.Client(timeout=10) as client:
+            r = client.get(
+                f"{SUPABASE_URL}/auth/v1/user",
+                headers={"Authorization": f"Bearer {access_token}", "apikey": SUPABASE_ANON},
+            )
+        if r.status_code != 200:
+            current_app.logger.warning("OAuth token verify failed: %s %s", r.status_code, r.text)
+            return jsonify(success=False, message="Token verification failed"), 401
+
+        ud = r.json() or {}
+        auth_id = ud.get("id")
+        email   = (ud.get("email") or "").lower()
+        fullname = (ud.get("user_metadata") or {}).get("full_name") or ud.get("user_metadata", {}).get("name")
+
+        if not auth_id or not email:
+            return jsonify(success=False, message="Incomplete user info"), 400
+
+        # Ensure a row exists in your 'users' table (best-effort)
+        try:
+            current_app.config["SUPABASE_ADMIN"].table("users").upsert(
+                {"auth_id": auth_id, "email": email, "fullname": fullname},
+                on_conflict="auth_id"
+            ).execute()
+        except Exception:
+            current_app.logger.exception("users upsert failed (oauth)")
+
+        # Create your Flask login + session, same as password flow
+        login_user(User(auth_id=auth_id, email=email, fullname=fullname))
+        record_login_event(current_user)
+        _, set_cookie = start_user_session(current_user)
+
+        resp = jsonify(success=True, redirect=url_for("dashboard"))
+        return set_cookie(resp), 200
+
+    except Exception:
+        current_app.logger.exception("oauth_complete failed")
+        return jsonify(success=False, message="OAuth failed"), 500
 
 # ----------------------------
 # Ask
