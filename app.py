@@ -119,6 +119,8 @@ app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 app.config["SUPABASE_URL"]  = os.getenv("SUPABASE_URL", "").rstrip("/")
 app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY", "")
 app.config["BASE_URL"]      = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
+app.config["SUPABASE_ADMIN"] = supabase_admin
+
 
 # --- OAuth provider mapping (insert this block here) ---
 OAUTH_ALLOWED = {
@@ -870,7 +872,8 @@ def cookies():
 
 @app.route("/pricing")
 def pricing():
-    return render_template("pricing.html")
+    free_used = bool(getattr(current_user, "free_plan_used", False)) if getattr(current_user, "is_authenticated", False) else False
+    return render_template("pricing.html", free_used=free_used)
 
 def _plans():
     return {
@@ -1538,25 +1541,24 @@ def verify_token():
 # ----------------------------
 # OAUTH
 # ----------------------------
+
 @app.get("/oauth/<provider>")
 def oauth_start(provider):
-    """Kick off OAuth by redirecting to Supabase Auth authorize endpoint."""
     p = OAUTH_ALLOWED.get(provider.lower())
     if not p:
         return "Unsupported provider", 404
 
-    # You can request extra scopes if needed:
-    scopes = ""
-    if p == "linkedin_oidc":
-        # email & basic profile are standard via OIDC; extra scopes are usually not needed
-        scopes = ""  # e.g. "r_liteprofile r_emailaddress"
+    # ✅ read values from app.config at runtime
+    supabase_url = current_app.config["SUPABASE_URL"]
+    base_url     = current_app.config["BASE_URL"]
 
-    params = {
-        "provider": p,
-        "redirect_to": f"{BASE_URL}/auth/callback",
-        # "scopes": scopes,  # uncomment if you set any
-    }
-    url = f"{SUPABASE_URL}/auth/v1/authorize?{urlencode(params)}"
+    url = (
+        f"{supabase_url}/auth/v1/authorize?"
+        + urlencode({
+            "provider": p,
+            "redirect_to": f"{base_url}/auth/callback",
+        })
+    )
     return redirect(url, code=302)
 
 @app.get("/auth/callback")
