@@ -10,7 +10,7 @@
 
 {% block content %}
 <div id="accountShell"
-     data-free-used="{{ '1' if (current_user.is_authenticated and (current_user.free_plan_used | default(false))) else '0' }}">
+     data-free-used="{{ '1' if free_used else '0' }}"
 
   <section class="auth-wrapper">
     <div class="auth-card auth-card--blue">
