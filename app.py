@@ -954,11 +954,28 @@ def subscribe():
     # --- FREE: do it locally (no Stripe) ---
     if request.method == "POST" and plan_code == "free":
         try:
-            supabase = current_app.config["SUPABASE"]
-            supabase.table("users").update({
+            admin = current_app.config["SUPABASE_ADMIN"]
+            auth_id = current_user.id
+
+            # Enforce one-time Free
+            used = False
+            try:
+                r = admin.table("users").select("free_plan_used").eq("auth_id", auth_id).single().execute()
+                used = bool((r.data or {}).get("free_plan_used"))
+            except Exception:
+                pass
+
+            if used:
+                flash("You’ve already used the Free plan.", "error")
+                return redirect(url_for("pricing"))
+
+            # Activate Free and mark as used
+            admin.table("users").update({
                 "plan": "free",
-                "plan_status": "active"
-            }).eq("auth_id", current_user.id).execute()
+                "plan_status": "active",
+                "free_plan_used": True,
+            }).eq("auth_id", auth_id).execute()
+
         except Exception:
             current_app.logger.exception("Could not activate free plan")
             flash("Could not activate free plan. Please try again.", "error")
@@ -1019,6 +1036,7 @@ def subscribe():
     # GET: confirm page
     # make sure your subscribe.html has a hidden <input name="next" value="{{ request.args.get('next', '') }}">
     return render_template("subscribe.html", plan_data=plan_data)
+    
 
 @app.get("/subscribe/success")
 @login_required
