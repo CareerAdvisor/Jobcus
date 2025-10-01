@@ -111,6 +111,46 @@ window.handleAttach     = handleAttach;
 window.removeWelcome    = removeWelcome;
 
 // ──────────────────────────────────────────────────────────────
+// Lightweight status bar shown above the input while AI works
+// ──────────────────────────────────────────────────────────────
+function showAIStatus(text = "Thinking…") {
+  let bar = document.getElementById("aiStatusBar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "aiStatusBar";
+    bar.style.cssText = `
+      position: sticky; bottom: 0; left: 0; right: 0;
+      display: flex; align-items: center; gap: 8px;
+      background: #f7fbff; border: 1px solid #d8e7ff;
+      color: #104879; padding: 10px 12px; border-radius: 10px;
+      margin: 8px 0 0; font-size: 14px; z-index: 5;
+    `;
+    const container = document.querySelector(".composer") || document.querySelector(".chat-footer") || document.body;
+    container.parentNode.insertBefore(bar, container);
+  }
+  bar.innerHTML = `
+    <span class="ai-spinner" aria-hidden="true"></span>
+    <strong>${text}</strong>
+  `;
+  bar.style.display = "flex";
+}
+function hideAIStatus() {
+  const bar = document.getElementById("aiStatusBar");
+  if (bar) bar.style.display = "none";
+}
+
+// Create an inline “thinking” placeholder inside the assistant bubble
+function renderThinkingPlaceholder(targetEl, label = "Thinking…") {
+  if (!targetEl) return;
+  targetEl.innerHTML = `
+    <div class="ai-thinking">
+      <span class="ai-spinner" aria-hidden="true"></span>
+      <span>${label}</span>
+    </div>
+  `;
+}
+
+// ──────────────────────────────────────────────────────────────
 // Model controls
 // ──────────────────────────────────────────────────────────────
 function initModelControls() {
@@ -207,6 +247,18 @@ function detectJobsIntent(raw) {
 
 // ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
+  // (Optional) Inject minimal CSS for spinner if not present
+  if (!document.getElementById("aiSpinnerStyles")) {
+    const st = document.createElement("style");
+    st.id = "aiSpinnerStyles";
+    st.textContent = `
+      .ai-spinner{width:16px;height:16px;border:2px solid rgba(16,72,121,.2);border-top-color:rgba(16,72,121,1);border-radius:50%;display:inline-block;animation:ai-spin .8s linear infinite}
+      @keyframes ai-spin{to{transform:rotate(360deg)}}
+      .ai-thinking{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f6f9ff;border:1px solid #e1ecff;border-radius:10px;color:#104879;font-size:14px}
+    `;
+    document.head.appendChild(st);
+  }
+
   // Init model UI/logic first
   const modelCtl = initModelControls();
 
@@ -439,6 +491,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const aiBlock = document.createElement("div");
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
+    renderThinkingPlaceholder(aiBlock, "Thinking…");
+    showAIStatus("Thinking…");
     scrollToAI(aiBlock);
     scrollToBottom();
 
@@ -454,9 +508,11 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
       if (jobIntent) {
+        // status while fetching
+        showAIStatus("Finding jobs…");
+      
         let jobs;
         if (Array.isArray(jobIntent.queries) && jobIntent.queries.length > 1) {
-          // fetch each location and merge
           const results = await Promise.all(jobIntent.queries.map(q =>
             apiFetch("/jobs", {
               method: "POST",
@@ -464,7 +520,6 @@ document.addEventListener("DOMContentLoaded", () => {
               body: JSON.stringify({ query: q })
             }).catch(() => ({ remotive:[], adzuna:[], jsearch:[] }))
           ));
-          // merge arrays
           jobs = results.reduce((acc, r) => ({
             remotive: [...(acc.remotive||[]), ...(r.remotive||[])],
             adzuna:   [...(acc.adzuna  ||[]), ...(r.adzuna  ||[])],
@@ -478,14 +533,18 @@ document.addEventListener("DOMContentLoaded", () => {
           });
         }
       
+        // replace the thinking bubble with the actual job list
+        aiBlock.innerHTML = "";
         displayJobs(jobs, aiBlock);
         if (![...(jobs?.remotive||[]), ...(jobs?.adzuna||[]), ...(jobs?.jsearch||[])].length) {
           aiBlock.insertAdjacentHTML('beforeend',
             `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
         }
         saveMessage("assistant", `Here are jobs for “${(jobIntent.queries || [jobIntent.query]).join(' | ')}”.`);
+      
         await refreshCreditsPanel?.();
         window.syncState?.();
+        hideAIStatus();               // ✅ hide the sticky status
         scrollToBottom();
         return;
       }
@@ -505,6 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
     } catch (err) {
+      hideAIStatus();  // ✅ ensure status bar is removed on error
       if (err?.kind === "limit") {
         aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
         scrollToBottom();
@@ -517,6 +577,9 @@ document.addEventListener("DOMContentLoaded", () => {
       disableComposer(false);
       input?.focus();
     }
+
+    // ✅ Model returned — stop the status bar now (success path)
+    hideAIStatus();
 
     const copyId = `ai-${Date.now()}`;
     aiBlock.innerHTML = `
