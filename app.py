@@ -114,13 +114,26 @@ load_dotenv()
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
-    
-# Public Supabase values from env
-app.config["SUPABASE_URL"]  = os.getenv("SUPABASE_URL", "").rstrip("/")
-app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY", "")
-app.config["BASE_URL"]      = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
-app.config["SUPABASE_ADMIN"] = supabase_admin
 
+# Public Supabase values from env
+app.config["SUPABASE_URL"]       = os.getenv("SUPABASE_URL", "").rstrip("/")
+app.config["SUPABASE_ANON_KEY"]  = os.getenv("SUPABASE_ANON_KEY", "")
+app.config["BASE_URL"]           = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
+
+# Validate required admin creds
+_supabase_url   = app.config["SUPABASE_URL"]
+_service_role   = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+
+if not _supabase_url or not _service_role:
+    # Fail fast with a clear message (don’t print secrets)
+    missing = []
+    if not _supabase_url: missing.append("SUPABASE_URL")
+    if not _service_role: missing.append("SUPABASE_SERVICE_ROLE_KEY")
+    raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
+
+# Create the admin client, THEN stash it on app.config
+supabase_admin = create_client(_supabase_url, _service_role)
+app.config["SUPABASE_ADMIN"] = supabase_admin
 
 # --- OAuth provider mapping (insert this block here) ---
 OAUTH_ALLOWED = {
