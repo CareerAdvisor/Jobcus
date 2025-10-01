@@ -252,6 +252,29 @@ def _is_safe_next(url: str) -> bool:
     except Exception:
         return False
 
+def change_plan(user_id: str, new_plan: str):
+    supabase = current_app.config["SUPABASE"]
+    # fetch current user row
+    row = supabase.table("users").select("*").eq("id", user_id).single().execute()
+    user = row.data or {}
+    # normalize plan string
+    plan = (new_plan or "").strip().lower()
+
+    if plan == "free":
+        if user.get("free_plan_used"):
+            # block re-activation of free plan
+            raise ValueError("Free trial already used. Please upgrade to continue.")
+        # first-time free activation: set plan + mark as used
+        supabase.table("users").update({
+            "plan": "free",
+            "free_plan_used": True
+        }).eq("id", user_id).execute()
+    else:
+        # allow resubscribe/upgrade/downgrade to paid plans anytime
+        supabase.table("users").update({
+            "plan": plan
+        }).eq("id", user_id).execute()
+
 # --- Local fallbacks to remove services/* dependency -------------------------
 def get_or_bootstrap_user(supabase_admin, auth_id: str, email: str | None):
     """
@@ -585,7 +608,7 @@ def fetch_remotive_jobs(query: str):
             {
                 "id": job.get("id"),
                 "title": job.get("title"),
-                "company_name": job.get("company_name"),
+                "company": job.get("company_name"),          # ← was company_name
                 "location": job.get("candidate_required_location"),
                 "url": job.get("url")
             }
@@ -1072,7 +1095,6 @@ def free_success():
                            plan_human=_plans()["free"]["title"],
                            plan_json="free")
 
-
 # --- checkout helpers ---
 def _activate_user_plan_by_metadata(supabase, metadata, customer_id=None, subscription_id=None):
     """Use metadata we set during Checkout to know who & what to update."""
@@ -1225,6 +1247,23 @@ def api_me():
         "plan": getattr(current_user, "plan", "free"),
         "role": getattr(current_user, "role", "user"),
     })
+
+@app.route("/api/plan", methods=["POST"])
+@api_login_required
+def update_plan():
+    data = request.get_json(silent=True) or {}
+    new_plan = (data.get("plan") or "").strip().lower()
+    if not new_plan:
+        return jsonify(error="bad_request", message="plan is required"), 400
+
+    try:
+        change_plan(current_user.id, new_plan)
+        return jsonify(ok=True, plan=new_plan), 200
+    except ValueError as e:
+        return jsonify(error="plan_denied", message=str(e)), 403
+    except Exception as e:
+        current_app.logger.exception("update_plan failed")
+        return jsonify(error="server_error", message="Something went wrong"), 500
 
 # ----------------------------
 # Email confirmation
@@ -1537,6 +1576,7 @@ def _chat_completion(model: str, user_msg: str, history=None) -> str:
         # Log if you want: current_app.logger.exception("OpenAI error")
         return "Sorry—I'm having trouble reaching the AI right now. Please try again."
 
+# app.py  — replace your existing api_ask() with this single version
 @app.post("/api/ask")
 @api_login_required
 def api_ask():
@@ -1548,42 +1588,51 @@ def api_ask():
     if not message:
         return jsonify(error="bad_request", message="message is required"), 400
 
-    auth_id = current_user.id  # your User.id = auth_id
+    auth_id = current_user.id
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-    # 1) Ensure conversation
+    # (1) Device/user guard for free plan (same style as resumes.py)
+    ok, payload = allow_free_use(auth_id, plan)
+    if not ok:
+        return jsonify({"error": "too_many_free_accounts",
+                        "message": payload.get("message") or "Free usage limit reached for this device."}), 429
+
+    # (2) QUOTA: count this chat message against the user's plan
+    allowed, info = check_and_increment(current_app.config["SUPABASE_ADMIN"], auth_id, plan, "chat_messages")
+    if not allowed:
+        info.setdefault("error", "quota_exceeded")
+        info.setdefault("message", "You’ve reached your plan limit for this feature.")
+        return jsonify(info), 402
+
+    # Optional (hour/day soft caps)
+    check_and_increment(current_app.config["SUPABASE_ADMIN"], auth_id, plan, "chat_messages_hour")
+    check_and_increment(current_app.config["SUPABASE_ADMIN"], auth_id, plan, "chat_messages_day")
+
+    # (3) Ensure conversation
     if not conv_id:
-        # Optional: try to title from first user message (truncate)
         title = (message[:60] + "…") if len(message) > 60 else message
-        row = supabase_admin.table("conversations").insert({
-            "auth_id": auth_id,
-            "title": title or "Conversation",
+        row = current_app.config["SUPABASE_ADMIN"].table("conversations").insert({
+            "auth_id": auth_id, "title": title or "Conversation",
         }).execute()
         conv_id = row.data[0]["id"]
 
-    # 2) Persist user message
-    supabase_admin.table("conversation_messages").insert({
-        "conversation_id": conv_id,
-        "role": "user",
-        "content": message
+    # (4) Persist user message
+    current_app.config["SUPABASE_ADMIN"].table("conversation_messages").insert({
+        "conversation_id": conv_id, "role": "user", "content": message
     }).execute()
 
-    # 3) (Optional) fetch a short context window from DB
-    # Keep it small to control token cost
-    ctx = supabase_admin.table("conversation_messages")\
-        .select("role,content")\
-        .eq("conversation_id", conv_id)\
-        .order("created_at", desc=True)\
-        .limit(8).execute().data or []
-    history = list(reversed(ctx))  # oldest first
+    # (5) Context window
+    ctx = current_app.config["SUPABASE_ADMIN"].table("conversation_messages")\
+        .select("role,content").eq("conversation_id", conv_id)\
+        .order("created_at", desc=True).limit(8).execute().data or []
+    history = list(reversed(ctx))
 
-    # 4) Call model
+    # (6) Call model
     ai_reply = _chat_completion(model=model, user_msg=message, history=history)
 
-    # 5) Persist assistant message
-    supabase_admin.table("conversation_messages").insert({
-        "conversation_id": conv_id,
-        "role": "assistant",
-        "content": ai_reply
+    # (7) Persist assistant message
+    current_app.config["SUPABASE_ADMIN"].table("conversation_messages").insert({
+        "conversation_id": conv_id, "role": "assistant", "content": ai_reply
     }).execute()
 
     return jsonify(reply=ai_reply, modelUsed=model, conversation_id=conv_id), 200
