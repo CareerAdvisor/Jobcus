@@ -168,59 +168,41 @@ function detectJobsIntent(raw) {
   if (!raw) return null;
   const message = String(raw).toLowerCase().trim();
 
-  // broader verbs so "provide/give/suggest" also trigger
-  const hasJobsWord = /\b(job|jobs|role|roles|position|positions|openings|vacancies)\b/.test(message);
-  const hasVerb = /\b(find|show|search|look|get|list|provide|give|suggest|recommend)\b/.test(message);
-  if (!(hasJobsWord && hasVerb)) return null;
+  // Do NOT trigger on advice/strategy-style prompts
+  if (/\b(advice|tips?|strategy|strategies|how to|guide|best practices?)\b/.test(message)) {
+    return null;
+  }
 
-  // --- extract a simple role and (first) location ---
-  const inLoc = /\b(in|near|around|at)\s+([a-z0-9\s\-,'\.]+)/i;
+  // Trigger only if the user clearly wants listings
+  const wantsListings =
+    /\b(openings?|vacancies|list(?:ing)?s?|show (me )?jobs?|find (me )?jobs?|roles? available|positions? available)\b/.test(message) ||
+    /^\s*jobs?:/i.test(message);
+
+  if (!wantsListings) return null;
+
+  // Extract role + location (same as before, simplified)
+  const inLoc = /\b(in|near|around|at)\s+([a-z0-9\s\-,.'\/]+)/i;
   const remote = /\b(remote|work from home|hybrid)\b/i;
 
   let role = message
-    .replace(/\b(find|show|search|look|get|list|provide|give|suggest|recommend)\b/g, "")
-    .replace(/\b(job|jobs|role|roles|position|positions|openings|vacancies)\b/g, "")
-    .replace(/\bin\s+[a-z0-9\s\-,'\.]+$/i, "") // strip trailing "in <place>"
+    .replace(/^\s*jobs?:/i, "")
+    .replace(/\b(openings?|vacancies|show (me )?jobs?|find (me )?jobs?)\b/g, "")
+    .replace(inLoc, "")
+    .replace(/\b(remote|work from home|hybrid)\b/g, "")
+    .replace(/\b(job|jobs|role|roles|position|positions)\b/g, "")
     .replace(/\s+/g, " ")
     .trim();
 
   let location = null;
   const m = message.match(inLoc);
-  if (m && m[2]) {
-    location = m[2].trim();
-  } else if (remote.test(message)) {
-    location = "remote";
-  }
+  if (m && m[2]) location = m[2].trim();
+  else if (remote.test(message)) location = "remote";
 
-  if (!role || role.length < 3) role = null;
-
-  // --- multi-location support: "in london and nottingham" ---
-  let locations = [];
-  const andSplit = message.match(/\bin\s+([a-z0-9\s\-,'\.]+(?:\s+and\s+[a-z0-9\s\-,'\.]+)+)/i);
-  if (andSplit && andSplit[1]) {
-    locations = andSplit[1].split(/\s+and\s+/i).map(s => s.trim()).filter(Boolean);
-  } else if (location) {
-    locations = [location];
-  }
-
-  // Build one or many queries
   let queries = [];
-  if (locations.length) {
-    queries = locations.map(loc => [role, loc].filter(Boolean).join(" ").trim());
-  } else {
-    const q = [role, location].filter(Boolean).join(" ").trim();
-    if (q) queries = [q];
-  }
+  if (location) queries = [[role, location].filter(Boolean).join(" ").trim()];
+  else if (role) queries = [role];
 
-  if (!queries.length) return null;
-
-  // Keep compatibility: provide a single joined query + full list
-  return {
-    query: queries.join(" | "),
-    queries,
-    role: role || null,
-    location: location || null
-  };
+  return queries.length ? { query: queries.join(" | "), queries, role: role || null, location } : null;
 }
 
 // ──────────────────────────────────────────────────────────────
