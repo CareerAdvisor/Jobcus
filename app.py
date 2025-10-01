@@ -1576,27 +1576,22 @@ def _chat_completion(model: str, user_msg: str, history=None) -> str:
         # Log if you want: current_app.logger.exception("OpenAI error")
         return "Sorry—I'm having trouble reaching the AI right now. Please try again."
 
-# Replace any existing /api/ask with this one
+# SINGLE SOURCE OF TRUTH for chat
 @app.post("/api/ask")
 @api_login_required
 def api_ask():
-    # Helper: get Supabase admin safely
-    def _get_admin():
-        return current_app.config.get("SUPABASE_ADMIN") or globals().get("supabase_admin")
-
     data = request.get_json(silent=True) or {}
     message = (data.get("message") or "").strip()
     model   = (data.get("model")   or "gpt-4o-mini").strip()
-    conv_id = data.get("conversation_id")  # optional
+    conv_id = data.get("conversation_id")
 
     if not message:
         return jsonify(error="bad_request", message="message is required"), 400
 
-    # Who & what plan
     auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
     plan    = (getattr(current_user, "plan", "free") or "free").lower()
 
-    # 1) Per-device/day guard for free users (from abuse_guard.py)
+    # 1) free plan guard (per-device/day)
     try:
         ok, payload = allow_free_use(str(auth_id), plan)
         if not ok:
@@ -1604,42 +1599,56 @@ def api_ask():
                 "error": payload.get("error") or "too_many_free_accounts",
                 "message": payload.get("message") or "Free daily limit reached for this device."
             }), 429
-    except Exception as e:
-        # Fail-open: don’t hard-block chat; just log if you have logging
-        pass
+    except Exception:
+        pass  # fail-open
 
-    # 2) Quota increment: the key piece that fixes “0 of 10” never changing
-    admin = _get_admin()
+    # 2) credits/quota — this is what fixes the “0 of 10” staying at 0
+    admin = current_app.config.get("SUPABASE_ADMIN")
     if not admin:
         return jsonify(error="server_config", message="Supabase admin client is not configured."), 500
 
-    try:
-        allowed, info = check_and_increment(admin, str(auth_id), plan, "chat_messages")
-    except Exception as e:
-        return jsonify(error="quota_store_error", message=str(e)), 500
-
-    if not allowed:
+    ok, info = check_and_increment(admin, str(auth_id), plan, "chat_messages")
+    if not ok:
         info.setdefault("error", "quota_exceeded")
         info.setdefault("message", "You’ve reached your plan limit for this feature.")
         return jsonify(info), 402
 
-    # Optional soft caps (safe to ignore failures)
+    # Optional soft caps (ignore failures)
     try:
         check_and_increment(admin, str(auth_id), plan, "chat_messages_hour")
         check_and_increment(admin, str(auth_id), plan, "chat_messages_day")
     except Exception:
         pass
 
-    # 3) Generate the reply using your existing helper
-    try:
-        reply = run_model(model, message)
-    except Exception as e:
-        return jsonify(error="model_error", message=str(e)), 500
+    # 3) ensure conversation row (optional but nice to have)
+    if not conv_id:
+        title = (message[:60] + "…") if len(message) > 60 else message
+        row = admin.table("conversations").insert(
+            {"auth_id": auth_id, "title": title or "Conversation"}
+        ).execute()
+        conv_id = row.data[0]["id"]
 
-    # (Optional) If you have conversations tables wired, you can persist here.
-    # Kept out to avoid 500s on missing tables. Frontend treats conversation_id as optional.
+    # 4) persist user message
+    admin.table("conversation_messages").insert({
+        "conversation_id": conv_id, "role": "user", "content": message
+    }).execute()
 
-    return jsonify(reply=reply, modelUsed=model, conversation_id=conv_id), 200
+    # 5) grab short history window
+    ctx = admin.table("conversation_messages") \
+        .select("role,content") \
+        .eq("conversation_id", conv_id) \
+        .order("created_at", desc=True).limit(8).execute().data or []
+    history = list(reversed(ctx))
+
+    # 6) call model
+    ai_reply = _chat_completion(model=model, user_msg=message, history=history)
+
+    # 7) persist assistant message
+    admin.table("conversation_messages").insert({
+        "conversation_id": conv_id, "role": "assistant", "content": ai_reply
+    }).execute()
+
+    return jsonify(reply=ai_reply, modelUsed=model, conversation_id=conv_id), 200
 
 @app.get("/api/conversations")
 @api_login_required
