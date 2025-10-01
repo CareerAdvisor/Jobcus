@@ -98,18 +98,18 @@
         <div class="or-divider"><span>OR</span></div>
 
         <div class="social-buttons">
-          <button type="button" class="social-btn fb">
-            <img src="{{ url_for('static', filename='icons/facebook.svg') }}" alt="Facebook">
-          </button>
-          <button type="button" class="social-btn google">
-            <img src="{{ url_for('static', filename='icons/google.png') }}" alt="Google">
-          </button>
-          <button type="button" class="social-btn linkedin">
-            <img src="{{ url_for('static', filename='icons/linkedin.svg') }}" alt="LinkedIn">
-          </button>
-          <button type="button" class="social-btn apple">
-            <img src="{{ url_for('static', filename='icons/apple.svg') }}" alt="Apple">
-          </button>
+          <a class="social-btn fb" href="/oauth/facebook"  aria-label="Sign in with Facebook">
+            <img src="{{ url_for('static', filename='icons/facebook.svg') }}" alt="">
+          </a>
+          <a class="social-btn google" href="/oauth/google" aria-label="Sign in with Google">
+            <img src="{{ url_for('static', filename='icons/google.png') }}" alt="">
+          </a>
+          <a class="social-btn linkedin" href="/oauth/linkedin" aria-label="Sign in with LinkedIn">
+            <img src="{{ url_for('static', filename='icons/linkedin.svg') }}" alt="">
+          </a>
+          <a class="social-btn apple" href="/oauth/apple" aria-label="Sign in with Apple">
+            <img src="{{ url_for('static', filename='icons/apple.svg') }}" alt="">
+          </a>
         </div>
       </form>
     </div>
