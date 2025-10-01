@@ -7,46 +7,51 @@
   };
 })();
 
-// Remember intended plan when clicking a subscribe link
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll('.plan a[href*="/subscribe"]').forEach(a => {
-    a.addEventListener('click', () => {
-      try {
-        const url = new URL(a.href, window.location.origin);
-        const plan = url.searchParams.get('plan') || '';
-        localStorage.setItem('intendedPlan', plan);
-      } catch (_) { /* ignore */ }
-    });
-  });
-});
-
-const PLAN_ROUTES = {
-  free() {
-    localStorage.setItem("userPlan", "free");
-    // lightweight onboarding: jump to dashboard
-    window.location.href = "/dashboard";
-  },
-  weekly() {
-    routePaid("weekly");
-  },
-  standard() {
-    routePaid("standard");
-  },
-  premium() {
-    routePaid("premium");
-  }
-};
-
-function routePaid(plan) {
-  localStorage.setItem("userPlan", plan);
-  // depends on body data-authed provided by base.html
-  const authed = document.body?.dataset?.authed === "1";
-  if (authed) window.location.href = `/checkout?plan=£{encodeURIComponent(plan)}`;
-  else window.location.href = `/account?next=£{encodeURIComponent("/checkout?plan=" + plan)}`;
+// --- Helpers ---
+async function whoami() {
+  const r = await fetch('/api/me', { credentials: 'same-origin' });
+  if (!r.ok) return { authenticated: false };
+  return r.json();
 }
 
+async function pickPlan(plan) {
+  const me = await whoami();
+
+  if (!me || !me.authenticated) {
+    // redirect unauth’d user to login with next=/subscribe
+    const next = `/subscribe?plan=${encodeURIComponent(plan)}`;
+    location.href = `/account?mode=login&next=${encodeURIComponent(next)}`;
+    return;
+  }
+
+  if (plan === 'free') {
+    const r = await fetch('/api/plan/select', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ plan })
+    });
+    const j = await r.json();
+    if (j.success && j.redirect) location.href = j.redirect;
+    else alert(j.message || 'Could not activate Free.');
+    return;
+  }
+
+  // Paid plans -> Stripe Checkout
+  const r = await fetch('/api/billing/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ plan })
+  });
+  const j = await r.json();
+  if (j.success && j.url) location.href = j.url;
+  else alert(j.message || 'Could not start checkout.');
+}
+
+// --- Attach handlers ---
 document.addEventListener("DOMContentLoaded", () => {
-  // Highlight previously chosen plan (optional)
+  // Old logic: highlight current plan
   const current = localStorage.getItem("userPlan");
   if (current) {
     document.querySelectorAll(".plan").forEach(card => {
@@ -54,8 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Intercept clicks on subscribe links
-  document.querySelectorAll(".subscribe-link").forEach(a => {
+  // Intercept clicks on plan buttons
+  document.querySelectorAll(".plan a[href*='plan=']").forEach(a => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
       let plan;
@@ -64,7 +69,9 @@ document.addEventListener("DOMContentLoaded", () => {
         plan = url.searchParams.get("plan");
       } catch { /* ignore */ }
       plan = plan || a.closest(".plan")?.dataset?.plan || "free";
-      (PLAN_ROUTES[plan] || PLAN_ROUTES.free)();
+
+      localStorage.setItem("userPlan", plan);
+      pickPlan(plan);
     });
   });
 });
