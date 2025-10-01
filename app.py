@@ -1303,12 +1303,13 @@ def confirm_page():
 # ----------------------------
 # Account routes (signup/login)
 # ----------------------------
+
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
-        # Keep your current GET -> render
         mode = request.args.get("mode", "signup")
-        return render_template("account.html", mode=mode)
+        free_used = bool(getattr(current_user, "free_plan_used", False)) if getattr(current_user, "is_authenticated", False) else False
+        return render_template("account.html", mode=mode, free_used=free_used)
 
     # ---- Robust input parsing (JSON OR form) ----
     data = request.get_json(silent=True)
