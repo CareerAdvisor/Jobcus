@@ -247,8 +247,8 @@ def allowed_models_for_plan(plan: str) -> list[str]:
     FREE_DEFAULT     = (os.getenv("FREE_MODEL", "gpt-4o-mini") or "gpt-4o-mini").strip()
     WEEKLY_DEFAULT   = (os.getenv("WEEKLY_MODEL_DEFAULT",
                          os.getenv("PAID_MODEL_DEFAULT", "gpt-4o-mini")) or "gpt-4o-mini").strip()
-    STANDARD_DEFAULT = (os.getenv("STANDARD_MODEL_DEFAULT", "gpt-4o-mini") or "gpt-4o-mini").strip()
-    PREMIUM_DEFAULT  = (os.getenv("PREMIUM_MODEL_DEFAULT", "gpt-4o") or "gpt-4o").strip()
+    STANDARD_DEFAULT = (os.getenv("STANDARD_MODEL_DEFAULT", "gpt-4o-mini") or "gpt-4o").strip()
+    PREMIUM_DEFAULT  = (os.getenv("PREMIUM_MODEL_DEFAULT", "gpt-4o") or "gpt-5-thinking").strip()
 
     # ---- Allow-lists (comma-separated) ----
     WEEKLY_ALLOW   = [s.strip() for s in (os.getenv("WEEKLY_MODEL_ALLOW",
@@ -256,7 +256,7 @@ def allowed_models_for_plan(plan: str) -> list[str]:
     STANDARD_ALLOW = [s.strip() for s in (os.getenv("STANDARD_MODEL_ALLOW",
                         os.getenv("PAID_MODEL_ALLOW", "")) or "").split(",") if s.strip()]
     PREMIUM_ALLOW  = [s.strip() for s in (os.getenv("PREMIUM_MODEL_ALLOW",
-                        "gpt-4o,gpt-4o-mini") or "").split(",") if s.strip()]
+                        "gpt-4o,gpt-5-thinking") or "").split(",") if s.strip()]
 
     if plan == "free":
         out = [FREE_DEFAULT]  # force a single option
