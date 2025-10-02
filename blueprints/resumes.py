@@ -1416,8 +1416,8 @@ def resume_analysis():
         "length_pages_est": read_brief["length_pages"]
     }
 
-       # ----- Single, final response payload -----
-        out = {
+    # ----- Single, final response payload -----
+    out = {
             "score": int(headline),
             "analysis": {
                 "issues": llm.get("analysis", {}).get("issues", []),
@@ -1488,12 +1488,7 @@ def resume_analysis():
                 fallback.append("Add working rights and current city/country (e.g., “Eligible to work in UK • London”).")
     
             # De-duplicate and attach
-            out["suggestions"] = list(dict.fromkeys([s.strip() for s in fallback if s.strip()]))
-    
-        # Concrete fixes (append to issues)
-        fixes = []
-        ...
-        return jsonify(out), 200
+            out["suggestions"] = list(dict.fromkeys([s.strip() for s in fallback if s.strip()]))       
 
     # Concrete fixes (append to issues)
     fixes = []
