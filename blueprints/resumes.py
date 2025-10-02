@@ -1521,3 +1521,5 @@ def resume_analysis():
     # 3) Final de-dupe after appending
     out["analysis"]["issues"] = list(dict.fromkeys((out["analysis"]["issues"] or []) + fixes))
 
+    return jsonify(out), 200
+
