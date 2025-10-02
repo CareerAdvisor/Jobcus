@@ -7,7 +7,7 @@
   };
 })();
 
-// Datalist (roles)
+// -------- Datalist (roles) --------
 async function initRoleDatalist() {
   const input = document.getElementById("dashRoleSelect");
   const dl    = document.getElementById("roleList");
@@ -16,7 +16,6 @@ async function initRoleDatalist() {
   try {
     const res = await fetch("/static/data/roles.json", { credentials: "same-origin" });
     const roles = await res.json();
-
     const seen = new Set();
     roles
       .filter(r => r && typeof r === "string")
@@ -42,8 +41,21 @@ async function initRoleDatalist() {
   }
 }
 
+// -------- Utilities shared across panels --------
+function mergeFixes(data){
+  const issues = Array.isArray(data?.analysis?.issues) ? data.analysis.issues : [];
+  const recs   = Array.isArray(data?.suggestions) ? data.suggestions : [];
+  const seen = new Set();
+  return [...issues, ...recs].filter(x => {
+    const key = String(x || "").trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  // ----- Greeting -----
+  // Greeting
   const greetEl = document.getElementById("dashboardGreeting");
   if (greetEl) {
     const first = !localStorage.getItem("dashboardVisited");
@@ -51,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("dashboardVisited", "true");
   }
 
-  // ----- Core elements -----
+  // Core elements
   const scoreCard  = document.getElementById("resume-score-card");
   const ring       = document.querySelector(".ring__progress");
   const ringLabel  = document.querySelector(".ring__label");
@@ -67,10 +79,9 @@ document.addEventListener("DOMContentLoaded", () => {
     parseable:   { meter: document.getElementById("bParseable"),   label: document.getElementById("mParseable") },
   };
 
-  // ----- Free-usage nudge -----
+  // Free-usage nudge
   const registerNudge = document.getElementById("registerNudge");
   const dismissNudge  = document.getElementById("dismissNudge");
-
   function maybeShowRegisterNudge() {
     const used = parseInt(localStorage.getItem("analysisCount") || "0", 10);
     const authed = (document.body.dataset.authed === "1");
@@ -84,23 +95,22 @@ document.addEventListener("DOMContentLoaded", () => {
     registerNudge.style.display = "none";
   });
 
-  // ----- Upload controls -----
+  // Upload controls
   const dropzone    = document.getElementById("dropzone");
-  const fileInput   = document.getElementById("dashResumeFile"); // IMPORTANT: must match your HTML id
+  const fileInput   = document.getElementById("dashResumeFile");
   const fileNameEl  = document.getElementById("fileName");
   const jdInput     = document.getElementById("dashJobDesc");
   const roleSelect  = document.getElementById("dashRoleSelect");
   const analyzeBtn  = document.getElementById("dashAnalyzeBtn");
   const analyzingEl = document.getElementById("dashAnalyzing");
 
-  // ✅ Populate the datalist
   initRoleDatalist();
 
-  // ----- Optimize controls -----
-  const optNav      = document.querySelector(".opt-nav");
-  const optPanel    = document.getElementById("optPanel");
+  // Optimize controls
+  const optNav   = document.querySelector(".opt-nav");
+  const optPanel = document.getElementById("optPanel");
 
-  // ----- “Analyze updated resume” pressed state + jump -----
+  // “Analyze updated resume” button
   const openReBtn = document.getElementById("openReanalyze");
   openReBtn?.addEventListener("click", () => {
     openReBtn.classList.add("is-hot");
@@ -110,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => dropzone?.classList.remove("pulse"), 800);
   });
 
-  // ===== Helpers =====
+  // Helpers
   const clamp = (n) => Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0));
   const paletteFor = (v) => (v >= 80 ? "#16a34a" : v >= 60 ? "#f59e0b" : "#e11d48");
 
@@ -163,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fileNameEl.textContent = f ? `Selected: ${f.name} (${formatSize(f.size)})` : "";
   }
 
-  // ===== Render from localStorage =====
+  // -------- Render from localStorage --------
   function renderFromStorage() {
     const raw = localStorage.getItem("resumeAnalysis");
     if (!raw) {
@@ -189,31 +199,29 @@ document.addEventListener("DOMContentLoaded", () => {
     setMetric(metrics.length,      b.length);
     setMetric(metrics.parseable,   b.parseable === true ? 100 : (b.parseable === false ? 0 : null));
 
-    const defaultView = (data.suggestions && data.suggestions.length) ? "recs" : "fixes";
-    paintPanel(defaultView, data);
-
+    // Default to Fixes
+    paintPanel("fixes", data);
     maybeShowRegisterNudge();
   }
 
-  // Initial paint
   renderFromStorage();
   maybeShowRegisterNudge();
 
-  // Copy recommendations to clipboard
+  // -------- Copy fixes (merged) to clipboard --------
   document.getElementById("copy-recs-btn")?.addEventListener("click", async () => {
     try {
       const data = JSON.parse(localStorage.getItem("resumeAnalysis") || "{}");
-      const list = Array.isArray(data.suggestions) ? data.suggestions : [];
-      const text = list.length ? ("• " + list.join("\n• ")) : "No recommendations available yet.";
+      const merged = mergeFixes(data);
+      const text = merged.length ? ("• " + merged.join("\n• ")) : "No fixes available yet.";
       await navigator.clipboard.writeText(text);
-      alert("Recommendations copied to clipboard.");
+      alert("Fixes copied to clipboard.");
     } catch (e) {
       console.error(e);
-      alert("Couldn't copy recommendations.");
+      alert("Couldn't copy fixes.");
     }
   });
 
-  // ===== Dropzone / picker =====
+  // -------- Dropzone / picker --------
   function openPicker(){ fileInput?.click(); }
   dropzone?.addEventListener("click", openPicker);
   dropzone?.addEventListener("keydown", (e) => {
@@ -236,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showFileName(f || null);
   });
 
-  // ===== Run analysis =====
+  // -------- Run analysis --------
   async function runAnalysis() {
     const f = fileInput?.files?.[0];
     if (!f) return;
@@ -245,7 +253,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (analyzeBtn) analyzeBtn.disabled = true;
 
     try {
-      // Attach file (Base64 → JSON body)
       const b64 = await fileToBase64(f);
       const body = {
         jobDescription: jdInput?.value || "",
@@ -271,7 +278,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const text = await res.text();
       let data = null; try { data = JSON.parse(text); } catch {}
 
-      // 402 → show centered modal + timed redirect
       if (res.status === 402) {
         const msgText = data?.message || "You’ve reached your plan limit for this feature.";
         const pricing = data?.pricing_url || (window.PRICING_URL || "/pricing");
@@ -280,7 +286,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // 429 (abuse/device guard)
       if (res.status === 429) {
         window.showUpgradeBanner?.(
           data?.message || "You have reached the limit for the free version, upgrade to enjoy more features"
@@ -288,7 +293,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Other failures
       if (!res.ok) {
         const msg = (data?.message || data?.error) || "Resume analysis failed. Please try again.";
         console.error("Resume analysis failed:", text);
@@ -296,18 +300,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Success
-      if (!data) {
-        alert("Unexpected server response.");
-        return;
-      }
+      if (!data) { alert("Unexpected server response."); return; }
 
       data.lastAnalyzed = new Date().toLocaleString();
       localStorage.setItem("resumeAnalysis", JSON.stringify(data));
       localStorage.setItem("resumeBase64", b64);
       localStorage.setItem("resumeKind", f.type);
 
-      // Snapshot for cross-device sync
       const resultObject = {
         score: Number(data.score || 0),
         breakdown: {
@@ -318,13 +317,13 @@ document.addEventListener("DOMContentLoaded", () => {
           length:      data?.breakdown?.length ?? null,
           parseable:   data?.breakdown?.parseable ?? null
         },
-        suggestions: Array.isArray(data?.suggestions) ? data.suggestions : [],
+        // keep a copy of merged fixes for cloud sync if needed
+        fixes: mergeFixes(data),
         lastAnalyzed: data.lastAnalyzed
       };
       localStorage.setItem("resume_latest", JSON.stringify(resultObject));
       if (window.syncState) window.syncState();
 
-      // Reset & repaint
       if (fileInput) fileInput.value = "";
       showFileName(null);
       if (analyzeBtn) analyzeBtn.disabled = true;
@@ -340,8 +339,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   analyzeBtn?.addEventListener("click", runAnalysis);
 
-  // ===== Optimize side panel =====
+  // -------- Optimize side panel --------
   function paintPanel(view, data) {
+    // Hide the Recommendations button entirely (in case the template still includes it)
+    document.querySelector('.opt-btn[data-view="recs"]')?.setAttribute("hidden", "hidden");
+
     optNav?.querySelectorAll(".opt-btn").forEach(b => {
       b.classList.toggle("is-active", b.dataset.view === view);
     });
@@ -352,10 +354,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const sc = data?.sections  || {};
 
     if (view === "fixes") {
+      const merged = mergeFixes(data);
       optPanel.innerHTML = `
         <h3 class="panel-title">⚠️ Fixes needed</h3>
         <p class="panel-sub">The most important issues to address first.</p>
-        <ul class="list">${(a.issues || []).map(i => `<li>${i}</li>`).join("") || "<li>No issues detected.</li>"}</ul>`;
+        <ul class="list">${merged.length ? merged.map(i => `<li>${i}</li>`).join("") : "<li>No issues detected.</li>"}</ul>`;
       return;
     }
 
@@ -364,15 +367,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <h3 class="panel-title">✅ What you did well</h3>
         <p class="panel-sub">Strengths that are already working for you.</p>
         <ul class="list">${(a.strengths || []).map(s => `<li>${s}</li>`).join("") || "<li>No strengths extracted.</li>"}</ul>`;
-      return;
-    }
-
-    if (view === "recs") {
-      const recs = (data?.suggestions || []);
-      optPanel.innerHTML = `
-        <h3 class="panel-title">🛠️ Recommendations</h3>
-        <p class="panel-sub">Quick, concrete improvements tailored to your resume.</p>
-        <ul class="list">${recs.length ? recs.map(r => `<li>${r}</li>`).join("") : "<li>No recommendations yet.</li>"}</ul>`;
       return;
     }
 
@@ -429,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
     paintPanel(btn.dataset.view, data);
   });
 
-  // Initial paint
+  // Initial paint (again, in case DOM changed while wiring)
   renderFromStorage();
 });
 
