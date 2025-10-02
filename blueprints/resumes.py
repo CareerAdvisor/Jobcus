@@ -857,8 +857,9 @@ portfolio: {data.get('portfolio',"")}
         return [s.strip() for s in str(val).replace("\r", "").split("\n") if s.strip()]
 
     try:
+        model = current_app.config.get("CHOOSE_MODEL", lambda r: "gpt-4o-mini")(None)
         resp = client.chat.completions.create(
-            model="gpt-4o",
+            model=model,
             messages=[{"role":"user","content":prompt}],
             temperature=0.2
         )
@@ -943,9 +944,10 @@ def ai_suggest():
 
         if client:
             try:
+                model = current_app.config.get("CHOOSE_MODEL", lambda r: "gpt-4o-mini")(None)
                 resp = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[{"role": "user", "content": prompt}],
+                    model=model,
+                    messages=[{"role":"user","content":prompt}],
                     temperature=0.6,
                     max_tokens=600,
                 )
