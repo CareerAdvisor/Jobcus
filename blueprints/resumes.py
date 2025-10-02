@@ -1303,66 +1303,79 @@ def resume_analysis():
 
     # ---- Optional LLM pass for qualitative commentary ----
     llm = {
-        "analysis":{"issues":[],"strengths":[]},
-        "suggestions":[],
-        "writing":{"readability":"","repetition":[],"grammar":[]},
-        "relevance":{"role": job_role, "score": 0, "explanation":"", "aligned_keywords":[], "missing_keywords":[]}
+        "analysis": {"issues": [], "strengths": []},
+        "suggestions": [],
+        "writing": {"readability": "", "repetition": [], "grammar": []},
+        "relevance": {"role": job_role, "score": 0, "explanation": "", "aligned_keywords": [], "missing_keywords": []},
     }
+    
+    chooser = current_app.config.get("CHOOSE_MODEL")
+    model_id = None
+    try:
+        # let the chooser decide per-user/plan (same logic you use in chat)
+        model_id = chooser(None) if callable(chooser) else os.getenv("FREE_MODEL", "gpt-4o-mini")
+    except Exception:
+        model_id = os.getenv("FREE_MODEL", "gpt-4o-mini")
+    
     if current_app.config.get("OPENAI_CLIENT"):
         try:
             client = current_app.config["OPENAI_CLIENT"]
-            role_or_desc = f"Job description:\n{job_desc}" if job_desc else (f"Target role: {job_role}" if job_role else "No job description provided.")
+            role_or_desc = f"Job description:\n{job_desc}" if job_desc else (
+                f"Target role: {job_role}" if job_role else "No job description provided."
+            )
             prompt = f"""
-You are an ATS-certified resume analyst. Return ONLY valid JSON (no backticks) with:
-{{
-  "analysis": {{"issues": ["..."], "strengths": ["..."]}},
-  "suggestions": ["..."],
-  "writing": {{
-    "readability": "Grade level (e.g., Grade 8–10 / B2)",
-    "repetition": [{{"term":"managed","count":5,"alternatives":["led","owned","coordinated"]}}],
-    "grammar": ["Short, actionable fixes."]
-  }},
-  "relevance": {{
-    "role": "{job_role}",
-    "score": 0-100,
-    "explanation": "1–2 sentences",
-    "aligned_keywords": ["..."],
-    "missing_keywords": ["..."]
-  }}
-}}
-Context:
-{role_or_desc}
-
-Resume:
-{resume_text[:8000]}
-""".strip()
+    You are an ATS-certified resume analyst. Return ONLY valid JSON (no backticks) with:
+    {{
+      "analysis": {{"issues": ["..."], "strengths": ["..."]}},
+      "suggestions": ["..."],
+      "writing": {{
+        "readability": "Grade level (e.g., Grade 8–10 / B2)",
+        "repetition": [{{"term":"managed","count":5,"alternatives":["led","owned","coordinated"]}}],
+        "grammar": ["Short, actionable fixes."]
+      }},
+      "relevance": {{
+        "role": "{job_role}",
+        "score": 0-100,
+        "explanation": "1–2 sentences",
+        "aligned_keywords": ["..."],
+        "missing_keywords": ["..."]
+      }}
+    }}
+    Context:
+    {role_or_desc}
+    
+    Resume:
+    {resume_text[:8000]}
+    """.strip()
+    
             resp = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[{"role":"user","content":prompt}],
-                temperature=0.0
+                model=model_id,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.0,
             )
             content = (resp.choices[0].message.content or "").strip()
-
-            # Log usage (resume analyzer LLM pass)
+    
+            # usage logging with the actual model_id
             log_ai_usage(
                 feature="resume_analyzer",
-                model="gpt-4o",
+                model=model_id,
                 resp=resp,
                 extra={
                     "status": "ok",
                     "cost_gbp": estimate_cost_gbp(
-                        "gpt-4o",
+                        model_id,
                         getattr(resp.usage, "prompt_tokens", None),
                         getattr(resp.usage, "completion_tokens", None),
-                    )
-                }
+                    ),
+                },
             )
             content = re.sub(r"```(?:json)?", "", content)
-            s,e = content.find("{"), content.rfind("}")
-            if s>=0 and e>s:
-                js = json.loads(content[s:e+1])
-                for k,v in js.items(): llm[k] = v
-        except Exception:
+            s, e = content.find("{"), content.rfind("}")
+            if s >= 0 and e > s:
+                js = json.loads(content[s:e + 1])
+                for k, v in js.items():
+                    llm[k] = v
+        } except Exception:
             current_app.logger.warning("LLM step skipped; continuing with deterministic output", exc_info=True)
 
     # ---- Map to your UI breakdown bars ----
@@ -1403,31 +1416,84 @@ Resume:
         "length_pages_est": read_brief["length_pages"]
     }
 
-    # ----- Single, final response payload -----
-    out = {
-        "score": int(headline),
-        "analysis": {
-            "issues": llm.get("analysis", {}).get("issues", []),
-            "strengths": llm.get("analysis", {}).get("strengths", [])
-        },
-        "suggestions": llm.get("suggestions", []),
-        "breakdown": breakdown,
-        "keywords": {
-            "matched": matched,
-            "missing": missing,
-        },
-        "sections": {
-            "present": [k for k, v in sec_struct["std"].items() if v],
-            "missing": [k for k, v in sec_struct["std"].items() if not v]
-        },
-        "writing": {
-            "readability": llm.get("writing", {}).get("readability", ""),
-            "repetition": llm.get("writing", {}).get("repetition", []),
-            "grammar": llm.get("writing", {}).get("grammar", [])
-        },
-        "relevance": llm.get("relevance", {}),
-        "diagnostics": diagnostics
-    }
+       # ----- Single, final response payload -----
+        out = {
+            "score": int(headline),
+            "analysis": {
+                "issues": llm.get("analysis", {}).get("issues", []),
+                "strengths": llm.get("analysis", {}).get("strengths", [])
+            },
+            "suggestions": llm.get("suggestions", []),
+            "breakdown": breakdown,
+            "keywords": {
+                "matched": matched,
+                "missing": missing,
+            },
+            "sections": {
+                "present": [k for k, v in sec_struct["std"].items() if v],
+                "missing": [k for k, v in sec_struct["std"].items() if not v]
+            },
+            "writing": {
+                "readability": llm.get("writing", {}).get("readability", ""),
+                "repetition": llm.get("writing", {}).get("repetition", []),
+                "grammar": llm.get("writing", {}).get("grammar", [])
+            },
+            "relevance": llm.get("relevance", {}),
+            "diagnostics": diagnostics
+        }
+    
+        # --- Deterministic fallback suggestions (never leave empty) ---
+        if not out["suggestions"]:
+            fallback = []
+    
+            # 1) Keywords coverage
+            if missing:
+                sample = ", ".join(missing[:8])
+                fallback.append(f"Add role-specific keywords naturally (only if true). Consider: {sample}.")
+            if not kw_match.get("distribution_ok", True) or kw_points < 20:
+                fallback.append("Spread key skills across summary, recent roles, and skills section to improve ATS term distribution.")
+    
+            # 2) Sections / structure
+            if not sec_struct["std"]["experience"]:
+                fallback.append("Add a Work Experience section with employer, title, location, and Month YYYY dates.")
+            if not sec_struct["std"]["education"]:
+                fallback.append("Add an Education section (degree, school, graduation year).")
+            if not sec_struct["std"].get("summary"):
+                fallback.append("Add a 2–3 sentence Professional Summary tailored to the target role.")
+            if not sec_struct["reverse_chrono"]:
+                fallback.append("Reorder roles into reverse-chronological order (most recent first).")
+    
+            # 3) Achievements & bullets
+            if quant["bullet_count"] < 6:
+                fallback.append("Increase bullet count; aim for 3–5 bullets per recent role.")
+            if quant["pct_with_numbers"] < 40:
+                fallback.append("Quantify impact (%, #, £/$). E.g., “Reduced resolution time by 35%”.")
+            if quant["avg_words_per_bullet"] and (quant["avg_words_per_bullet"] < 8 or quant["avg_words_per_bullet"] > 20):
+                fallback.append("Keep bullets concise (8–20 words) focused on outcomes, not duties.")
+            if quant["pct_action_starts"] < 60:
+                fallback.append("Start bullets with strong action verbs (Led, Built, Reduced, Automated…).")
+    
+            # 4) Readability / length
+            if breakdown["length"] < 70:
+                fallback.append(f"Adjust length to 1–2 pages (estimated {read_brief['length_pages']} page(s)).")
+            if breakdown["readability"] < 60:
+                fallback.append("Simplify wording and shorten long sentences to improve readability (B1–B2 level).")
+    
+            # 5) Parseability / formatting
+            if not breakdown["parseable"] or pf_score < 6:
+                fallback.append("Use clean, ATS-friendly formatting (no tables/columns; clear section headings). Export to PDF.")
+    
+            # 6) Eligibility / location hints
+            if elig_loc["score"] < 3:
+                fallback.append("Add working rights and current city/country (e.g., “Eligible to work in UK • London”).")
+    
+            # De-duplicate and attach
+            out["suggestions"] = list(dict.fromkeys([s.strip() for s in fallback if s.strip()]))
+    
+        # Concrete fixes (append to issues)
+        fixes = []
+        ...
+        return jsonify(out), 200
 
     # Concrete fixes (append to issues)
     fixes = []
