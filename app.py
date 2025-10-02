@@ -230,30 +230,55 @@ def _available_models():
 
 def allowed_models_for_plan(plan: str) -> list[str]:
     """
-    What the UI should show for the given plan.
-    Free: forced to FREE_MODEL.
-    Paid: PAID_MODEL_DEFAULT + PAID_MODEL_ALLOW (deduped, optionally filtered by availability).
+    Plan-specific model defaults + allow-lists (UI + server guard can reuse this).
+    Free  -> forced to FREE_MODEL (single choice).
+    Weekly/Standard/Premium -> <PLAN>_MODEL_DEFAULT + <PLAN>_MODEL_ALLOW (deduped).
+    We optionally filter the final list by models available to the API key.
+    Env vars you can set:
+      FREE_MODEL
+      WEEKLY_MODEL_DEFAULT,   WEEKLY_MODEL_ALLOW
+      STANDARD_MODEL_DEFAULT, STANDARD_MODEL_ALLOW
+      PREMIUM_MODEL_DEFAULT,  PREMIUM_MODEL_ALLOW
+      (Legacy fallbacks: PAID_MODEL_DEFAULT / PAID_MODEL_ALLOW)
     """
     plan = (plan or "free").lower()
 
-    free_default = (os.getenv("FREE_MODEL", "gpt-4o-mini") or "gpt-4o-mini").strip()
-    paid_default = (os.getenv("PAID_MODEL_DEFAULT", "gpt-4o-mini") or "gpt-4o-mini").strip()
-    paid_allow   = [s.strip() for s in (os.getenv("PAID_MODEL_ALLOW", "") or "").split(",") if s.strip()]
+    # ---- Defaults (safe fallbacks if envs are missing) ----
+    FREE_DEFAULT     = (os.getenv("FREE_MODEL", "gpt-4o-mini") or "gpt-4o-mini").strip()
+    WEEKLY_DEFAULT   = (os.getenv("WEEKLY_MODEL_DEFAULT",
+                         os.getenv("PAID_MODEL_DEFAULT", "gpt-4o-mini")) or "gpt-4o-mini").strip()
+    STANDARD_DEFAULT = (os.getenv("STANDARD_MODEL_DEFAULT", "gpt-4o-mini") or "gpt-4o-mini").strip()
+    PREMIUM_DEFAULT  = (os.getenv("PREMIUM_MODEL_DEFAULT", "gpt-4o") or "gpt-4o").strip()
+
+    # ---- Allow-lists (comma-separated) ----
+    WEEKLY_ALLOW   = [s.strip() for s in (os.getenv("WEEKLY_MODEL_ALLOW",
+                        os.getenv("PAID_MODEL_ALLOW", "")) or "").split(",") if s.strip()]
+    STANDARD_ALLOW = [s.strip() for s in (os.getenv("STANDARD_MODEL_ALLOW",
+                        os.getenv("PAID_MODEL_ALLOW", "")) or "").split(",") if s.strip()]
+    PREMIUM_ALLOW  = [s.strip() for s in (os.getenv("PREMIUM_MODEL_ALLOW",
+                        "gpt-4o,gpt-4o-mini") or "").split(",") if s.strip()]
 
     if plan == "free":
-        out = [free_default]
+        out = [FREE_DEFAULT]  # force a single option
+    elif plan == "weekly":
+        out = _dedupe([WEEKLY_DEFAULT] + WEEKLY_ALLOW)
+    elif plan == "standard":
+        out = _dedupe([STANDARD_DEFAULT] + STANDARD_ALLOW)
+    elif plan == "premium":
+        out = _dedupe([PREMIUM_DEFAULT] + PREMIUM_ALLOW)
     else:
-        out = _dedupe([paid_default] + paid_allow)
+        # unknown plan -> treat as free
+        out = [FREE_DEFAULT]
 
-    # Optional safety: only keep models your account actually has
+    # ---- Optional safety: keep only models actually available to your key ----
     avail = _available_models()
     if avail:
         filtered = [m for m in out if m in avail]
         if filtered:
             return filtered
-        # fallback so UI still works even if none matched
-        if free_default in avail:
-            return [free_default]
+        # Fallback so UI/server still work even if none matched
+        if FREE_DEFAULT in avail:
+            return [FREE_DEFAULT]
     return out
 
 def choose_model(requested: str | None) -> str:
@@ -1755,7 +1780,8 @@ def _chat_completion(model: str, user_msg: str, history=None) -> str:
 def api_ask():
     data = request.get_json(silent=True) or {}
     message = (data.get("message") or "").strip()
-    model   = (data.get("model")   or "gpt-4o-mini").strip()
+    requested = (data.get("model") or "").strip()
+    model = choose_model(requested)
     conv_id = data.get("conversation_id")
 
     if not message:
