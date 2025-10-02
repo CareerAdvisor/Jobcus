@@ -41,17 +41,53 @@ async function initRoleDatalist() {
   }
 }
 
-// -------- Utilities shared across panels --------
+// -------- Merge fixes (issues + suggestions) with fuzzy de-dup --------
 function mergeFixes(data){
   const issues = Array.isArray(data?.analysis?.issues) ? data.analysis.issues : [];
   const recs   = Array.isArray(data?.suggestions) ? data.suggestions : [];
-  const seen = new Set();
-  return [...issues, ...recs].filter(x => {
-    const key = String(x || "").trim();
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+
+  // ---- helpers for fuzzy de-dup ----
+  const STOP = new Set(["the","a","an","is","are","of","and","to","for","with","at","on","in","your","resume","document","section","sections"]);
+  const MAP  = [
+    [/reverse-?chronological/gi, "reverse chronological"],
+    [/objective\s*\/\s*summary|summary\s*\/\s*objective|objective or summary/gi, "summary"],
+    [/\bensure\b/gi, ""],
+    [/\bmake sure\b/gi, ""],
+    [/\bclearly\b/gi, ""],
+    [/\bthroughout the resume\b/gi, "throughout the document"],
+    [/\bformatting and spacing\b/gi, "formatting spacing"],
+    [/\bskills section\b/gi, "skills"],
+    [/\bexperience section\b/gi, "experience"],
+    [/[“”"]/g, "'"],
+    [/[—–]/g, "-"],
+  ];
+
+  const canon = (s="") => {
+    let t = String(s).toLowerCase().trim();
+    MAP.forEach(([re, rep]) => { t = t.replace(re, rep); });
+    t = t.replace(/[^a-z0-9\s\-']/g, " ").replace(/\s+/g, " ").trim();
+    return t;
+  };
+
+  const tokens = (s) => canon(s).split(/\s+/).filter(w => w && !STOP.has(w));
+  const sim = (a, b) => {
+    const A = new Set(tokens(a)), B = new Set(tokens(b));
+    if (A.size === 0 || B.size === 0) return 0;
+    let inter = 0; A.forEach(x => { if (B.has(x)) inter++; });
+    // similarity vs the *shorter* sentence to be conservative
+    return inter / Math.min(A.size, B.size);
+  };
+
+  // ---- prefer Issues wording; add recs only if not too similar ----
+  const out = [];
+  const keep = (x) => {
+    const isDup = out.some(y => sim(x, y) >= 0.72 || canon(y).includes(canon(x)) || canon(x).includes(canon(y)));
+    if (!isDup) out.push(x);
+  };
+
+  issues.forEach(keep);
+  recs.forEach(keep);
+  return out;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -317,7 +353,6 @@ document.addEventListener("DOMContentLoaded", () => {
           length:      data?.breakdown?.length ?? null,
           parseable:   data?.breakdown?.parseable ?? null
         },
-        // keep a copy of merged fixes for cloud sync if needed
         fixes: mergeFixes(data),
         lastAnalyzed: data.lastAnalyzed
       };
