@@ -1503,7 +1503,13 @@ def resume_analysis():
             dict.fromkeys([s.strip() for s in fallback if s.strip()])
         )
 
-    # Concrete fixes (append to issues)
+    # 1) Start with LLM/analysis issues + suggestions merged
+    out["analysis"]["issues"] = list(dict.fromkeys(
+        (out["analysis"]["issues"] or []) + (out.get("suggestions") or [])
+    ))
+    out["suggestions"] = []  # we no longer ship a separate list
+    
+    # 2) Add your deterministic fixes (the ones you already craft)
     fixes = []
     if not sec_struct["std"]["experience"]:
         fixes.append("Add a Work Experience section (titles like “Experience” or “Relevant Experience” are fine).")
@@ -1511,7 +1517,7 @@ def resume_analysis():
         fixes.append("Ensure roles are in reverse-chronological order (most recent first) with Month YYYY dates.")
     if breakdown.get("length", 100) < 70:
         fixes.append("Expand to 1–2 pages with impact bullets (8–20 words each).")
+    
+    # 3) Final de-dupe after appending
+    out["analysis"]["issues"] = list(dict.fromkeys((out["analysis"]["issues"] or []) + fixes))
 
-    out["analysis"]["issues"] = (out["analysis"]["issues"] or []) + fixes
-
-    return jsonify(out), 200
