@@ -1421,7 +1421,7 @@ def account():
             login_user(User(auth_id=auth_id, email=email, fullname=name))
             record_login_event(current_user)
             _, set_cookie = start_user_session(current_user)
-            resp = jsonify(success=True, redirect=url_for("dashboard"))
+            resp = jsonify(success=True, redirect=url_for("chat"))
             return set_cookie(resp), 200
 
         except AuthApiError as e:
@@ -1468,7 +1468,7 @@ def account():
         login_user(User(auth_id=auth_id, email=email, fullname=fullname))
         record_login_event(current_user)
         _, set_cookie = start_user_session(current_user)
-        resp = jsonify(success=True, redirect=url_for("dashboard"))
+        resp = jsonify(success=True, redirect=url_for("chat"))
         return set_cookie(resp), 200
 
     except AuthApiError as e:
@@ -1626,7 +1626,7 @@ def oauth_callback():
           body: JSON.stringify({{ access_token, refresh_token, provider_token }})
         }}).then(r => r.json()).then(j => {{
           if (j && j.success) {{
-            location.replace(j.redirect || "/dashboard");
+            location.replace(j.redirect || "/chat");
           }} else {{
             location.replace("/account?mode=login&error=" + encodeURIComponent(j.message || "oauth_failed"));
           }}
@@ -1684,7 +1684,7 @@ def oauth_complete():
         record_login_event(current_user)
         _, set_cookie = start_user_session(current_user)
 
-        resp = jsonify(success=True, redirect=url_for("dashboard"))
+        resp = jsonify(success=True, redirect=url_for("chat"))
         return set_cookie(resp), 200
 
     except Exception:
