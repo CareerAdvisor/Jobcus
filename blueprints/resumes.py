@@ -783,9 +783,10 @@ def optimize_resume():
         f"Original resume:\n\n{resume_text}"
     )
     try:
+        model = current_app.config.get("CHOOSE_MODEL", lambda r: "gpt-4o-mini")(None)
         resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
+            model=model,
+            messages=[{"role":"user","content":prompt}],
             temperature=0.3
         )
         optimized = (resp.choices[0].message.content or "").strip()
