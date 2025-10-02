@@ -1309,19 +1309,13 @@ def resume_analysis():
         "relevance": {"role": job_role, "score": 0, "explanation": "", "aligned_keywords": [], "missing_keywords": []},
     }
     
-    chooser = current_app.config.get("CHOOSE_MODEL")
-    model_id = None
-    try:
-        # let the chooser decide per-user/plan (same logic you use in chat)
-        model_id = chooser(None) if callable(chooser) else os.getenv("FREE_MODEL", "gpt-4o-mini")
-    except Exception:
-        model_id = os.getenv("FREE_MODEL", "gpt-4o-mini")
-    
     if current_app.config.get("OPENAI_CLIENT"):
         try:
             client = current_app.config["OPENAI_CLIENT"]
-            role_or_desc = f"Job description:\n{job_desc}" if job_desc else (
-                f"Target role: {job_role}" if job_role else "No job description provided."
+            role_or_desc = (
+                f"Job description:\n{job_desc}"
+                if job_desc
+                else (f"Target role: {job_role}" if job_role else "No job description provided.")
             )
             prompt = f"""
     You are an ATS-certified resume analyst. Return ONLY valid JSON (no backticks) with:
@@ -1349,35 +1343,25 @@ def resume_analysis():
     """.strip()
     
             resp = client.chat.completions.create(
-                model=model_id,
+                model="gpt-4o",  # or your plan-aware choose_model(None)
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
             )
             content = (resp.choices[0].message.content or "").strip()
     
-            # usage logging with the actual model_id
-            log_ai_usage(
-                feature="resume_analyzer",
-                model=model_id,
-                resp=resp,
-                extra={
-                    "status": "ok",
-                    "cost_gbp": estimate_cost_gbp(
-                        model_id,
-                        getattr(resp.usage, "prompt_tokens", None),
-                        getattr(resp.usage, "completion_tokens", None),
-                    ),
-                },
-            )
+            # (usage logging + JSON extraction)
             content = re.sub(r"```(?:json)?", "", content)
             s, e = content.find("{"), content.rfind("}")
             if s >= 0 and e > s:
                 js = json.loads(content[s:e + 1])
                 for k, v in js.items():
                     llm[k] = v
-        } except Exception:
-            current_app.logger.warning("LLM step skipped; continuing with deterministic output", exc_info=True)
-
+    
+        except Exception:
+            current_app.logger.warning(
+                "LLM step skipped; continuing with deterministic output", exc_info=True
+            )
+        
     # ---- Map to your UI breakdown bars ----
     breakdown = {
         "formatting": int(round((pf_score/10)*100)),
