@@ -110,6 +110,9 @@ function gatherContext(form) {
       ? skillsRaw.split(/[,;\r\n]+/).map(s => s.trim()).filter(Boolean)
       : [];
 
+    // ✅ NEW — capture the certifications textarea
+    const certifications = form.certifications?.value?.trim() || "";
+
     return {
       name,
       title: form.title?.value?.trim() || "",
@@ -120,6 +123,7 @@ function gatherContext(form) {
         : [],
       experience,
       education,
+      certifications,   // ✅ FIX: include certs
       skills
     };
   } catch (e) {
@@ -505,13 +509,13 @@ function initWizard() {
   function updateButtons() {
     const lastIndex = steps.length - 1;
     const onLast = idx === lastIndex;
-
+    const onDesign = steps[idx]?.id === "step-design";  // ✅ NEW
+  
     if (back) back.disabled = idx === 0;
-
-    // Show Next unless we're on the last step
-    if (next) next.style.display = onLast ? "none" : "inline-block";
-
-    // Show Submit only if this step contains the submit button
+  
+    // Hide Next on last step AND on the Design step
+    if (next) next.style.display = (onLast || onDesign) ? "none" : "inline-block";
+  
     const thisStepHasSubmit = !!steps[idx]?.querySelector?.("#rb-submit");
     if (submitBtn) submitBtn.style.display = thisStepHasSubmit ? "inline-block" : "none";
   }
