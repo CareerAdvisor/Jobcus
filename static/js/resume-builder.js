@@ -110,8 +110,8 @@ function gatherContext(form) {
       ? skillsRaw.split(/[,;\r\n]+/).map(s => s.trim()).filter(Boolean)
       : [];
 
-    // ✅ NEW — capture the certifications textarea
-    const certifications = form.certifications?.value?.trim() || "";
+    const certifications   = form.certifications?.value?.trim() || "";
+    const projects_awards  = form.projects_awards?.value?.trim() || "";  // NEW
 
     return {
       name,
@@ -123,7 +123,8 @@ function gatherContext(form) {
         : [],
       experience,
       education,
-      certifications,   // ✅ FIX: include certs
+      certifications,
+      projects_awards,  // NEW
       skills
     };
   } catch (e) {
