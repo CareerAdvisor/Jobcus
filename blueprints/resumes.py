@@ -1313,8 +1313,97 @@ def build_cover_letter():
     resp = make_response(html)
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
+    
+# ----------- AI Helper -----------------
+@resumes_bp.post("/api/ai-helper")
+@login_required
+def ai_helper():
+    """
+    Accepts JSON: { field: "resume_analysis" | "rewrite_bullet" | "highlights" | "summary",
+                    context: {...}, index?: number }
+    Returns JSON: { issues?: [...], list?: [...], text?: "..." }
+    """
+    client = current_app.config.get("OPENAI_CLIENT")
 
-# ---------- 3) AI resume analysis ----------
+    try:
+        data = request.get_json(force=True) or {}
+    except Exception:
+        return jsonify(error="bad_request", message="Invalid JSON body"), 400
+
+    field   = (data.get("field") or "").strip()
+    ctx     = data.get("context") or {}
+    idx     = data.get("index", 0)
+
+    # Optional: enforce plan/feature gates like your other AI routes
+    # from limits import feature_enabled, check_and_increment
+    # plan = (getattr(current_user, "plan", "free") or "free").lower()
+    # if not feature_enabled(plan, "optimize_ai"): return jsonify(error="upgrade_required", message=...), 403
+    # ok, info = check_and_increment(current_app.config["SUPABASE_ADMIN"], current_user.id, plan, "optimize_ai")
+    # if not ok: return jsonify(info), 402
+
+    def chat(msg):
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role":"user","content":msg}],
+            temperature=0.4,
+            max_tokens=600
+        )
+        return (resp.choices[0].message.content or "").strip()
+
+    if field == "resume_analysis":
+        bullets = ctx.get("bullets") or []
+        summary = (ctx.get("summary") or "").strip()
+        prompt = f"""
+You analyze resume bullets. For each bullet, detect concrete problems (weak verb, no metric, passive voice, vague, too long) and suggest a stronger rewrite.
+Return strict JSON as:
+{{"issues":[{{"text":"...", "problems":["...","..."], "suggestion":"..."}}]]}}
+Only include items that have at least one problem.
+Bullets:
+- {chr(10).join(f"- {b}" for b in bullets[:20])}
+
+Summary (optional): {summary or "N/A"}
+""".strip()
+        out = chat(prompt)
+        # be defensive: try to pull a JSON block; else fallback
+        try:
+            import re, json
+            block = re.search(r"\{[\s\S]*\}\s*$", out).group(0)
+            parsed = json.loads(block)
+            return jsonify(issues=parsed.get("issues", []))
+        except Exception:
+            # fallback: return nothing and let frontend heuristics kick in
+            return jsonify(issues=[])
+
+    if field == "rewrite_bullet":
+        text = (ctx.get("text") or "").strip()
+        prompt = f"""
+Rewrite this resume bullet using a strong action verb, 1 line, include a concrete metric or outcome if plausible.
+Return only the rewritten line.
+Original: {text}
+"""
+        return jsonify(text=chat(prompt))
+
+    if field == "highlights":
+        # generate 3–6 bullet ideas for a specific experience index
+        role = (ctx.get("experience", [{}])[idx].get("role") if ctx.get("experience") else "") or (ctx.get("title") or "")
+        prompt = f"""
+Create 4 concise resume bullets for a {role or "professional"}.
+Each bullet must start with a strong verb and include a metric (%/time/$) and outcome.
+Return bullets split by newlines.
+"""
+        text = chat(prompt)
+        lines = [s.strip("• ").strip() for s in text.splitlines() if s.strip()]
+        return jsonify(list=lines[:6])
+
+    if field == "summary":
+        title = ctx.get("title") or "professional"
+        skills = ", ".join(ctx.get("skills") or [])[:120]
+        prompt = f"Write a 2–3 sentence resume summary for a {title}, highlighting {skills or 'relevant strengths'}."
+        return jsonify(text=chat(prompt)))
+
+    return jsonify(error="unknown_field", message="Unsupported field"), 400
+
+# ---------- AI resume analysis ----------
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
 @api_login_required
 def resume_analysis():
