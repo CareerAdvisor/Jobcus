@@ -376,27 +376,26 @@ html, body { overflow-x: initial; } /* or simply remove the old overflow-x:hidde
 
 .metric__head span { white-space: nowrap; }
 
-/* Make rw-pill look like opt-btn and go white text on hover */
+/* Toolbar pills styled like .opt-btn */
 .rw-pill{
   display:inline-block;
-  width:auto;
   text-align:left;
   padding:12px 14px;
   border-radius:12px;
-  background:#f3f6fa;
+  background:#f3f6fa;           /* light like inactive opt-btn */
   color:#0f172a;
   font-weight:700;
+  margin:0 .5rem .5rem 0;
   border:1px solid #e2e8f0;
   cursor:pointer;
 }
-.rw-pill:hover,
-.rw-pill.active{               /* active state mirrors .opt-btn.is-active */
-  background: var(--brand);
-  color:#fff;
-  border-color: var(--brand);
+.rw-pill:hover{
+  background:#104879;            /* brand blue on hover */
+  color:#fff;                    /* white text */
+  border-color:#104879;
 }
-.rw-pill.rw-pill--ai{          /* keep a primary look for the AI button if you like */
-  background: var(--brand);
+.rw-pill.active{
+  background:#104879;            /* active = same as selected opt-btn */
   color:#fff;
-  border-color: var(--brand);
+  border-color:#104879;
 }
