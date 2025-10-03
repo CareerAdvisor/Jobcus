@@ -388,19 +388,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const kw = data?.keywords  || {};
     const sc = data?.sections  || {};
 
-    if (view === "fixes") {
-      const issues = Array.isArray(a.issue_text) ? a.issue_text
-                     : Array.isArray(a.issues) ? a.issues.map(i =>
-                         typeof i === "string" ? i :
-                         `${i.category || 'Issue'}${i.severity ? ' ('+i.severity+')' : ''}: ${i.finding || ''} — Fix: ${i.recommendation || ''}`
-                       )
-                     : [];
-      optPanel.innerHTML = `
-        <h3 class="panel-title">⚠️ Fixes needed</h3>
-        <p class="panel-sub">The most important issues to address first.</p>
-        <ul class="list">${issues.length ? issues.map(i => `<li>${i}</li>`).join("") : "<li>No issues detected.</li>"}</ul>`;
-      return;
-    }
+   // dashboard.js → inside paintPanel(view, data)
+  if (view === "fixes") {
+    const issues = Array.isArray(a.issues) ? a.issues : [];
+    optPanel.innerHTML = `
+      <h3 class="panel-title">⚠️ Fixes needed</h3>
+      <p class="panel-sub">The most important issues to address first.</p>
+      <ul class="list">${issues.length ? issues.map(i => `<li>${i}</li>`).join("") : "<li>No issues detected.</li>"}</ul>
+      <div class="rw-suggest" style="margin-top:12px">
+        <p class="panel-sub">Tip: click <strong>AI helper</strong> above to rewrite weak bullets, add metrics, and apply keyword fixes without leaving this page.</p>
+        <button type="button" id="openAiHelper" class="rw-pill">AI helper</button>
+      </div>`;
+    document.getElementById("openAiHelper")?.addEventListener("click", () => {
+      // switch the toolbar to AI helper tab
+      document.querySelector('.rw-pill[data-panel="analysis"]')?.classList.remove("active");
+      document.querySelector('.rw-pill[data-panel="verbs"]')?.classList.remove("active");
+      document.getElementById("ai-helper-btn")?.classList.add("active");
+      // optional: scroll to the AI helper panel if you render one
+      document.getElementById("panel-analysis")?.scrollIntoView({ behavior:"smooth", block:"start" });
+    });
+    return;
+  }
 
     if (view === "done") {
       optPanel.innerHTML = `
