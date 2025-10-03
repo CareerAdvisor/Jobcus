@@ -698,7 +698,7 @@ def build_resume():
         "experience":     ctx.get("experience", []),
         "education":      ctx.get("education", []),
         "certifications": ctx.get("certifications", []),
-        # expose to Jinja
+        "projects_awards": ctx.get("projects_awards", []),   # ← add this
         "is_paid": is_paid,
         "wm_text": wm_text,
         "for_pdf": (fmt == "pdf"),
