@@ -106,14 +106,13 @@
         <article class="item">
           <div class="item-header">
             <div class="item-title">{{ ed.degree }}</div>
-            {% set line2 = [ed.school, ed.location]|select|string|join(' · ') %}
-            {% if line2 %}<div class="item-meta">{{ line2 }}</div>{% endif %}
-            {% if ed.start or ed.end or ed.graduated %}
-              <div class="item-meta">
-                {% if ed.start %}{{ ed.start }}{% endif %}
-                {% if ed.end or ed.graduated %} · {{ ed.end or ed.graduated }}{% endif %}
-              </div>
-            {% endif %}
+            {# School · Location #}
+            {% set line2 = [ed.school, ed.location] | reject('equalto', '') | list | join(' · ') %}
+            {% if line2 %}<div class="item-sub">{{ line2 }}</div>{% endif %}
+            
+            {# Start · End (or Graduated) #}
+            {% set dates = [ed.start, ed.end or ed.graduated] | reject('equalto', '') | list | join(' · ') %}
+            {% if dates %}<div class="item-sub">{{ dates }}</div>{% endif %}
           </div>
         </article>
       {% endfor %}
