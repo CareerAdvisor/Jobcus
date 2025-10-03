@@ -620,6 +620,7 @@ function initWizard() {
         experience: experienceStr,
         skills: (ctxForTemplate.skills || []).join(", "),
         certifications: form.elements["certifications"]?.value?.trim() || "",
+        projects_awards: form.elements["projects_awards"]?.value?.trim() || "", // <-- add
         portfolio: (ctxForTemplate.links?.[0]?.url) || "",
       };
 
