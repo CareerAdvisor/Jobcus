@@ -753,7 +753,7 @@ def build_resume():
     return resp
 
 # ---------- Template-based resume (DOCX) ----------
-@bp.post("/build-resume-docx")
+@resumes_bp.post("/build-resume-docx")
 def build_resume_docx():
     try:
         data = request.get_json(force=True) or {}
