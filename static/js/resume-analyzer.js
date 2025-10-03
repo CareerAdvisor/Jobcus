@@ -9,6 +9,57 @@
   };
 })();
 
+/* ------------------------------------------------------------------
+   Make the AI endpoint and helpers available to resume-analyzer-extras.js
+   (ported from your inline <script> block; idempotent)
+-------------------------------------------------------------------*/
+(function(){
+  // Endpoint used by AI Helper / Resume analysis tabs
+  if (!window.AI_ENDPOINT) window.AI_ENDPOINT = "/api/ai-helper";
+
+  // Minimal escapeHtml (same contract as in resume-builder.js)
+  if (typeof window.escapeHtml !== "function") {
+    window.escapeHtml = (s = "") =>
+      s.replace(/&/g,"&amp;")
+       .replace(/</g,"&lt;")
+       .replace(/>/g,"&gt;")
+       .replace(/"/g,"&quot;")
+       .replace(/'/g,"&#39;");
+  }
+
+  // Centralized response handling (ported from resume-builder.js)
+  if (typeof window.handleCommonErrors !== "function") {
+    window.handleCommonErrors = async function(res){
+      if (res.ok) return null;
+      const ct = res.headers.get("content-type") || "";
+      let body = null;
+      try {
+        body = ct.includes("application/json") ? await res.json()
+                                               : { message: await res.text() };
+      } catch {}
+
+      if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
+        const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
+        window.upgradePrompt?.(body?.message_html || msg, (window.PRICING_URL || "/pricing"), 1200);
+        throw new Error(msg);
+      }
+      if (res.status === 401 || res.status === 403) {
+        const msg = body?.message || "Please sign in to continue.";
+        window.showUpgradeBanner?.(msg);
+        setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
+        throw new Error(msg);
+      }
+      if (res.status === 429 && (body?.error === "too_many_free_accounts" || body?.error === "device_limit")) {
+        const msg = body?.message || "Too many free accounts detected from your network/device.";
+        window.showUpgradeBanner?.(msg);
+        throw new Error(msg);
+      }
+      const msg = body?.message || `Request failed (${res.status})`;
+      throw new Error(msg);
+    };
+  }
+})();
+
 /* ---------- QUICK FORM-DATA FLOW (optional page variant) ---------- */
 /* Binds to:
  *   - Button:  #analyzeBtn
