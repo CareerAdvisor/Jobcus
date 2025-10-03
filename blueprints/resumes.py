@@ -1403,7 +1403,7 @@ Return bullets split by newlines.
 
     return jsonify(error="unknown_field", message="Unsupported field"), 400
 
-# ---------- AI resume analysis ----------
+# ---------- 3) AI resume analysis ----------
 @resumes_bp.route("/api/resume-analysis", methods=["POST"])
 @api_login_required
 def resume_analysis():
@@ -1564,32 +1564,32 @@ def resume_analysis():
                 else (f"Target role: {job_role}" if job_role else "No job description provided.")
             )
             prompt = f"""
-    You are an ATS-certified resume analyst. Return ONLY valid JSON (no backticks) with:
-    {{
-      "analysis": {{"issues": ["..."], "strengths": ["..."]}},
-      "suggestions": ["..."],
-      "writing": {{
-        "readability": "Grade level (e.g., Grade 8–10 / B2)",
-        "repetition": [{{"term":"managed","count":5,"alternatives":["led","owned","coordinated"]}}],
-        "grammar": ["Short, actionable fixes."]
-      }},
-      "relevance": {{
-        "role": "{job_role}",
-        "score": 0-100,
-        "explanation": "1–2 sentences",
-        "aligned_keywords": ["..."],
-        "missing_keywords": ["..."]
-      }}
-    }}
-    Context:
-    {role_or_desc}
-    
-    Resume:
-    {resume_text[:8000]}
-    """.strip()
+You are an ATS-certified resume analyst. Return ONLY valid JSON (no backticks) with:
+{{
+  "analysis": {{"issues": ["..."], "strengths": ["..."]}},
+  "suggestions": ["..."],
+  "writing": {{
+    "readability": "Grade level (e.g., Grade 8–10 / B2)",
+    "repetition": [{{"term":"managed","count":5,"alternatives":["led","owned","coordinated"]}}],
+    "grammar": ["Short, actionable fixes."]
+  }},
+  "relevance": {{
+    "role": "{job_role}",
+    "score": 0-100,
+    "explanation": "1–2 sentences",
+    "aligned_keywords": ["..."],
+    "missing_keywords": ["..."]
+  }}
+}}
+Context:
+{role_or_desc}
+
+Resume:
+{resume_text[:8000]}
+""".strip()
     
             resp = client.chat.completions.create(
-                model="gpt-4o",  # or your plan-aware choose_model(None)
+                model="gpt-4o",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
             )
@@ -1689,7 +1689,7 @@ def resume_analysis():
         },
         "relevance": llm.get("relevance", {}),
         "diagnostics": diagnostics,
-    }   # <— make sure this closing brace lines up with `out = {`
+    }
 
     # --- Deterministic fallback suggestions (never leave empty) ---
     if not out["suggestions"]:
@@ -1789,13 +1789,36 @@ def resume_analysis():
     # 3) Final de-dupe after appending
     out["analysis"]["issues"] = list(dict.fromkeys((out["analysis"]["issues"] or []) + fixes))
 
+    # ====== NEW: supply a rich issue object + a stringified legacy version ======
+    # We’ll derive 'caused_by' from the missing keywords list if available.
+    if missing:
+        issue = {
+            "category": "Keywords",
+            "severity": "high",
+            "finding": "No domain keywords detected for the target role" if not matched else "Important domain keywords are underrepresented",
+            "caused_by": missing[:5],  # e.g., ["Jira", "Scrum"]
+            "recommendation": "Add 2–3 relevant tools and frameworks used in your projects",
+            "example_fix": "Spearheaded Scrum ceremonies and managed Jira board across 6 squads"
+        }
+        issue_text = f"{issue['category']} ({issue['severity']}): {issue['finding']} — Fix: {issue['recommendation']} (e.g., {issue['example_fix']})"
+
+        # Keep objects under a new key, and keep strings under the legacy 'issues' key
+        a = out.setdefault("analysis", {})
+        a.setdefault("issues_objects", [])
+        a["issues_objects"].append(issue)
+
+        # Prepend the stringified version so current UI (which renders strings) shows it
+        legacy = a.get("issues") or []
+        a["issues"] = [issue_text] + legacy
+
+    # ====== END new rich+legacy bridge ======
+
     # 1) Map various wordings → an intent key and a preferred phrase
     _INTENT_PREF = {
         "formatting_consistency": "Ensure consistent, clean formatting and spacing across all sections.",
         "contact_placement":      "Place contact information at the top of the resume, not inside Experience.",
         "add_certs":              "Add a Certifications section if you hold relevant credentials.",
         "add_experience":         "Add a Work Experience section (e.g., “Experience” or “Relevant Experience”).",
-        # add more as you standardize additional fixes…
     }
     
     def _intent_key(line: str) -> str | None:
@@ -1842,8 +1865,8 @@ def resume_analysis():
         inter = len(A & B)
         return inter / float(min(len(A), len(B)))
     
-    # 2) Combine issues + suggestions, then reduce by intent (intent wins)
-    combined = (out.get("analysis", {}).get("issues") or []) + (out.get("suggestions") or [])
+    # 2) Combine issues + (now-empty) suggestions, then reduce by intent (intent wins)
+    combined = (out.get("analysis", {}).get("issues") or [])
     
     kept_by_intent: dict[str, str] = {}
     others: list[str] = []
@@ -1853,7 +1876,6 @@ def resume_analysis():
             continue
         intent = _intent_key(line)
         if intent:
-            # prefer the standard phrase for that intent
             kept_by_intent.setdefault(intent, _INTENT_PREF.get(intent) or _canon(line))
         else:
             others.append(_canon(line))
@@ -1879,5 +1901,5 @@ def resume_analysis():
     out.setdefault("analysis", {})["issues"] = final_fixes
     out["suggestions"] = []
 
-    return jsonify(out), 200
+    return jsonify(out)
 
