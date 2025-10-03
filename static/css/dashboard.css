@@ -120,7 +120,7 @@ body{overflow-x:hidden}
 }
 .score-card__icon{
   width:24px;height:24px; border-radius:6px;
-  background: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='%23104879' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 2h9l3 3v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM6 4v16h10V6h-2V4H6z'/%3E%3C/svg%3E") center/24px 24px no-repeat;
+  background: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='%23104879' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 2h9l3 3v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1-2-2zM6 4v16h10V6h-2V4H6z'/%3E%3C/svg%3E") center/24px 24px no-repeat;
   opacity:.85;
 }
 
@@ -375,3 +375,43 @@ html, body { overflow-x: hidden; }
 html, body { overflow-x: initial; } /* or simply remove the old overflow-x:hidden line */
 
 .metric__head span { white-space: nowrap; }
+
+/* ===================== NEW: Resume-analyzer toolbar & panels ===================== */
+.rw-pill{
+  border:1px solid #d6dbe1;
+  border-radius:999px;
+  padding:.35rem .8rem;
+  background:#fff;
+  cursor:pointer;
+}
+.rw-pill.active{ box-shadow:0 0 0 2px #0b68d122; }
+.rw-pill--ai{
+  background:#0b68d1;
+  color:#fff;
+  border-color:#0b68d1;
+}
+.rw-panel{ margin-top:1rem; }
+.rw-issue{
+  border-left:4px solid #e85959;
+  background:#fff6f6;
+  padding:12px 12px 12px 16px;
+  border-radius:8px;
+  margin:.75rem 0;
+}
+.rw-issue h4{ margin:0 0 .25rem 0; font-size:1rem; }
+.rw-issue small{ opacity:.7; }
+.rw-suggest{
+  background:#f6fbff;
+  border:1px dashed #b8d7ff;
+  border-radius:8px;
+  padding:10px;
+  margin-top:.5rem;
+}
+.rw-verb-chip{
+  display:inline-block;
+  border:1px solid #d6dbe1;
+  border-radius:999px;
+  padding:.25rem .6rem;
+  margin:.25rem .25rem 0 0;
+  cursor:pointer;
+}
