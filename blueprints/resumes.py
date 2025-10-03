@@ -14,6 +14,9 @@ from docxtpl import DocxTemplate
 from PyPDF2 import PdfReader
 from jinja2 import TemplateNotFound
 from authz import require_plan
+from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 # OpenAI SDKs have changed slightly across versions; this keeps RateLimitError optional.
 try:
@@ -749,129 +752,139 @@ def build_resume():
     resp.headers["Content-Type"] = "text/html; charset=utf-8"
     return resp
 
-# ---------- 2) Template-based resume (DOCX) ----------
+# ---------- Template-based resume (DOCX) ----------
 @app.post("/build-resume-docx")
 def build_resume_docx():
     try:
         data = request.get_json(force=True) or {}
 
-        # helpers to normalize inputs (strings or arrays)
+        # ---- helpers ----
         def _lines(val):
+            """Return a list of lines from a string/list; strips bullets & empties."""
             if isinstance(val, list):
                 return [str(x).strip() for x in val if str(x).strip()]
             if isinstance(val, str):
-                # allow comma or newline separated
-                parts = [p.strip() for p in val.replace("•", "").split("\n")]
-                # if it's a single line with commas, split those too
+                s = val.replace("•", "")
+                parts = [p.strip() for p in s.split("\n")]
                 if len(parts) == 1 and "," in parts[0]:
                     parts = [p.strip() for p in parts[0].split(",")]
                 return [p for p in parts if p]
             return []
 
         def _sections(val):
-            # list of dicts expected for experience/education; fall back to a single blob
+            """Normalize experience/education into list[dict]."""
             if isinstance(val, list):
                 return val
             if isinstance(val, str) and val.strip():
                 return [{"bullets": [v.strip() for v in val.split("\n") if v.strip()]}]
             return []
 
-        full_name = data.get("name") or data.get("fullName") or data.get("full_name") or ""
-        title     = data.get("title", "")
-        contact   = data.get("contact", "")
-        summary   = data.get("summary", "")
+        # ---- normalize incoming payload ----
+        full_name = (data.get("name")
+                     or data.get("fullName")
+                     or data.get("full_name") or "").strip()
+        title     = (data.get("title") or "").strip()
+        contact   = (data.get("contact") or "").strip()
+        summary   = (data.get("summary") or "").strip()
         skills    = _lines(data.get("skills", ""))
-        certs     = _lines(data.get("certifications", ""))  # can be string or array
-        # allow either arrays of dicts or flat strings
+        certs     = _lines(data.get("certifications", ""))
+        projects  = _lines(data.get("projects_awards", "")
+                           or data.get("projectsAndAwards", ""))
         experience = _sections(data.get("experience", []))
         education  = _sections(data.get("education", []))
-        projects_awards = _lines(data.get("projects_awards", "") or data.get("projectsAndAwards", ""))
 
+        # ---- build docx ----
         doc = Document()
 
+        def add_heading(text, lvl=1):
+            if not text: return
+            h = doc.add_heading(text, level=lvl)
+            try:
+                h.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            except:  # pragma: no cover
+                pass
+
+        def add_para(text, bold=False):
+            if not text: return
+            p = doc.add_paragraph()
+            r = p.add_run(text)
+            if bold:
+                r.bold = True
+            r.font.size = Pt(11)
+
+        def add_bullets(lines):
+            for line in (lines or []):
+                if not str(line).strip():
+                    continue
+                doc.add_paragraph(str(line).strip(), style="List Bullet")
+
         # Header
-        if full_name: doc.add_heading(full_name, level=0)
-        if title:     doc.add_paragraph(title)
-        if contact:   doc.add_paragraph(contact)
+        if full_name: add_heading(full_name, 0)
+        if title:     add_para(title)
+        if contact:   add_para(contact)
 
         # Summary
         if summary:
-            doc.add_heading("Professional Summary", level=1)
-            doc.add_paragraph(summary)
+            add_heading("Professional Summary", 1)
+            add_para(summary)
 
         # Skills
         if skills:
-            doc.add_heading("Skills", level=1)
-            for s in skills:
-                doc.add_paragraph(s, style="List Bullet")
+            add_heading("Skills", 1)
+            add_bullets(skills)
 
-        # Experience (dates on a new line under role/company)
+        # Experience
         if experience:
-            doc.add_heading("Relevant Experience", level=1)
+            add_heading("Relevant Experience", 1)
             for e in experience:
                 role    = (e.get("role") or "").strip()
                 company = (e.get("company") or "").strip()
-                header  = " – ".join([p for p in [role, company] if p])
-                if header:
-                    doc.add_paragraph(header).bold = True  # title line
+                header  = " – ".join([x for x in [role, company] if x])
+                dates   = " · ".join([x for x in [(e.get("start") or "").strip(),
+                                                  (e.get("end") or "").strip()] if x])
+                loc     = (e.get("location") or "").strip()
 
-                # second line: location (optional); third line: dates
-                location = (e.get("location") or "").strip()
-                if location:
-                    doc.add_paragraph(location)
+                if header: add_para(header, bold=True)
+                if loc:    add_para(loc)
+                if dates:  add_para(dates)
 
-                start = (e.get("start") or "").strip()
-                end   = (e.get("end")   or "").strip()
-                if start or end:
-                    doc.add_paragraph(" · ".join([p for p in [start, end] if p]))
+                add_bullets(e.get("bullets"))
 
-                # bullets
-                bullets = e.get("bullets") or []
-                for b in bullets:
-                    if str(b).strip():
-                        doc.add_paragraph(str(b).strip(), style="List Bullet")
-
-        # Education (degree line, then institution/location line, then dates line)
+        # Education (join strings; no generators)
         if education:
-            doc.add_heading("Education", level=1)
+            add_heading("Education", 1)
             for ed in education:
-                degree   = (ed.get("degree") or "").strip()
-                school   = (ed.get("school") or "").strip()
-                location = (ed.get("location") or "").strip()
-                start    = (ed.get("start") or "").strip()
-                end      = (ed.get("end") or ed.get("graduated") or "").strip()
+                degree = (ed.get("degree") or "").strip()
+                school = (ed.get("school") or "").strip()
+                line1  = " – ".join([x for x in [degree, school] if x])
 
-                if degree:
-                    doc.add_paragraph(degree).bold = True  # degree line
+                loc    = (ed.get("location") or "").strip()
+                start  = (ed.get("start") or ed.get("graduatedStart") or "").strip()
+                end    = (ed.get("end")   or ed.get("graduated")      or "").strip()
+                line2  = " · ".join([x for x in [loc, start, end] if x])
 
-                line2 = " · ".join([p for p in [school, location] if p])
-                if line2:
-                    doc.add_paragraph(line2)
-
-                if start or end:
-                    doc.add_paragraph(" · ".join([p for p in [start, end] if p]))
+                if line1: add_para(line1, bold=True)
+                if line2: add_para(line2)
 
         # Certifications
         if certs:
-            doc.add_heading("Other Education & Certifications", level=1)
-            for c in certs:
-                doc.add_paragraph(c, style="List Bullet")
+            add_heading("Other Education & Certifications", 1)
+            add_bullets(certs)
 
         # Projects & Awards
-        if projects_awards:
-            doc.add_heading("Projects & Awards", level=1)
-            for item in projects_awards:
-                doc.add_paragraph(item, style="List Bullet")
+        if projects:
+            add_heading("Projects & Awards", 1)
+            add_bullets(projects)
 
+        # Stream DOCX
         buf = BytesIO()
         doc.save(buf)
         buf.seek(0)
-
         return send_file(
             buf,
             as_attachment=True,
             download_name="resume.docx",
-            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
 
     except Exception as e:
