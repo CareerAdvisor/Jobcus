@@ -209,11 +209,23 @@ def _clean_kw_list(lst):
         if not parts:
             continue
         cleaned = " ".join(parts)
+
+        # drop super short non-acronyms
         if (len(cleaned) < 3 and not _is_acronym(cleaned.upper())):
             continue
+
+        # --- NEW: drop likely fragments/truncated stems like "projec", "qualit"
+        if re.match(r"^[a-z]{3,}$", cleaned):
+            # ends with two consonants or ends with a consonant after a long run can be OK,
+            # but short stems missing common endings are often bad. Filter a few patterns:
+            if re.search(r"(?:projec|qualit|requir|deliv|suppor|managemen|depar|operat|technolog)$", cleaned):
+                continue
+
         if cleaned in STOPWORDS_KW or cleaned in NOISE_NOUNS or cleaned in NOISE_VERBS:
             continue
+
         out.append(cleaned)
+
     return sorted(set(out))
 
 def _build_jd_terms(jd: str):
@@ -313,6 +325,35 @@ def _split_sections(text: str):
                 continue
         sections[cur].append(ln)
     return sections
+
+# --- Normalize text extracted from PDF/DOCX so words aren't split ---
+def _normalize_extracted_text(s: str) -> str:
+    """
+    Fix common extractor artifacts:
+      - remove soft/zero-width hyphens & BOMs
+      - join hyphenated line breaks: 'projec-\n t' -> 'project'
+      - join accidental mid-word breaks without hyphen: 'projec\n t' -> 'project'
+      - collapse excessive whitespace
+    """
+    if not s:
+        return s
+
+    # 1) strip invisible/soft hyphens & zero-width chars
+    s = re.sub(r"[\u00AD\u200B-\u200F\uFEFF]", "", s)
+
+    # 2) hyphenated line breaks (ASCII or Unicode hyphens)
+    #    e.g., end of line "projec-\n" then "t" on next line → join
+    s = re.sub(r"([A-Za-z])[\-\u2010-\u2015]\s*\n\s*([A-Za-z])", r"\1\2", s)
+
+    # 3) mid-word newline without hyphen: "projec\n t" → "project"
+    s = re.sub(r"(?<=[A-Za-z])\s*\n\s*(?=[A-Za-z])", "", s)
+
+    # (keep paragraph breaks when there are multiple blank lines)
+    # replace 3+ newlines with two; collapse runs of spaces
+    s = re.sub(r"\n{3,}", "\n\n", s)
+    s = re.sub(r"[ \t]{2,}", " ", s)
+
+    return s
 
 def _extract_roles_with_dates(text: str):
     """Return list of roles with date hints + lines (to weight recency and detect gaps)."""
@@ -1213,24 +1254,32 @@ def resume_analysis():
             raw_bytes = base64.b64decode(data["pdf"])
             reader = PdfReader(BytesIO(raw_bytes))
             resume_text = "\n".join((p.extract_text() or "") for p in reader.pages)
+            resume_text = _normalize_extracted_text(resume_text)  # normalize
             file_kind = "pdf"
+    
         elif data.get("docx"):
             raw_bytes = base64.b64decode(data["docx"])
-            d = docx.Document(BytesIO(raw_bytes))
+            buf = BytesIO(raw_bytes)
+            d = docx.Document(buf)
             resume_text = "\n".join(p.text for p in d.paragraphs)
+            resume_text = _normalize_extracted_text(resume_text)  # normalize
             file_kind = "docx"
+    
         elif data.get("text"):
             resume_text = (data["text"] or "").strip()
+            resume_text = _normalize_extracted_text(resume_text)  # normalize
             file_kind = "text"
+    
         else:
             return jsonify(error="No resume data provided"), 400
+    
     except Exception:
         current_app.logger.exception("resume-analysis: decode failed")
         return jsonify(error="Could not read the resume file"), 400
-
-    if not resume_text.strip():
+    
+    if not (resume_text or "").strip():
         return jsonify(error="Could not extract any text"), 400
-
+    
     job_desc = (data.get("jobDescription") or "").strip()
     job_role = (data.get("jobRole") or "").strip()
     level    = (data.get("careerLevel") or "mid").lower()
@@ -1399,6 +1448,28 @@ def resume_analysis():
         "roles_parsed": roles[:4],
         "length_pages_est": read_brief["length_pages"]
     }
+
+    # helper if you don't already have one
+    def _is_acronym(s: str) -> bool:
+        s = (s or "").strip()
+        return len(s) >= 2 and len(s) <= 6 and s.isupper()
+    
+    # Clean up fragmenty repetition terms from LLM output
+    rep = (llm.get("writing") or {}).get("repetition") or []
+    clean_rep = []
+    for item in rep:
+        term = (item.get("term") or "").strip()
+        if not term:
+            continue
+        # reject 1–2 letter noise unless it's a legit acronym
+        if len(term) < 3 and not _is_acronym(term):
+            continue
+        # drop common truncated stems that come from broken extraction
+        if re.search(r"(?:projec|qualit|requir|deliv|suppor|managemen|operat|depar|technolog)$", term.lower()):
+            continue
+        clean_rep.append(item)
+    
+    llm.setdefault("writing", {})["repetition"] = clean_rep
 
     # ----- Single, final response payload -----
     out = {
