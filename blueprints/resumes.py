@@ -1592,5 +1592,95 @@ def resume_analysis():
     # 3) Final de-dupe after appending
     out["analysis"]["issues"] = list(dict.fromkeys((out["analysis"]["issues"] or []) + fixes))
 
+    # 1) Map various wordings → an intent key and a preferred phrase
+    _INTENT_PREF = {
+        "formatting_consistency": "Ensure consistent, clean formatting and spacing across all sections.",
+        "contact_placement":      "Place contact information at the top of the resume, not inside Experience.",
+        "add_certs":              "Add a Certifications section if you hold relevant credentials.",
+        "add_experience":         "Add a Work Experience section (e.g., “Experience” or “Relevant Experience”).",
+        # add more as you standardize additional fixes…
+    }
+    
+    def _intent_key(line: str) -> str | None:
+        t = (line or "").lower()
+        # formatting
+        if re.search(r"\bformat(ting)?\b.*\b(spacing|consistent|consistency)\b", t):
+            return "formatting_consistency"
+        if re.search(r"\bconsistent\b.*\bformat(ting)?\b", t):
+            return "formatting_consistency"
+    
+        # contact info placement
+        if re.search(r"\bcontact\b.*\b(top|header)\b", t):
+            return "contact_placement"
+        if re.search(r"\bcontact\b.*\bexperience\b", t) and re.search(r"\b(in|inside|embedded|within)\b", t):
+            return "contact_placement"
+    
+        # certifications
+        if re.search(r"\b(certification|certifications|credential)\b", t) and re.search(r"\b(add|section)\b", t):
+            return "add_certs"
+    
+        # experience section
+        if re.search(r"\b(work )?experience\b.*\b(add|section)\b", t):
+            return "add_experience"
+        if re.search(r"\badd\b.*\bexperience\b.*\bsection\b", t):
+            return "add_experience"
+    
+        # fall back: None → gets handled by fuzzy step below
+        return None
+    
+    def _canon(s: str) -> str:
+        s = (s or "").strip()
+        s = re.sub(r"[“”]", '"', s)
+        s = re.sub(r"[—–]", "-", s)
+        s = re.sub(r"\s+", " ", s)
+        return s
+    
+    def _token_set(s: str) -> set[str]:
+        s = _canon(s).lower()
+        return set(re.findall(r"[a-z0-9]+", s)) - {"the","a","an","of","and","to","for","with","in","your","resume","section","sections"}
+    
+    def _similar(a: str, b: str) -> float:
+        A, B = _token_set(a), _token_set(b)
+        if not A or not B: return 0.0
+        inter = len(A & B)
+        return inter / float(min(len(A), len(B)))
+    
+    # 2) Combine issues + suggestions, then reduce by intent (intent wins)
+    combined = (out.get("analysis", {}).get("issues") or []) + (out.get("suggestions") or [])
+    
+    kept_by_intent: dict[str, str] = {}
+    others: list[str] = []
+    
+    for line in combined:
+        if not (line and line.strip()):
+            continue
+        intent = _intent_key(line)
+        if intent:
+            # prefer the standard phrase for that intent
+            kept_by_intent.setdefault(intent, _INTENT_PREF.get(intent) or _canon(line))
+        else:
+            others.append(_canon(line))
+    
+    # 3) Fuzzy de-dup for the leftovers (no intent match)
+    deduped_others: list[str] = []
+    for line in others:
+        if not any(_similar(line, x) >= 0.72 or _canon(line) == _canon(x) for x in deduped_others):
+            deduped_others.append(line)
+    
+    # 4) Build the final ordered list: intents in first-seen order, then unique others
+    ordered_intents: list[str] = []
+    seen_intents = set()
+    for line in combined:
+        k = _intent_key(line)
+        if k and k not in seen_intents and k in kept_by_intent:
+            ordered_intents.append(kept_by_intent[k])
+            seen_intents.add(k)
+    
+    final_fixes = ordered_intents + deduped_others
+    
+    # 5) Write back: one authoritative list, no 'suggestions'
+    out.setdefault("analysis", {})["issues"] = final_fixes
+    out["suggestions"] = []
+
     return jsonify(out), 200
 
