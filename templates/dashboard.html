@@ -165,7 +165,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-  <!-- New: analyzer extras (after dashboard.js) -->
+
+  <!-- NEW: declare endpoint BEFORE extras loads -->
+  <script>window.AI_ENDPOINT = "/api/ai-helper";</script>
+
+  <!-- Analyzer extras needs AI_ENDPOINT + handleCommonErrors -->
   <script defer src="{{ url_for('static', filename='js/resume-analyzer-extras.js') }}"></script>
 {% endblock %}
