@@ -750,60 +750,134 @@ def build_resume():
     return resp
 
 # ---------- 2) Template-based resume (DOCX) ----------
-@resumes_bp.post("/build-resume-docx")
-@login_required
-@require_plan("standard")   # gate this route to Standard/Premium
+@app.post("/build-resume-docx")
 def build_resume_docx():
     try:
         data = request.get_json(force=True) or {}
 
-        # Expect the same fields your JS sends:
-        # fullName, title, contact, summary, education, experience, certifications, skills
+        # helpers to normalize inputs (strings or arrays)
+        def _lines(val):
+            if isinstance(val, list):
+                return [str(x).strip() for x in val if str(x).strip()]
+            if isinstance(val, str):
+                # allow comma or newline separated
+                parts = [p.strip() for p in val.replace("•", "").split("\n")]
+                # if it's a single line with commas, split those too
+                if len(parts) == 1 and "," in parts[0]:
+                    parts = [p.strip() for p in parts[0].split(",")]
+                return [p for p in parts if p]
+            return []
+
+        def _sections(val):
+            # list of dicts expected for experience/education; fall back to a single blob
+            if isinstance(val, list):
+                return val
+            if isinstance(val, str) and val.strip():
+                return [{"bullets": [v.strip() for v in val.split("\n") if v.strip()]}]
+            return []
+
+        full_name = data.get("name") or data.get("fullName") or data.get("full_name") or ""
+        title     = data.get("title", "")
+        contact   = data.get("contact", "")
+        summary   = data.get("summary", "")
+        skills    = _lines(data.get("skills", ""))
+        certs     = _lines(data.get("certifications", ""))  # can be string or array
+        # allow either arrays of dicts or flat strings
+        experience = _sections(data.get("experience", []))
+        education  = _sections(data.get("education", []))
+        projects_awards = _lines(data.get("projects_awards", "") or data.get("projectsAndAwards", ""))
+
         doc = Document()
-        if data.get("fullName"):
-            doc.add_heading(data["fullName"], level=0)
-        if data.get("title"):
-            doc.add_paragraph(data["title"])
-        if data.get("contact"):
-            doc.add_paragraph(data["contact"])
 
-        if data.get("summary"):
-            doc.add_heading("Summary", level=1)
-            doc.add_paragraph(data["summary"])
+        # Header
+        if full_name: doc.add_heading(full_name, level=0)
+        if title:     doc.add_paragraph(title)
+        if contact:   doc.add_paragraph(contact)
 
-        if data.get("experience"):
-            doc.add_heading("Experience", level=1)
-            # If you pass rich text (with bullets/newlines), just dump it:
-            doc.add_paragraph(data["experience"])
+        # Summary
+        if summary:
+            doc.add_heading("Professional Summary", level=1)
+            doc.add_paragraph(summary)
 
-        if data.get("education"):
-            doc.add_heading("Education", level=1)
-            doc.add_paragraph(data["education"])
-
-        if data.get("certifications"):
-            doc.add_heading("Certifications", level=1)
-            # If it's a multi-line string, split into bullets:
-            for line in str(data["certifications"]).splitlines():
-                line = line.strip()
-                if line:
-                    doc.add_paragraph(f"• {line}")
-
-        if data.get("skills"):
+        # Skills
+        if skills:
             doc.add_heading("Skills", level=1)
-            doc.add_paragraph(data["skills"])
+            for s in skills:
+                doc.add_paragraph(s, style="List Bullet")
+
+        # Experience (dates on a new line under role/company)
+        if experience:
+            doc.add_heading("Relevant Experience", level=1)
+            for e in experience:
+                role    = (e.get("role") or "").strip()
+                company = (e.get("company") or "").strip()
+                header  = " – ".join([p for p in [role, company] if p])
+                if header:
+                    doc.add_paragraph(header).bold = True  # title line
+
+                # second line: location (optional); third line: dates
+                location = (e.get("location") or "").strip()
+                if location:
+                    doc.add_paragraph(location)
+
+                start = (e.get("start") or "").strip()
+                end   = (e.get("end")   or "").strip()
+                if start or end:
+                    doc.add_paragraph(" · ".join([p for p in [start, end] if p]))
+
+                # bullets
+                bullets = e.get("bullets") or []
+                for b in bullets:
+                    if str(b).strip():
+                        doc.add_paragraph(str(b).strip(), style="List Bullet")
+
+        # Education (degree line, then institution/location line, then dates line)
+        if education:
+            doc.add_heading("Education", level=1)
+            for ed in education:
+                degree   = (ed.get("degree") or "").strip()
+                school   = (ed.get("school") or "").strip()
+                location = (ed.get("location") or "").strip()
+                start    = (ed.get("start") or "").strip()
+                end      = (ed.get("end") or ed.get("graduated") or "").strip()
+
+                if degree:
+                    doc.add_paragraph(degree).bold = True  # degree line
+
+                line2 = " · ".join([p for p in [school, location] if p])
+                if line2:
+                    doc.add_paragraph(line2)
+
+                if start or end:
+                    doc.add_paragraph(" · ".join([p for p in [start, end] if p]))
+
+        # Certifications
+        if certs:
+            doc.add_heading("Other Education & Certifications", level=1)
+            for c in certs:
+                doc.add_paragraph(c, style="List Bullet")
+
+        # Projects & Awards
+        if projects_awards:
+            doc.add_heading("Projects & Awards", level=1)
+            for item in projects_awards:
+                doc.add_paragraph(item, style="List Bullet")
 
         buf = BytesIO()
         doc.save(buf)
         buf.seek(0)
+
         return send_file(
             buf,
             as_attachment=True,
             download_name="resume.docx",
-            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
+
     except Exception as e:
         current_app.logger.exception("DOCX build failed")
         return jsonify(error="docx_failed", message=str(e)), 500
+
     
 # ---------- 4) AI resume optimisation ----------
 @resumes_bp.route("/api/optimize-resume", methods=["POST"])
