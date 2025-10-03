@@ -247,8 +247,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("copy-recs-btn")?.addEventListener("click", async () => {
     try {
       const data = JSON.parse(localStorage.getItem("resumeAnalysis") || "{}");
-      const merged = mergeFixes(data);
-      const text = merged.length ? ("• " + merged.join("\n• ")) : "No fixes available yet.";
+      const issues = Array.isArray(data?.analysis?.issues) ? data.analysis.issues : [];
+      const text = issues.length ? ("• " + issues.join("\n• ")) : "No fixes available yet.";
       await navigator.clipboard.writeText(text);
       alert("Fixes copied to clipboard.");
     } catch (e) {
@@ -389,11 +389,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const sc = data?.sections  || {};
 
     if (view === "fixes") {
-      const merged = mergeFixes(data);
+      const issues = Array.isArray(a.issues) ? a.issues : [];
       optPanel.innerHTML = `
         <h3 class="panel-title">⚠️ Fixes needed</h3>
         <p class="panel-sub">The most important issues to address first.</p>
-        <ul class="list">${merged.length ? merged.map(i => `<li>${i}</li>`).join("") : "<li>No issues detected.</li>"}</ul>`;
+        <ul class="list">${issues.length ? issues.map(i => `<li>${i}</li>`).join("") : "<li>No issues detected.</li>"}</ul>`;
       return;
     }
 
