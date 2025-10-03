@@ -146,7 +146,20 @@
       </ul>
     </section>
     {% endif %}
+
+    {% if projects_awards %}
+    <section class="row section">
+      <h2>Projects &amp; Awards</h2>
+      <ul class="bullets">
+      {% for line in projects_awards.splitlines() if line.strip() %}
+        <li>{{ line }}</li>
+      {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
   </div>
 </body>
 </html>
+
 
