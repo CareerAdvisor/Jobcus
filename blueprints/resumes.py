@@ -754,27 +754,56 @@ def build_resume():
 @login_required
 @require_plan("standard")   # gate this route to Standard/Premium
 def build_resume_docx():
-    data = request.get_json(force=True) or {}
-    ctx  = build_context(data)
+    try:
+        data = request.get_json(force=True) or {}
 
-    tpl_path = os.path.join(current_app.root_path, "templates", "resumes", "clean.docx")
-    tpl = DocxTemplate(tpl_path)
-    tpl.render({
-        "name":           ctx.get("name", ""),
-        "title":          ctx.get("title", ""),
-        "summary":        ctx.get("summary", ""),
-        "experience":     ctx.get("experience", []),
-        "education":      ctx.get("education", []),
-        "skills":         ctx.get("skills", []),
-        "contact":        ctx.get("contact", ""),
-        "links":          ctx.get("links", []),
-        "certifications": ctx.get("certifications", []),
-    })
+        # Expect the same fields your JS sends:
+        # fullName, title, contact, summary, education, experience, certifications, skills
+        doc = Document()
+        if data.get("fullName"):
+            doc.add_heading(data["fullName"], level=0)
+        if data.get("title"):
+            doc.add_paragraph(data["title"])
+        if data.get("contact"):
+            doc.add_paragraph(data["contact"])
 
-    buf = BytesIO()
-    tpl.save(buf)
-    buf.seek(0)
-    return send_file(buf, as_attachment=True, download_name="resume.docx")
+        if data.get("summary"):
+            doc.add_heading("Summary", level=1)
+            doc.add_paragraph(data["summary"])
+
+        if data.get("experience"):
+            doc.add_heading("Experience", level=1)
+            # If you pass rich text (with bullets/newlines), just dump it:
+            doc.add_paragraph(data["experience"])
+
+        if data.get("education"):
+            doc.add_heading("Education", level=1)
+            doc.add_paragraph(data["education"])
+
+        if data.get("certifications"):
+            doc.add_heading("Certifications", level=1)
+            # If it's a multi-line string, split into bullets:
+            for line in str(data["certifications"]).splitlines():
+                line = line.strip()
+                if line:
+                    doc.add_paragraph(f"• {line}")
+
+        if data.get("skills"):
+            doc.add_heading("Skills", level=1)
+            doc.add_paragraph(data["skills"])
+
+        buf = BytesIO()
+        doc.save(buf)
+        buf.seek(0)
+        return send_file(
+            buf,
+            as_attachment=True,
+            download_name="resume.docx",
+            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+    except Exception as e:
+        current_app.logger.exception("DOCX build failed")
+        return jsonify(error="docx_failed", message=str(e)), 500
     
 # ---------- 4) AI resume optimisation ----------
 @resumes_bp.route("/api/optimize-resume", methods=["POST"])
