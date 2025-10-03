@@ -2004,9 +2004,6 @@ Return only the letter body text (no greeting/closing signatures).
 
 app.register_blueprint(ai_bp)
 
-# app.py (or wherever set_security_headers lives)
-from flask import request
-
 @app.after_request
 def set_security_headers(resp):
     csp = (
