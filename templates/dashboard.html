@@ -121,7 +121,18 @@
         <small>Higher is better. Aim for green across the board.</small>
       </footer>
     </article>
-  </div>
+  </div> <!-- end .dash-stack -->
+
+  <!-- 🔽 ADDED (below score card, above .opt-shell) -->
+  <nav class="rw-toolbar" aria-label="Analysis filters" style="display:flex;gap:.5rem;flex-wrap:wrap;margin:1rem 0;">
+    <button type="button" class="rw-pill" data-panel="analysis">Resume analysis</button>
+    <button type="button" class="rw-pill" data-panel="verbs">Power verbs</button>
+    <button type="button" id="ai-helper-btn" class="rw-pill rw-pill--ai">AI helper</button>
+  </nav>
+
+  <section id="panel-analysis" class="rw-panel" hidden></section>
+  <section id="panel-verbs" class="rw-panel" hidden></section>
+  <!-- 🔼 END ADD -->
 
   <div id="no-analysis-cta" class="no-analysis" style="display:none;">
     <p>You haven’t analyzed a resume yet. Use the upload panel above to get started.</p>
@@ -155,5 +166,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  <!-- New: analyzer extras (after dashboard.js) -->
   <script defer src="{{ url_for('static', filename='js/resume-analyzer-extras.js') }}"></script>
 {% endblock %}
