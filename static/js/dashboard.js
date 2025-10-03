@@ -389,7 +389,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const sc = data?.sections  || {};
 
     if (view === "fixes") {
-      const issues = Array.isArray(a.issues) ? a.issues : [];
+      const issues = Array.isArray(a.issue_text) ? a.issue_text
+                     : Array.isArray(a.issues) ? a.issues.map(i =>
+                         typeof i === "string" ? i :
+                         `${i.category || 'Issue'}${i.severity ? ' ('+i.severity+')' : ''}: ${i.finding || ''} — Fix: ${i.recommendation || ''}`
+                       )
+                     : [];
       optPanel.innerHTML = `
         <h3 class="panel-title">⚠️ Fixes needed</h3>
         <p class="panel-sub">The most important issues to address first.</p>
