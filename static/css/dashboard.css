@@ -382,20 +382,16 @@ html, body { overflow-x: initial; } /* or simply remove the old overflow-x:hidde
   text-align:left;
   padding:12px 14px;
   border-radius:12px;
-  background:#f3f6fa;           /* light like inactive opt-btn */
+  background:#f3f6fa;
   color:#0f172a;
   font-weight:700;
   margin:0 .5rem .5rem 0;
   border:1px solid #e2e8f0;
   cursor:pointer;
 }
-.rw-pill:hover{
-  background:#104879;            /* brand blue on hover */
-  color:#fff;                    /* white text */
-  border-color:#104879;
-}
+.rw-pill:hover,
 .rw-pill.active{
-  background:#104879;            /* active = same as selected opt-btn */
+  background:#104879;
   color:#fff;
   border-color:#104879;
 }
