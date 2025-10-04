@@ -1,0 +1,29 @@
+/* WeasyPrint ignores box-shadow: remove shadows and use borders */
+.card, .section, .resume, .rb-card, .preview-wrap {
+  /* box-shadow not supported → don't set it at all */
+  border: 1px solid #e5e7eb;
+}
+
+/* Print media defaults */
+@page {
+  size: A4;
+  margin: 18mm 16mm;
+}
+
+.resume {
+  max-width: 800px;
+  margin: 0 auto;
+  page-break-inside: avoid;
+}
+
+h1, h2, h3, .section {
+  page-break-after: avoid;
+}
+
+/* Tighten vertical rhythm a bit for PDFs */
+.section { margin: 10px 0 12px; }
+.item-title { margin: 0 0 2px; }
+.item-sub   { margin: 0 0 10px; }
+
+/* If you had responsive rules that matter for PDF, just set them directly here,
+   instead of relying on @media screen queries */
