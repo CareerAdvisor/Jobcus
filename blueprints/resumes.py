@@ -1343,7 +1343,7 @@ def ai_helper():
         bullets = ctx.get("bullets") or []
         summary = (ctx.get("summary") or "").strip()
         prompt = f"""You analyze resume bullets. For each bullet, list concrete problems and a stronger 1-line rewrite.
-Return strict JSON: {{"issues":[{{"text":"...", "problems":["..."], "suggestion":"..."}}]]}}
+Return strict JSON: {{"issues":[{{"text":"...", "problems":["..."], "suggestion":"..."}}]}}
 Bullets:\n- """ + "\n- ".join(bullets[:20]) + f"\n\nSummary: {summary or 'N/A'}"
         raw = chat(prompt, temp=0.0)
         try:
