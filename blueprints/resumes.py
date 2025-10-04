@@ -835,25 +835,31 @@ def build_resume_docx():
         if education:
             doc.add_heading("Education", level=1)
             for ed in education:
-                degree   = (ed.get("degree") or "").strip()
-                school   = (ed.get("school") or "").strip()
-                location = (ed.get("location") or "").strip()
-                start    = (ed.get("start") or "").strip()
-                end      = (ed.get("end") or ed.get("graduated") or "").strip()
-
+                # ---- Title line (degree/program) ----
+                degree = (ed.get("degree") or ed.get("program") or ed.get("title") or "").strip()
                 if degree:
-                    p = doc.add_paragraph(degree)
+                    p = doc.add_paragraph()
+                    run = p.add_run(degree)
                     try:
-                        for run in p.runs: run.bold = True
-                    except:
+                        run.bold = True
+                    except Exception:
                         pass
-
-                line2 = " · ".join([p for p in [school, location] if p])
-                if line2:
-                    doc.add_paragraph(line2)
-
-                if start or end:
-                    doc.add_paragraph(" · ".join([p for p in [start, end] if p]))
+        
+                # ---- Sub line: Institution | Location – Start – End ----
+                school_line = " | ".join([p for p in [
+                    (ed.get("school") or "").strip(),
+                    (ed.get("location") or "").strip()
+                ] if p])
+        
+                start = (ed.get("graduatedStart") or ed.get("start") or "").strip()
+                end   = (ed.get("graduated")      or ed.get("end")   or "").strip()
+        
+                date_bits = [x for x in [start, end] if x]
+                date_line = " – ".join(date_bits)   # en dash
+        
+                line = f"{school_line}{(' – ' + date_line) if date_line else ''}"
+                if line:
+                    doc.add_paragraph(line)
 
         # Certifications
         if certs:
