@@ -420,3 +420,20 @@ html, body { overflow-x: initial; } /* or simply remove the old overflow-x:hidde
   font-weight:800;
 }
 
+/* Power verbs layout */
+.verbs-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;              /* space between chips */
+}
+
+.rw-verb-chip {
+  padding: 8px 12px;
+  border-radius: 12px;
+  line-height: 1.2;
+  border: 0;
+  cursor: pointer;
+  /* keep your existing colors; these are just safe defaults */
+  background: #104879;
+  color: #fff;
+}
