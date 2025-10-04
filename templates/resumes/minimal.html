@@ -19,7 +19,7 @@
 
     /* Print/PDF: WeasyPrint ignores box-shadow, so give a subtle border instead */
     @media print {
-      .card, .section, .resume, .rb-card, .preview-wrap { border: 1px solid #e5e7eb; }
+      .card, .section, .resume, .rb-card, .preview-wrap { border: none; }
       @page { size: A4; margin: 18mm 16mm; }
       /* tighten spacing so sections sit closer (no big gaps) */
       .section { margin: 10px 0 12px; }
@@ -35,7 +35,7 @@
   {% if for_pdf %}
   <style>
     /* Same rules as in @media print — applied unconditionally for PDF builds */
-    .card, .section, .resume, .rb-card, .preview-wrap { border: 1px solid #e5e7eb; }
+    .card, .section, .resume, .rb-card, .preview-wrap { border: none; }
     @page { size: A4; margin: 18mm 16mm; }
     .section { margin: 10px 0 12px; }
     .item-title { margin: 0 0 2px; }
