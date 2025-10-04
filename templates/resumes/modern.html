@@ -105,12 +105,9 @@
     
       {% for ed in education %}
         <div class="item">
-          {# Title line: show Degree/Program #}
-          <h3 class="item-title">
-            {{ ed.degree or ed.program or ed.title }}
-          </h3>
+          <h3 class="item-title">{{ ed.degree or ed.program or ed.title }}</h3>
     
-          {# Build date line: prefers builder keys, falls back to generic #}
+          {# build date string (start/end) #}
           {% set start = (ed.graduatedStart or ed.start) | trim %}
           {% set end   = (ed.graduated or ed.end) | trim %}
           {% set date_bits = [] %}
@@ -118,17 +115,13 @@
           {% if end %}{% set _ = date_bits.append(end) %}{% endif %}
           {% set date_line = date_bits | list | join(' – ') %}
     
-          {# Build school/location line #}
+          {# school + location #}
           {% set school_line = [ed.school, ed.location] | reject('equalto','') | list | join(' | ') %}
     
-          {# One compact subline: – dates | Institution | Location #}
-          {% if date_line or school_line %}
+          {% if school_line or date_line %}
             <div class="item-sub">
-              {% if date_line %}<span class="ed-date">– {{ date_line }}</span>{% endif %}
-              {% if school_line %}
-                {% if date_line %}<span class="sep"> | </span>{% endif %}
-                <span class="ed-school">{{ school_line }}</span>
-              {% endif %}
+              {{ school_line }}
+              {% if date_line %} – {{ date_line }}{% endif %}
             </div>
           {% endif %}
         </div>
