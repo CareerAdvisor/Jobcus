@@ -46,7 +46,6 @@ function mergeFixes(data){
   const issues = Array.isArray(data?.analysis?.issues) ? data.analysis.issues : [];
   const recs   = Array.isArray(data?.suggestions) ? data.suggestions : [];
 
-  // ---- helpers for fuzzy de-dup ----
   const STOP = new Set(["the","a","an","is","are","of","and","to","for","with","at","on","in","your","resume","document","section","sections"]);
   const MAP  = [
     [/reverse-?chronological/gi, "reverse chronological"],
@@ -74,11 +73,9 @@ function mergeFixes(data){
     const A = new Set(tokens(a)), B = new Set(tokens(b));
     if (A.size === 0 || B.size === 0) return 0;
     let inter = 0; A.forEach(x => { if (B.has(x)) inter++; });
-    // similarity vs the *shorter* sentence to be conservative
     return inter / Math.min(A.size, B.size);
   };
 
-  // ---- prefer Issues wording; add recs only if not too similar ----
   const out = [];
   const keep = (x) => {
     const isDup = out.some(y => sim(x, y) >= 0.72 || canon(y).includes(canon(x)) || canon(x).includes(canon(y)));
@@ -88,6 +85,15 @@ function mergeFixes(data){
   issues.forEach(keep);
   recs.forEach(keep);
   return out;
+}
+
+// ---------- Small storage helpers ----------
+function getAnalysisFromLS() {
+  try { return JSON.parse(localStorage.getItem("resumeAnalysis") || "null"); }
+  catch { return null; }
+}
+function getResumeTextFromLS() {
+  return localStorage.getItem("resumeTextRaw") || "";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -374,9 +380,153 @@ document.addEventListener("DOMContentLoaded", () => {
 
   analyzeBtn?.addEventListener("click", runAnalysis);
 
+  // ---------- New renderers for extra tabs ----------
+  const escapeHtml =
+    typeof window.escapeHtml === "function"
+      ? window.escapeHtml
+      : (s="") => String(s)
+          .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+          .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+
+  function renderResumeAnalysis(panel, data) {
+    if (!data) {
+      panel.innerHTML = `<p class="panel-sub">No analysis available yet. Upload and analyze a resume above.</p>`;
+      return;
+    }
+    const score = (typeof data.score === "number") ? data.score : "—";
+    const b = data.breakdown || {};
+    const issues = (data.analysis?.issues || []).map(i => `<li>${escapeHtml(i)}</li>`).join("");
+    const strengths = (data.analysis?.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join("");
+
+    panel.innerHTML = `
+      <h3 class="panel-title">Resume analysis</h3>
+      <div class="kv"><div>Overall score</div><div><strong>${score}</strong> / 100</div></div>
+      <div class="kv"><div>Formatting</div><div>${b.formatting ?? "—"}%</div></div>
+      <div class="kv"><div>Sections</div><div>${b.sections ?? "—"}%</div></div>
+      <div class="kv"><div>Keywords</div><div>${b.keywords ?? "—"}%</div></div>
+      <div class="kv"><div>Readability</div><div>${b.readability ?? "—"}%</div></div>
+      <div class="kv"><div>Length</div><div>${b.length ?? "—"}%</div></div>
+      <div class="kv"><div>Parseable</div><div>${b.parseable ? "Yes" : "No"}</div></div>
+      ${issues ? `<div style="margin-top:12px;"><strong>Issues</strong><ul class="list">${issues}</ul></div>` : ""}
+      ${strengths ? `<div style="margin-top:12px;"><strong>Strengths</strong><ul class="list">${strengths}</ul></div>` : ""}
+    `;
+  }
+
+  function renderPowerVerbs(panel, data) {
+    const seen = new Set();
+    let chips = [];
+
+    const rep = (data?.writing?.repetition || []);
+    rep.forEach(item => {
+      (item.alternatives || []).forEach(v => {
+        const term = (v || "").trim();
+        if (term && !seen.has(term)) { seen.add(term); chips.push(term); }
+      });
+    });
+
+    const defaults = ["Led","Owned","Drove","Built","Created","Reduced","Increased","Automated","Optimized","Streamlined","Improved","Delivered","Launched","Architected","Implemented","Migrated"];
+    defaults.forEach(v => { if (!seen.has(v)) { seen.add(v); chips.push(v); } });
+
+    panel.innerHTML = `
+      <h3 class="panel-title">Power verbs</h3>
+      <p class="panel-sub">Click to copy and replace repetitive openings like “managed” or “responsible for”.</p>
+      <div class="verbs-wrap">
+        ${chips.map(v => `<button type="button" class="rw-verb-chip" data-copy="${escapeHtml(v)}">${escapeHtml(v)}</button>`).join("")}
+      </div>
+    `;
+
+    panel.querySelectorAll(".rw-verb-chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const t = btn.getAttribute("data-copy") || "";
+        navigator.clipboard?.writeText(t);
+        btn.classList.add("active");
+        setTimeout(()=>btn.classList.remove("active"), 700);
+      });
+    });
+  }
+
+  function renderAIHelper(panel, data) {
+    const resumeText = getResumeTextFromLS();
+    const issues = (data?.analysis?.issues || []);
+
+    panel.innerHTML = `
+      <h3 class="panel-title">AI helper</h3>
+      <p class="panel-sub">Ask the AI to rewrite a bullet or fix an issue without leaving the page.</p>
+
+      <label class="field">
+        <span class="field__label">Your instruction</span>
+        <textarea id="aiHelperInput" class="textarea" rows="4" placeholder="e.g., Rewrite this bullet to highlight impact and add a metric: ‘Managed team of 5 developers’"></textarea>
+      </label>
+
+      <div class="actions" style="margin-top:10px;">
+        <button id="aiHelperSend" class="btn btn-primary">Ask AI</button>
+        <span id="aiHelperBusy" class="loading" style="display:none;">Thinking…</span>
+      </div>
+
+      <div id="aiHelperOut" class="opt-output" style="display:none;"></div>
+
+      <details style="margin-top:10px;">
+        <summary>Context (what the AI will see)</summary>
+        <pre class="opt-output" style="margin-top:8px;white-space:pre-wrap;">${escapeHtml(JSON.stringify({
+          score: data?.score,
+          analysis: { issues },
+          keywords: data?.keywords,
+          sections: data?.sections
+        }, null, 2))}</pre>
+      </details>
+    `;
+
+    const sendBtn = document.getElementById("aiHelperSend");
+    const busy    = document.getElementById("aiHelperBusy");
+    const input   = document.getElementById("aiHelperInput");
+    const out     = document.getElementById("aiHelperOut");
+
+    async function callAI(){
+      const prompt = (input.value || "").trim();
+      if (!prompt) { input.focus(); return; }
+      busy.style.display = "inline";
+      sendBtn.disabled = true;
+
+      try {
+        const payload = {
+          prompt,
+          resumeText,
+          analysis: data || {}
+        };
+
+        const res = await fetch(window.AI_ENDPOINT || "/api/ai-helper", {
+          method: "POST",
+          headers: { "Content-Type":"application/json" },
+          body: JSON.stringify(payload),
+          credentials: "same-origin"
+        });
+
+        if (typeof window.handleCommonErrors === "function") {
+          const maybe = await window.handleCommonErrors(res);
+          if (maybe === null) { /* ok */ }
+        }
+
+        const text = await res.text();
+        let js = null; try { js = JSON.parse(text); } catch {}
+        if (!res.ok) throw new Error(js?.message || js?.error || `AI error (${res.status})`);
+
+        const answer = js?.text || js?.reply || js?.result || text;
+        out.style.display = "block";
+        out.textContent = answer;
+      } catch (err) {
+        out.style.display = "block";
+        out.textContent = `⚠️ ${err.message || err}`;
+      } finally {
+        busy.style.display = "none";
+        sendBtn.disabled = false;
+      }
+    }
+
+    sendBtn.addEventListener("click", callAI);
+  }
+
   // -------- Optimize side panel --------
   function paintPanel(view, data) {
-    // Hide the Recommendations button entirely (in case the template still includes it)
     document.querySelector('.opt-btn[data-view="recs"]')?.setAttribute("hidden", "hidden");
 
     optNav?.querySelectorAll(".opt-btn").forEach(b => {
@@ -388,33 +538,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const kw = data?.keywords  || {};
     const sc = data?.sections  || {};
 
-   // dashboard.js → inside paintPanel(view, data)
-  if (view === "fixes") {
-    const issues = Array.isArray(a.issues) ? a.issues : [];
-    optPanel.innerHTML = `
-      <h3 class="panel-title">⚠️ Fixes needed</h3>
-      <p class="panel-sub">The most important issues to address first.</p>
-      <ul class="list">${issues.length ? issues.map(i => `<li>${i}</li>`).join("") : "<li>No issues detected.</li>"}</ul>
-      <div class="rw-suggest" style="margin-top:12px">
-        <p class="panel-sub">Tip: click <strong>AI helper</strong> above to rewrite weak bullets, add metrics, and apply keyword fixes without leaving this page.</p>
-        <button type="button" id="openAiHelper" class="rw-pill">AI helper</button>
-      </div>`;
-    document.getElementById("openAiHelper")?.addEventListener("click", () => {
-      // switch the toolbar to AI helper tab
-      document.querySelector('.rw-pill[data-panel="analysis"]')?.classList.remove("active");
-      document.querySelector('.rw-pill[data-panel="verbs"]')?.classList.remove("active");
-      document.getElementById("ai-helper-btn")?.classList.add("active");
-      // optional: scroll to the AI helper panel if you render one
-      document.getElementById("panel-analysis")?.scrollIntoView({ behavior:"smooth", block:"start" });
-    });
-    return;
-  }
+    if (view === "analysis") {
+      return renderResumeAnalysis(optPanel, data);
+    }
+    if (view === "verbs") {
+      return renderPowerVerbs(optPanel, data);
+    }
+    if (view === "ai") {
+      return renderAIHelper(optPanel, data);
+    }
+
+    if (view === "fixes") {
+      const issues = Array.isArray(a.issues) ? a.issues : [];
+      optPanel.innerHTML = `
+        <h3 class="panel-title">⚠️ Fixes needed</h3>
+        <p class="panel-sub">The most important issues to address first.</p>
+        <ul class="list">${issues.length ? issues.map(i => `<li>${escapeHtml(i)}</li>`).join("") : "<li>No issues detected.</li>"}</ul>
+        <div class="rw-suggest" style="margin-top:12px">
+          <p class="panel-sub">Tip: click <strong>AI helper</strong> above to rewrite weak bullets, add metrics, and apply keyword fixes without leaving this page.</p>
+          <button type="button" id="openAiHelper" class="rw-pill">AI helper</button>
+        </div>`;
+      document.getElementById("openAiHelper")?.addEventListener("click", () => {
+        paintPanel("ai", data);
+        optPanel.scrollIntoView({ behavior:"smooth", block:"start" });
+      });
+      return;
+    }
 
     if (view === "done") {
       optPanel.innerHTML = `
         <h3 class="panel-title">✅ What you did well</h3>
         <p class="panel-sub">Strengths that are already working for you.</p>
-        <ul class="list">${(a.strengths || []).map(s => `<li>${s}</li>`).join("") || "<li>No strengths extracted.</li>"}</ul>`;
+        <ul class="list">${(a.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join("") || "<li>No strengths extracted.</li>"}</ul>`;
       return;
     }
 
@@ -440,9 +595,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <p class="panel-sub">These are skills/terms recruiters often search for. Add only the ones you genuinely have.</p>
         ${rows.map(k => {
           const has = matched.has(String(k).toLowerCase());
-          return `<div class="kv"><span>${k}</span><strong style="color:${has ? '#16a34a' : '#ef4444'}">${has ? "Yes" : "No"}</strong></div>`;
+          return `<div class="kv"><span>${escapeHtml(k)}</span><strong style="color:${has ? '#16a34a' : '#ef4444'}">${has ? "Yes" : "No"}</strong></div>`;
         }).join("")}
-        ${(sc.missing || []).length ? `<p class="panel-sub" style="margin-top:10px">Missing sections: ${(sc.missing || []).join(", ")}</p>` : ""}`;
+        ${(sc.missing || []).length ? `<p class="panel-sub" style="margin-top:10px">Missing sections: ${(sc.missing || []).map(escapeHtml).join(", ")}</p>` : ""}`;
       return;
     }
 
@@ -451,23 +606,23 @@ document.addEventListener("DOMContentLoaded", () => {
     optPanel.innerHTML = `
       <h3 class="panel-title">✍️ Writing quality</h3>
       <p class="panel-sub">Readability, phrasing and repetition.</p>
-      <div class="kv"><span>Readability</span><strong>${w.readability || "—"}</strong></div>
+      <div class="kv"><span>Readability</span><strong>${escapeHtml(w.readability || "—")}</strong></div>
       <h4 class="panel-title" style="font-size:16px;margin-top:12px;">Repetition</h4>
       ${
         rep.length
           ? rep.map(r =>
-              `<div class="kv"><span>“${r.term}” × ${r.count}<br><small class="panel-sub">Try: ${(r.alternatives||[]).join(", ") || "—"}</small></span><strong>Repeated</strong></div>`
+              `<div class="kv"><span>“${escapeHtml(r.term)}” × ${r.count}<br><small class="panel-sub">Try: ${(r.alternatives||[]).map(escapeHtml).join(", ") || "—"}</small></span><strong>Repeated</strong></div>`
             ).join("")
           : `<div class="kv"><span>No repetitive phrases</span><strong style="color:#16a34a">Pass</strong></div>`
       }
       <h4 class="panel-title" style="font-size:16px;margin-top:12px;">Grammar & style</h4>
-      <ul class="list">${(w.grammar || []).map(g => `<li>${g}</li>`).join("") || "<li>No grammar suggestions returned.</li>"}</ul>`;
+      <ul class="list">${(w.grammar || []).map(g => `<li>${escapeHtml(g)}</li>`).join("") || "<li>No grammar suggestions returned.</li>"}</ul>`;
   }
 
   optNav?.addEventListener("click", (e) => {
     const btn = e.target.closest(".opt-btn");
     if (!btn) return;
-    const data = JSON.parse(localStorage.getItem("resumeAnalysis") || "{}");
+    const data = getAnalysisFromLS() || {};
     paintPanel(btn.dataset.view, data);
   });
 
