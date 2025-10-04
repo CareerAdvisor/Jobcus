@@ -157,32 +157,24 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  {# You can keep these if they load fine; otherwise the JS will lazy-load fallbacks #}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
-  <!-- Dashboard logic (upload, score card, + the extra tabs renderers) -->
+  {# Inline globals for AI endpoint + helpers (define only if missing) #}
   <script>
-    // Endpoint used by AI Helper / Resume analysis tabs (don't overwrite if already set)
     window.AI_ENDPOINT = window.AI_ENDPOINT || "/api/ai-helper";
-
-    // Minimal escapeHtml (same contract as in resume-builder.js); define only if missing
     if (typeof window.escapeHtml !== "function") {
       window.escapeHtml = (s = "") =>
         s.replace(/&/g,"&amp;").replace(/</g,"&lt;")
          .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
     }
-
-    // Centralized response handling; define only if missing
     if (typeof window.handleCommonErrors !== "function") {
       window.handleCommonErrors = async function(res){
         if (res.ok) return null;
         const ct = res.headers.get("content-type") || "";
         let body = null;
-        try {
-          body = ct.includes("application/json") ? await res.json()
-                                                 : { message: await res.text() };
-        } catch {}
+        try { body = ct.includes("application/json") ? await res.json() : { message: await res.text() }; } catch {}
         if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
           const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
           window.upgradePrompt?.(body?.message_html || msg, (window.PRICING_URL || "/pricing"), 1200);
