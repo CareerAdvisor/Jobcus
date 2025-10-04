@@ -98,10 +98,12 @@ function gatherContext(form) {
     const education = eduNodes.map((node) => {
       const g = (n) => qs(node, `[name="${n}"]`);
       return {
-        degree:    g("degree")?.value?.trim() || "",
-        school:    g("school")?.value?.trim() || "",
-        location:  g("location")?.value?.trim() || "",
-        graduated: g("graduated")?.value?.trim() || g("graduatedStart")?.value?.trim() || ""
+        degree:          g("degree")?.value?.trim() || "",
+        school:          g("school")?.value?.trim() || "",
+        location:        g("location")?.value?.trim() || "",
+        // keep start and end as separate fields
+        graduatedStart:  g("graduatedStart")?.value?.trim() || "",
+        graduated:       g("graduated")?.value?.trim() || ""
       };
     });
 
