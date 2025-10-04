@@ -10,7 +10,8 @@
   --success:#16a34a;
   --warn:#f59e0b;
   --danger:#e11d48;
-  
+
+  /* page/container vars (merged from second :root) */
   --page-max: 980px;          /* outer container width */
   --panel-max: 900px;         /* card/panel width */
   --gutter-l: max(16px, env(safe-area-inset-left));
