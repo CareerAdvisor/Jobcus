@@ -105,21 +105,31 @@
     
       {% for ed in education %}
         <div class="item">
-          {# Title: Degree or Program #}
-          <h3 class="item-title">{{ ed.degree or ed.program or ed.title }}</h3>
+          {# Title line: show Degree/Program #}
+          <h3 class="item-title">
+            {{ ed.degree or ed.program or ed.title }}
+          </h3>
     
-          {# Subline 1: School · Location #}
-          {% set school_line = [ed.school, ed.location] | reject('equalto','') | list | join(' · ') %}
-          {% if school_line %}
-            <div class="item-sub">{{ school_line }}</div>
-          {% endif %}
+          {# Build date line: prefers builder keys, falls back to generic #}
+          {% set start = (ed.graduatedStart or ed.start) | trim %}
+          {% set end   = (ed.graduated or ed.end) | trim %}
+          {% set date_bits = [] %}
+          {% if start %}{% set _ = date_bits.append(start) %}{% endif %}
+          {% if end %}{% set _ = date_bits.append(end) %}{% endif %}
+          {% set date_line = date_bits | list | join(' – ') %}
     
-          {# Subline 2: Start – End (or Graduated) #}
-          {% set start = ed.graduatedStart or ed.start %}
-          {% set end   = ed.graduated or ed.end %}
-          {% set date_line = [start, end] | reject('equalto','') | list | join(' – ') %}
-          {% if date_line %}
-            <div class="item-sub">• {{ date_line }}</div>
+          {# Build school/location line #}
+          {% set school_line = [ed.school, ed.location] | reject('equalto','') | list | join(' | ') %}
+    
+          {# One compact subline: – dates | Institution | Location #}
+          {% if date_line or school_line %}
+            <div class="item-sub">
+              {% if date_line %}<span class="ed-date">– {{ date_line }}</span>{% endif %}
+              {% if school_line %}
+                {% if date_line %}<span class="sep"> | </span>{% endif %}
+                <span class="ed-school">{{ school_line }}</span>
+              {% endif %}
+            </div>
           {% endif %}
         </div>
       {% endfor %}
