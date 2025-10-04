@@ -1333,12 +1333,55 @@ def build_cover_letter():
 @resumes_bp.post("/api/ai-helper")
 @api_login_required
 def ai_helper():
+    import re, json  # ensure these are imported
     client = current_app.config.get("OPENAI_CLIENT")
     try:
-        data = request.get_json(force=True) or {}
+        data = request.get_json(force=True, silent=True) or {}
     except Exception:
         return jsonify(error="bad_request", message="Invalid JSON"), 400
 
+    # ------ NEW simple contract (dashboard AI helper) ------
+    if "prompt" in data:
+        # (Optional) your same quota guards can be placed here if needed.
+        prompt       = (data.get("prompt") or "").strip()
+        resume_text  = (data.get("resumeText") or "").strip()
+        analysis_ctx = data.get("analysis") or {}
+        if not prompt:
+            return jsonify(error="missing_prompt", message="Please write what you want the AI to do."), 400
+
+        if client:
+            try:
+                issues = analysis_ctx.get("analysis", {}).get("issues", []) if isinstance(analysis_ctx, dict) else []
+                context = ("Issues:\n- " + "\n- ".join(issues[:8])) if issues else "No issues array provided."
+                sys = ("You are a concise resume-writing assistant. "
+                       "Rewrite, improve, or generate the requested text. "
+                       "Prefer strong action verbs, measurable impact, and clear, ATS-friendly phrasing. "
+                       "Return only the rewritten text (no preface, no markdown fences).")
+                user = f"{prompt}\n\nResume (excerpt, optional):\n{resume_text[:6000]}\n\nContext:\n{context}"
+                r = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role":"system","content":sys},{"role":"user","content":user}],
+                    temperature=0.3,
+                )
+                text = (r.choices[0].message.content or "").replace("```","").strip()
+                return jsonify(text=text)
+            except Exception:
+                current_app.logger.exception("ai-helper: openai path failed; using fallback")
+
+        # Fallback when no OpenAI configured
+        m = re.match(r"(?i)\s*(managed|responsible\s+for|worked\s+on)\s+(.*)", prompt or "")
+        if m:
+            tail = m.group(2).strip().rstrip(".")
+            out = [
+                f"• Led {tail}; improved results by 15–30% through clear KPIs and stakeholder alignment.",
+                f"• Led {tail}; reduced cycle time by 20% and increased quality by 10%."
+            ]
+        else:
+            out = ["• Led cross-functional effort to deliver X, reducing time/cost by 15–30% while improving quality. "
+                   "Add exact %, #, or £/$ where true."]
+        return jsonify(text="\n".join(out))
+
+    # ------ LEGACY field-based contract (kept intact) ------
     field = (data.get("field") or "").strip()
     ctx   = data.get("context") or {}
     idx   = int(data.get("index") or 0)
@@ -1357,30 +1400,35 @@ def ai_helper():
     if field == "resume_analysis":
         bullets = ctx.get("bullets") or []
         summary = (ctx.get("summary") or "").strip()
-        prompt = f"""You analyze resume bullets. For each bullet, list concrete problems and a stronger 1-line rewrite.
-Return strict JSON: {{"issues":[{{"text":"...", "problems":["..."], "suggestion":"..."}}]}}
-Bullets:\n- """ + "\n- ".join(bullets[:20]) + f"\n\nSummary: {summary or 'N/A'}"
+        prompt = (
+            "You analyze resume bullets. For each bullet, list concrete problems and a stronger 1-line rewrite.\n"
+            "Return strict JSON: {\"issues\":[{\"text\":\"...\", \"problems\":[\"...\"], \"suggestion\":\"...\"}]}\n"
+            "Bullets:\n- " + "\n- ".join(bullets[:20]) + f"\n\nSummary: {summary or 'N/A'}"
+        )
         raw = chat(prompt, temp=0.0)
         try:
-            import re, json
             block = re.search(r"\{[\s\S]*\}\s*$", raw).group(0)
             parsed = json.loads(block)
             return jsonify(issues=parsed.get("issues", []))
         except Exception:
             return jsonify(issues=[])
+
     if field == "rewrite_bullet":
         text = (ctx.get("text") or "").strip()
         prompt = f"Rewrite this resume bullet (1 line, metric/outcome, strong verb). Return only the rewritten line.\n{text}"
         return jsonify(text=chat(prompt, temp=0.4, max_tokens=140))
+
     if field == "highlights":
         role = (ctx.get("experience", [{}])[idx].get("role") if ctx.get("experience") else "") or (ctx.get("title") or "professional")
         prompt = f"Write 4 concise resume bullets for a {role}. Each starts with a strong verb and includes a metric. Split by newlines."
         lines = [s.strip("• ").strip() for s in chat(prompt).splitlines() if s.strip()]
         return jsonify(list=lines[:6])
+
     if field == "summary":
         title = ctx.get("title") or "professional"
         skills = ", ".join(ctx.get("skills") or [])[:120] or "relevant strengths"
         return jsonify(text=chat(f"2–3 sentence resume summary for a {title} highlighting {skills}.", temp=0.5, max_tokens=180))
+
     return jsonify(error="unknown_field", message="Unsupported field"), 400
 
 # ---------- 3) AI resume analysis ----------
