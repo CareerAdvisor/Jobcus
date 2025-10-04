@@ -399,3 +399,6 @@ html, body { overflow-x: initial; } /* or simply remove the old overflow-x:hidde
   color:#fff;
   border-color:#104879;
 }
+
+.item-sub .sep { opacity:.6; }
+.ed-date { font-weight:600; }
