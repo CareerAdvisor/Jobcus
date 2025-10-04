@@ -398,3 +398,25 @@ html, body { overflow-x: initial; } /* or simply remove the old overflow-x:hidde
 
 .item-sub .sep { opacity:.6; }
 .ed-date { font-weight:600; }
+
+/* Make non-active hover turn site blue with white text */
+.opt-btn:hover:not(.is-active){
+  background:#104879;
+  color:#fff;
+  border-color:#104879;
+}
+
+/* Ensure focus-visible matches hover (keyboard users) */
+.opt-btn:focus-visible:not(.is-active){
+  outline:2px solid #104879;
+  outline-offset:2px;
+}
+
+/* Optional: make active a touch bolder */
+.opt-btn.is-active{
+  background:#104879;
+  color:#fff;
+  border-color:#104879;
+  font-weight:800;
+}
+
