@@ -12,14 +12,16 @@
   --danger:#e11d48;
 
   /* page/container vars (merged from second :root) */
-  --page-max: 980px;          /* outer container width */
-  --panel-max: 900px;         /* card/panel width */
+  --page-max: 980px;      /* outer container width */
+  --panel-max: 900px;     /* card/panel width */
   --gutter-l: max(16px, env(safe-area-inset-left));
   --gutter-r: max(16px, env(safe-area-inset-right));
 }
 
 *{box-sizing:border-box}
-body{overflow-x:hidden}
+
+/* one final, consistent overflow choice: avoid cut-offs */
+html, body { overflow-x: initial; }
 
 .dash-shell{
   max-width:1100px;
@@ -266,7 +268,7 @@ body{overflow-x:hidden}
   display: flex;
   flex-direction: column;
   gap: 18px;
-  max-width: 900px;        /* feel free to tweak (860–980 look great) */
+  max-width: var(--panel-max);
   margin: 0 auto;
   padding: 0 16px;
 }
@@ -307,70 +309,13 @@ body{overflow-x:hidden}
 .role-title { text-align: center; font-weight: 700; color: #0f3a5f; }
 
 /* Analyze button full width */
-#dashAnalyzeBtn {
-  width: 100%;
-  border-radius: 12px;
-}
+#dashAnalyzeBtn { width: 100%; border-radius: 12px; }
 
 /* Make sure no legacy two-column grid fights this layout */
 .dash-top, .dash-grid {
   display: block !important;
   grid-template-columns: unset !important;
 }
-
-/* Prevent horizontal cut-offs on narrow phones */
-html, body { overflow-x: hidden; }
-
-/* “Analyze updated resume” pressed/active state (white text on blue) */
-#openReanalyze.is-hot {
-  background: #104879 !important;
-  color: #fff !important;
-  border-color: #104879 !important;
-}
-
-/* outer page container */
-.dash-shell{
-  max-width: var(--page-max);
-  margin-inline: auto;
-  padding-left: var(--gutter-l);
-  padding-right: var(--gutter-r);
-}
-
-/* stack that holds Upload + Score */
-.dash-stack{
-  max-width: var(--panel-max);
-  margin-inline: auto;
-  padding-inline: 0;          /* keep gutters from dash-shell */
-}
-
-/* make all cards stay centered with a friendly width */
-.upload-card,
-.score-card,
-.opt-panel,
-.opt-nav{
-  max-width: var(--panel-max);
-  margin-inline: auto;
-}
-
-/* the optimize area should center its single column on mobile */
-@media (max-width: 860px){
-  .opt-shell{ grid-template-columns: 1fr; justify-items: center; }
-  .opt-nav{ position: static; }   /* sticky side menu can cause overflow on phones */
-}
-
-/* long words/URLs won’t push the layout wider than the viewport */
-.upload-card,
-.score-card,
-.opt-panel,
-.metric,
-.kv,
-.list{
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-/* undo the old global rule that was hiding overflow and making things look "cut off" */
-html, body { overflow-x: initial; } /* or simply remove the old overflow-x:hidden line */
 
 .metric__head span { white-space: nowrap; }
 
@@ -443,6 +388,6 @@ html, body { overflow-x: initial; } /* or simply remove the old overflow-x:hidde
   box-shadow:0 0 0 2px rgba(16,72,121,.15);
 }
 
-.rw-verb-chip.active{           
-  transform: translateY(1px);    /* brief tap/click feedback */
+.rw-verb-chip.active{
+  transform: translateY(1px);   /* brief tap/click feedback */
 }
