@@ -10,6 +10,11 @@
   --success:#16a34a;
   --warn:#f59e0b;
   --danger:#e11d48;
+  
+  --page-max: 980px;          /* outer container width */
+  --panel-max: 900px;         /* card/panel width */
+  --gutter-l: max(16px, env(safe-area-inset-left));
+  --gutter-r: max(16px, env(safe-area-inset-right));
 }
 
 *{box-sizing:border-box}
@@ -322,14 +327,6 @@ html, body { overflow-x: hidden; }
   border-color: #104879 !important;
 }
 
-/* --- Center everything & prevent edge cut-offs --- */
-:root{
-  --page-max: 980px;          /* outer container width */
-  --panel-max: 900px;         /* card/panel width */
-  --gutter-l: max(16px, env(safe-area-inset-left));
-  --gutter-r: max(16px, env(safe-area-inset-right));
-}
-
 /* outer page container */
 .dash-shell{
   max-width: var(--page-max);
@@ -420,20 +417,31 @@ html, body { overflow-x: initial; } /* or simply remove the old overflow-x:hidde
   font-weight:800;
 }
 
-/* Power verbs layout */
-.verbs-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;              /* space between chips */
+/* ================= Power verbs chips ================= */
+.verbs-wrap{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;                 /* spacing between chips */
 }
 
-.rw-verb-chip {
-  padding: 8px 12px;
-  border-radius: 12px;
-  line-height: 1.2;
-  border: 0;
-  cursor: pointer;
-  /* keep your existing colors; these are just safe defaults */
-  background: #104879;
-  color: #fff;
+.rw-verb-chip{
+  padding:8px 12px;
+  border-radius:12px;
+  border:0;
+  line-height:1.2;
+  background:var(--brand);  /* #104879 from your vars */
+  color:#fff;
+  cursor:pointer;
+}
+
+.rw-verb-chip:hover,
+.rw-verb-chip:focus{
+  background:var(--brand-500);  /* darker on hover */
+  color:#fff;
+  outline:none;
+  box-shadow:0 0 0 2px rgba(16,72,121,.15);
+}
+
+.rw-verb-chip.active{           
+  transform: translateY(1px);    /* brief tap/click feedback */
 }
