@@ -166,11 +166,47 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+  <!-- Dashboard logic (upload, score card, etc.) -->
   <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
-  <!-- NEW: declare endpoint BEFORE extras loads -->
-  <script>window.AI_ENDPOINT = "/api/ai-helper";</script>
+  <!-- 👇 INSERT THIS INLINE BLOCK (must come BEFORE resume-analyzer-extras.js) -->
+  <script>
+    // Endpoint used by AI Helper / Resume analysis tabs
+    window.AI_ENDPOINT = "/api/ai-helper";
 
-  <!-- Analyzer extras needs AI_ENDPOINT + handleCommonErrors -->
+    // Minimal escapeHtml (same contract as in resume-builder.js)
+    window.escapeHtml = (s = "") =>
+      s.replace(/&/g,"&amp;").replace(/</g,"&lt;")
+       .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+
+    // Centralized response handling (ported from resume-builder.js)
+    window.handleCommonErrors = async function(res){
+      if (res.ok) return null;
+      const ct = res.headers.get("content-type") || "";
+      let body = null;
+      try { body = ct.includes("application/json") ? await res.json()
+                                                   : { message: await res.text() }; } catch {}
+      if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
+        const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
+        window.upgradePrompt?.(body?.message_html || msg, (window.PRICING_URL || "/pricing"), 1200);
+        throw new Error(msg);
+      }
+      if (res.status === 401 || res.status === 403) {
+        const msg = body?.message || "Please sign in to continue.";
+        window.showUpgradeBanner?.(msg);
+        setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
+        throw new Error(msg);
+      }
+      if (res.status === 429 && (body?.error === "too_many_free_accounts" || body?.error === "device_limit")) {
+        const msg = body?.message || "Too many free accounts detected from your network/device.";
+        window.showUpgradeBanner?.(msg);
+        throw new Error(msg);
+      }
+      const msg = body?.message || `Request failed (${res.status})`;
+      throw new Error(msg);
+    };
+  </script>
+
+  <!-- Extra toolbar (Resume analysis / Power verbs / AI helper) -->
   <script defer src="{{ url_for('static', filename='js/resume-analyzer-extras.js') }}"></script>
 {% endblock %}
