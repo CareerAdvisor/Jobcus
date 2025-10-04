@@ -55,7 +55,7 @@
 
     {% if summary %}
     <section class="section">
-      <h1>Professional Summary</h1>
+      <h2>Professional Summary</h2>
       <div class="rule"></div>
       <div class="summary">{{ summary }}</div>
     </section>
@@ -63,7 +63,7 @@
 
     {% if skills %}
     <section class="section skills-section">
-      <h1>Skills</h1>
+      <h2>Skills</h2>
       <div class="rule"></div>
       <div class="skills">
         {% for s in (skills if skills is iterable and skills is not string else (skills.split(',') if skills else [])) %}
@@ -75,7 +75,7 @@
 
     {% if experience %}
     <section class="section experience-section">
-      <h1>Relevant Experience</h1>
+      <h2>Relevant Experience</h2>
       <div class="rule"></div>
       {% for e in experience %}
         <article class="item">
@@ -100,7 +100,7 @@
 
     {% if education and education|length %}
     <section class="section section-education">
-      <h1>Education</h1>
+      <h2>Education</h2>
       <hr class="rule">
     
       {% for ed in education %}
@@ -139,7 +139,7 @@
          else (projects_awards.split('\n') if projects_awards else []) %}
     {% if pa_list and pa_list|length %}
     <section class="section">
-      <h1>Projects & Awards</h1>
+      <h2>Projects & Awards</h2>
       <div class="rule"></div>
       <ul class="bullets">
         {% for item in pa_list if item %}<li>{{ item|trim }}</li>{% endfor %}
@@ -148,7 +148,7 @@
     {% endif %}
 
     <section class="section">
-      <h1>Other Education & Certifications</h1>
+      <h2>Other Education & Certifications</h2>
       <div class="rule"></div>
       <ul class="bullets">
         {% for c in cert_list if c %}<li>{{ c|trim }}</li>{% endfor %}
