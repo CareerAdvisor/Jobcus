@@ -98,23 +98,30 @@
     </section>
     {% endif %}
 
-    {% if education %}
-    <section class="section education-section">
+    {% if education and education|length %}
+    <section class="section">
       <h2>Education</h2>
-      <div class="rule"></div>
+      <hr class="rule">
+    
       {% for ed in education %}
-        <article class="item">
-          <div class="item-header">
-            <div class="item-title">{{ ed.degree }}</div>
-            {# School · Location #}
-            {% set line2 = [ed.school, ed.location] | reject('equalto', '') | list | join(' · ') %}
-            {% if line2 %}<div class="item-sub">{{ line2 }}</div>{% endif %}
-            
-            {# Start · End (or Graduated) #}
-            {% set dates = [ed.start, ed.end or ed.graduated] | reject('equalto', '') | list | join(' · ') %}
-            {% if dates %}<div class="item-sub">{{ dates }}</div>{% endif %}
-          </div>
-        </article>
+        <div class="item">
+          {# Title: Degree or Program #}
+          <h3 class="item-title">{{ ed.degree or ed.program or ed.title }}</h3>
+    
+          {# Subline 1: School · Location #}
+          {% set school_line = [ed.school, ed.location] | reject('equalto','') | list | join(' · ') %}
+          {% if school_line %}
+            <div class="item-sub">{{ school_line }}</div>
+          {% endif %}
+    
+          {# Subline 2: Start – End (or Graduated) #}
+          {% set start = ed.graduatedStart or ed.start %}
+          {% set end   = ed.graduated or ed.end %}
+          {% set date_line = [start, end] | reject('equalto','') | list | join(' – ') %}
+          {% if date_line %}
+            <div class="item-sub">• {{ date_line }}</div>
+          {% endif %}
+        </div>
       {% endfor %}
     </section>
     {% endif %}
