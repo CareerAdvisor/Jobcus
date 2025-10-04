@@ -7,7 +7,34 @@
   };
 })();
 
-// -------- Datalist (roles) --------
+/* ======================= GLOBAL HELPERS (defined early) ======================= */
+// Use the global escapeHtml if already provided by template; else define a local one.
+const escapeHtml =
+  typeof window.escapeHtml === "function"
+    ? window.escapeHtml
+    : (s = "") =>
+        String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+// small loader for optional vendor scripts
+async function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    // already present?
+    if ([...document.scripts].some(s => s.src && s.src.includes(src))) return resolve(true);
+    const el = document.createElement("script");
+    el.src = src;
+    el.defer = true;
+    el.onload = () => resolve(true);
+    el.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(el);
+  });
+}
+
+/* ======================= Datalist (roles) ======================= */
 async function initRoleDatalist() {
   const input = document.getElementById("dashRoleSelect");
   const dl    = document.getElementById("roleList");
@@ -41,7 +68,7 @@ async function initRoleDatalist() {
   }
 }
 
-// -------- Merge fixes (issues + suggestions) with fuzzy de-dup --------
+/* ==== Merge fixes (issues + suggestions) with fuzzy de-dup (unchanged) ==== */
 function mergeFixes(data){
   const issues = Array.isArray(data?.analysis?.issues) ? data.analysis.issues : [];
   const recs   = Array.isArray(data?.suggestions) ? data.suggestions : [];
@@ -92,10 +119,9 @@ function getAnalysisFromLS() {
   try { return JSON.parse(localStorage.getItem("resumeAnalysis") || "null"); }
   catch { return null; }
 }
-function getResumeTextFromLS() {
-  return localStorage.getItem("resumeTextRaw") || "";
-}
+function getResumeTextFromLS() { return localStorage.getItem("resumeTextRaw") || ""; }
 
+/* ======================= Main ======================= */
 document.addEventListener("DOMContentLoaded", () => {
   // Greeting
   const greetEl = document.getElementById("dashboardGreeting");
@@ -380,14 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   analyzeBtn?.addEventListener("click", runAnalysis);
 
-  // ---------- New renderers for extra tabs ----------
-  const escapeHtml =
-    typeof window.escapeHtml === "function"
-      ? window.escapeHtml
-      : (s="") => String(s)
-          .replace(/&/g,"&amp;").replace(/</g,"&lt;")
-          .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-
+  /* ---------- New renderers for extra tabs ---------- */
   function renderResumeAnalysis(panel, data) {
     if (!data) {
       panel.innerHTML = `<p class="panel-sub">No analysis available yet. Upload and analyze a resume above.</p>`;
@@ -415,7 +434,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderPowerVerbs(panel, data) {
     const seen = new Set();
     let chips = [];
-
     const rep = (data?.writing?.repetition || []);
     rep.forEach(item => {
       (item.alternatives || []).forEach(v => {
@@ -423,7 +441,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (term && !seen.has(term)) { seen.add(term); chips.push(term); }
       });
     });
-
     const defaults = ["Led","Owned","Drove","Built","Created","Reduced","Increased","Automated","Optimized","Streamlined","Improved","Delivered","Launched","Architected","Implemented","Migrated"];
     defaults.forEach(v => { if (!seen.has(v)) { seen.add(v); chips.push(v); } });
 
@@ -488,13 +505,8 @@ document.addEventListener("DOMContentLoaded", () => {
       sendBtn.disabled = true;
 
       try {
-        const payload = {
-          prompt,
-          resumeText,
-          analysis: data || {}
-        };
-
-        const res = await fetch(window.AI_ENDPOINT || "/api/ai-helper", {
+        const payload = { prompt, resumeText, analysis: data || {} };
+        const res = await fetch((window.AI_ENDPOINT || "/api/ai-helper"), {
           method: "POST",
           headers: { "Content-Type":"application/json" },
           body: JSON.stringify(payload),
@@ -538,15 +550,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const kw = data?.keywords  || {};
     const sc = data?.sections  || {};
 
-    if (view === "analysis") {
-      return renderResumeAnalysis(optPanel, data);
-    }
-    if (view === "verbs") {
-      return renderPowerVerbs(optPanel, data);
-    }
-    if (view === "ai") {
-      return renderAIHelper(optPanel, data);
-    }
+    if (view === "analysis") return renderResumeAnalysis(optPanel, data);
+    if (view === "verbs")    return renderPowerVerbs(optPanel, data);
+    if (view === "ai")       return renderAIHelper(optPanel, data);
 
     if (view === "fixes") {
       const issues = Array.isArray(a.issues) ? a.issues : [];
@@ -586,9 +592,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const matched = new Set((kw.matched || []).map(s => String(s).toLowerCase()));
       const hasKW = (kw.matched && kw.matched.length) || (kw.missing && kw.missing.length);
-      const rows = hasKW
-        ? [...new Set([...(kw.matched || []), ...(kw.missing || [])])]
-        : samples;
+      const rows = hasKW ? [...new Set([...(kw.matched || []), ...(kw.missing || [])])] : samples;
 
       optPanel.innerHTML = `
         <h3 class="panel-title">🎯 ATS keywords</h3>
@@ -630,12 +634,43 @@ document.addEventListener("DOMContentLoaded", () => {
   renderFromStorage();
 });
 
-// — Download helper for optimized resume —
-function downloadHelper(format, text, filename) {
+/* ======================= Download helper ======================= */
+async function ensureFileSaver() {
+  if (window.saveAs) return true;
+  try {
+    await loadScriptOnce("/static/vendor/FileSaver.min.js"); // place a local copy there
+    return !!window.saveAs;
+  } catch { return false; }
+}
+
+async function ensureDocxLib() {
+  if (window.docx) return true;
+  try {
+    // Try local first (avoid CDN MIME issues). Put docx.min.js here.
+    await loadScriptOnce("/static/vendor/docx.min.js");
+    return !!window.docx;
+  } catch { return false; }
+}
+
+async function ensureJsPDF() {
+  if (window.jspdf?.jsPDF) return true;
+  try {
+    await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    return !!(window.jspdf && window.jspdf.jsPDF);
+  } catch { return false; }
+}
+
+async function downloadHelper(format, text, filename) {
   if (format === "txt") {
+    if (!(await ensureFileSaver())) return alert("Download helper (FileSaver) not available.");
     const blob = new Blob([text], { type: "text/plain" });
-    saveAs(blob, `${filename}.txt`);
-  } else if (format === "docx") {
+    window.saveAs(blob, `${filename}.txt`);
+    return;
+  }
+
+  if (format === "docx") {
+    if (!(await ensureFileSaver())) return alert("Download helper (FileSaver) not available.");
+    if (!(await ensureDocxLib()))  return alert("DOCX generator not available.");
     const { Document, Packer, Paragraph, TextRun } = window.docx;
     const doc = new Document({
       sections: [{
@@ -644,8 +679,13 @@ function downloadHelper(format, text, filename) {
         )
       }]
     });
-    Packer.toBlob(doc).then(blob => saveAs(blob, `${filename}.docx`));
-  } else if (format === "pdf") {
+    const blob = await Packer.toBlob(doc);
+    window.saveAs(blob, `${filename}.docx`);
+    return;
+  }
+
+  if (format === "pdf") {
+    if (!(await ensureJsPDF()))   return alert("PDF generator not available.");
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ unit: "mm", format: "a4" });
     const lines = pdf.splitTextToSize(text, 180);
@@ -656,6 +696,7 @@ function downloadHelper(format, text, filename) {
       y += 8;
     });
     pdf.save(`${filename}.pdf`);
+    return;
   }
 }
 
