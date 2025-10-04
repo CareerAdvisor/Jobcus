@@ -407,30 +407,6 @@ document.addEventListener("DOMContentLoaded", () => {
   analyzeBtn?.addEventListener("click", runAnalysis);
 
   /* ---------- New renderers for extra tabs ---------- */
-  function renderResumeAnalysis(panel, data) {
-    if (!data) {
-      panel.innerHTML = `<p class="panel-sub">No analysis available yet. Upload and analyze a resume above.</p>`;
-      return;
-    }
-    const score = (typeof data.score === "number") ? data.score : "—";
-    const b = data.breakdown || {};
-    const issues = (data.analysis?.issues || []).map(i => `<li>${escapeHtml(i)}</li>`).join("");
-    const strengths = (data.analysis?.strengths || []).map(s => `<li>${escapeHtml(s)}</li>`).join("");
-
-    panel.innerHTML = `
-      <h3 class="panel-title">Resume analysis</h3>
-      <div class="kv"><div>Overall score</div><div><strong>${score}</strong> / 100</div></div>
-      <div class="kv"><div>Formatting</div><div>${b.formatting ?? "—"}%</div></div>
-      <div class="kv"><div>Sections</div><div>${b.sections ?? "—"}%</div></div>
-      <div class="kv"><div>Keywords</div><div>${b.keywords ?? "—"}%</div></div>
-      <div class="kv"><div>Readability</div><div>${b.readability ?? "—"}%</div></div>
-      <div class="kv"><div>Length</div><div>${b.length ?? "—"}%</div></div>
-      <div class="kv"><div>Parseable</div><div>${b.parseable ? "Yes" : "No"}</div></div>
-      ${issues ? `<div style="margin-top:12px;"><strong>Issues</strong><ul class="list">${issues}</ul></div>` : ""}
-      ${strengths ? `<div style="margin-top:12px;"><strong>Strengths</strong><ul class="list">${strengths}</ul></div>` : ""}
-    `;
-  }
-
   function renderPowerVerbs(panel, data) {
     const seen = new Set();
     let chips = [];
@@ -550,7 +526,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const kw = data?.keywords  || {};
     const sc = data?.sections  || {};
 
-    if (view === "analysis") return renderResumeAnalysis(optPanel, data);
     if (view === "verbs")    return renderPowerVerbs(optPanel, data);
     if (view === "ai")       return renderAIHelper(optPanel, data);
 
