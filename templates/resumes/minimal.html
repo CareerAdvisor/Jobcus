@@ -10,6 +10,39 @@
   <link rel="stylesheet" href="{{ base_css }}">
   <link rel="stylesheet" href="{{ theme_css }}">
 
+  {# PDF & screen overrides — inline, no extra file #}
+  <style>
+    /* Keep shadows for screen only (WeasyPrint won’t parse these in print mode) */
+    @media screen {
+      .card, .resume, .rb-card, .preview-wrap { box-shadow: 0 4px 18px rgba(16,72,121,.06); }
+    }
+
+    /* Print/PDF: WeasyPrint ignores box-shadow, so give a subtle border instead */
+    @media print {
+      .card, .section, .resume, .rb-card, .preview-wrap { border: 1px solid #e5e7eb; }
+      @page { size: A4; margin: 18mm 16mm; }
+      /* tighten spacing so sections sit closer (no big gaps) */
+      .section { margin: 10px 0 12px; }
+      .item-title { margin: 0 0 2px; }
+      .item-sub { margin: 0 0 10px; }
+    }
+
+    {# If you want *zero* WeasyPrint warnings, you can also gate the entire screen CSS
+       when rendering for PDF: skip screen CSS when for_pdf is true. See next block. #}
+  </style>
+
+  {# Optional: if you want to totally avoid WeasyPrint parsing screen CSS, skip it #}
+  {% if for_pdf %}
+  <style>
+    /* Same rules as in @media print — applied unconditionally for PDF builds */
+    .card, .section, .resume, .rb-card, .preview-wrap { border: 1px solid #e5e7eb; }
+    @page { size: A4; margin: 18mm 16mm; }
+    .section { margin: 10px 0 12px; }
+    .item-title { margin: 0 0 2px; }
+    .item-sub { margin: 0 0 10px; }
+  </style>
+  {% endif %}
+
   {# Watermark logic: free = JOBCUS.COM, paid = none #}
   {% set is_paid = current_user.is_authenticated and (current_user.plan|lower in ['standard','premium']) %}
   {% set wm_text = 'JOBCUS.COM' if not is_paid else '' %}
@@ -159,6 +192,3 @@
 
 </body>
 </html>
-
-
-
