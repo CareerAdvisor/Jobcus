@@ -830,15 +830,22 @@ def build_resume_docx():
                 for b in (e.get("bullets") or []):
                     if str(b).strip():
                         doc.add_paragraph(str(b).strip(), style="List Bullet")
-
+        
         # Education
         if education:
-            doc.add_heading("Education", level=1)
+            # Heading with compact spacing (≈ two lines before, one line after)
+            h = doc.add_heading("Education", level=1)
+            h_format = h.paragraph_format
+            h_format.space_before = Pt(12)   # tighten the space before the section
+            h_format.space_after  = Pt(6)    # small space after the heading
+        
             for ed in education:
                 # ---- Title line (degree/program) ----
                 degree = (ed.get("degree") or ed.get("program") or ed.get("title") or "").strip()
                 if degree:
                     p = doc.add_paragraph()
+                    p.paragraph_format.space_before = Pt(2)   # minimal gap above title
+                    p.paragraph_format.space_after  = Pt(2)   # minimal gap below title
                     run = p.add_run(degree)
                     try:
                         run.bold = True
@@ -855,11 +862,13 @@ def build_resume_docx():
                 end   = (ed.get("graduated")      or ed.get("end")   or "").strip()
         
                 date_bits = [x for x in [start, end] if x]
-                date_line = " – ".join(date_bits)   # en dash
+                date_line = " – ".join(date_bits)
         
                 line = f"{school_line}{(' – ' + date_line) if date_line else ''}"
                 if line:
-                    doc.add_paragraph(line)
+                    p2 = doc.add_paragraph(line)
+                    p2.paragraph_format.space_before = Pt(0)  # keep tight under the degree
+                    p2.paragraph_format.space_after  = Pt(6)  # small gap before next entry
 
         # Certifications
         if certs:
