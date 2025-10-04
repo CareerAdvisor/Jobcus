@@ -73,3 +73,12 @@
   font-size:9.5pt;
   padding:4px 8px;
 }
+
+/* Close the gap above Education to ~2 lines and tighten within entries */
+.section-education { margin-top: 16px; }               /* overall section top space */
+.section-education h2 { margin: 0; }
+.section-education .rule { margin: 6px 0 10px; }
+
+.section-education .item-title { margin: 0 0 2px; }     /* degree line */
+.section-education .item-sub   { margin: 0 0 10px; }    /* institution/date line */
+
