@@ -21,7 +21,7 @@ window.insertSuggestion ||= function (text) {
 })();
 
 // ──────────────────────────────────────────────────────────────
-// Small utilities (now also exposed on window for inline handlers)
+/** Small utilities (now also exposed on window for inline handlers) */
 // ──────────────────────────────────────────────────────────────
 function removeWelcome() {
   const banner = document.getElementById("welcomeBanner");
@@ -99,6 +99,72 @@ function disableComposer(disabled) {
   const sendBtn = document.getElementById("sendButton");
   if (input)  input.disabled  = !!disabled;
   if (sendBtn) sendBtn.style.opacity = disabled ? "0.5" : "";
+}
+
+// ──────────────────────────────────────────────────────────────
+// NEW — Feature intent router → turn user ask into on-site links
+// ──────────────────────────────────────────────────────────────
+const FEATURE_LINKS = {
+  "resume-analyzer": { url: "/resume-analyzer", label: "Resume Analyzer" },
+  "resume-builder":  { url: "/resume-builder",  label: "Resume Builder"  },
+  "cover-letter":    { url: "/cover-letter",    label: "Cover Letter"    },
+  "interview-coach": { url: "/interview-coach", label: "Interview Coach (Jeni)" },
+  "skill-gap":       { url: "/skill-gap",       label: "Skill Gap Analyzer" },
+  "job-insights":    { url: "/job-insights",    label: "Job Insights" },
+  "employers":       { url: "/employers",       label: "Employer Tools" },
+  "pricing":         { url: "/pricing",         label: "Pricing" }
+};
+
+function detectFeatureIntent(message) {
+  const m = String(message || "").toLowerCase();
+
+  // priority-ordered checks
+  if (/\b(analy[sz]e|scan|score|optimi[sz]e).*\bresume\b|\bresume\b.*\b(analy[sz]er|score|ats|keywords?)\b/.test(m))
+    return { primary: "resume-analyzer", alts: ["resume-builder", "cover-letter", "skill-gap"] };
+
+  if (/\b(build|create|write|make).*\bresume\b|\bresume builder\b/.test(m))
+    return { primary: "resume-builder", alts: ["resume-analyzer", "cover-letter", "job-insights"] };
+
+  if (/\bcover letter|write.*cover.?letter|generate.*cover.?letter\b/.test(m))
+    return { primary: "cover-letter", alts: ["resume-analyzer", "resume-builder", "job-insights"] };
+
+  if (/\b(interview|practice|mock|jeni|questions?).*\b(prepare|coach|help|practice|simulate)?\b/.test(m))
+    return { primary: "interview-coach", alts: ["resume-analyzer", "cover-letter", "job-insights"] };
+
+  if (/\b(skill gap|gap analysis|what skills|missing skills|upskilling|transition)\b/.test(m))
+    return { primary: "skill-gap", alts: ["resume-analyzer", "job-insights", "cover-letter"] };
+
+  if (/\b(job insights?|market|salary|salaries|demand|trends?|benchmark)\b/.test(m))
+    return { primary: "job-insights", alts: ["resume-analyzer", "skill-gap", "cover-letter"] };
+
+  if (/\b(employer|recruiter|post(ing)?|job description|jd generator)\b/.test(m))
+    return { primary: "employers", alts: ["pricing"] };
+
+  return null;
+}
+
+function renderFeatureSuggestions(intent, intoEl) {
+  if (!intent || !intoEl) return;
+
+  const primary = FEATURE_LINKS[intent.primary];
+  const alts = (intent.alts || []).map(k => FEATURE_LINKS[k]).filter(Boolean);
+
+  const wrap = document.createElement("div");
+  wrap.className = "feature-suggest";
+  wrap.innerHTML = `
+    <div class="feature-suggest-head">Top recommendation</div>
+    <a class="feature-suggest-primary" href="${primary.url}">
+      <span>Open ${primary.label}</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17l7-7v6h2V7h-9v2h6l-7 7z" fill="currentColor"/></svg>
+    </a>
+    ${alts.length ? `
+      <div class="feature-suggest-alt-head">Other helpful tools</div>
+      <div class="feature-suggest-alts">
+        ${alts.map(a => `<a href="${a.url}">${a.label}</a>`).join("")}
+      </div>` : ""}
+    <hr class="response-separator" />
+  `;
+  intoEl.appendChild(wrap);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -219,7 +285,7 @@ function initModelControls() {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Server call helper (POST to /api/ask and return JSON)
+/** Server call helper (POST to /api/ask and return JSON) */
 // ──────────────────────────────────────────────────────────────
 async function sendMessageToAPI(payload) {
   // apiFetch comes from base.js and already handles credentials + CSRF + 401s
@@ -315,7 +381,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const escapeHtml = (s='') => s
     .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')     // ← correct
+    .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
@@ -520,6 +586,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const aiBlock = document.createElement("div");
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
+
+    // After: const aiBlock = document.createElement("div"); aiBlock.className = "chat-entry ai-answer"; chatbox.appendChild(aiBlock);
+    // Add this:
+    const featureIntent = detectFeatureIntent(message);
+    if (featureIntent) {
+      renderFeatureSuggestions(featureIntent, aiBlock);
+    }
+
     renderThinkingPlaceholder(aiBlock, "Thinking…");
     showAIStatus("Thinking…");
     scrollToAI(aiBlock);
@@ -539,7 +613,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (jobIntent) {
         // status while fetching
         showAIStatus("Finding jobs…");
-      
+
         let jobs;
         if (Array.isArray(jobIntent.queries) && jobIntent.queries.length > 1) {
           const results = await Promise.all(jobIntent.queries.map(q =>
@@ -561,7 +635,7 @@ document.addEventListener("DOMContentLoaded", () => {
             body: JSON.stringify({ query: jobIntent.query })
           });
         }
-      
+
         // replace the thinking bubble with the actual job list
         aiBlock.innerHTML = "";
         displayJobs(jobs, aiBlock);
@@ -570,7 +644,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
         }
         saveMessage("assistant", `Here are jobs for “${(jobIntent.queries || [jobIntent.query]).join(' | ')}”.`);
-      
+
         await refreshCreditsPanel?.();
         window.syncState?.();
         hideAIStatus();               // ✅ hide the sticky status
