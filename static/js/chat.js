@@ -520,12 +520,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const aiBlock = document.createElement("div");
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
-
-    const featureIntent = detectFeatureIntent(message);
-    if (featureIntent) {
-      renderFeatureSuggestions(featureIntent, aiBlock);
-    }
-    
     renderThinkingPlaceholder(aiBlock, "Thinking…");
     showAIStatus("Thinking…");
     scrollToAI(aiBlock);
@@ -582,72 +576,6 @@ document.addEventListener("DOMContentLoaded", () => {
         hideAIStatus();               // ✅ hide the sticky status
         scrollToBottom();
         return;
-      }
-
-      // ──────────────────────────────────────────────────────────────
-      // Feature intent router → turn user ask into on-site links
-      // ──────────────────────────────────────────────────────────────
-      const FEATURE_LINKS = {
-        "resume-analyzer": { url: "/resume-analyzer", label: "Resume Analyzer" },
-        "resume-builder":  { url: "/resume-builder",  label: "Resume Builder"  },
-        "cover-letter":    { url: "/cover-letter",    label: "Cover Letter"    },
-        "interview-coach": { url: "/interview-coach", label: "Interview Coach (Jeni)" },
-        "skill-gap":       { url: "/skill-gap",       label: "Skill Gap Analyzer" },
-        "job-insights":    { url: "/job-insights",    label: "Job Insights" },
-        "employers":       { url: "/employers",       label: "Employer Tools" },
-        "pricing":         { url: "/pricing",         label: "Pricing" }
-      };
-      
-      function detectFeatureIntent(message) {
-        const m = String(message || "").toLowerCase();
-      
-        // priority-ordered checks
-        if (/\b(analy[sz]e|scan|score|optimi[sz]e).*\bresume\b|\bresume\b.*\b(analy[sz]er|score|ats|keywords?)\b/.test(m))
-          return { primary: "resume-analyzer", alts: ["resume-builder", "cover-letter", "skill-gap"] };
-      
-        if (/\b(build|create|write|make).*\bresume\b|\bresume builder\b/.test(m))
-          return { primary: "resume-builder", alts: ["resume-analyzer", "cover-letter", "job-insights"] };
-      
-        if (/\bcover letter|write.*cover.?letter|generate.*cover.?letter\b/.test(m))
-          return { primary: "cover-letter", alts: ["resume-analyzer", "resume-builder", "job-insights"] };
-      
-        if (/\b(interview|practice|mock|jeni|questions?).*\b(prepare|coach|help|practice|simulate)?\b/.test(m))
-          return { primary: "interview-coach", alts: ["resume-analyzer", "cover-letter", "job-insights"] };
-      
-        if (/\b(skill gap|gap analysis|what skills|missing skills|upskilling|transition)\b/.test(m))
-          return { primary: "skill-gap", alts: ["resume-analyzer", "job-insights", "cover-letter"] };
-      
-        if (/\b(job insights?|market|salary|salaries|demand|trends?|benchmark)\b/.test(m))
-          return { primary: "job-insights", alts: ["resume-analyzer", "skill-gap", "cover-letter"] };
-      
-        if (/\b(employer|recruiter|post(ing)?|job description|jd generator)\b/.test(m))
-          return { primary: "employers", alts: ["pricing"] };
-      
-        return null;
-      }
-      
-      function renderFeatureSuggestions(intent, intoEl) {
-        if (!intent || !intoEl) return;
-      
-        const primary = FEATURE_LINKS[intent.primary];
-        const alts = (intent.alts || []).map(k => FEATURE_LINKS[k]).filter(Boolean);
-      
-        const wrap = document.createElement("div");
-        wrap.className = "feature-suggest";
-        wrap.innerHTML = `
-          <div class="feature-suggest-head">Top recommendation</div>
-          <a class="feature-suggest-primary" href="${primary.url}">
-            <span>Open ${primary.label}</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17l7-7v6h2V7h-9v2h6l-7 7z" fill="currentColor"/></svg>
-          </a>
-          ${alts.length ? `
-            <div class="feature-suggest-alt-head">Other helpful tools</div>
-            <div class="feature-suggest-alts">
-              ${alts.map(a => `<a href="${a.url}">${a.label}</a>`).join("")}
-            </div>` : ""}
-          <hr class="response-separator" />
-        `;
-        intoEl.appendChild(wrap);
       }
 
       // Normal AI chat
