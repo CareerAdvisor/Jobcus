@@ -5,13 +5,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const question = entry.querySelector(".faq-question");
     const answer = entry.querySelector(".faq-answer");
     const toggleIcon = entry.querySelector(".faq-toggle");
-
-    // Initially hide all answers
     answer.style.display = "none";
 
     question.addEventListener("click", () => {
       const isOpen = entry.classList.contains("open");
-
       if (isOpen) {
         entry.classList.remove("open");
         answer.style.display = "none";
@@ -24,25 +21,19 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Expand all
-  document.getElementById("expandAll").addEventListener("click", () => {
+  document.getElementById("expandAll")?.addEventListener("click", () => {
     faqEntries.forEach(entry => {
-      const answer = entry.querySelector(".faq-answer");
-      const toggleIcon = entry.querySelector(".faq-toggle");
       entry.classList.add("open");
-      answer.style.display = "block";
-      toggleIcon.textContent = "−";
+      entry.querySelector(".faq-answer").style.display = "block";
+      entry.querySelector(".faq-toggle").textContent = "−";
     });
   });
 
-  // Collapse all
-  document.getElementById("collapseAll").addEventListener("click", () => {
+  document.getElementById("collapseAll")?.addEventListener("click", () => {
     faqEntries.forEach(entry => {
-      const answer = entry.querySelector(".faq-answer");
-      const toggleIcon = entry.querySelector(".faq-toggle");
       entry.classList.remove("open");
-      answer.style.display = "none";
-      toggleIcon.textContent = "+";
+      entry.querySelector(".faq-answer").style.display = "none";
+      entry.querySelector(".faq-toggle").textContent = "+";
     });
   });
 });
