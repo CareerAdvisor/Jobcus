@@ -27,10 +27,10 @@ const PRICING_URL = (window.PRICING_URL || "/pricing");
 // Softer (but still big) sparse watermark preset
 const WM_OPTS_SOFT = {
   mode: "sparse",
-  fontSize: 300,
-  count: 2,
+  fontSize: 300,                // big text, slightly smaller than 320
+  count: 2,                     // fewer stamps per page
   rotate: -28,
-  color: "rgba(16,72,121,.10)",
+  color: "rgba(16,72,121,.10)", // lower opacity
   threshold: 1400
 };
 
@@ -101,6 +101,7 @@ function gatherContext(form) {
         degree:          g("degree")?.value?.trim() || "",
         school:          g("school")?.value?.trim() || "",
         location:        g("location")?.value?.trim() || "",
+        // keep start and end as separate fields
         graduatedStart:  g("graduatedStart")?.value?.trim() || "",
         graduated:       g("graduated")?.value?.trim() || ""
       };
@@ -112,7 +113,7 @@ function gatherContext(form) {
       : [];
 
     const certifications   = form.certifications?.value?.trim() || "";
-    const projects_awards  = form.projects_awards?.value?.trim() || "";
+    const projects_awards  = form.projects_awards?.value?.trim() || "";  // NEW
 
     return {
       name,
@@ -125,7 +126,7 @@ function gatherContext(form) {
       experience,
       education,
       certifications,
-      projects_awards,
+      projects_awards,  // NEW
       skills
     };
   } catch (e) {
@@ -309,10 +310,9 @@ function initSkills() {
   return { refreshChips, skillsSet };
 }
 
-// ───────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────
 // Render with server templates (HTML/PDF/DOCX)
-// (kept for PDF/DOCX helpers, overlay uses HTML branch)
-// ───────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
 
   async function postAndMaybeError(url, payload) {
@@ -351,7 +351,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     return;
   }
 
-  // Legacy inline preview path (not used by overlay flow anymore)
   const res = await fetch("/build-resume", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -361,6 +360,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
 
   const ct = res.headers.get("content-type") || "";
 
+  // 🔁 UPDATED to new IDs (previewTemplateWrap/Frame)
   const wrap  = qs(document, withinBuilder("#previewTemplateWrap, #previewTemplateWrapFinish"));
   const frame = qs(document, withinBuilder("#previewTemplateFrame, #previewTemplateFrameFinish"));
 
@@ -372,6 +372,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
 
       const onLoadOnce = () => {
         try {
+          // Compute plan ONCE here
           const plan = (document.body.dataset.plan || "guest").toLowerCase();
           const isPaid       = (plan === "standard" || plan === "premium");
           const isSuperadmin = (document.body.dataset.superadmin === "1");
@@ -380,6 +381,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           const host = d?.body || d?.documentElement;
           if (!host || !d) return;
 
+          // 1) Prevent late scale/zoom that can shrink watermark
           const fix = d.createElement("style");
           fix.textContent = `
             html, body { margin:0; padding:0; overflow-x:hidden; }
@@ -395,6 +397,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           `;
           (d.head || d.documentElement).appendChild(fix);
 
+          // 2) Strip any template watermarks
           try {
             if (typeof window.__stripWatermarks__ === "function") {
               window.__stripWatermarks__(d);
@@ -419,6 +422,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
             }
           } catch {}
 
+          // 3) Apply BIG (but softer) sparse watermark to page containers (fallback to body)
           if (!isPaid && !isSuperadmin) {
             try {
               const targets = d.querySelectorAll(".page, #doc, .doc, .resume, body > div:first-child");
@@ -441,6 +445,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
             }
           }
 
+          // 4) nocopy/keyboard guards
           const baseStyle = d.createElement("style");
           baseStyle.textContent = `
             .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
@@ -475,26 +480,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
 } // END renderWithTemplateFromContext
 
 // ───────────────────────────────────────────────
-// NEW —— Full-screen preview overlay helpers
-// ───────────────────────────────────────────────
-function openPreviewOverlay(html) {
-  const overlay = document.getElementById("rbPreviewOverlay");
-  const frame   = document.getElementById("rbPreviewFrame");
-  if (!overlay || !frame) return;
-  frame.srcdoc = html || "<!doctype html><html><body>Loading…</body></html>";
-  overlay.hidden = false;
-  document.documentElement.style.overflow = "hidden";
-}
-function closePreviewOverlay() {
-  const overlay = document.getElementById("rbPreviewOverlay");
-  const frame   = document.getElementById("rbPreviewFrame");
-  if (!overlay) return;
-  overlay.hidden = true;
-  if (frame) frame.srcdoc = "";
-  document.documentElement.style.overflow = "";
-}
-
-// ───────────────────────────────────────────────
 // Wizard
 // ───────────────────────────────────────────────
 function initWizard() {
@@ -527,9 +512,11 @@ function initWizard() {
   function updateButtons() {
     const lastIndex = steps.length - 1;
     const onLast = idx === lastIndex;
-    const onDesign = steps[idx]?.id === "step-design";
+    const onDesign = steps[idx]?.id === "step-design";  // ✅ NEW
   
     if (back) back.disabled = idx === 0;
+  
+    // Hide Next on last step AND on the Design step
     if (next) next.style.display = (onLast || onDesign) ? "none" : "inline-block";
   
     const thisStepHasSubmit = !!steps[idx]?.querySelector?.("#rb-submit");
@@ -546,7 +533,7 @@ function initWizard() {
     if (node.id === "step-education"  && !qs(builder, "#edu-list .rb-item")) addEducationFromObj();
     if (node.id === "step-experience" && !node.dataset.loaded) {
       node.dataset.loaded = "1";
-      if (window.USER_AUTHENTICICATED) {
+      if (window.USER_AUTHENTICATED) {
         qsa(builder, "#exp-list .ai-suggest .ai-refresh").forEach(btn => btn.click());
       }
     }
@@ -635,7 +622,7 @@ function initWizard() {
         experience: experienceStr,
         skills: (ctxForTemplate.skills || []).join(", "),
         certifications: form.elements["certifications"]?.value?.trim() || "",
-        projects_awards: form.elements["projects_awards"]?.value?.trim() || "",
+        projects_awards: form.elements["projects_awards"]?.value?.trim() || "", // <-- add
         portfolio: (ctxForTemplate.links?.[0]?.url) || "",
       };
 
@@ -689,83 +676,13 @@ function initWizard() {
     }
   }
 
-  // PDF/DOCX keep using the regular builders
+  previewBtn?.addEventListener("click", () => buildAndRender("html"));
   pdfBtn?.addEventListener("click",     () => buildAndRender("pdf"));
   docxBtn?.addEventListener("click",    () => buildAndRender("docx"));
 
-  // Mirror the Finish buttons to the same actions
+  qs(builder, "#previewTemplateFinish")?.addEventListener("click", () => previewBtn?.click());
   qs(builder, "#downloadTemplatePdfFinish")?.addEventListener("click", () => pdfBtn?.click());
   qs(builder, "#downloadTemplateDocxFinish")?.addEventListener("click", () => docxBtn?.click());
-
-  // ── NEW: Full-screen overlay preview flow ───────────────────
-  async function buildPreviewIntoOverlay() {
-    const theme     = document.getElementById("themeSelect")?.value || "modern";
-    const live      = gatherContext(document.getElementById("resumeForm"));
-    const ctx       = { ...(window._resumeCtx || {}), ...live };
-
-    const res = await fetch("/build-resume", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ format: "html", theme, ...ctx })
-    });
-    await handleCommonErrors(res);
-    const html = await res.text();
-    openPreviewOverlay(html);
-  }
-
-  // Make all Preview buttons open the overlay, and ensure we're on the last step
-  previewBtn?.addEventListener("click", async () => {
-    const finishIdx = steps.findIndex(s => s && s.id === "step-finish");
-    if (finishIdx >= 0) showStep(finishIdx);
-    await buildPreviewIntoOverlay();
-  });
-  qs(builder, "#previewTemplateFinish")?.addEventListener("click", buildPreviewIntoOverlay);
-
-  // Overlay controls
-  document.getElementById("rbPreviewBack")?.addEventListener("click", () => {
-    closePreviewOverlay();
-  });
-  document.getElementById("rbPreviewPDF")?.addEventListener("click", async () => {
-    try {
-      const theme = document.getElementById("themeSelect")?.value || "modern";
-      const live  = gatherContext(document.getElementById("resumeForm"));
-      const ctx   = { ...(window._resumeCtx || {}), ...live };
-      const res   = await fetch("/build-resume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ format: "pdf", theme, ...ctx })
-      });
-      await handleCommonErrors(res);
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "resume.pdf"; a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) { alert(e.message || "PDF build failed"); }
-  });
-  document.getElementById("rbPreviewDOCX")?.addEventListener("click", async () => {
-    try {
-      const theme = document.getElementById("themeSelect")?.value || "modern";
-      const live  = gatherContext(document.getElementById("resumeForm"));
-      const ctx   = { ...(window._resumeCtx || {}), ...live };
-      const res   = await fetch("/build-resume-docx", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(ctx)
-      });
-      await handleCommonErrors(res);
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "resume.docx"; a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) { alert(e.message || "DOCX build failed"); }
-  });
-
-  // ESC closes overlay
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closePreviewOverlay();
-  });
 
   showStep(idx || 0);
   window.__rbWizard = { steps, showStep, get index(){return idx;} };
@@ -852,12 +769,17 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Resume builder init failed:", e);
   }
 
-  // Legacy preview wraps were left harmless; no-op open handlers retained
+  // ───────────────────────────────────────────────
+  // 🔁 Your extra preview hookup (as requested)
+  // ───────────────────────────────────────────────
   const wrap  = document.getElementById("previewTemplateWrap");
   const frame = document.getElementById("previewTemplateFrame");
-  const wm    = wrap?.dataset?.watermark || "";
+  const wm    = wrap?.dataset?.watermark || ""; // JOBCUS.COM for free, blank for paid
+
   document.getElementById("previewTemplate")?.addEventListener("click", async () => {
     if (wrap) wrap.style.display = "block";
+    // You still build the preview via renderWithTemplateFromContext in initWizard.
+    // If you ever build HTML directly, do: frame.srcdoc = html;
   });
 
   const wrapFin  = document.getElementById("previewTemplateWrapFinish");
@@ -865,5 +787,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const wmFin    = wrapFin?.dataset?.watermark || "";
   document.getElementById("previewTemplateFinish")?.addEventListener("click", () => {
     if (wrapFin) wrapFin.style.display = "block";
+    // If building HTML directly, set: frameFin.srcdoc = html;
   });
 });
