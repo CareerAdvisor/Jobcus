@@ -13,7 +13,7 @@
 /* Buttons */
 .home-page .btn{
   display:inline-block;background:var(--blue);color:#fff;
-  padding:14px 20px;border-radius:12px;font-weight:700
+  padding:14px 20px;border-radius:12px;font-weight:700;transition:all .2s ease
 }
 .home-page .btn:hover{filter:brightness(1.06)}
 .home-page .btn.outline{
@@ -42,18 +42,31 @@
   padding:0 16px;font-weight:800
 }
 
-/* Trust strip */
+/* Trust strip (pills are links) */
 .home-page .trust{padding:28px 0;border-top:1px solid var(--ring);border-bottom:1px solid var(--ring);background:#fbfdff}
 .home-page .trust .row{display:flex;gap:28px;flex-wrap:wrap;align-items:center;justify-content:center;color:#6b7f99;font-weight:700}
-.home-page .pill{display:inline-block;padding:6px 12px;border-radius:999px;background:#eef5ff;color:var(--blue);font-weight:700;font-size:12px}
+.home-page .pill{
+  display:inline-block;padding:6px 12px;border-radius:999px;background:#eef5ff;color:var(--blue);
+  font-weight:700;font-size:12px;transition:all .2s ease
+}
+.home-page .pill:hover{background:var(--blue);color:#fff}
 
 /* Sections */
 .home-page section.section{padding:70px 0}
 .home-page .section-title{font-size:28px;margin:0 0 12px;color:var(--brand)}
 .home-page .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.home-page .card{background:var(--card);border:1px solid var(--ring);border-radius:16px;padding:22px;box-shadow:0 8px 20px rgba(16,72,121,.05)}
+.home-page .card{
+  background:var(--card);border:1px solid var(--ring);border-radius:16px;padding:22px;
+  box-shadow:0 8px 20px rgba(16,72,121,.05); transition:transform .15s ease, box-shadow .15s ease
+}
 .home-page .card h4{margin:6px 0 8px;color:#0e1e36}
 .home-page .card p{color:#42526b}
+.home-page .card-link{display:block;text-decoration:none;color:inherit}
+.home-page .card-link:hover .card{transform:translateY(-2px);box-shadow:0 12px 24px rgba(16,72,121,.10)}
+.home-page .card-link:hover .card h4{color:var(--blue)}
+
+/* Center that one Features line */
+.center-lead{ text-align:center; margin-left:auto; margin-right:auto }
 
 /* FAQ */
 .faq-bg{background:var(--bg)}
@@ -61,9 +74,21 @@
 .faq-entry{margin-bottom:10px}
 .faq-question{
   width:100%; text-align:left; display:flex; justify-content:space-between; align-items:center;
-  background:#fff; border:1px solid var(--ring); border-radius:12px; padding:14px 16px; font-weight:700; color:var(--blue)
+  background:#fff; border:1px solid var(--ring); border-radius:12px; padding:14px 16px;
+  font-weight:700; color:var(--blue); transition:all .2s ease
 }
-.faq-answer{background:#fff; border:1px solid var(--ring); border-top:0; border-radius:0 0 12px 12px; padding:14px 16px}
+.faq-question .faq-toggle{transition:color .2s ease}
+.faq-question:hover{
+  background:var(--blue); color:#fff;
+}
+.faq-question:hover .faq-toggle{ color:#fff }
+.faq-entry.open .faq-question{
+  background:var(--blue); color:#fff;
+}
+.faq-entry.open .faq-question .faq-toggle{ color:#fff }
+.faq-answer{
+  background:#fff; border:1px solid var(--ring); border-top:0; border-radius:0 0 12px 12px; padding:14px 16px
+}
 .faq-controls{display:flex; gap:12px; justify-content:center; margin:14px 0}
 .faq-cta{margin-top:20px; text-align:left}
 
