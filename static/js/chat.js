@@ -675,6 +675,27 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("resize", scrollToBottom);
 });
 
+// AUTO-CONSUME prefilled question from home page
+(function(){
+  try {
+    const params = new URLSearchParams(location.search);
+    const q = params.get('q') || localStorage.getItem('chat:prefill') || '';
+    if (!q) return;
+    localStorage.removeItem('chat:prefill');
+    const input = document.getElementById('userInput');
+    const form  = document.getElementById('chat-form');
+    if (!input || !form) return;
+    input.value = q;
+    // small delay lets the page finish wiring handlers
+    setTimeout(() => {
+      form.dispatchEvent(new Event("submit", { bubbles:true, cancelable:true }));
+      // Clean the querystring so refreshes don't resend
+      const nextURL = location.pathname + location.hash;
+      history.replaceState({}, "", nextURL);
+    }, 100);
+  } catch {}
+})();
+
 // ──────────────────────────────────────────────────────────────
 // Optional job suggestions (kept from your original)
 // ──────────────────────────────────────────────────────────────
