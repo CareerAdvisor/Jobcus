@@ -287,18 +287,17 @@ Dean’s Award 2023"></textarea>
       </div>
     </div>
 
-    <!-- Right: Sticky preview pane (desktop only) -->
-    <aside id="previewPane" class="rb-preview" {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %} hidden>
-      <div class="rb-preview-head">
-        <h3>Preview</h3>
-        <div class="rb-preview-actions">
-          <button type="button" id="previewRefresh" class="cta-secondary">Refresh</button>
-          <button type="button" id="previewDownloadPdf" class="cta-primary">PDF</button>
-        </div>
+    <!-- Full-screen preview overlay (hidden by default) -->
+    <div id="rbPreviewOverlay" class="rb-preview-overlay" hidden>
+      <div class="rb-preview-bar">
+        <button type="button" id="rbPreviewBack" class="ghost">← Back to editing</button>
+        <div class="spacer"></div>
+        <button type="button" id="rbPreviewDOCX" class="cta-secondary">DOCX</button>
+        <button type="button" id="rbPreviewPDF" class="cta-primary">Download PDF</button>
       </div>
-      <iframe id="previewFrame" class="resume-preview" title="Resume preview" loading="lazy"></iframe>
-    </aside>
-  </div>
+      <iframe id="rbPreviewFrame" title="Resume preview"></iframe>
+    </div>
+
 </main>
 {% endblock %}
 
