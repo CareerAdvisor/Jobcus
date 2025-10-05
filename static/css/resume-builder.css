@@ -308,3 +308,21 @@
   transform: rotate(-30deg);
   user-select: none; pointer-events: none;
 }
+
+/* One consistent rule everywhere (1px) */
+.resume .section { border-top: 0 !important; }               /* kill wrapper borders */
+.resume hr,
+.resume .rule {                                              /* use only the <hr>/.rule */
+  border: 0 !important;
+  border-top: 1px solid #0e1e36 !important;                  /* pick your color */
+  height: 0 !important;
+  margin: 10px 0 14px !important;
+}
+
+/* If any template uses “thick” or similar, normalize it */
+.resume .rule.thick,
+.resume hr.thick { border-top-width: 1px !important; }
+
+/* Safety: if a section still adds a border, avoid double lines */
+.resume .section > .rule:first-child { margin-top: 0; }      /* keep spacing tidy */
+
