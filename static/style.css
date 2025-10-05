@@ -3972,19 +3972,3 @@ body.has-upgrade-banner {
 .preview-wrap[data-watermark].wm-active::after{
   display: grid;                /* show only once content is ready */
 }
-
-/* Expanded layout for most pages */
-body:not(.chat-page):not(.auth-page) .page-container {
-  max-width: 1440px;      /* pick 1280/1440/1600 as you like */
-  width: 100%;
-  margin-inline: auto;
-  padding-inline: 24px;   /* breathing room at large widths */
-}
-
-/* Optional: ensure <main> tracks the same width if needed */
-body:not(.chat-page):not(.auth-page) main {
-  max-width: 1440px;
-  margin-inline: auto;
-  padding-inline: 24px;
-}
-
