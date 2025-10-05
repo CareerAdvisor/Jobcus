@@ -144,7 +144,7 @@
   box-shadow: none !important;
   padding: 0 !important;
 }
-.welcome-title{ color:#104879; font-weight:700; margin:0 0 12px; }
+.welcome-title{ font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Apple Color Emoji", "Segoe UI Emoji", sans-serif; color:#104879; font-weight:700; margin:0 0 12px; }
 .suggestion-chips{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
 .chip{ background:#104879; color:#fff; border:0; border-radius:999px; padding:8px 14px; cursor:pointer; }
 .chip:hover{ opacity:.95; }
