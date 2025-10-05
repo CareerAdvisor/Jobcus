@@ -10,7 +10,7 @@
 #cover-letter.rb-wrap{ background:#f8fcff; }
 #cover-letter .cl-container{
   width: min(1150px, 92%);
-  margin: 16px auto;
+  margin: 0 auto;
   padding: 0;                /* gutters handled by inner blocks */
 }
 #cover-letter .cl-narrow{
