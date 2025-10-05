@@ -2,20 +2,17 @@
 {% block title %}FAQs - Jobcus{% endblock %}
 
 {% block content %}
-
-<!-- 🌟 Hero Banner -->
 <section class="faq-section">
-  <div class="faq-header" style="align-items: center; animation: fadeInUp 1s ease-in-out;">
-   <img src="{{ url_for('static', filename='images/faq-hero.png') }}" alt="Frequently Asked Question">
-    <p style="margin-bottom: 24px; text-align: center;">Your guide to making the most of Jobcus – your AI Career Advisor</p>
-
-    <div class="faq-controls" style="margin-bottom: 14px; margin-top: 14px; text-align: center; align-items: center; ">
-      <button id="expandAll">Expand All</button>
-      <button id="collapseAll">Collapse All</button>
+  <div class="faq-header" style="align-items:center;animation:fadeInUp 1s ease-in-out;">
+    <img src="{{ url_for('static', filename='images/faq-hero.png') }}" alt="Frequently Asked Question">
+    <p style="margin-bottom:24px;text-align:center;">Your guide to making the most of Jobcus – your AI Career Advisor</p>
+    <div class="faq-controls" style="margin:14px 0;text-align:center;align-items:center;">
+      <button id="expandAll" class="btn">Expand All</button>
+      <button id="collapseAll" class="btn outline">Collapse All</button>
     </div>
   </div>
 
-  <div class="faq-container">
+  <div class="faq-container container" style="max-width:900px;">
     {% for faq in [
       ["🔍 What is Jobcus?", "Jobcus is an AI-powered career assistant designed to help job seekers build optimized resumes, analyze their skill gaps, prepare for interviews, and gain job market insights — all in one platform."],
       ["📄 How does the Resume Builder work?", "Simply fill in your career details and our AI formats it into a professionally structured resume. You can then download your resume in PDF, Word, or TXT formats."],
@@ -28,12 +25,12 @@
       ["📥 Can I upload my existing resume?", "Yes! You can upload a PDF version of your resume, and our AI will analyze and suggest improvements instantly."],
       ["🛠️ I found a bug or have feedback. What should I do?", "We’d love to hear from you! Use our contact form or reach out via support@jobcus.com. Your feedback helps us improve."]
     ] %}
-    <div class="faq-entry">
-      <button class="faq-question" style="margin-bottom: 14px; text-align: center; width: 100%;">
+    <div class="faq-entry" style="margin-bottom:10px;">
+      <button class="faq-question btn outline" style="margin-bottom:14px;text-align:left;width:100%;display:flex;justify-content:space-between;align-items:center;">
         <span>{{ faq[0] }}</span>
         <span class="faq-toggle">+</span>
       </button>
-      <div class="faq-answer" style="margin-bottom: 20px; margin-top: 2px;">
+      <div class="faq-answer" style="margin:2px 0 20px 0;">
         <p>{{ faq[1] }}</p>
       </div>
     </div>
