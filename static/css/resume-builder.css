@@ -373,3 +373,37 @@
   transform: rotate(-30deg);
   pointer-events: none; user-select: none;
 }
+
+/* ——— Break base main width on the builder page ——— */
+main#resume-builder,
+#resume-builder.rb-wrap{
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Match home width (min(1150px, 92%)) */
+#resume-builder .interview-container,
+#resume-builder .rb-shell{
+  width: min(1150px, 92%) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Ensure the grid actually goes 2-col on desktop */
+@media (min-width: 1024px){
+  #resume-builder .rb-shell{
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px;  /* form | sticky preview */
+    gap: 16px;
+    align-items: start;
+  }
+  #resume-builder .rb-preview{
+    display: block;
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 24px);
+  }
+}
