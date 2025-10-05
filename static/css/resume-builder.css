@@ -39,9 +39,24 @@
   #resume-builder .hero-subtitle{ max-width: 46rem; }
 }
 
-/* Wrap + container */
+/* Wrap */
 #resume-builder.rb-wrap { background: var(--bg); padding: 1rem; }
-#resume-builder .rb-container { max-width: 940px; margin: 0 auto; padding: 0 12px 24px; }
+
+/* Hero container matches home width */
+#resume-builder .interview-container{
+  width: min(1150px, 92%);
+  margin: 0 auto 24px;
+}
+
+/* =============== Page shell & container =============== */
+#resume-builder .rb-shell{
+  width: min(1150px, 92%);
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+#resume-builder .rb-main { min-width: 0; }
+#resume-builder .rb-container { width: 100%; padding: 0 12px 24px; margin: 0; }
 
 /* Tabs */
 #resume-builder .rb-tabs{
@@ -66,7 +81,6 @@
   margin:0 0 1rem;
   box-shadow:0 4px 14px rgba(16,72,121,.06);
 }
-
 #resume-builder .rb-card > header {
   display: flex;
   flex-direction: column;
@@ -76,7 +90,6 @@
   min-height: 100px;
   height: auto;
 }
-
 #resume-builder .rb-card > header h2{
   margin:0 0 .4rem;
   font-size:14pt;
@@ -201,9 +214,7 @@
   font-weight:600;
   color:inherit;
 }
-#resume-builder .rb-tabs a.rb-tab-link:hover{
-  filter:brightness(0.98);
-}
+#resume-builder .rb-tabs a.rb-tab-link:hover{ filter:brightness(0.98); }
 .rb-tabs .rb-tab-link--cta{
   background:#ffc957;
   color:#fff;
@@ -273,7 +284,7 @@
 /* Certifications textarea sizing */
 #resume-builder textarea[name="certifications"]{ min-height: 140px; }
 
-/* Section spacing */
+/* Section spacing within generated resume preview */
 .resume .section { margin: 10px 0; }
 .resume .rule    { margin: 6px 0 8px; }
 .skills-section  { margin-bottom: 6px; }
@@ -287,7 +298,7 @@
 .item-title-line{ font-weight:700; font-size:1.05rem; }
 .item-dates{ color:#6b7280; margin:2px 0 6px; }
 
-/* Watermark overlay for previews */
+/* Watermark overlay for in-form previews */
 .preview-wrap[data-watermark] { position: relative; }
 .preview-wrap[data-watermark]::after {
   content: attr(data-watermark);
@@ -299,14 +310,7 @@
   user-select: none; pointer-events: none;
 }
 
-/* =============== New responsive shell =============== */
-#resume-builder .rb-shell{
-  display: grid;
-  gap: 16px;
-}
-
-/* Mobile-first: single column */
-#resume-builder .rb-main { min-width: 0; }
+/* =============== Right preview =============== */
 #resume-builder .rb-preview {
   display: none;                   /* hidden on mobile */
   background: #fff;
@@ -351,12 +355,12 @@
 #resume-builder .rb-preview .resume-preview{
   display: block;
   width: 100%;
-  height: min(100vh - 72px, 900px); /* sticky space; tweak if desired */
+  height: min(100vh - 72px, 900px);
   border: 0;
   background: #fff;
 }
 
-/* Show watermark text if present */
+/* Show watermark text if present on the sticky preview */
 #resume-builder .rb-preview[data-watermark]{
   position: relative;
 }
