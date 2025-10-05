@@ -1,3 +1,4 @@
+{# templates/base.html #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,10 +8,10 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <link rel="canonical" href="{{ request.url if request else '' }}">
 
-  <!-- ====== Basic SEO ====== -->
-  <title>{% block title %}Jobcus – AI Resume Builder & Analyzer{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}Create ATS-ready resumes, analyze your resume, close skill gaps, prep for interviews, and land the right job with Jobcus.{% endblock %}">
-  <meta name="keywords" content="resume builder, resume analyzer, cover letter, interview coach, skill gap, ATS, job search, Jobcus">
+  <!-- ====== SEO (chat-first defaults; pages can override blocks) ====== -->
+  <title>{% block title %}Jobcus – AI Career Chat & Advisor{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Jobcus is a conversation-first AI career advisor. Start in chat, then seamlessly jump into resume analysis & builder, cover letters, interview coaching, skill-gap analysis, and live job insights.{% endblock %}">
+  <meta name="keywords" content="AI career chat, career advisor, resume analyzer, resume builder, cover letter, interview coach, skill gap, job insights, ATS, Jobcus">
   <meta name="author" content="Jobcus">
   <meta name="robots" content="index,follow,max-image-preview:large">
 
@@ -18,18 +19,18 @@
   <meta property="og:site_name" content="Jobcus">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{ request.url if request else 'https://www.jobcus.com' }}">
-  <meta property="og:title" content="{% block og_title %}Jobcus – AI Resume Builder & Analyzer{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}Build and analyze ATS-friendly resumes, generate cover letters, prep interviews, and close skill gaps with AI.{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}Jobcus – AI Career Chat & Advisor{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Ask career questions in natural language. Jobcus routes you to Resume Analyzer/Builder, Cover Letters, Interview Coach, Skill-Gap, and Job Insights.{% endblock %}">
   <meta property="og:image" content="{{ url_for('static', filename='images/og/jobcus-og.jpg', _external=True) if url_for else '' }}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Jobcus – AI Resume Builder & Analyzer">
+  <meta property="og:image:alt" content="Jobcus – AI Career Chat & Advisor">
 
   <!-- ====== Twitter Cards ====== -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@jobcus">
-  <meta name="twitter:title" content="{% block tw_title %}Jobcus – AI Resume Builder & Analyzer{% endblock %}">
-  <meta name="twitter:description" content="{% block tw_description %}AI tools to build and analyze resumes, create cover letters, and prep for interviews.{% endblock %}">
+  <meta name="twitter:title" content="{% block tw_title %}Jobcus – AI Career Chat & Advisor{% endblock %}">
+  <meta name="twitter:description" content="{% block tw_description %}Chat-first career guidance: resumes, interviews, skills, and real-time job insights.{% endblock %}">
   <meta name="twitter:image" content="{{ url_for('static', filename='images/og/jobcus-og.jpg', _external=True) if url_for else '' }}">
 
   <!-- ====== App Icons / Favicons ====== -->
@@ -39,10 +40,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
   <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
 
-  <!-- ====== Fonts ====== -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-
-  <!-- ====== Core CSS ====== -->
+  <!-- ====== Fonts & Core CSS ====== -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/aos/aos.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
@@ -55,12 +54,11 @@
 
   <meta name="referrer" content="strict-origin-when-cross-origin">
 
-  <!-- CSRF token (Flask/WTF example) -->
   {% if csrf_token %}
     <meta name="csrf-token" content="{{ csrf_token() }}">
   {% endif %}
 
-  <!-- ====== Structured Data (JSON-LD) ====== -->
+  <!-- ====== Structured Data ====== -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -110,22 +108,22 @@
         </div>
 
         <div class="header-right">
-          <!-- Desktop nav -->
+          <!-- Desktop nav (chat-first) -->
           <nav class="desktop-nav">
-            <a href="/chat">Jobcus AI</a>
+            <a href="/chat">AI Career Chat</a>
             <a href="/resume-analyzer">Resume Analyzer</a>
             <a href="/resume-builder">Resume Builder</a>
-            <a href="/pricing">Pricing</a>
             <a href="/cover-letter">Cover Letter</a>
             <div class="dropdown">
-              <button class="dropbtn">Features ▾</button>
+              <button class="dropbtn">More ▾</button>
               <div class="dropdown-content">
                 <a href="/interview-coach">Interview Coach</a>
                 <a href="/skill-gap">Skill Gap Analysis</a>
                 <a href="/job-insights">Job Insights</a>
               </div>
             </div>
-            <a href="/employers">Partner with Us</a>
+            <a href="/pricing">Pricing</a>
+            <a href="/employers">Employers</a>
           </nav>
 
           {# Avatar + dropdown #}
@@ -172,20 +170,20 @@
 
         <!-- Mobile nav -->
         <nav class="mobile-nav" id="mobileMenu">
-          <a href="/chat">Jobcus AI</a>
+          <a href="/chat">AI Career Chat</a>
           <a href="/resume-analyzer">Resume Analyzer</a>
           <a href="/resume-builder">Resume Builder</a>
-          <a href="/pricing">Pricing</a>
           <a href="/cover-letter">Cover Letter</a>
           <div class="dropdown">
-            <button class="dropbtn">Features ▾</button>
+            <button class="dropbtn">More ▾</button>
             <div class="dropdown-content">
               <a href="/interview-coach">Interview Coach</a>
               <a href="/skill-gap">Skill Gap Analysis</a>
               <a href="/job-insights">Job Insights</a>
             </div>
           </div>
-          <a href="/employers">Partner with Us</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/employers">Employers</a>
         </nav>
       </header>
     {% endif %}
@@ -217,7 +215,6 @@
   {% endif %}
 
   {% if not for_pdf %}
-    <!-- Cookie banner -->
     {% include "cookie.html" %}
 
     <script>
@@ -225,14 +222,12 @@
       window.AUTH_ID = {{ (current_user.id if current_user.is_authenticated else None)|tojson }};
     </script>
 
-    <!-- Base JS -->
+    <!-- Base JS (has AOS init, apiFetch, upgradePrompt, menus, cookie consent, etc.) -->
     <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
 
     <!-- Self-hosted AOS (CSP-safe) -->
     <script src="{{ url_for('static', filename='vendor/aos/aos.js') }}"></script>
-    <script>
-      if (window.AOS && typeof AOS.init === 'function') AOS.init();
-    </script>
+    <script> if (window.AOS && typeof AOS.init === 'function') AOS.init(); </script>
 
     {% block scripts %}{% endblock %}
   {% endif %}
