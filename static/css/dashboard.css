@@ -11,24 +11,27 @@
   --warn:#f59e0b;
   --danger:#e11d48;
 
-  /* page/container vars (merged from second :root) */
-  --page-max: 980px;      /* outer container width */
-  --panel-max: 900px;     /* card/panel width */
+  /* unified page/container vars (match home/resume width) */
+  --page-max: 1150px;          /* outer container width target */
+  --panel-max: 900px;          /* inner card/panel width when stacked */
   --gutter-l: max(16px, env(safe-area-inset-left));
   --gutter-r: max(16px, env(safe-area-inset-right));
 }
 
 *{box-sizing:border-box}
 
-/* one final, consistent overflow choice: avoid cut-offs */
-html, body { overflow-x: initial; }
+/* avoid cut-offs */
+html, body { overflow-x: hidden; background: var(--bg); }
 
-.dash-shell{
-  max-width:1100px;
-  margin:0 auto;
-  padding:20px 16px 48px;
+/* ======= CONTAINERS (wider like index/resume) ======= */
+.dash-shell,
+.dashboard-container{
+  width: min(var(--page-max), 92%);
+  margin: 0 auto;
+  padding: 20px 0 48px;       /* gutters handled by width calc */
 }
 
+/* Headings */
 .dash-title{
   margin:0 0 6px;
   color:var(--ink);
@@ -42,6 +45,7 @@ html, body { overflow-x: initial; }
   text-align:center;
 }
 
+/* ======= TOP GRID (kept responsive) ======= */
 .dash-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -52,7 +56,8 @@ html, body { overflow-x: initial; }
 }
 
 /* Cards */
-.card{
+.card,
+.dashboard-card{
   background:var(--card);
   border:1px solid var(--border);
   border-radius:14px;
@@ -70,22 +75,11 @@ html, body { overflow-x: initial; }
   cursor:pointer;
 }
 .btn[disabled]{opacity:.55; cursor:not-allowed;}
-.btn-primary{
-  background:var(--brand);
-  color:#fff;
-}
-.btn-outline{
-  background:#fff;
-  color:var(--brand);
-  border:1px solid var(--brand);
-}
+.btn-primary{ background:var(--brand); color:#fff; }
+.btn-outline{ background:#fff; color:var(--brand); border:1px solid var(--brand); }
 
 /* Upload card */
-.upload-title{
-  text-align:center;
-  color:#333;
-  margin:0 0 12px;
-}
+.upload-title{ text-align:center; color:#333; margin:0 0 12px; }
 .dropzone{
   border:2px dashed #ccd6e2;
   border-radius:12px;
@@ -99,15 +93,8 @@ html, body { overflow-x: initial; }
   width:54px;height:54px;margin:0 auto 6px;
   background: url("data:image/svg+xml,%3Csvg width='54' height='54' viewBox='0 0 24 24' fill='none' stroke='%2391a4b7' stroke-width='1.6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 18a4 4 0 1 1 1-7.874A5.002 5.002 0 0 1 21 12a4 4 0 0 1-1 7H7z'/%3E%3Cpath d='M12 12v6m0-6-2.5 2.5M12 12l2.5 2.5'/%3E%3C/svg%3E") center/54px 54px no-repeat;
 }
-.dropzone__title{
-  color:var(--brand);
-  font-weight:800;
-  font-size:22px;
-}
-.dropzone__hint{
-  color:#7c8a9b;
-  font-size:15px;
-}
+.dropzone__title{ color:var(--brand); font-weight:800; font-size:22px; }
+.dropzone__hint{ color:#7c8a9b; font-size:15px; }
 
 .field{display:block;margin-top:12px;}
 .field__label{display:block;margin:8px 0 6px;color:var(--ink);font-weight:600}
@@ -123,15 +110,12 @@ html, body { overflow-x: initial; }
 .help{color:#666; text-align:center; margin:12px 0 0}
 
 /* Score card */
-.score-card__top{
-  display:flex; align-items:center; justify-content:space-between;
-}
+.score-card__top{ display:flex; align-items:center; justify-content:space-between; }
 .score-card__icon{
   width:24px;height:24px; border-radius:6px;
   background: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='%23104879' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 2h9l3 3v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1-2-2zM6 4v16h10V6h-2V4H6z'/%3E%3C/svg%3E") center/24px 24px no-repeat;
   opacity:.85;
 }
-
 .score-card__body{
   display:grid; grid-template-columns:240px 1fr; gap:18px; align-items:center; padding-top:8px;
 }
@@ -142,23 +126,15 @@ html, body { overflow-x: initial; }
 /* Ring */
 .ring{width:240px; height:240px; margin:0 auto;}
 .ring svg{width:100%; height:100%}
-.ring__track{
-  fill:none; stroke:#e6edf3; stroke-width:14;
-}
+.ring__track{ fill:none; stroke:#e6edf3; stroke-width:14; }
 .ring__progress{
   fill:none; stroke:var(--success); stroke-width:14; stroke-linecap:round;
   transform: rotate(-90deg); transform-origin: 50% 50%;
 }
-.ring__label{
-  font-size:32px; font-weight:800; text-anchor:middle; fill:#153b5b;
-}
+.ring__label{ font-size:32px; font-weight:800; text-anchor:middle; fill:#153b5b; }
 
 /* Metrics */
-.metrics{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px;
-}
+.metrics{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .metric{border:1px solid var(--border); border-radius:12px; padding:10px 12px; background:#fff;}
 .metric--wide{grid-column:1 / -1}
 .metric__head{display:flex; justify-content:space-between; align-items:center; font-weight:700; color:#14223a}
@@ -191,7 +167,7 @@ html, body { overflow-x: initial; }
   text-align:left;
   padding:12px 14px;
   border-radius:12px;
-  background:#f3f6fa;           /* visible background by default */
+  background:#f3f6fa;
   color:#0f172a;
   font-weight:700;
   margin-bottom:10px;
@@ -226,11 +202,7 @@ html, body { overflow-x: initial; }
 
 /* Utilities */
 .sr-only{position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); border:0}
-
-/* center that label */
 .field__label.center{ text-align:center; }
-
-/* show chosen file name */
 .file-name{
   margin-top:8px;
   text-align:center;
@@ -246,43 +218,20 @@ html, body { overflow-x: initial; }
   color:#fff;
   border-color:var(--brand);
 }
-
-/* small pulse outline on jump */
 .dropzone.pulse{ box-shadow:0 0 0 3px rgba(16,72,121,.15); }
+.opt-explain{ margin:0 0 10px; color:#475569; }
 
-/* little spacing for the new line above Optimize button */
-.opt-explain{
-  margin:0 0 10px;
-  color:#475569;
-}
-
-/* Page container (if not already present) */
-.dashboard-container {
-  max-width: 1100px;
+/* ======= STACKED SECTION (centered, panel width) ======= */
+.dash-stack{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  width: min(var(--panel-max), 100%);
   margin: 0 auto;
-  padding: 20px 16px;
+  padding: 0;                    /* outer container already has padding */
 }
 
-/* Stacked layout: score card above upload on ALL breakpoints */
-.dash-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  max-width: var(--panel-max);
-  margin: 0 auto;
-  padding: 0 16px;
-}
-
-/* Cards */
-.dashboard-card {
-  background: #fff;
-  border: 1px solid #e6ecf2;
-  border-radius: 12px;
-  padding: 18px;
-  box-shadow: 0 1px 0 rgba(16,72,121,0.02);
-}
-
-/* Upload card: center heading + controls like your screenshot */
+/* Upload card: center heading + controls */
 .upload-card h3,
 .upload-card .upload-title,
 .upload-card .helper,
@@ -291,32 +240,25 @@ html, body { overflow-x: initial; }
   margin: 0 0 12px;
 }
 
-/* Dropzone look */
-#dropzone {
-  border: 2px dashed #d7e1ea;
-  border-radius: 12px;
-  padding: 28px 16px;
-  text-align: center;
-  cursor: pointer;
-  outline: none;
-  transition: border-color .15s ease, box-shadow .15s ease;
+/* Dropzone look (id variant) */
+#dropzone{
+  border:2px dashed #d7e1ea;
+  border-radius:12px;
+  padding:28px 16px;
+  text-align:center;
+  cursor:pointer;
+  outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease;
 }
-#dropzone.is-drag { border-color: #104879; box-shadow: 0 0 0 3px rgba(16,72,121,0.12); }
-#dropzone .dz-title   { font-weight: 800; color: #0f3a5f; font-size: 22px; }
-#dropzone .dz-sub     { color: #6b7c8f; margin-top: 6px; }
+#dropzone.is-drag { border-color:#104879; box-shadow:0 0 0 3px rgba(16,72,121,0.12); }
+#dropzone .dz-title{ font-weight:800; color:#0f3a5f; font-size:22px; }
+#dropzone .dz-sub{ color:#6b7c8f; margin-top:6px; }
 
-/* Role line centered */
-.role-title { text-align: center; font-weight: 700; color: #0f3a5f; }
-
-/* Analyze button full width */
-#dashAnalyzeBtn { width: 100%; border-radius: 12px; }
+.role-title { text-align:center; font-weight:700; color:#0f3a5f; }
+#dashAnalyzeBtn { width:100%; border-radius:12px; }
 
 /* Make sure no legacy two-column grid fights this layout */
-.dash-top, .dash-grid {
-  display: block !important;
-  grid-template-columns: unset !important;
-}
-
+.dash-top, .dash-grid { grid-template-columns: unset; }
 .metric__head span { white-space: nowrap; }
 
 /* Toolbar pills styled like .opt-btn */
@@ -342,20 +284,16 @@ html, body { overflow-x: initial; }
 .item-sub .sep { opacity:.6; }
 .ed-date { font-weight:600; }
 
-/* Make non-active hover turn site blue with white text */
+/* Hover/focus polish for opt buttons */
 .opt-btn:hover:not(.is-active){
   background:#104879;
   color:#fff;
   border-color:#104879;
 }
-
-/* Ensure focus-visible matches hover (keyboard users) */
 .opt-btn:focus-visible:not(.is-active){
   outline:2px solid #104879;
   outline-offset:2px;
 }
-
-/* Optional: make active a touch bolder */
 .opt-btn.is-active{
   background:#104879;
   color:#fff;
@@ -364,30 +302,21 @@ html, body { overflow-x: initial; }
 }
 
 /* ================= Power verbs chips ================= */
-.verbs-wrap{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;                 /* spacing between chips */
-}
-
+.verbs-wrap{ display:flex; flex-wrap:wrap; gap:10px; }
 .rw-verb-chip{
   padding:8px 12px;
   border-radius:12px;
   border:0;
   line-height:1.2;
-  background:var(--brand);  /* #104879 from your vars */
+  background:var(--brand);
   color:#fff;
   cursor:pointer;
 }
-
 .rw-verb-chip:hover,
 .rw-verb-chip:focus{
-  background:var(--brand-500);  /* darker on hover */
+  background:var(--brand-500);
   color:#fff;
   outline:none;
   box-shadow:0 0 0 2px rgba(16,72,121,.15);
 }
-
-.rw-verb-chip.active{
-  transform: translateY(1px);   /* brief tap/click feedback */
-}
+.rw-verb-chip.active{ transform: translateY(1px); }
