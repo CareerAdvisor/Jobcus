@@ -101,6 +101,35 @@ function disableComposer(disabled) {
   if (sendBtn) sendBtn.style.opacity = disabled ? "0.5" : "";
 }
 
+// ──────────────────────────────────────────────────────────────
+// NEW — chat-only plan-limit detector that uses the global upgrade UI
+// ──────────────────────────────────────────────────────────────
+function handleChatLimitError(err) {
+  // apiFetch throws: "Request failed <status>: <body>"
+  const msg = String(err && err.message || "");
+  const isLimit =
+    /Request failed 402/.test(msg) ||
+    /upgrade_required/.test(msg) ||
+    /quota_exceeded/.test(msg);
+
+  if (isLimit) {
+    const copy = "You’ve reached your plan limit. Upgrade to continue.";
+    // Uses the same site-wide prompt used by analyzer/builder (defined in base.js)
+    if (typeof window.upgradePrompt === "function") {
+      window.upgradePrompt(copy, (window.PRICING_URL || "/pricing"), 1200);
+    } else if (typeof window.showUpgradeBanner === "function") {
+      // Fallback: sticky banner only
+      window.showUpgradeBanner(copy);
+      setTimeout(() => { window.location.href = (window.PRICING_URL || "/pricing"); }, 1200);
+    }
+    // Mark so our catch block can short-circuit generic error UI
+    err.kind = "limit";
+    err.message = copy;
+    return true;
+  }
+  return false;
+}
+
 // Expose functions used by inline HTML handlers
 window.insertSuggestion = insertSuggestion;
 window.copyToClipboard  = copyToClipboard;
@@ -565,6 +594,14 @@ document.addEventListener("DOMContentLoaded", () => {
       finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
     } catch (err) {
       hideAIStatus();  // ✅ ensure status bar is removed on error
+
+      // NEW — show the same upgrade modal/banner + gentle redirect (chat only)
+      if (handleChatLimitError(err)) {
+        aiBlock.innerHTML = ""; // suppress raw JSON message
+        scrollToBottom();
+        return;
+      }
+
       if (err?.kind === "limit") {
         aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
         scrollToBottom();
