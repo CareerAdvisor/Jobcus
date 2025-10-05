@@ -39,24 +39,16 @@
   #resume-builder .hero-subtitle{ max-width: 46rem; }
 }
 
-/* Wrap */
-#resume-builder.rb-wrap { background: var(--bg); padding: 1rem; }
+/* Page background + outer padding */
+#resume-builder.rb-wrap { background: var(--bg); padding: 1rem 0 1.25rem; }
 
-/* Hero container matches home width */
-#resume-builder .interview-container{
+/* ===== Container width matches index (desktop) but stays responsive ===== */
+#resume-builder .rb-container{
   width: min(1150px, 92%);
-  margin: 0 auto 24px;
-}
-
-/* =============== Page shell & container =============== */
-#resume-builder .rb-shell{
-  width: min(1150px, 92%);
+  max-width: none;
   margin: 0 auto;
-  display: grid;
-  gap: 16px;
+  padding: 0 0 24px;
 }
-#resume-builder .rb-main { min-width: 0; }
-#resume-builder .rb-container { width: 100%; padding: 0 12px 24px; margin: 0; }
 
 /* Tabs */
 #resume-builder .rb-tabs{
@@ -80,7 +72,9 @@
   padding:0;
   margin:0 0 1rem;
   box-shadow:0 4px 14px rgba(16,72,121,.06);
+  width: 100%;               /* fill container width */
 }
+
 #resume-builder .rb-card > header {
   display: flex;
   flex-direction: column;
@@ -90,6 +84,7 @@
   min-height: 100px;
   height: auto;
 }
+
 #resume-builder .rb-card > header h2{
   margin:0 0 .4rem;
   font-size:14pt;
@@ -114,7 +109,9 @@
 /* Grid */
 #resume-builder .rb-grid{ display:grid; gap:.9rem; grid-template-columns:1fr 1fr; }
 #resume-builder .rb-grid .full{ grid-column:1/-1; }
-@media (max-width:640px){ #resume-builder .rb-grid{ grid-template-columns:1fr; } }
+@media (max-width:980px){
+  #resume-builder .rb-grid{ grid-template-columns:1fr; }
+}
 
 /* Labels & fields */
 #resume-builder label{ display:flex; flex-direction:column; gap:.35rem; font-weight:600; font-size:.9rem; }
@@ -214,7 +211,9 @@
   font-weight:600;
   color:inherit;
 }
-#resume-builder .rb-tabs a.rb-tab-link:hover{ filter:brightness(0.98); }
+#resume-builder .rb-tabs a.rb-tab-link:hover{
+  filter:brightness(0.98);
+}
 .rb-tabs .rb-tab-link--cta{
   background:#ffc957;
   color:#fff;
@@ -284,7 +283,7 @@
 /* Certifications textarea sizing */
 #resume-builder textarea[name="certifications"]{ min-height: 140px; }
 
-/* Section spacing within generated resume preview */
+/* Section spacing */
 .resume .section { margin: 10px 0; }
 .resume .rule    { margin: 6px 0 8px; }
 .skills-section  { margin-bottom: 6px; }
@@ -298,7 +297,7 @@
 .item-title-line{ font-weight:700; font-size:1.05rem; }
 .item-dates{ color:#6b7280; margin:2px 0 6px; }
 
-/* Watermark overlay for in-form previews */
+/* Watermark overlay for previews (inline preview blocks) */
 .preview-wrap[data-watermark] { position: relative; }
 .preview-wrap[data-watermark]::after {
   content: attr(data-watermark);
@@ -309,144 +308,3 @@
   transform: rotate(-30deg);
   user-select: none; pointer-events: none;
 }
-
-/* =============== Right preview =============== */
-#resume-builder .rb-preview {
-  display: none;                   /* hidden on mobile */
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 4px 14px rgba(16,72,121,.06);
-  overflow: hidden;
-}
-
-/* Desktop ≥ 1024px: two columns, sticky preview */
-@media (min-width: 1024px){
-  #resume-builder .rb-shell{
-    grid-template-columns: minmax(0, 1fr) 420px;
-    align-items: start;
-  }
-  #resume-builder .rb-preview{
-    display: block;                /* shown on desktop */
-    position: sticky;
-    top: 16px;                     /* adjust with your header height if needed */
-    max-height: calc(100vh - 24px);
-  }
-}
-
-/* Preview head */
-#resume-builder .rb-preview-head{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
-  background: #f8fbff;
-}
-#resume-builder .rb-preview-head h3{
-  margin: 0; font-size: 1rem; color: var(--brand);
-}
-#resume-builder .rb-preview-actions{ display: flex; gap: 8px; }
-#resume-builder .rb-preview .cta-primary{ background: var(--accent); color: #1f2a37; }
-#resume-builder .rb-preview .cta-secondary{ background: var(--brand); color: #fff; }
-
-/* Preview iframe */
-#resume-builder .rb-preview .resume-preview{
-  display: block;
-  width: 100%;
-  height: min(100vh - 72px, 900px);
-  border: 0;
-  background: #fff;
-}
-
-/* Show watermark text if present on the sticky preview */
-#resume-builder .rb-preview[data-watermark]{
-  position: relative;
-}
-#resume-builder .rb-preview[data-watermark]::after{
-  content: attr(data-watermark);
-  position: absolute; inset: 0;
-  display: grid; place-items: center;
-  font: 700 28px/1 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  color: rgba(16,72,121,.06);
-  transform: rotate(-30deg);
-  pointer-events: none; user-select: none;
-}
-
-/* === Make resume-builder match home page width === */
-
-/* Break any global main cap */
-main#resume-builder,
-#resume-builder.rb-wrap{
-  max-width: 100% !important;
-  width: 100% !important;
-  margin: 0 !important;
-  padding-left: 0;
-  padding-right: 0;
-}
-
-/* Use the same inner width as index.html: min(1150px, 92%) */
-#resume-builder .interview-container,
-#resume-builder .rb-shell{
-  width: min(1150px, 92%) !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-}
-
-/* Stop shrinking the form column (overrides old 940px) */
-#resume-builder .rb-container{
-  max-width: none !important;
-  width: 100% !important;
-  padding-left: 0;
-  padding-right: 0;
-}
-
-/* Desktop layout: form + sticky preview (same as before, but ensure it applies) */
-@media (min-width: 1024px){
-  #resume-builder .rb-shell{
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px; /* form | preview */
-    gap: 16px;
-    align-items: start;
-  }
-  #resume-builder .rb-preview{
-    display: block;
-    position: sticky;
-    top: 16px;
-    max-height: calc(100vh - 24px);
-  }
-}
-
-/* Optional: give hero the same centered width feel as home */
-#resume-builder .interview-container .hero{
-  border-radius: 14px;
-}
-
-/* ========== Full-screen preview overlay ========== */
-#resume-builder .rb-preview-overlay[hidden] { display:none !important; }
-
-#resume-builder .rb-preview-overlay{
-  position:fixed; inset:0;
-  background:rgba(10,18,30,.86);
-  backdrop-filter:saturate(160%) blur(4px);
-  z-index:9999;
-  display:flex; flex-direction:column; min-width:0; min-height:0;
-}
-
-#resume-builder .rb-preview-bar{
-  display:flex; align-items:center; gap:8px;
-  padding:10px 12px; background:#fff; border-bottom:1px solid var(--border);
-}
-
-#resume-builder .rb-preview-bar .spacer{ flex:1; }
-
-#resume-builder #rbPreviewFrame{
-  flex:1 1 auto; width:100%; border:0; background:#fff;
-}
-
-/* Make preview page use full width height nicely on phones, too */
-@media (max-width:640px){
-  #resume-builder .rb-preview-bar{ padding:8px 10px; }
-}
-
