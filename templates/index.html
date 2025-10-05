@@ -1,99 +1,117 @@
+{# templates/index.html #}
 {% extends "base.html" %}
 
-{% block title %}Jobcus – AI Resume Builder & Analyzer{% endblock %}
+{% block title %}Jobcus – AI Career Chat{% endblock %}
+{% block meta_description %}Your personal AI career advisor. Start in chat, then jump into Resume Analyzer/Builder, Cover Letters, Interview Coach, Skill-Gap, and Job Insights — all in one place.{% endblock %}
+{% block og_title %}Jobcus – AI Career Chat{% endblock %}
+{% block og_description %}Conversation-first career guidance. Ask anything and Jobcus routes you to the right tool: resumes, interviews, skills, insights.{% endblock %}
 
 {% block content %}
 
-<!-- 🟦 Hero Section (full-bleed background) -->
+<!-- HERO: AI Career Chat as the core (full-bleed compatible with your existing CSS) -->
 <div class="full-bleed hero-bleed">
-  <section class="hero hero--index">
-    <h1 class="hero-title">AI Resume Builder &amp; Analyzer</h1>
+  <section class="hero hero--index" data-aos="fade-up">
+    <p class="eyebrow">AI Career Chat • Built for Job Seekers</p>
+    <h1 class="hero-title">Your personal AI career advisor — in one simple chat</h1>
     <p class="hero-subtitle">
-      Create ATS-ready resumes, analyse your resume and get instant feedback, close skill gaps,
-      prep for interviews, and everything you need to land the right job.
+      Ask career questions in natural language. Jobcus routes you to Resume Analyzer/Builder, Cover Letters,
+      Interview Coach (Jeni), Skill-Gap, and live Job Insights.
     </p>
     <div class="hero-actions">
-      <a href="/resume-analyzer" class="cta-primary">Analyze my resume now</a>
-      <a href="/resume-builder" class="cta-secondary">Build my resume</a>
+      <a href="/chat" class="cta-primary">Try the AI Career Chat</a>
+      <a href="/pricing" class="cta-secondary">View pricing</a>
     </div>
   </section>
 </div>
 
-<!-- ✉️ Cover Letter Builder -->
-<section class="ai-assistance cover-letter" style="background:#f9fafb; margin-bottom: 20px; margin-top:20px;">
-  <h2>Stand Out with Tailored Cover Letters</h2>
-  <p>
-    Use your resume details and AI assistance to create personalised, job-specific cover letters that recruiters notice.
-  </p>
-  <a href="/cover-letter" class="cta-secondary">Create your letter</a>
+<!-- Trust / quick capabilities -->
+<section class="trust-strip" aria-label="Capabilities">
+  <div class="trust-row">
+    <span class="pill">ATS-friendly resumes</span>
+    <span class="pill">Interview practice with Jeni</span>
+    <span class="pill">Real-time job insights</span>
+    <span class="pill">Skill-gap guidance</span>
+    <span class="pill">Multi-currency, global</span>
+  </div>
 </section>
 
-<!-- 💡 Feature Highlights -->
+<!-- FEATURES: show modules as extensions of the chat -->
 <section class="features">
-  <a href="/resume-analyzer" class="feature-link" data-aos="fade-up" data-aos-delay="300">
-    <div class="feature-box">
-      <h3>🧰 Resume Analyzer</h3>
-      <p>Improve your resume with instant feedback.</p>
-    </div>
-  </a>
-  
-  <a href="/resume-builder" class="feature-link" data-aos="fade-up">
-    <div class="feature-box">
-      <h3>📄 Resume Builder</h3>
-      <p>Create ATS-friendly resumes in minutes.</p>
-    </div>
-  </a>
-
-  <a href="/cover-letter" class="feature-link" data-aos="fade-up" data-aos-delay="50">
-    <div class="feature-box">
-      <h3>✉️ Cover Letter Builder</h3>
-      <p>Generate tailored cover letters to match each job.</p>
-    </div>
-  </a>
-
-  <a href="/interview-coach" class="feature-link" data-aos="fade-up" data-aos-delay="100">
-    <div class="feature-box">
-      <h3>🧠 Interview Coach</h3>
-      <p>Practice questions and boost confidence.</p>
-    </div>
-  </a>
-
-  <a href="/skill-gap" class="feature-link" data-aos="fade-up" data-aos-delay="75">
-    <div class="feature-box">
-      <h3>📊 Skill Gap Analyzer</h3>
-      <p>Identify missing skills and boost your employability.</p>
-    </div>
-  </a>
-
-  <!-- NEW: Employers -->
-  <a href="/employers" class="feature-link" data-aos="fade-up" data-aos-delay="150">
-    <div class="feature-box">
-      <h3>🏢 Employers</h3>
-      <p>Post roles, collect inquiries, and reach qualified talent.</p>
-    </div>
-  </a>
-</section>
-
-<!-- 🧠 Interview Coach -->
-<section class="ai-assistance interview-coach">
-  <img src="{{ url_for('static', filename='images/ai-assist.png') }}" alt="Interview Coach" />
-  <h2>Ace Your Interviews with Our AI Coach</h2>
-  <p>
-    Practice tailored questions, get STAR-based feedback, and polish your answers with real-time coaching.
-  </p>
-  <a href="/interview-coach" class="cta-secondary">Practice now</a>
-</section>
-
-<!-- 🤖 AI Assistance -->
-<footer class="full-bleed site-footer footer-note-static">
-  <section class="cta-section ai-assist-cta">
-    <h2>Meet Your Personal AI Career Assistant</h2>
-    <p>
-      Ask anything about resumes, job descriptions, interview prep, or skill gaps, get instant, actionable guidance.
+  <header class="section-head">
+    <h2 data-aos="fade-up">Everything flows from the chat</h2>
+    <p class="lead" data-aos="fade-up" data-aos-delay="50">
+      Ask one question. Jobcus orchestrates the right tool — no menus, no friction.
     </p>
-    <a href="/chat" class="cta-primary">Chat with Jobcus AI</a>
-  </section>
-</footer>
+  </header>
+
+  <div class="feature-grid">
+    <a href="/resume-analyzer" class="feature-link" data-aos="fade-up">
+      <div class="feature-box">
+        <h3>🧰 Resume Analyzer</h3>
+        <p>ATS checks, keyword alignment, and actionable fixes.</p>
+      </div>
+    </a>
+
+    <a href="/resume-builder" class="feature-link" data-aos="fade-up" data-aos-delay="50">
+      <div class="feature-box">
+        <h3>📄 Resume Builder</h3>
+        <p>Create polished, ATS-ready resumes in minutes.</p>
+      </div>
+    </a>
+
+    <a href="/cover-letter" class="feature-link" data-aos="fade-up" data-aos-delay="75">
+      <div class="feature-box">
+        <h3>✉️ Cover Letters</h3>
+        <p>Tailored letters from your resume + the job link.</p>
+      </div>
+    </a>
+
+    <a href="/interview-coach" class="feature-link" data-aos="fade-up" data-aos-delay="100">
+      <div class="feature-box">
+        <h3>🧠 Interview Coach (Jeni)</h3>
+        <p>Practice role-specific questions with real-time feedback.</p>
+      </div>
+    </a>
+
+    <a href="/skill-gap" class="feature-link" data-aos="fade-up" data-aos-delay="125">
+      <div class="feature-box">
+        <h3>📊 Skill-Gap Analyzer</h3>
+        <p>See what’s missing and get an upskilling plan.</p>
+      </div>
+    </a>
+
+    <a href="/job-insights" class="feature-link" data-aos="fade-up" data-aos-delay="150">
+      <div class="feature-box">
+        <h3>📈 Job Insights</h3>
+        <p>Live salaries, demand by location, and trending skills.</p>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-it-works alt-bg">
+  <div class="how-grid">
+    <div class="how-card" data-aos="fade-up">
+      <h4>1) Ask in natural language</h4>
+      <p>Type a question, paste a JD, or upload a resume. No “prompt engineering.”</p>
+    </div>
+    <div class="how-card" data-aos="fade-up" data-aos-delay="50">
+      <h4>2) Chat orchestrates tools</h4>
+      <p>We route you to resume analysis, cover letters, interview practice, or insights.</p>
+    </div>
+    <div class="how-card" data-aos="fade-up" data-aos-delay="100">
+      <h4>3) Get results you can use</h4>
+      <p>Export optimized PDFs/DOCX, save versions, and track progress.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA: Chat -->
+<section class="cta-section full-bleed">
+  <h2>Meet Your Personal AI Career Assistant</h2>
+  <p>From resumes to interviews and market insights — start in chat and go further, faster.</p>
+  <a href="/chat" class="cta-primary">Chat with Jobcus AI</a>
+</section>
 
 {% endblock %}
-
