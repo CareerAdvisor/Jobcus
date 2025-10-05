@@ -5,19 +5,13 @@
 
 {% block extra_css %}
 <style>
-  /* PAGE-SCOPED overrides so other pages remain unchanged */
-  .home-page main{max-width:100%; padding:0}
-  .home-page .container{width:min(1150px,92%); margin:auto}
+  /* Page-scoped desktop overrides (won’t affect other pages) */
+  .home-page main{max-width:100%;padding:0}
+  .home-page .container{width:min(1150px,92%);margin:auto}
 
-  /* Desktop landing styles (scoped under .home-page to avoid bleed) */
-  .home-page :root{
-    --brand:#104879;
-    --ink:#0e1e36;
-    --muted:#5b6b83;
-    --blue:#1e72ff;
-    --bg:#f7fafc;
-    --card:#ffffff;
-    --ring:#e8eef5;
+  :root{
+    --brand:#104879; --ink:#0e1e36; --muted:#5b6b83;
+    --blue:#1e72ff; --bg:#f7fafc; --card:#ffffff; --ring:#e8eef5;
   }
   .home-page .btn{display:inline-block;background:var(--blue);color:#fff;padding:14px 20px;border-radius:12px;font-weight:700}
   .home-page .btn.outline{background:transparent;color:var(--blue);border:2px solid var(--blue)}
@@ -85,7 +79,6 @@
       </div>
     </div>
 
-    <!-- Chat demo card -->
     <div>
       <div class="chat-demo" aria-label="AI Career Chat demo">
         <h3>AI Career Chat</h3>
@@ -102,7 +95,7 @@
   </div>
 </section>
 
-<!-- Trust / quick capabilities -->
+<!-- Trust strip -->
 <div class="trust">
   <div class="container row">
     <span class="pill">ATS-friendly resumes</span>
@@ -113,25 +106,47 @@
   </div>
 </div>
 
-<!-- FEATURES: everything flows from the chat -->
+<!-- FEATURES -->
 <section id="features" class="section">
   <div class="container">
     <h2 class="section-title">Everything flows from the chat</h2>
     <p class="lead">Ask one question. Jobcus routes you to the right tool — no menus, no friction.</p>
     <div class="cards">
-      <div class="card">
-        <h4>Resume Builder & Analyzer</h4>
-        <p>Create or upload a resume and get instant ATS checks, keyword alignment, and role-specific suggestions.</p>
-      </div>
-      <div class="card">
-        <h4>Cover Letter Generator</h4>
-        <p>Turn your resume + job link into a polished, tailored letter in seconds. Choose tone and refine with AI.</p>
-      </div>
-      <div class="card">
-        <h4>Interview Coach (Jeni)</h4>
-        <p>Practice role-specific questions and receive feedback on clarity, tone, and confidence — anytime.</p>
-      </div>
-      <div class="card">
-        <h4>Skill-Gap Analyzer</h4>
-        <p>Compare your skill
+      <div class="card"><h4>Resume Builder & Analyzer</h4><p>Create or upload a resume and get instant ATS checks, keyword alignment, and role-specific suggestions.</p></div>
+      <div class="card"><h4>Cover Letter Generator</h4><p>Turn your resume + job link into a polished, tailored letter in seconds. Choose tone and refine with AI.</p></div>
+      <div class="card"><h4>Interview Coach (Jeni)</h4><p>Practice role-specific questions and receive feedback on clarity, tone, and confidence — anytime.</p></div>
+      <div class="card"><h4>Skill-Gap Analyzer</h4><p>Compare your skills to target roles and get a step-by-step upskilling plan with course suggestions.</p></div>
+      <div class="card"><h4>Job Insights Dashboard</h4><p>See live salary ranges, demand by location, and trending skills powered by global job APIs.</p></div>
+      <div class="card"><h4>Employer Tools (Phased)</h4><p>Start with AI Job Description Generator. Grow into posting, matching, and talent insights over time.</p></div>
+    </div>
+  </div>
+</section>
 
+<!-- HOW IT WORKS -->
+<section id="how" class="section" style="background:var(--bg)">
+  <div class="container">
+    <h2 class="section-title">How Jobcus works</h2>
+    <div class="cards">
+      <div class="card"><h4>1) Ask in natural language</h4><p>Type, paste a JD, or upload a resume. The AI understands your goal without special prompts.</p></div>
+      <div class="card"><h4>2) Chat orchestrates tools</h4><p>The AI routes you to the right module — analyse resume, generate cover letter, practise interviews, or explore insights.</p></div>
+      <div class="card"><h4>3) Get results you can use</h4><p>Export optimised PDFs/DOCX, save versions, and track progress across devices.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="section" style="background:var(--bg)">
+  <div class="container">
+    <h2 class="section-title">FAQ</h2>
+    <div class="cards">
+      <div class="card"><h4>Is Jobcus a job board?</h4><p>No. Jobcus is a career advisor. We help you prepare smarter and apply better; we also surface insights from job APIs.</p></div>
+      <div class="card"><h4>How is this different from ChatGPT?</h4><p>Jobcus is domain-specific with structured modules (ATS checks, interview simulator, skill-gap engine) routed by the chat.</p></div>
+      <div class="card"><h4>Can employers use Jobcus?</h4><p>Yes. Today we offer an AI Job Description Generator; over time this grows into posting, matching, and talent insights.</p></div>
+    </div>
+    <div style="margin-top:20px">
+      <a class="btn" id="get-started" href="/account">Create your account</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
