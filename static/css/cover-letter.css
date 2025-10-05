@@ -10,9 +10,10 @@
 #cover-letter.rb-wrap{ background:#f8fcff; }
 #cover-letter .cl-container{
   width: min(1150px, 92%);
-  max-width: 100%;
+  max-width: 100% !important; 
+  width: 100% !important; 
   margin: 0 auto;
-  padding-top: 20px;                /* gutters handled by inner blocks */
+  padding-top: 20px !important;                /* gutters handled by inner blocks */
 }
 #cover-letter .cl-narrow{
   max-width: 900px;
