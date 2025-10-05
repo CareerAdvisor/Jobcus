@@ -422,3 +422,31 @@ main#resume-builder,
 #resume-builder .interview-container .hero{
   border-radius: 14px;
 }
+
+/* ========== Full-screen preview overlay ========== */
+#resume-builder .rb-preview-overlay[hidden] { display:none !important; }
+
+#resume-builder .rb-preview-overlay{
+  position:fixed; inset:0;
+  background:rgba(10,18,30,.86);
+  backdrop-filter:saturate(160%) blur(4px);
+  z-index:9999;
+  display:flex; flex-direction:column; min-width:0; min-height:0;
+}
+
+#resume-builder .rb-preview-bar{
+  display:flex; align-items:center; gap:8px;
+  padding:10px 12px; background:#fff; border-bottom:1px solid var(--border);
+}
+
+#resume-builder .rb-preview-bar .spacer{ flex:1; }
+
+#resume-builder #rbPreviewFrame{
+  flex:1 1 auto; width:100%; border:0; background:#fff;
+}
+
+/* Make preview page use full width height nicely on phones, too */
+@media (max-width:640px){
+  #resume-builder .rb-preview-bar{ padding:8px 10px; }
+}
+
