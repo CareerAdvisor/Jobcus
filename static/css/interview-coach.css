@@ -1,6 +1,27 @@
-/* ====== Interview Coach & AI Response Styling ====== */
+/* ====== Interview Coach & AI Response Styling (desktop-wide + mobile responsive) ====== */
 
-/* Keep the whole coach output constrained */
+/* ---------- Page shell (matches index/resume widths) ---------- */
+/* If you wrap the page with <main id="interview-coach" class="coach-wrap"> ... */
+#interview-coach.coach-wrap { background: #f8fcff; }
+
+/* Outer container width like home page: min(1150px, 92%) */
+#interview-coach .coach-container,
+.coach-container {
+  width: min(1150px, 92%);
+  margin: 16px auto;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Optional inner column cap for readable content (900px) */
+#interview-coach .coach-narrow,
+.coach-narrow {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ---------- Core boxes (cap at 900px and center) ---------- */
 #interviewCoachResult,
 #feedback-box,
 #suggestions-box,
@@ -11,7 +32,15 @@
   box-sizing: border-box;
 }
 
-/* Generic AI output wrapper */
+/* History entries also follow the same readable width */
+.history-entry {
+  max-width: 900px;
+  width: 100%;
+  margin: 16px auto;
+  box-sizing: border-box;
+}
+
+/* ---------- Generic AI output wrapper ---------- */
 .ai-response {
   max-width: 100%;
   width: 100%;
@@ -67,13 +96,7 @@
   height: auto;
 }
 
-/* History entries */
-.history-entry {
-  max-width: 900px;
-  margin: 16px auto;
-}
-
-/* Mobile polish */
+/* ---------- Mobile polish ---------- */
 @media (max-width: 640px) {
   #interviewCoachResult,
   #feedback-box,
@@ -82,10 +105,20 @@
   .history-entry {
     padding: 12px;
     max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Ensure outer shell keeps nice gutters on small screens */
+  #interview-coach .coach-container,
+  .coach-container {
+    width: 100%;
+    padding-inline: 12px;
+    margin: 12px auto;
   }
 }
 
-/* History / feedback container stays within the viewport */
+/* ---------- History / feedback regions never bleed horizontally ---------- */
 #historyPanel,
 .history-panel,
 .feedback-history,
@@ -96,7 +129,7 @@
   overflow-x: hidden; /* never bleed off-screen */
 }
 
-/* Markdown body (what you render with marked.js) */
+/* Markdown body (what you render with marked.js or similar) */
 #historyPanel .ai-response,
 .history-panel .ai-response,
 .feedback-history .ai-response,
@@ -142,7 +175,7 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* Optional: keep blockquotes/content boxes from nudging width */
+/* Keep blockquotes/content boxes from nudging width */
 #historyPanel .ai-response blockquote,
 .history-panel .ai-response blockquote,
 .feedback-history .ai-response blockquote,
@@ -164,6 +197,15 @@
 .result-box .ai-response > :last-child,
 #historyPanel .ai-response > :last-child { margin-bottom: 0 !important; }
 
-/* Canvas overlay should never create scroll */
+/* If you ever overlay a watermark canvas on outputs */
 .wm-overlay { display:block; position:absolute; inset:0; pointer-events:none; }
 
+/* ---------- Optional: hero/section wrappers if you add them later ---------- */
+/* Use these safely if your page includes a hero. They won’t interfere otherwise. */
+#interview-coach .hero-wrap { background:#104879; padding: 20px 0; }
+#interview-coach .hero {
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  padding: clamp(16px,4vw,48px) clamp(12px,4vw,24px);
+  background:#104879; border-radius:14px; color:#fff;
+}
+#interview-coach .hero .kicker { color:#ffc957; font-weight:700; letter-spacing:.08em; }
