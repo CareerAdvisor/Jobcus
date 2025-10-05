@@ -298,3 +298,74 @@
   transform: rotate(-30deg);
   user-select: none; pointer-events: none;
 }
+
+/* =============== New responsive shell =============== */
+#resume-builder .rb-shell{
+  display: grid;
+  gap: 16px;
+}
+
+/* Mobile-first: single column */
+#resume-builder .rb-main { min-width: 0; }
+#resume-builder .rb-preview {
+  display: none;                   /* hidden on mobile */
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 14px rgba(16,72,121,.06);
+  overflow: hidden;
+}
+
+/* Desktop ≥ 1024px: two columns, sticky preview */
+@media (min-width: 1024px){
+  #resume-builder .rb-shell{
+    grid-template-columns: minmax(0, 1fr) 420px;
+    align-items: start;
+  }
+  #resume-builder .rb-preview{
+    display: block;                /* shown on desktop */
+    position: sticky;
+    top: 16px;                     /* adjust with your header height if needed */
+    max-height: calc(100vh - 24px);
+  }
+}
+
+/* Preview head */
+#resume-builder .rb-preview-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: #f8fbff;
+}
+#resume-builder .rb-preview-head h3{
+  margin: 0; font-size: 1rem; color: var(--brand);
+}
+#resume-builder .rb-preview-actions{ display: flex; gap: 8px; }
+#resume-builder .rb-preview .cta-primary{ background: var(--accent); color: #1f2a37; }
+#resume-builder .rb-preview .cta-secondary{ background: var(--brand); color: #fff; }
+
+/* Preview iframe */
+#resume-builder .rb-preview .resume-preview{
+  display: block;
+  width: 100%;
+  height: min(100vh - 72px, 900px); /* sticky space; tweak if desired */
+  border: 0;
+  background: #fff;
+}
+
+/* Show watermark text if present */
+#resume-builder .rb-preview[data-watermark]{
+  position: relative;
+}
+#resume-builder .rb-preview[data-watermark]::after{
+  content: attr(data-watermark);
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font: 700 28px/1 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color: rgba(16,72,121,.06);
+  transform: rotate(-30deg);
+  pointer-events: none; user-select: none;
+}
