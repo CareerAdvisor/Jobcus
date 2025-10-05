@@ -676,6 +676,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // AUTO-CONSUME prefilled question from home page
+// AUTO-CONSUME prefilled question from home page
 (function(){
   try {
     const params = new URLSearchParams(location.search);
