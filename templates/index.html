@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Jobcus — AI Career Chat{% endblock %}
+{% block body_class %}home-page{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* PAGE-SCOPED overrides so other pages remain unchanged */
+  .home-page main{max-width:100%; padding:0}
+  .home-page .container{width:min(1150px,92%); margin:auto}
+
+  /* Desktop landing styles (scoped under .home-page to avoid bleed) */
+  .home-page :root{
+    --brand:#104879;
+    --ink:#0e1e36;
+    --muted:#5b6b83;
+    --blue:#1e72ff;
+    --bg:#f7fafc;
+    --card:#ffffff;
+    --ring:#e8eef5;
+  }
+  .home-page .btn{display:inline-block;background:var(--blue);color:#fff;padding:14px 20px;border-radius:12px;font-weight:700}
+  .home-page .btn.outline{background:transparent;color:var(--blue);border:2px solid var(--blue)}
+
+  /* Hero */
+  .home-page .hero{background:linear-gradient(180deg,#f7fbff,#ffffff);padding:64px 0 28px}
+  .home-page .hero-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:center}
+  .home-page .eyebrow{color:var(--blue);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px}
+  .home-page h1.hero-title{font-size:48px;line-height:1.1;margin:.3em 0 .4em;color:var(--ink)}
+  .home-page .lead{font-size:18px;color:#334155;max-width:62ch}
+  .home-page .cta{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+
+  /* Chat mock */
+  .home-page .chat-demo{background:#0e1e36;border-radius:16px;padding:18px;box-shadow:0 14px 34px rgba(16,72,121,.18);color:#fff}
+  .home-page .chat-demo h3{margin:0 0 12px 0;font-size:16px;letter-spacing:.08em;text-transform:uppercase;color:#9cc0ff}
+  .home-page .bubble{background:#173250;border-radius:14px;padding:12px 14px;margin:10px 0;max-width:95%}
+  .home-page .bubble.ai{background:#0c2d4f;border-left:4px solid #4aa3ff}
+  .home-page .bubble.user{background:#173b63;border-left:4px solid #8dd0ff;margin-left:auto}
+  .home-page .input{display:flex;margin-top:12px;background:#0b2540;border:1px solid #1f4570;border-radius:12px;overflow:hidden}
+  .home-page .input input{flex:1;border:0;background:transparent;color:#e6f0ff;padding:12px 14px;font-size:15px}
+  .home-page .input button{border:0;background:var(--blue);color:#fff;padding:0 16px;font-weight:700}
+
+  /* Trust strip */
+  .home-page .trust{padding:28px 0;border-top:1px solid var(--ring);border-bottom:1px solid var(--ring);background:#fbfdff}
+  .home-page .trust .row{display:flex;gap:28px;flex-wrap:wrap;align-items:center;justify-content:center;color:#6b7f99;font-weight:700}
+  .home-page .pill{display:inline-block;padding:6px 12px;border-radius:999px;background:#eef5ff;color:#1b5ad6;font-weight:700;font-size:12px}
+
+  /* Sections */
+  .home-page section.section{padding:70px 0}
+  .home-page .section-title{font-size:28px;margin:0 0 12px;color:var(--brand)}
+  .home-page .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .home-page .card{background:var(--card);border:1px solid var(--ring);border-radius:16px;padding:22px;box-shadow:0 8px 20px rgba(16,72,121,.05)}
+  .home-page .card h4{margin:6px 0 8px;color:var(--ink)}
+  .home-page .card p{color:#42526b}
+
+  /* Responsive */
+  @media (max-width:980px){
+    .home-page .hero-grid{grid-template-columns:1fr}
+    .home-page .cards{grid-template-columns:1fr 1fr}
+    .home-page h1.hero-title{font-size:40px}
+  }
+  @media (max-width:640px){
+    .home-page .cards{grid-template-columns:1fr}
+    .home-page h1.hero-title{font-size:34px}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO: AI Career Chat as the core -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <div class="eyebrow">AI Career Chat • Built for Job Seekers</div>
+      <h1 class="hero-title">Your personal AI career advisor — in one simple chat</h1>
+      <p class="lead">
+        Ask career questions in natural language. Jobcus routes you to
+        Resume Analyzer/Builder, Cover Letters, Interview Coach (Jeni),
+        Skill-Gap, and live Job Insights.
+      </p>
+      <div class="cta">
+        <a class="btn" href="/chat">Try the AI Career Chat</a>
+        <a class="btn outline" href="/pricing">View pricing</a>
+      </div>
+    </div>
+
+    <!-- Chat demo card -->
+    <div>
+      <div class="chat-demo" aria-label="AI Career Chat demo">
+        <h3>AI Career Chat</h3>
+        <div class="bubble user">Can you analyse my resume for a UX Designer role?</div>
+        <div class="bubble ai">Sure — I’ll scan for ATS keywords, structure and gaps. Do you have the job link?</div>
+        <div class="bubble user">Here’s the JD. Also, what skills am I missing for Senior UX?</div>
+        <div class="bubble ai">You’re strong on research. Add “Design Systems”, “A/B testing”, and “Figma Auto Layout”. I can generate a cover letter too.</div>
+        <div class="input">
+          <input placeholder="Ask your career question…" aria-label="chat input" />
+          <button>Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Trust / quick capabilities -->
+<div class="trust">
+  <div class="container row">
+    <span class="pill">ATS-friendly resumes</span>
+    <span class="pill">Interview practice with Jeni</span>
+    <span class="pill">Real-time job insights</span>
+    <span class="pill">Skill-gap guidance</span>
+    <span class="pill">Multi-currency, global</span>
+  </div>
+</div>
+
+<!-- FEATURES: everything flows from the chat -->
+<section id="features" class="section">
+  <div class="container">
+    <h2 class="section-title">Everything flows from the chat</h2>
+    <p class="lead">Ask one question. Jobcus routes you to the right tool — no menus, no friction.</p>
+    <div class="cards">
+      <div class="card">
+        <h4>Resume Builder & Analyzer</h4>
+        <p>Create or upload a resume and get instant ATS checks, keyword alignment, and role-specific suggestions.</p>
+      </div>
+      <div class="card">
+        <h4>Cover Letter Generator</h4>
+        <p>Turn your resume + job link into a polished, tailored letter in seconds. Choose tone and refine with AI.</p>
+      </div>
+      <div class="card">
+        <h4>Interview Coach (Jeni)</h4>
+        <p>Practice role-specific questions and receive feedback on clarity, tone, and confidence — anytime.</p>
+      </div>
+      <div class="card">
+        <h4>Skill-Gap Analyzer</h4>
+        <p>Compare your skill
+
