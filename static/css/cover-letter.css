@@ -29,7 +29,7 @@
 }
 
 /* ---------- Hero ---------- */
-#cover-letter .hero-wrap{ background:#104879; padding:20px 0; }
+#cover-letter .hero-wrap{ background:#104879; padding-bottom:20px;}
 #cover-letter .hero{
   display:flex; flex-direction:column; align-items:center; text-align:center;
   padding: clamp(16px,4vw,48px) clamp(12px,4vw,24px);
@@ -43,7 +43,7 @@
 }
 #cover-letter .hero-title{
   color:#fff; font-weight:800; line-height:1.15; margin:0;
-  font-size: clamp(28px, 4.5vw + .25rem, 60px);
+  font-size: clamp(24px, 4.5vw + .25rem, 56px);
 }
 #cover-letter .hero-title .accent{ color:#ffc957; }
 #cover-letter .hero-subtitle{
