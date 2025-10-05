@@ -24,9 +24,6 @@ const escapeHtml = (s="") =>
 // ✅ Single source of truth for Pricing URL
 const PRICING_URL = (window.PRICING_URL || "/pricing");
 
-// Desktop check for showing the sticky preview pane
-const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
-
 // Softer (but still big) sparse watermark preset
 const WM_OPTS_SOFT = {
   mode: "sparse",
@@ -312,9 +309,10 @@ function initSkills() {
   return { refreshChips, skillsSet };
 }
 
-// ───────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────
 // Render with server templates (HTML/PDF/DOCX)
-// ───────────────────────────────────────────────────────────────
+// (kept for PDF/DOCX helpers, overlay uses HTML branch)
+// ───────────────────────────────────────────────
 async function renderWithTemplateFromContext(ctx, format = "html", theme = "modern") {
 
   async function postAndMaybeError(url, payload) {
@@ -353,6 +351,7 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     return;
   }
 
+  // Legacy inline preview path (not used by overlay flow anymore)
   const res = await fetch("/build-resume", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -464,16 +463,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
 
       frame.addEventListener("load", onLoadOnce, { once: true });
       frame.srcdoc = html;
-
-      // NEW — also mirror into the right sticky preview pane
-      try {
-        const sideFrame = document.getElementById('previewFrame');
-        const pane      = document.getElementById('previewPane');
-        if (sideFrame) {
-          sideFrame.srcdoc = html;
-          if (pane && isDesktop()) pane.hidden = false;
-        }
-      } catch {}
     }
   } else if (ct.includes("application/json")) {
     const data = await res.json().catch(() => ({}));
@@ -484,6 +473,26 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
     throw new Error(`Preview failed. ${txt ? "Server said: " + txt : ""}`);
   }
 } // END renderWithTemplateFromContext
+
+// ───────────────────────────────────────────────
+// NEW —— Full-screen preview overlay helpers
+// ───────────────────────────────────────────────
+function openPreviewOverlay(html) {
+  const overlay = document.getElementById("rbPreviewOverlay");
+  const frame   = document.getElementById("rbPreviewFrame");
+  if (!overlay || !frame) return;
+  frame.srcdoc = html || "<!doctype html><html><body>Loading…</body></html>";
+  overlay.hidden = false;
+  document.documentElement.style.overflow = "hidden";
+}
+function closePreviewOverlay() {
+  const overlay = document.getElementById("rbPreviewOverlay");
+  const frame   = document.getElementById("rbPreviewFrame");
+  if (!overlay) return;
+  overlay.hidden = true;
+  if (frame) frame.srcdoc = "";
+  document.documentElement.style.overflow = "";
+}
 
 // ───────────────────────────────────────────────
 // Wizard
@@ -537,7 +546,7 @@ function initWizard() {
     if (node.id === "step-education"  && !qs(builder, "#edu-list .rb-item")) addEducationFromObj();
     if (node.id === "step-experience" && !node.dataset.loaded) {
       node.dataset.loaded = "1";
-      if (window.USER_AUTHENTICATED) {
+      if (window.USER_AUTHENTICICATED) {
         qsa(builder, "#exp-list .ai-suggest .ai-refresh").forEach(btn => btn.click());
       }
     }
@@ -680,43 +689,86 @@ function initWizard() {
     }
   }
 
-  previewBtn?.addEventListener("click", () => buildAndRender("html"));
+  // PDF/DOCX keep using the regular builders
   pdfBtn?.addEventListener("click",     () => buildAndRender("pdf"));
   docxBtn?.addEventListener("click",    () => buildAndRender("docx"));
 
-  qs(builder, "#previewTemplateFinish")?.addEventListener("click", () => previewBtn?.click());
+  // Mirror the Finish buttons to the same actions
   qs(builder, "#downloadTemplatePdfFinish")?.addEventListener("click", () => pdfBtn?.click());
   qs(builder, "#downloadTemplateDocxFinish")?.addEventListener("click", () => docxBtn?.click());
 
+  // ── NEW: Full-screen overlay preview flow ───────────────────
+  async function buildPreviewIntoOverlay() {
+    const theme     = document.getElementById("themeSelect")?.value || "modern";
+    const live      = gatherContext(document.getElementById("resumeForm"));
+    const ctx       = { ...(window._resumeCtx || {}), ...live };
+
+    const res = await fetch("/build-resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ format: "html", theme, ...ctx })
+    });
+    await handleCommonErrors(res);
+    const html = await res.text();
+    openPreviewOverlay(html);
+  }
+
+  // Make all Preview buttons open the overlay, and ensure we're on the last step
+  previewBtn?.addEventListener("click", async () => {
+    const finishIdx = steps.findIndex(s => s && s.id === "step-finish");
+    if (finishIdx >= 0) showStep(finishIdx);
+    await buildPreviewIntoOverlay();
+  });
+  qs(builder, "#previewTemplateFinish")?.addEventListener("click", buildPreviewIntoOverlay);
+
+  // Overlay controls
+  document.getElementById("rbPreviewBack")?.addEventListener("click", () => {
+    closePreviewOverlay();
+  });
+  document.getElementById("rbPreviewPDF")?.addEventListener("click", async () => {
+    try {
+      const theme = document.getElementById("themeSelect")?.value || "modern";
+      const live  = gatherContext(document.getElementById("resumeForm"));
+      const ctx   = { ...(window._resumeCtx || {}), ...live };
+      const res   = await fetch("/build-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ format: "pdf", theme, ...ctx })
+      });
+      await handleCommonErrors(res);
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "resume.pdf"; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { alert(e.message || "PDF build failed"); }
+  });
+  document.getElementById("rbPreviewDOCX")?.addEventListener("click", async () => {
+    try {
+      const theme = document.getElementById("themeSelect")?.value || "modern";
+      const live  = gatherContext(document.getElementById("resumeForm"));
+      const ctx   = { ...(window._resumeCtx || {}), ...live };
+      const res   = await fetch("/build-resume-docx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ctx)
+      });
+      await handleCommonErrors(res);
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "resume.docx"; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { alert(e.message || "DOCX build failed"); }
+  });
+
+  // ESC closes overlay
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closePreviewOverlay();
+  });
+
   showStep(idx || 0);
   window.__rbWizard = { steps, showStep, get index(){return idx;} };
-
-  // ───────────────────────────────────────────────
-  // Right sticky preview buttons (NEW)
-  // ───────────────────────────────────────────────
-  document.getElementById('previewRefresh')?.addEventListener('click', () => {
-    const live = gatherContext(document.getElementById('resumeForm'));
-    const theme = document.getElementById('themeSelect')?.value || 'modern';
-    renderWithTemplateFromContext({ ...(window._resumeCtx || {}), ...live }, 'html', theme);
-  });
-  document.getElementById('previewDownloadPdf')?.addEventListener('click', () => {
-    // Reuse existing PDF flow to keep quota/plan logic consistent
-    const btn = document.getElementById('downloadTemplatePdf');
-    if (btn) btn.click();
-  });
-  themeSelect?.addEventListener('change', () => {
-    const pane = document.getElementById('previewPane');
-    if (pane && !pane.hidden) {
-      const live = gatherContext(document.getElementById('resumeForm'));
-      const theme = document.getElementById('themeSelect')?.value || 'modern';
-      renderWithTemplateFromContext({ ...(window._resumeCtx || {}), ...live }, 'html', theme);
-    }
-  });
-  window.addEventListener('resize', () => {
-    const pane = document.getElementById('previewPane');
-    if (!pane) return;
-    if (!isDesktop()) pane.hidden = true;
-  });
 }
 
 // ───────────────────────────────────────────────
@@ -800,15 +852,17 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Resume builder init failed:", e);
   }
 
-  // Keep compatibility with the inline preview wrappers
+  // Legacy preview wraps were left harmless; no-op open handlers retained
   const wrap  = document.getElementById("previewTemplateWrap");
   const frame = document.getElementById("previewTemplateFrame");
+  const wm    = wrap?.dataset?.watermark || "";
   document.getElementById("previewTemplate")?.addEventListener("click", async () => {
     if (wrap) wrap.style.display = "block";
   });
 
   const wrapFin  = document.getElementById("previewTemplateWrapFinish");
   const frameFin = document.getElementById("previewTemplateFrameFinish");
+  const wmFin    = wrapFin?.dataset?.watermark || "";
   document.getElementById("previewTemplateFinish")?.addEventListener("click", () => {
     if (wrapFin) wrapFin.style.display = "block";
   });
