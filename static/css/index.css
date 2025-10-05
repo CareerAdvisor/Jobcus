@@ -25,9 +25,23 @@
 .home-page .hero{background:linear-gradient(180deg,#f7fbff,#ffffff);padding:64px 0 28px}
 .home-page .hero-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:center}
 .home-page .eyebrow{color:var(--blue);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:12px}
-.home-page h1.hero-title{font-size:48px;line-height:1.1;margin:.3em 0 .4em;color:#0e1e36}
+/* UPDATED color to brand blue */
+.home-page h1.hero-title{font-size:48px;line-height:1.1;margin:.3em 0 .4em;color:#104879;letter-spacing:-0.02em}
 .home-page .lead{font-size:18px;color:#334155;max-width:62ch}
 .home-page .cta{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+
+/* Center the hero visual on small screens */
+.home-page .hero-grid{align-items:center}
+@media (max-width:980px){
+  .home-page .hero-grid{grid-template-columns:1fr}
+  .home-page .hero-grid > *{margin-inline:auto}
+  .home-page .hero-visual,
+  .home-page .hero-visual img,
+  .home-page .chat-demo{
+    margin-inline:auto;
+    width:min(540px,92%);
+  }
+}
 
 /* Chat mock */
 .home-page .chat-demo{background:#0e1e36;border-radius:16px;padding:18px;box-shadow:0 14px 34px rgba(16,72,121,.18);color:#fff}
@@ -42,7 +56,79 @@
   padding:0 16px;font-weight:800
 }
 
-/* Trust strip (pills are links) */
+/* ===== Ad strips (landscape on desktop, square on mobile) ===== */
+.home-page .ad-strip{
+  padding:26px 0;
+  background:#fbfdff;
+  border-top:1px solid var(--ring);
+  border-bottom:1px solid var(--ring);
+}
+.home-page .ad-grid{
+  display:grid;
+  gap:18px;
+  grid-template-columns:repeat(3,1fr); /* desktop: 3 landscape cards */
+}
+@media (max-width:1100px){
+  .home-page .ad-grid{ grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:660px){
+  .home-page .ad-grid{ grid-template-columns:1fr; }
+}
+
+/* Card container */
+.home-page .ad-card{
+  position:relative;
+  display:block;
+  text-decoration:none;
+  overflow:hidden;
+  border:1px solid var(--ring);
+  border-radius:16px;
+  background:#eef5ff;
+  box-shadow:0 8px 20px rgba(16,72,121,.06);
+  transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+
+/* Maintain aspect: landscape on desktop, square on mobile */
+.home-page .ad-card::before{
+  content:"";
+  display:block;
+  aspect-ratio:3/1; /* landscape */
+}
+@media (max-width:660px){
+  .home-page .ad-card::before{ aspect-ratio:1/1; } /* square */
+}
+
+/* Content overlay */
+.home-page .ad-content{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  text-align:center; padding:14px;
+  color:#0e1e36;
+}
+.home-page .ad-title{
+  font-weight:800; font-size:18px; color:#104879; margin:0;
+}
+.home-page .ad-sub{
+  margin:6px 0 0; color:#42526b; font-size:14px;
+}
+
+/* Hover state */
+.home-page .ad-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 24px rgba(16,72,121,.12);
+  filter:brightness(1.02);
+}
+
+/* Optional background-image support */
+.home-page .ad-card[data-bg]{ background:#0e1e36; }
+.home-page .ad-card[data-bg]::before{
+  background:var(--ad-img) center/cover no-repeat;
+  opacity:.22;
+  border-radius:16px 16px 0 0;
+  display:block;
+}
+
+/* Trust strip (legacy pills; safe to keep if used elsewhere) */
 .home-page .trust{padding:28px 0;border-top:1px solid var(--ring);border-bottom:1px solid var(--ring);background:#fbfdff}
 .home-page .trust .row{display:flex;gap:28px;flex-wrap:wrap;align-items:center;justify-content:center;color:#6b7f99;font-weight:700}
 .home-page .pill{
@@ -94,7 +180,6 @@
 
 /* Responsive */
 @media (max-width:980px){
-  .home-page .hero-grid{grid-template-columns:1fr}
   .home-page .cards{grid-template-columns:1fr 1fr}
   .home-page h1.hero-title{font-size:40px}
 }
