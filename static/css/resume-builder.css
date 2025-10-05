@@ -374,7 +374,9 @@
   pointer-events: none; user-select: none;
 }
 
-/* ——— Break base main width on the builder page ——— */
+/* === Make resume-builder match home page width === */
+
+/* Break any global main cap */
 main#resume-builder,
 #resume-builder.rb-wrap{
   max-width: 100% !important;
@@ -384,7 +386,7 @@ main#resume-builder,
   padding-right: 0;
 }
 
-/* Match home width (min(1150px, 92%)) */
+/* Use the same inner width as index.html: min(1150px, 92%) */
 #resume-builder .interview-container,
 #resume-builder .rb-shell{
   width: min(1150px, 92%) !important;
@@ -392,11 +394,19 @@ main#resume-builder,
   margin-right: auto !important;
 }
 
-/* Ensure the grid actually goes 2-col on desktop */
+/* Stop shrinking the form column (overrides old 940px) */
+#resume-builder .rb-container{
+  max-width: none !important;
+  width: 100% !important;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Desktop layout: form + sticky preview (same as before, but ensure it applies) */
 @media (min-width: 1024px){
   #resume-builder .rb-shell{
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px;  /* form | sticky preview */
+    grid-template-columns: minmax(0, 1fr) 420px; /* form | preview */
     gap: 16px;
     align-items: start;
   }
@@ -406,4 +416,9 @@ main#resume-builder,
     top: 16px;
     max-height: calc(100vh - 24px);
   }
+}
+
+/* Optional: give hero the same centered width feel as home */
+#resume-builder .interview-container .hero{
+  border-radius: 14px;
 }
