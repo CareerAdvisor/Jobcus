@@ -520,6 +520,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const aiBlock = document.createElement("div");
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
+
+    const featureIntent = detectFeatureIntent(message);
+    if (featureIntent) {
+      renderFeatureSuggestions(featureIntent, aiBlock);
+    }
+    
     renderThinkingPlaceholder(aiBlock, "Thinking…");
     showAIStatus("Thinking…");
     scrollToAI(aiBlock);
