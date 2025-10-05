@@ -398,11 +398,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderWelcome(){
-    const shell   = document.getElementById("chatShell");
-    const fname   = (shell?.dataset.firstName || "there");
+    const shell = document.getElementById("chatShell");
+    const fname = (shell?.dataset.firstName || "there");
     chatbox.innerHTML = `
       <div class="welcome" id="welcomeBanner">
-        <p class="welcome-title">Welcome back, ${escapeHtml(fname)}. How can I help you today?</p>
+        <p class="welcome-title">👋 Welcome ${escapeHtml(fname)}! How can I help you today?</p>
         <div class="suggestion-chips">
           <button type="button" onclick="insertSuggestion('How do I improve my resume?')" class="chip">Improve my resume</button>
           <button type="button" onclick="insertSuggestion('Interview tips for a UX role')" class="chip">Interview tips</button>
