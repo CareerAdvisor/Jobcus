@@ -24,13 +24,16 @@ const escapeHtml = (s="") =>
 // ✅ Single source of truth for Pricing URL
 const PRICING_URL = (window.PRICING_URL || "/pricing");
 
+// Desktop check for showing the sticky preview pane
+const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
+
 // Softer (but still big) sparse watermark preset
 const WM_OPTS_SOFT = {
   mode: "sparse",
-  fontSize: 300,                // big text, slightly smaller than 320
-  count: 2,                     // fewer stamps per page
+  fontSize: 300,
+  count: 2,
   rotate: -28,
-  color: "rgba(16,72,121,.10)", // lower opacity
+  color: "rgba(16,72,121,.10)",
   threshold: 1400
 };
 
@@ -101,7 +104,6 @@ function gatherContext(form) {
         degree:          g("degree")?.value?.trim() || "",
         school:          g("school")?.value?.trim() || "",
         location:        g("location")?.value?.trim() || "",
-        // keep start and end as separate fields
         graduatedStart:  g("graduatedStart")?.value?.trim() || "",
         graduated:       g("graduated")?.value?.trim() || ""
       };
@@ -113,7 +115,7 @@ function gatherContext(form) {
       : [];
 
     const certifications   = form.certifications?.value?.trim() || "";
-    const projects_awards  = form.projects_awards?.value?.trim() || "";  // NEW
+    const projects_awards  = form.projects_awards?.value?.trim() || "";
 
     return {
       name,
@@ -126,7 +128,7 @@ function gatherContext(form) {
       experience,
       education,
       certifications,
-      projects_awards,  // NEW
+      projects_awards,
       skills
     };
   } catch (e) {
@@ -360,7 +362,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
 
   const ct = res.headers.get("content-type") || "";
 
-  // 🔁 UPDATED to new IDs (previewTemplateWrap/Frame)
   const wrap  = qs(document, withinBuilder("#previewTemplateWrap, #previewTemplateWrapFinish"));
   const frame = qs(document, withinBuilder("#previewTemplateFrame, #previewTemplateFrameFinish"));
 
@@ -372,7 +373,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
 
       const onLoadOnce = () => {
         try {
-          // Compute plan ONCE here
           const plan = (document.body.dataset.plan || "guest").toLowerCase();
           const isPaid       = (plan === "standard" || plan === "premium");
           const isSuperadmin = (document.body.dataset.superadmin === "1");
@@ -381,7 +381,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           const host = d?.body || d?.documentElement;
           if (!host || !d) return;
 
-          // 1) Prevent late scale/zoom that can shrink watermark
           const fix = d.createElement("style");
           fix.textContent = `
             html, body { margin:0; padding:0; overflow-x:hidden; }
@@ -397,7 +396,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
           `;
           (d.head || d.documentElement).appendChild(fix);
 
-          // 2) Strip any template watermarks
           try {
             if (typeof window.__stripWatermarks__ === "function") {
               window.__stripWatermarks__(d);
@@ -422,7 +420,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
             }
           } catch {}
 
-          // 3) Apply BIG (but softer) sparse watermark to page containers (fallback to body)
           if (!isPaid && !isSuperadmin) {
             try {
               const targets = d.querySelectorAll(".page, #doc, .doc, .resume, body > div:first-child");
@@ -445,7 +442,6 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
             }
           }
 
-          // 4) nocopy/keyboard guards
           const baseStyle = d.createElement("style");
           baseStyle.textContent = `
             .nocopy, .nocopy * { user-select: none !important; -webkit-user-select: none !important; }
@@ -468,6 +464,16 @@ async function renderWithTemplateFromContext(ctx, format = "html", theme = "mode
 
       frame.addEventListener("load", onLoadOnce, { once: true });
       frame.srcdoc = html;
+
+      // NEW — also mirror into the right sticky preview pane
+      try {
+        const sideFrame = document.getElementById('previewFrame');
+        const pane      = document.getElementById('previewPane');
+        if (sideFrame) {
+          sideFrame.srcdoc = html;
+          if (pane && isDesktop()) pane.hidden = false;
+        }
+      } catch {}
     }
   } else if (ct.includes("application/json")) {
     const data = await res.json().catch(() => ({}));
@@ -512,11 +518,9 @@ function initWizard() {
   function updateButtons() {
     const lastIndex = steps.length - 1;
     const onLast = idx === lastIndex;
-    const onDesign = steps[idx]?.id === "step-design";  // ✅ NEW
+    const onDesign = steps[idx]?.id === "step-design";
   
     if (back) back.disabled = idx === 0;
-  
-    // Hide Next on last step AND on the Design step
     if (next) next.style.display = (onLast || onDesign) ? "none" : "inline-block";
   
     const thisStepHasSubmit = !!steps[idx]?.querySelector?.("#rb-submit");
@@ -622,7 +626,7 @@ function initWizard() {
         experience: experienceStr,
         skills: (ctxForTemplate.skills || []).join(", "),
         certifications: form.elements["certifications"]?.value?.trim() || "",
-        projects_awards: form.elements["projects_awards"]?.value?.trim() || "", // <-- add
+        projects_awards: form.elements["projects_awards"]?.value?.trim() || "",
         portfolio: (ctxForTemplate.links?.[0]?.url) || "",
       };
 
@@ -686,6 +690,33 @@ function initWizard() {
 
   showStep(idx || 0);
   window.__rbWizard = { steps, showStep, get index(){return idx;} };
+
+  // ───────────────────────────────────────────────
+  // Right sticky preview buttons (NEW)
+  // ───────────────────────────────────────────────
+  document.getElementById('previewRefresh')?.addEventListener('click', () => {
+    const live = gatherContext(document.getElementById('resumeForm'));
+    const theme = document.getElementById('themeSelect')?.value || 'modern';
+    renderWithTemplateFromContext({ ...(window._resumeCtx || {}), ...live }, 'html', theme);
+  });
+  document.getElementById('previewDownloadPdf')?.addEventListener('click', () => {
+    // Reuse existing PDF flow to keep quota/plan logic consistent
+    const btn = document.getElementById('downloadTemplatePdf');
+    if (btn) btn.click();
+  });
+  themeSelect?.addEventListener('change', () => {
+    const pane = document.getElementById('previewPane');
+    if (pane && !pane.hidden) {
+      const live = gatherContext(document.getElementById('resumeForm'));
+      const theme = document.getElementById('themeSelect')?.value || 'modern';
+      renderWithTemplateFromContext({ ...(window._resumeCtx || {}), ...live }, 'html', theme);
+    }
+  });
+  window.addEventListener('resize', () => {
+    const pane = document.getElementById('previewPane');
+    if (!pane) return;
+    if (!isDesktop()) pane.hidden = true;
+  });
 }
 
 // ───────────────────────────────────────────────
@@ -769,24 +800,16 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Resume builder init failed:", e);
   }
 
-  // ───────────────────────────────────────────────
-  // 🔁 Your extra preview hookup (as requested)
-  // ───────────────────────────────────────────────
+  // Keep compatibility with the inline preview wrappers
   const wrap  = document.getElementById("previewTemplateWrap");
   const frame = document.getElementById("previewTemplateFrame");
-  const wm    = wrap?.dataset?.watermark || ""; // JOBCUS.COM for free, blank for paid
-
   document.getElementById("previewTemplate")?.addEventListener("click", async () => {
     if (wrap) wrap.style.display = "block";
-    // You still build the preview via renderWithTemplateFromContext in initWizard.
-    // If you ever build HTML directly, do: frame.srcdoc = html;
   });
 
   const wrapFin  = document.getElementById("previewTemplateWrapFinish");
   const frameFin = document.getElementById("previewTemplateFrameFinish");
-  const wmFin    = wrapFin?.dataset?.watermark || "";
   document.getElementById("previewTemplateFinish")?.addEventListener("click", () => {
     if (wrapFin) wrapFin.style.display = "block";
-    // If building HTML directly, set: frameFin.srcdoc = html;
   });
 });
