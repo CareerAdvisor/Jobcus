@@ -43,17 +43,21 @@
   </div>
 </section>
 
-      <!-- Slide 1 -->
-      <a class="ad-slide" href="/#">
-        <picture>
-          <source media="(min-width: 701px)"
-                  srcset="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}">
-          <img class="ad-img"
-               src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
-               alt="ATS-friendly resumes" loading="lazy"
-               onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/ads/square_ad1.jpg') }}';">
-        </picture>
-      </a>
+<!-- Ad Strip A -->
+<!-- Full-width responsive ad (leaderboard on desktop, square on mobile) -->
+<section class="ad-banner ad-banner--full">
+  <a class="ad-banner__frame" href="/resume-analyzer" aria-label="ATS-friendly resumes">
+    <picture>
+      <!-- Desktop / wide -->
+      <source media="(min-width: 701px)"
+              srcset="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}">
+      <!-- Mobile / square fallback (also used if JS fallback triggers) -->
+      <img class="ad-img"
+           src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
+           alt="ATS-friendly resumes" loading="lazy">
+    </picture>
+  </a>
+</section>
 
 <!-- FEATURES (cards are links; lead centered) -->
 <section id="features" class="section">
@@ -89,57 +93,21 @@
   </div>
 </section>
 
-<!-- Ad Strip B (BEFORE FAQ) -->
-<section class="ad-slider ad-slider--full" id="ads-mid">
-  <div class="container">
-    <div class="ad-slider__frame" aria-roledescription="carousel">
-
-      <!-- Slide 1 -->
-      <a class="ad-slide is-active" href="/#" aria-label="Skill-gap guidance">
-        <picture>
-          <source media="(min-width: 701px)"
-                  srcset="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}">
-          <img class="ad-img"
-               src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
-               alt="Skill-gap guidance — see what to learn next"
-               loading="lazy"
-               onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/ads/square_ad1.jpg') }}';">
-        </picture>
-      </a>
-
-      <!-- Slide 2 -->
-      <a class="ad-slide" href="/#" aria-label="Cover letters in minutes">
-        <picture>
-          <source media="(min-width: 701px)"
-                  srcset="{{ url_for('static', filename='img/ads/leaderboard_ad2.jpg') }}">
-          <img class="ad-img"
-               src="{{ url_for('static', filename='img/ads/square_ad2.jpg') }}"
-               alt="Cover letters in minutes — hiring-manager ready"
-               loading="lazy"
-               onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/ads/square_ad2.jpg') }}';">
-        </picture>
-      </a>
-
-      <!-- Slide 3 -->
-      <a class="ad-slide" href="/#" aria-label="Multi-currency plans">
-        <picture>
-          <source media="(min-width: 701px)"
-                  srcset="{{ url_for('static', filename='img/ads/leaderboard_ad3.jpg') }}">
-          <img class="ad-img"
-               src="{{ url_for('static', filename='img/ads/square_ad3.jpg') }}"
-               alt="Multi-currency plans — global billing & receipts"
-               loading="lazy"
-               onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/ads/square_ad3.jpg') }}';">
-        </picture>
-      </a>
-
-      <button class="ad-nav prev" aria-label="Previous slide">‹</button>
-      <button class="ad-nav next" aria-label="Next slide">›</button>
-      <div class="ad-dots" role="tablist" aria-label="Ad navigation"></div>
-    </div>
-  </div>
+<!-- Ad Strip B -->
+<!-- Full-width responsive ad (leaderboard on desktop, square on mobile) -->
+<section class="ad-banner ad-banner--full">
+  <a class="ad-banner__frame" href="/resume-analyzer" aria-label="ATS-friendly resumes">
+    <picture>
+      <!-- Desktop / wide -->
+      <source media="(min-width: 701px)"
+              srcset="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}">
+      <!-- Mobile / square fallback (also used if JS fallback triggers) -->
+      <img class="ad-img"
+           src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
+           alt="ATS-friendly resumes" loading="lazy">
+    </picture>
+  </a>
 </section>
-
 
 <!-- FAQ (accordion) -->
 <section id="faq" class="section faq-bg">
