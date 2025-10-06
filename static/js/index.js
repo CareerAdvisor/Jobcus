@@ -60,57 +60,51 @@
 })();
 
 (function(){
-  const sliders = Array.from(document.querySelectorAll('.home-page .ad-slider'));
-  if(!sliders.length) return;
+  const AUTOPLAY_MS = 6000;
 
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.ad-slider').forEach((slider) => {
+    const frame  = slider.querySelector('.ad-slider__frame');
+    const slides = [...frame.querySelectorAll('.ad-slide')];
+    const dotsEl = frame.querySelector('.ad-dots');
+    const prev   = frame.querySelector('.ad-nav.prev');
+    const next   = frame.querySelector('.ad-nav.next');
 
-  sliders.forEach(root => {
-    const frame  = root.querySelector('.ad-slider__frame');
-    const slides = Array.from(root.querySelectorAll('.ad-slide'));
-    const dots   = Array.from(root.querySelectorAll('.ad-dot'));
-    const prev   = root.querySelector('.ad-nav.prev');
-    const next   = root.querySelector('.ad-nav.next');
+    if (!slides.length) return;
 
-    if(!frame || slides.length === 0) return;
-
-    let i = 0, timer = null;
-
-    const show = (idx) => {
-      i = (idx + slides.length) % slides.length;
-      slides.forEach((s, k) => s.classList.toggle('is-active', k === i));
-      dots.forEach((d, k) => d.setAttribute('aria-selected', k === i));
-    };
-
-    const start = () => {
-      if(reduce) return;
-      stop();
-      timer = setInterval(() => show(i + 1), 5000);
-    };
-    const stop  = () => { if(timer) { clearInterval(timer); timer = null; } };
-
-    // init
-    show(0);
-    start();
-
-    // controls
-    prev?.addEventListener('click', () => { show(i - 1); start(); });
-    next?.addEventListener('click', () => { show(i + 1); start(); });
-    dots.forEach((d, k) => d.addEventListener('click', () => { show(k); start(); }));
-
-    // pause on hover/focus
-    root.addEventListener('mouseenter', stop);
-    root.addEventListener('mouseleave', start);
-    root.addEventListener('focusin', stop);
-    root.addEventListener('focusout', start);
-
-    // swipe
-    let sx = 0;
-    root.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; stop(); }, {passive:true});
-    root.addEventListener('touchend',   (e) => {
-      const dx = e.changedTouches[0].clientX - sx;
-      if(Math.abs(dx) > 40) show(i + (dx < 0 ? 1 : -1));
-      start();
+    // Build dots
+    dotsEl.innerHTML = '';
+    const dots = slides.map((_, i) => {
+      const b = document.createElement('button');
+      b.className = 'ad-dot';
+      b.type = 'button';
+      b.setAttribute('role','tab');
+      b.setAttribute('aria-label', `Go to slide ${i+1}`);
+      dotsEl.appendChild(b);
+      b.addEventListener('click', () => go(i));
+      return b;
     });
+
+    let idx = 0, timer;
+    function setActive(i){
+      slides.forEach((s, n) => s.classList.toggle('is-active', n === i));
+      dots.forEach((d, n) => d.setAttribute('aria-selected', n === i ? 'true' : 'false'));
+    }
+    function go(i){ idx = (i + slides.length) % slides.length; setActive(idx); restart(); }
+    function nextSlide(){ go(idx + 1); }
+    function prevSlide(){ go(idx - 1); }
+
+    function restart(){
+      clearInterval(timer);
+      timer = setInterval(nextSlide, AUTOPLAY_MS);
+    }
+
+    prev?.addEventListener('click', prevSlide);
+    next?.addEventListener('click', nextSlide);
+    frame.addEventListener('mouseenter', () => clearInterval(timer));
+    frame.addEventListener('mouseleave', restart);
+
+    // Kickoff
+    setActive(0);
+    restart();
   });
 })();
