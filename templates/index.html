@@ -49,14 +49,41 @@
     <div class="ad-slider__frame" aria-roledescription="carousel">
 
       <!-- Slide 1 -->
-      <a class="ad-slide" href="/#" aria-label="ATS-friendly resumes">
-        <img class="ad-img"
-             src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"           <!-- mobile default -->
-             data-mobile="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
-             data-desktop="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}"
-             alt="ATS-friendly resumes — scan, score & optimise"
-             loading="lazy">
+      <a class="ad-slide" href="/#">
+        <picture>
+          <source media="(min-width: 701px)"
+                  srcset="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}">
+          <img class="ad-img"
+               src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
+               alt="ATS-friendly resumes" loading="lazy"
+               onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/ads/square_ad1.jpg') }}';">
+        </picture>
       </a>
+
+      <a class="ad-slide" href="/#">
+        <picture>
+          <source media="(min-width: 701px)"
+                  srcset="{{ url_for('static', filename='img/ads/leaderboard_ad2.jpg') }}">
+          <img class="ad-img"
+               src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
+               alt="ATS-friendly resumes" loading="lazy"
+               onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/ads/square_ad1.jpg') }}';">
+        </picture>
+      </a>
+
+      <a class="ad-slide" href="/#">
+        <picture>
+          <source media="(min-width: 701px)"
+                  srcset="{{ url_for('static', filename='img/ads/leaderboard_ad3.jpg') }}">
+          <img class="ad-img"
+               src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
+               alt="ATS-friendly resumes" loading="lazy"
+               onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/ads/square_ad1.jpg') }}';">
+        </picture>
+      </a>
+
+      <button class="ad-nav prev" aria-label="Previous slide">‹</button>
+      <button class="ad-nav next" aria-label="Next slide">›</button>
       <div class="ad-dots" role="tablist" aria-label="Ad navigation"></div>
     </div>
   </div>
