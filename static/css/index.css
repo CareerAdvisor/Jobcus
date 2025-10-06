@@ -56,6 +56,20 @@
   padding:0 16px;font-weight:800
 }
 
+/* Center the CTA buttons under the hero copy */
+.home-page .cta{
+  justify-content:center;         /* <— centers the two buttons */
+}
+
+/* Light digital pattern behind the hero area */
+.home-page .hero{
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 24px 24px, rgba(16,72,121,.06) 1px, transparent 1px) 0 0/32px 32px,
+    linear-gradient(180deg,#f7fbff,#ffffff);
+}
+
 /* ===== Ad strips (landscape on desktop, square on mobile) ===== */
 .home-page .ad-strip{
   padding:26px 0;
