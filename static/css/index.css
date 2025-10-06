@@ -187,3 +187,98 @@ h1.hero-title{font-size:48px;line-height:1.1;margin:.3em 0 .4em;color:#104879;le
 .cards{grid-template-columns:1fr}
   h1.hero-title{font-size:34px}
 }
+
+/* ========= Responsive Ad Slider ========= */
+.home-page .ad-slider{
+  padding: 26px 0;
+  background: #fbfdff;
+  border-top: 1px solid var(--ring);
+  border-bottom: 1px solid var(--ring);
+}
+
+.home-page .ad-slider .ad-slider__frame{
+  position: relative;
+  width: min(1150px, 92%);
+  margin: 0 auto;
+}
+
+/* Slider viewport */
+.home-page .ad-slider .ad-slider__frame{
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(16,72,121,.06);
+  background: #eef5ff;
+  border: 1px solid var(--ring);
+}
+
+/* Maintain aspect:
+   - Desktop (>= 700px): ~leaderboard (728x90 feel) → ratio ~ 7.5:1 (we’ll use 6.5:1 so it’s taller)
+   - Mobile: square */
+.home-page .ad-slider .ad-slider__frame::before{
+  content:"";
+  display:block;
+  aspect-ratio: 6.5 / 1;            /* wide */
+}
+@media (max-width:700px){
+  .home-page .ad-slider .ad-slider__frame::before{
+    aspect-ratio: 1 / 1;            /* square */
+  }
+}
+
+/* Slides container (absolute, we’ll stack slides) */
+.home-page .ad-slide{
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  opacity: 0; transform: scale(.985);
+  transition: opacity .4s ease, transform .4s ease;
+  pointer-events: none;
+}
+.home-page .ad-slide.is-active{
+  opacity: 1; transform: scale(1);
+  pointer-events: auto;
+}
+
+/* Images: choose desktop or mobile version by breakpoint */
+.home-page .ad-img{
+  width: 100%; height: 100%;
+  object-fit: cover; display: none;
+}
+.home-page .ad-img.desktop{ display:block; }
+.home-page .ad-img.mobile{ display:none; }
+@media (max-width:700px){
+  .home-page .ad-img.desktop{ display:none; }
+  .home-page .ad-img.mobile{ display:block; }
+}
+
+/* Nav arrows */
+.home-page .ad-nav{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:36px; height:36px; border-radius:999px; border:0;
+  background:#104879; color:#fff; font-size:22px; line-height:1;
+  display:grid; place-items:center; cursor:pointer;
+  opacity:.92; transition: filter .15s ease, transform .05s ease;
+}
+.home-page .ad-nav:hover{ filter:brightness(1.06); }
+.home-page .ad-nav:active{ transform: translateY(-50%) scale(.98); }
+.home-page .ad-nav.prev{ left:10px; }
+.home-page .ad-nav.next{ right:10px; }
+@media (max-width:700px){
+  .home-page .ad-nav{ width:32px; height:32px; font-size:20px; }
+}
+
+/* Dots */
+.home-page .ad-dots{
+  position:absolute; left:50%; transform:translateX(-50%);
+  bottom:8px; display:flex; gap:8px;
+}
+.home-page .ad-dot{
+  width:8px; height:8px; border-radius:999px; border:0;
+  background:#c7d6ea; cursor:pointer;
+}
+.home-page .ad-dot[aria-selected="true"]{ background:#104879; }
+
+/* Respect reduced motion (no auto-advance) */
+@media (prefers-reduced-motion: reduce){
+  .home-page .ad-slide{ transition: none; }
+}
+
