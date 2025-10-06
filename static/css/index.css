@@ -344,10 +344,10 @@
 
 /* Full-bleed across the site width */
 .home-page .ad-banner--full{
-  width:80%;
+  width:100%;
 }
 .home-page .ad-banner--full .ad-banner__frame{
-  width:80%;
+  width:100%;
   max-width:none;
   margin:0;
 }
@@ -388,7 +388,7 @@
 .home-page .ad-banner picture,
 .home-page .ad-banner img{
   position:absolute; inset:0;
-  width:80%; height:100%;
+  width:90%; height:100%;
   object-fit:cover;             /* fills frame nicely (minor crop possible) */
   display:block;
 }
