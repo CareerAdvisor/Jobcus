@@ -59,7 +59,6 @@
   });
 })();
 
-
 (function(){
   const sliders = Array.from(document.querySelectorAll('.home-page .ad-slider'));
   if(!sliders.length) return;
