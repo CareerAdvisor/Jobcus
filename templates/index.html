@@ -48,7 +48,7 @@
   <div class="container">
     <div class="ad-slider__frame">
       <!-- Slide 1 -->
-      <a class="ad-slide" href="/resume-analyzer"
+      <a class="ad-slide" href="/#"
          aria-label="ATS-friendly resumes – Scan, score & optimize">
         <img class="ad-img desktop"
              src="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}"
@@ -58,7 +58,7 @@
              alt="" loading="lazy">
       </a>
       <!-- Slide 2 -->
-      <a class="ad-slide" href="/interview-coach"
+      <a class="ad-slide" href="/#"
          aria-label="Interview practice with Jeni – Mock interviews & feedback">
         <img class="ad-img desktop"
              src="{{ url_for('static', filename='img/ads/leaderboard_ad2.jpg') }}"
@@ -68,7 +68,7 @@
              alt="" loading="lazy">
       </a>
       <!-- Slide 3 -->
-      <a class="ad-slide" href="/job-insights"
+      <a class="ad-slide" href="/#"
          aria-label="Real-time job insights – Skills, titles & salary trends">
         <img class="ad-img desktop"
              src="{{ url_for('static', filename='img/ads/leaderboard_ad3.jpg') }}"
@@ -123,6 +123,47 @@
     </div>
   </div>
 </section>
+
+<!-- Ad Slider (B) – same markup, place before FAQs -->
+<section class="home-page ad-slider">
+  <div class="container">
+    <div class="ad-slider__frame">
+      <a class="ad-slide" href="/#">
+        <img class="ad-img desktop"
+             src="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}"
+             alt="Skill-gap guidance" loading="lazy">
+        <img class="ad-img mobile"
+             src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
+             alt="" loading="lazy">
+      </a>
+      <a class="ad-slide" href="/#">
+        <img class="ad-img desktop"
+             src="{{ url_for('static', filename='img/ads/leaderboard_ad2.jpg') }}"
+             alt="Cover letters in minutes" loading="lazy">
+        <img class="ad-img mobile"
+             src="{{ url_for('static', filename='img/ads/square_ad2.jpg') }}"
+             alt="" loading="lazy">
+      </a>
+      <a class="ad-slide" href="/#" title="Multi-currency, global">
+        <img class="ad-img desktop"
+             src="{{ url_for('static', filename='img/ads/leaderboard_ad3.jpg') }}"
+             alt="Multi-currency plans" loading="lazy">
+        <img class="ad-img mobile"
+             src="{{ url_for('static', filename='img/ads/square_ad3.jpg') }}"
+             alt="" loading="lazy">
+      </a>
+
+      <button class="ad-nav prev" aria-label="Previous ad">‹</button>
+      <button class="ad-nav next" aria-label="Next ad">›</button>
+      <div class="ad-dots" role="tablist" aria-label="Ad slides">
+        <button class="ad-dot" role="tab" aria-selected="true"></button>
+        <button class="ad-dot" role="tab" aria-selected="false"></button>
+        <button class="ad-dot" role="tab" aria-selected="false"></button>
+      </div>
+    </div>
+  </div>
+</section>
+
 
 <!-- FAQ (accordion) -->
 <section id="faq" class="section faq-bg">
