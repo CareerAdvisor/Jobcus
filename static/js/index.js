@@ -59,102 +59,27 @@
   });
 })();
 
-(function () {
-  const AUTOPLAY_MS = 6000;
+(function(){
+  function fixPictureFallback(){
+    const mq = window.matchMedia('(min-width: 701px)');
+    document.querySelectorAll('.ad-banner picture').forEach(pic => {
+      const source = pic.querySelector('source[media*="min-width"]');
+      const img    = pic.querySelector('img');
+      if (!source || !img) return;
 
-  /* ---------- Choose the right image per breakpoint + fallback ---------- */
-  function applyAdImages() {
-    const desktop = window.matchMedia('(min-width: 701px)').matches;
-    document.querySelectorAll('.ad-slider .ad-img').forEach((img) => {
-      const want = desktop ? img.dataset.desktop : img.dataset.mobile;
-      if (!want) return;
-
-      if (img.getAttribute('src') !== want) {
-        img.onerror = function () {
-          // If desktop asset fails, fall back to mobile
-          if (desktop && img.dataset.mobile) img.src = img.dataset.mobile;
-        };
-        img.src = want;
+      function choose(){
+        if (!mq.matches) return;               // mobile uses <img> already
+        const url = source.getAttribute('srcset');
+        if (!url) return;
+        // Probe the desktop URL; if it loads, swap into <img>; else keep mobile
+        const probe = new Image();
+        probe.onload  = () => { img.src = url; };
+        probe.onerror = () => { /* keep mobile */ };
+        probe.src = url;
       }
+      choose();
+      mq.addEventListener?.('change', choose);
     });
   }
-
-  /* --------------------------- Slider initializer --------------------------- */
-  function initSliders() {
-    document.querySelectorAll('.ad-slider').forEach((slider) => {
-      const frame  = slider.querySelector('.ad-slider__frame');
-      const slides = [...frame.querySelectorAll('.ad-slide')];
-
-      // Ensure a dots container exists
-      let dotsEl = frame.querySelector('.ad-dots');
-      if (!dotsEl) {
-        dotsEl = document.createElement('div');
-        dotsEl.className = 'ad-dots';
-        frame.appendChild(dotsEl);
-      }
-
-      const prev   = frame.querySelector('.ad-nav.prev');
-      const next   = frame.querySelector('.ad-nav.next');
-
-      if (!slides.length) return;
-
-      // Build dots
-      dotsEl.innerHTML = '';
-      const dots = slides.map((_, i) => {
-        const b = document.createElement('button');
-        b.className = 'ad-dot';
-        b.type = 'button';
-        b.setAttribute('role', 'tab');
-        b.setAttribute('aria-label', `Go to slide ${i + 1}`);
-        dotsEl.appendChild(b);
-        b.addEventListener('click', () => go(i));
-        return b;
-      });
-
-      let idx = 0, timer;
-
-      function setActive(i) {
-        slides.forEach((s, n) => s.classList.toggle('is-active', n === i));
-        dots.forEach((d, n) =>
-          d.setAttribute('aria-selected', n === i ? 'true' : 'false')
-        );
-      }
-      function go(i) { idx = (i + slides.length) % slides.length; setActive(idx); restart(); }
-      function nextSlide() { go(idx + 1); }
-      function prevSlide() { go(idx - 1); }
-
-      function restart() {
-        clearInterval(timer);
-        timer = setInterval(nextSlide, AUTOPLAY_MS);
-      }
-
-      prev?.addEventListener('click', prevSlide);
-      next?.addEventListener('click', nextSlide);
-      frame.addEventListener('mouseenter', () => clearInterval(timer));
-      frame.addEventListener('mouseleave', restart);
-
-      // Kickoff
-      setActive(0);
-      restart();
-    });
-  }
-
-  /* --------------------------- Boot sequence --------------------------- */
-  function boot() {
-    applyAdImages();        // pick images (and fallback) first
-    initSliders();          // then initialize sliders
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
-  }
-
-  // Swap images on breakpoint changes (debounced)
-  window.addEventListener('resize', () => {
-    clearTimeout(window.__adSwap);
-    window.__adSwap = setTimeout(applyAdImages, 150);
-  });
+  fixPictureFallback();
 })();
-
