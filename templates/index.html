@@ -43,6 +43,21 @@
   </div>
 </section>
 
+<!-- one slide example -->
+<a class="ad-slide" href="/resume-analyzer">
+  <picture>
+    <!-- Desktop source -->
+    <source media="(min-width: 701px)"
+            srcset="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}">
+    <!-- Fallback (mobile square, also used if desktop 404s) -->
+    <img class="ad-img"
+         src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
+         alt="ATS-friendly resumes" loading="lazy"
+         onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/ads/square_ad1.jpg') }}';">
+  </picture>
+</a>
+
+
 <!-- Ad Slider (A) -->
 <section class="home-page ad-slider">
   <div class="container">
