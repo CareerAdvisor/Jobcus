@@ -188,6 +188,32 @@
   .home-page h1.hero-title{font-size:34px}
 }
 
+/* Section header accent */
+.home-page #features{
+  background:
+    radial-gradient(1200px 600px at 50% -200px, rgba(16,72,121,.06), transparent 60%),
+    linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+/* Card accents: thin blue border with gold top bar */
+.home-page #features .card{
+  border:1px solid rgba(16,72,121,.15);
+  position:relative;
+}
+.home-page #features .card::before{
+  content:"";
+  position:absolute; inset:0 0 auto 0;
+  height:4px; border-radius:16px 16px 0 0;
+  background:#fec957;              /* gold bar */
+}
+.home-page #features .card h4{ color:#104879; }
+.home-page #features .card-link:hover .card{
+  box-shadow:0 12px 24px rgba(16,72,121,.12);
+}
+.home-page #features .card-link:hover .card h4{
+  color:#0b3a64;                   /* darker blue on hover */
+}
+
 /* ===== Responsive Ad Slider (multi-instance) ===== */
 .home-page .ad-slider{
   padding: 26px 0;
@@ -195,9 +221,6 @@
   border-top: 1px solid var(--ring);
   border-bottom: 1px solid var(--ring);
 }
-
-/* full-bleed: match site width edge-to-edge */
-.home-page .ad-slider.ad-slider--full .container{ width:100%; margin:0; }
 
 /* fallback if you ever want a fixed container:
    .home-page .ad-slider .container{ width:min(1150px,92%); margin:0 auto; }
@@ -215,20 +238,6 @@
   isolation: isolate;
 }
 
-/* Maintain aspect: leaderboard on desktop, square on mobile */
-.home-page .ad-slider .ad-slider__frame::before{
-  content:"";
-  display:block;
-  aspect-ratio: 6.5 / 1;    /* great for 728×90-ish assets scaled up */
-  min-height: 100px;        /* never collapse */
-}
-@media (max-width:700px){
-  .home-page .ad-slider .ad-slider__frame::before{
-    aspect-ratio: 1 / 1;
-    min-height: 260px;
-  }
-}
-
 /* Slides fill the frame */
 .home-page .ad-slider .ad-slide{
   position:absolute; inset:0;
@@ -236,10 +245,6 @@
   transition: opacity .35s ease, transform .35s ease;
   pointer-events:none;
   display:block;
-}
-.home-page .ad-slider .ad-slide.is-active{
-  opacity:1; transform:scale(1);
-  pointer-events:auto;
 }
 
 /* picture/img stretch to fit */
