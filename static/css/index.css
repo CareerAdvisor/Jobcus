@@ -188,14 +188,20 @@
   .home-page h1.hero-title{font-size:34px}
 }
 
-/* ===== Responsive Ad Slider (multiple supported) ===== */
+/* ===== Responsive Ad Slider (multi-instance) ===== */
 .home-page .ad-slider{
   padding: 26px 0;
   background: #fbfdff;
   border-top: 1px solid var(--ring);
   border-bottom: 1px solid var(--ring);
 }
-.home-page .ad-slider .container{ width: min(1150px, 92%); margin: 0 auto; }
+
+/* full-bleed: match site width edge-to-edge */
+.home-page .ad-slider.ad-slider--full .container{ width:100%; margin:0; }
+
+/* fallback if you ever want a fixed container:
+   .home-page .ad-slider .container{ width:min(1150px,92%); margin:0 auto; }
+*/
 
 .home-page .ad-slider .ad-slider__frame{
   position: relative;
@@ -206,52 +212,50 @@
   box-shadow: 0 8px 20px rgba(16,72,121,.06);
   background: #eaf2ff;
   border: 1px solid var(--ring);
-  isolation: isolate; /* keep pseudo below content */
+  isolation: isolate;
 }
 
-/* Maintain aspect: desktop wide, mobile square */
+/* Maintain aspect: leaderboard on desktop, square on mobile */
 .home-page .ad-slider .ad-slider__frame::before{
   content:"";
   display:block;
-  aspect-ratio: 6.5 / 1;    /* leaderboard-ish height */
+  aspect-ratio: 6.5 / 1;    /* great for 728×90-ish assets scaled up */
+  min-height: 100px;        /* never collapse */
 }
 @media (max-width:700px){
-  .home-page .ad-slider .ad-slider__frame::before{ aspect-ratio: 1 / 1; }
+  .home-page .ad-slider .ad-slider__frame::before{
+    aspect-ratio: 1 / 1;
+    min-height: 260px;
+  }
 }
 
-/* Each slide fills the frame */
+/* Slides fill the frame */
 .home-page .ad-slider .ad-slide{
   position:absolute; inset:0;
-  display:grid; place-items:center;
   opacity:0; transform:scale(.985);
   transition: opacity .35s ease, transform .35s ease;
   pointer-events:none;
+  display:block;
 }
 .home-page .ad-slider .ad-slide.is-active{
   opacity:1; transform:scale(1);
   pointer-events:auto;
 }
 
-/* Images: switch by breakpoint */
-.home-page .ad-slider .ad-img{
+/* picture/img stretch to fit */
+.home-page .ad-slider picture,
+.home-page .ad-slider img{
   position:absolute; inset:0;
-  width:100%; height:100%;
-  object-fit:cover;
-  display:none;
-  background:#dfe9ff; /* subtle fallback bg */
-}
-.home-page .ad-slider .ad-img.desktop{ display:block; }
-.home-page .ad-slider .ad-img.mobile{ display:none; }
-@media (max-width:700px){
-  .home-page .ad-slider .ad-img.desktop{ display:none; }
-  .home-page .ad-slider .ad-img.mobile{ display:block; }
+  width:100%; height:100%; object-fit:cover;
+  display:block;
+  background:#dfe9ff;
 }
 
 /* Arrows */
 .home-page .ad-slider .ad-nav{
   position:absolute; top:50%; transform:translateY(-50%);
-  width:36px; height:36px; border-radius:999px; border:0;
-  background:#104879; color:#fff; font-size:22px;
+  width:38px; height:38px; border-radius:999px; border:0;
+  background:#104879; color:#fff; font-size:22px; line-height:1;
   display:grid; place-items:center; cursor:pointer;
   opacity:.95; transition:filter .15s ease, transform .05s ease;
   z-index:2;
@@ -275,36 +279,3 @@
 }
 .home-page .ad-slider .ad-dot[aria-selected="true"]{ background:#104879; }
 
-/* Full-bleed variant (optional) */
-.home-page .ad-slider.ad-slider--full .container{ width:100%; }
-.home-page .ad-slider.ad-slider--full{ border-left:0; border-right:0; }
-
-/* Slider frame height: leaderboard on desktop, square on mobile */
-.home-page .ad-slider .ad-slider__frame{
-  position: relative;
-  overflow: hidden;
-  border-radius: 14px;
-  box-shadow: 0 8px 20px rgba(16,72,121,.06);
-  border: 1px solid var(--ring);
-  background: #eaf2ff;
-}
-
-.home-page .ad-slider .ad-slider__frame::before{
-  content:"";
-  display:block;
-  aspect-ratio: 6.5 / 1;   /* ~728x112 look; ok for 728x90 assets */
-  min-height: 100px;       /* hard fallback so it never collapses */
-}
-
-@media (max-width:700px){
-  .home-page .ad-slider .ad-slider__frame::before{
-    aspect-ratio: 1 / 1;
-    min-height: 260px;     /* keeps a nice square on small devices */
-  }
-}
-
-/* Slides fill the frame */
-.home-page .ad-slider .ad-slide{ position:absolute; inset:0; opacity:0; transition:opacity .35s; }
-.home-page .ad-slider .ad-slide.is-active{ opacity:1; }
-.home-page .ad-slider picture, 
-.home-page .ad-slider img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
