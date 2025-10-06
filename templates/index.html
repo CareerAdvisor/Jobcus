@@ -49,42 +49,33 @@
     <div class="ad-slider__frame" aria-roledescription="carousel">
 
       <!-- Slide 1 -->
-      <a class="ad-slide is-active" href="/#" aria-label="ATS-friendly resumes">
-        <picture>
-          <source media="(min-width: 701px)"
-                  srcset="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}">
-          <img class="ad-img"
-               src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
-               alt="ATS-friendly resumes — scan, score & optimize"
-               loading="lazy"
-               onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/ads/square_ad1.jpg') }}';">
-        </picture>
+      <a class="ad-slide" href="/#" aria-label="ATS-friendly resumes">
+        <img class="ad-img"
+             src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"           <!-- mobile default -->
+             data-mobile="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"
+             data-desktop="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}"
+             alt="ATS-friendly resumes — scan, score & optimise"
+             loading="lazy">
       </a>
 
       <!-- Slide 2 -->
-      <a class="ad-slide" href="/#" aria-label="Interview practice with Jeni">
-        <picture>
-          <source media="(min-width: 701px)"
-                  srcset="{{ url_for('static', filename='img/ads/leaderboard_ad2.jpg') }}">
-          <img class="ad-img"
-               src="{{ url_for('static', filename='img/ads/square_ad2.jpg') }}"
-               alt="Interview practice with Jeni — mock interviews & feedback"
-               loading="lazy"
-               onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/ads/square_ad2.jpg') }}';">
-        </picture>
+      <a class="ad-slide" href="/#" aria-label="ATS-friendly resumes">
+        <img class="ad-img"
+             src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"           <!-- mobile default -->
+             data-mobile="{{ url_for('static', filename='img/ads/square_ad2.jpg') }}"
+             data-desktop="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}"
+             alt="ATS-friendly resumes — scan, score & optimise"
+             loading="lazy">
       </a>
 
       <!-- Slide 3 -->
-      <a class="ad-slide" href="/#" aria-label="Real-time job insights">
-        <picture>
-          <source media="(min-width: 701px)"
-                  srcset="{{ url_for('static', filename='img/ads/leaderboard_ad3.jpg') }}">
-          <img class="ad-img"
-               src="{{ url_for('static', filename='img/ads/square_ad3.jpg') }}"
-               alt="Real-time job insights — skills, titles & salary trends"
-               loading="lazy"
-               onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/ads/square_ad3.jpg') }}';">
-        </picture>
+      <a class="ad-slide" href="/#" aria-label="ATS-friendly resumes">
+        <img class="ad-img"
+             src="{{ url_for('static', filename='img/ads/square_ad1.jpg') }}"           <!-- mobile default -->
+             data-mobile="{{ url_for('static', filename='img/ads/square_ad3.jpg') }}"
+             data-desktop="{{ url_for('static', filename='img/ads/leaderboard_ad1.jpg') }}"
+             alt="ATS-friendly resumes — scan, score & optimise"
+             loading="lazy">
       </a>
 
       <button class="ad-nav prev" aria-label="Previous slide">‹</button>
