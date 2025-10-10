@@ -609,12 +609,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const featureIntent = detectFeatureIntent(message);
     if (featureIntent) {
       renderFeatureSuggestions(featureIntent, aiBlock); // keep inline CTAs
-
-      // Try an auto-redirect for clear asks like “can you analyze my resume…”
-      if (maybeAutoRedirect(featureIntent, message)) {
-        renderThinkingPlaceholder(aiBlock, "Opening…");
-        return; // stop normal chat path; we are navigating
-      }
     }
 
     renderThinkingPlaceholder(aiBlock, "Thinking…");
