@@ -13,3 +13,5 @@ weasyprint
 docxtpl
 gotrue
 stripe
+Babel
+Flask-Babel
