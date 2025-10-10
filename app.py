@@ -6,6 +6,8 @@ import re, json, base64, logging, requests
 from functools import wraps
 from auth_utils import api_login_required, is_staff, is_superadmin, require_superadmin
 
+from flask_babel import Babel, gettext as _
+from babel.numbers import format_currency
 from flask import (
     Blueprint, Flask, request, jsonify, render_template, redirect,
     session, flash, url_for, send_file, current_app, make_response, g
@@ -43,6 +45,10 @@ import httpx
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
+
+SUPPORTED_LOCALES = ["en", "fr", "es", "de", "pt", "ar"]
+DEFAULT_LOCALE = "en"
+DEFAULT_CURRENCY = "GBP"
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 resumes_bp = None  # will set when found
@@ -114,6 +120,46 @@ load_dotenv()
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
+
+def get_locale():
+    q = request.args.get("lang")
+    if q and q.split("-")[0] in SUPPORTED_LOCALES:
+        return q
+    c = request.cookies.get("lang")
+    if c and c.split("-")[0] in SUPPORTED_LOCALES:
+        return c
+    best = request.accept_languages.best_match(SUPPORTED_LOCALES)
+    return best or DEFAULT_LOCALE
+
+def get_currency():
+    q = request.args.get("ccy")
+    if q:
+        return q.upper()
+    c = request.cookies.get("ccy")
+    if c:
+        return c.upper()
+    loc = get_locale()
+    fallback_map = {"en": "GBP", "fr": "EUR", "de": "EUR", "es": "EUR", "pt": "EUR", "ar": "USD"}
+    return fallback_map.get(loc.split("-")[0], DEFAULT_CURRENCY)
+
+babel = Babel(app, locale_selector=get_locale)
+
+@app.context_processor
+def inject_locale_and_currency():
+    return {
+        "current_locale": get_locale(),
+        "current_currency": get_currency(),
+        "supported_locales": SUPPORTED_LOCALES,
+    }
+
+@app.template_filter("fmt_ccy")
+def fmt_ccy(amount, currency=None):
+    currency = currency or get_currency()
+    loc = get_locale()
+    try:
+        return format_currency(amount, currency, locale=loc)
+    except Exception:
+        return f"{currency} {float(amount):,.2f}"
 
 # Public Supabase values from env
 app.config["SUPABASE_URL"]       = os.getenv("SUPABASE_URL", "").rstrip("/")
@@ -209,6 +255,17 @@ PLAN_TO_PRICE = {
     "standard": os.getenv("STRIPE_PRICE_STANDARD"),
     "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
 }
+
+# NEW: per-currency price IDs for each plan you display
+STRIPE_PRICE_IDS = {
+    "basic":   {"GBP": "price_gbp_basic",   "EUR": "price_eur_basic",   "USD": "price_usd_basic",   "NGN": "price_ngn_basic"},
+    "weekly":  {"GBP": "price_gbp_weekly",  "EUR": "price_eur_weekly",  "USD": "price_usd_weekly",  "NGN": "price_ngn_weekly"},
+    "standard":{"GBP": "price_gbp_standard","EUR": "price_eur_standard","USD": "price_usd_standard","NGN": "price_ngn_standard"},
+    "premium": {"GBP": "price_gbp_premium", "EUR": "price_eur_premium", "USD": "price_usd_premium", "NGN": "price_ngn_premium"},
+}
+
+def price_id_for(plan, currency):
+    return STRIPE_PRICE_IDS[plan][currency]
     
 # ---- Model selection helpers ----
 def _dedupe(seq):
@@ -807,6 +864,20 @@ def _get_or_create_stripe_customer(user):
     return cust["id"]
 
 # -------- Basic pages --------
+@app.route("/set-lang/<lang>")
+def set_lang(lang):
+    lang = lang if lang in SUPPORTED_LOCALES else DEFAULT_LOCALE
+    resp = make_response(redirect(request.referrer or url_for("index")))
+    resp.set_cookie("lang", lang, max_age=60*60*24*365*2, samesite="Lax")
+    return resp
+
+@app.route("/set-ccy/<ccy>")
+def set_ccy(ccy):
+    ccy = (ccy or DEFAULT_CURRENCY).upper()
+    resp = make_response(redirect(request.referrer or url_for("pricing")))
+    resp.set_cookie("ccy", ccy, max_age=60*60*24*365*2, samesite="Lax")
+    return resp
+    
 @app.route("/")
 def index():
     return render_template("index.html")
