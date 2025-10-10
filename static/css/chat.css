@@ -202,7 +202,7 @@ body, .chat-main{ background-color:#f9fbf9; }
 }
 .credits-panel h2{ margin:0 0 10px; color:#104879; font-size:20px; }
 .credits-row{ display:flex; justify-content:space-between; gap:16px; padding:8px 0 4px; border-bottom:1px solid #f1f5f9; }
-.credits-hint{ display:block; color:#94a3b8; font-size:12px; margin-top:2px; }
+.credits-hint{ display:block; color:#94a3b8; font-size:12px; }
 .credits-details summary{ cursor:pointer; margin-top:10px; color:#104879; }
 .credits-panel ul,.credits-card ul,.credits-details ul{ list-style:none; margin:0; padding-left:0; }
 .credits-panel li,.credits-card li,.credits-details li{ position:relative; padding-left:1.1rem; line-height:1.5; }
@@ -540,29 +540,29 @@ html { -webkit-text-size-adjust: 100%; }
 
 [data-aos]{ opacity:1 !important; transform:none !important; }
 
-/* suggested links card */
+/* ==============================================
+   Suggested links card (UPDATED per your design)
+   ============================================== */
 .feature-suggest{
-  border:1px solid #e7eef7; background:#f7fbff; color:#104879;
-  padding:12px; border-radius:10px; margin:8px 0 12px;
-  font-size:14px
+  border:1px solid #e5eef9; background:#f8fbff;
+  border-radius:12px; padding:12px; margin:8px 0 12px;
 }
-.feature-suggest-head{
-  font-weight:700; margin-bottom:6px
-}
+.feature-suggest-head{ font-weight:700; color:#104879; margin-bottom:6px; }
 .feature-suggest-primary{
   display:flex; align-items:center; justify-content:space-between;
-  text-decoration:none; background:#104879; color:#fff;
-  padding:10px 12px; border-radius:8px; font-weight:700;
-  margin:6px 0 8px
+  text-decoration:none; font-weight:800; color:#0f2442;
+  background:#fff; border:1px solid #dbe7f6; border-radius:10px; padding:10px 12px;
 }
-.feature-suggest-primary:hover{ opacity:.92 }
-.feature-suggest-alt-head{ font-weight:600; margin:6px 0 }
-.feature-suggest-alts{ display:flex; gap:10px; flex-wrap:wrap }
+.feature-suggest-primary:hover{ background:#104879; color:#fff; border-color:#104879; }
+.feature-suggest-alt-head{ margin:10px 0 6px; color:#476281; font-weight:700; }
+.feature-suggest-alts{ display:flex; gap:8px; flex-wrap:wrap; }
 .feature-suggest-alts a{
-  background:#eef5ff; border:1px solid #d8e7ff; color:#104879;
-  padding:6px 10px; border-radius:999px; text-decoration:none; font-weight:600
+  text-decoration:none; padding:6px 10px; border:1px solid #dbe7f6; border-radius:999px;
+  color:#104879; background:#fff;
 }
-.feature-suggest-alts a:hover{ background:#e5f0ff }
+.feature-suggest-alts a:hover{ background:#104879; color:#fff; border-color:#104879; }
+
+/* Keep autoroute banner (used by JS) */
 .feature-autoroute{
   display:flex; gap:10px; align-items:center; margin-top:8px;
   font-size:14px; color:#104879; background:#f1f6ff; border:1px solid #d8e7ff;
