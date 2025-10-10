@@ -587,11 +587,37 @@ document.addEventListener("DOMContentLoaded", () => {
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
 
-    // After: const aiBlock = document.createElement("div"); aiBlock.className = "chat-entry ai-answer"; chatbox.appendChild(aiBlock);
-    // Add this:
     const featureIntent = detectFeatureIntent(message);
     if (featureIntent) {
+      // keep the inline CTAs so users still have buttons
       renderFeatureSuggestions(featureIntent, aiBlock);
+    
+      // NEW: auto-route when intent is very explicit
+      const veryStrong = /\b(open|start|take me|go to|launch|use|begin)\b/.test(message.toLowerCase())
+                      || /^(scan|analy[sz]e|build|create|write)\b/.test(message.toLowerCase());
+    
+      // Optional: make analyzer/builder always strong when user mentions resume + action
+      const strongKeys = ["resume-analyzer", "resume-builder", "cover-letter", "interview-coach", "skill-gap", "job-insights"];
+      const isSupported = strongKeys.includes(featureIntent.primary);
+    
+      if (isSupported && veryStrong) {
+        const dest = FEATURE_LINKS[featureIntent.primary]?.url || "/";
+        // Tiny “opening…” strip the user can cancel
+        const bar = document.createElement("div");
+        bar.className = "feature-autoroute";
+        bar.innerHTML = `
+          <span>Opening <strong>${FEATURE_LINKS[featureIntent.primary].label}</strong>…</span>
+          <button type="button" class="cancel">Cancel</button>
+        `;
+        aiBlock.appendChild(bar);
+    
+        let cancelled = false;
+        bar.querySelector(".cancel")?.addEventListener("click", () => { cancelled = true; bar.remove(); });
+    
+        setTimeout(() => {
+          if (!cancelled) window.location.href = dest;
+        }, 900); // quick, but gives the user a moment to cancel
+      }
     }
 
     renderThinkingPlaceholder(aiBlock, "Thinking…");
