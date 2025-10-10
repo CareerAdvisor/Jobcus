@@ -383,3 +383,6 @@
   z-index: 3;
 }
 .preview-wrap.wm-active::after { display: grid; } /* only after content is ready */
+
+.main { padding-inline: 1rem; }
+.card { margin-inline: auto; }
