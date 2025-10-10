@@ -16,56 +16,6 @@
 
 <section class="employer-section card">
   <header class="stacked-hero">
-    <h2 class="subject-title">Employer Inquiry Form</h2>
-    <p class="subject-subtitle">Tell us who you're looking to hire and how we can assist your recruitment process.</p>
-  </header>
-
-  <form id="employer-inquiry-form"
-        class="ui-form"
-        data-endpoint="{{ url_for('employer_inquiry') }}"
-        novalidate>
-    <div class="form-grid">
-      <div class="field full">
-        <label for="employer-company">Company</label>
-        <input id="employer-company" type="text" name="company" autocomplete="organization">
-      </div>
-
-      <div class="field full">
-        <label for="employer-name">Name</label>
-        <input id="employer-name" type="text" name="name" autocomplete="name" required>
-      </div>
-
-      <div class="field two">
-        <div class="field">
-          <label for="employer-email">Email</label>
-          <input id="employer-email" type="email" name="email" autocomplete="email" required>
-        </div>
-        <div class="field">
-          <label for="employer-phone">Phone</label>
-          <input id="employer-phone" type="text" name="phone" autocomplete="tel" required>
-        </div>
-      </div>
-
-      <div class="field full">
-        <label for="employer-roles">Job Roles You're Hiring For</label>
-        <input id="employer-roles" type="text" name="job_roles" placeholder="e.g. Product Manager, Data Analyst">
-      </div>
-
-      <div class="field full">
-        <label for="employer-message">Message</label>
-        <textarea id="employer-message" name="message" rows="5" placeholder="Tell us about the roles, timeframe, budget, and any specifics…" required></textarea>
-      </div>
-    </div>
-
-    <div class="actions">
-      <button type="submit" class="primary-btn">Submit Inquiry</button>
-      <div id="inquiry-response" class="status" aria-live="polite"></div>
-    </div>
-  </form>
-</section>
-
-<section class="employer-section card">
-  <header class="stacked-hero">
     <h2 class="subject-title">AI-Powered Job Post Generator</h2>
     <p class="subject-subtitle">Instantly create a professional job description with the help of AI.</p>
   </header>
@@ -141,6 +91,56 @@
     <button id="download-docx" class="secondary-btn">⬇️ Download .docx</button>
   </div>
   </section>
+
+<section class="employer-section card">
+  <header class="stacked-hero">
+    <h2 class="subject-title">Employer Inquiry Form</h2>
+    <p class="subject-subtitle">Tell us who you're looking to hire and how we can assist your recruitment process.</p>
+  </header>
+
+  <form id="employer-inquiry-form"
+        class="ui-form"
+        data-endpoint="{{ url_for('employer_inquiry') }}"
+        novalidate>
+    <div class="form-grid">
+      <div class="field full">
+        <label for="employer-company">Company</label>
+        <input id="employer-company" type="text" name="company" autocomplete="organization">
+      </div>
+
+      <div class="field full">
+        <label for="employer-name">Name</label>
+        <input id="employer-name" type="text" name="name" autocomplete="name" required>
+      </div>
+
+      <div class="field two">
+        <div class="field">
+          <label for="employer-email">Email</label>
+          <input id="employer-email" type="email" name="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="employer-phone">Phone</label>
+          <input id="employer-phone" type="text" name="phone" autocomplete="tel" required>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label for="employer-roles">Job Roles You're Hiring For</label>
+        <input id="employer-roles" type="text" name="job_roles" placeholder="e.g. Product Manager, Data Analyst">
+      </div>
+
+      <div class="field full">
+        <label for="employer-message">Message</label>
+        <textarea id="employer-message" name="message" rows="5" placeholder="Tell us about the roles, timeframe, budget, and any specifics…" required></textarea>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="primary-btn">Submit Inquiry</button>
+      <div id="inquiry-response" class="status" aria-live="polite"></div>
+    </div>
+  </form>
+</section>
 
 {% endblock %}
 
