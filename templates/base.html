@@ -1,7 +1,13 @@
 {# templates/base.html #}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ (current_locale or 'en') }}" {% if current_locale in ['ar', 'fa', 'he'] %}dir="rtl"{% endif %}>
 <head>
+  {# Locale SEO alternates #}
+  {% for loc in supported_locales %}
+    <link rel="alternate" hreflang="{{ loc }}" href="{{ request.base_url | replace('/'+current_locale, '/'~loc) if current_locale in supported_locales else request.base_url }}">
+  {% endfor %}
+  <link rel="alternate" hreflang="x-default" href="{{ request.base_url }}">
+    
   <!-- ====== Core Document & Viewport ====== -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -89,6 +95,9 @@
 {% set _is_superadmin = current_user.is_authenticated and (_role | lower == 'superadmin') %}
 {% set _wm = (current_user.email | default('Guest', true)) ~ ' · Jobcus' %}
 
+{# Make currency available everywhere in this layout #}
+{% set ccy = current_currency %}
+
 <body
   class="{% block body_class %}{% endblock %}"
   data-authed="{{ '1' if current_user.is_authenticated else '0' }}"
@@ -162,6 +171,27 @@
             </div>
           </div>
 
+          {# ▼▼ INSERTED: Language & Currency switchers (desktop) ▼▼ #}
+          <div class="locale-ccy-switchers">
+            <div class="switcher">
+              <label for="langSel" class="sr-only">Language</label>
+              <select id="langSel" onchange="window.location.href='/set-lang/'+this.value">
+                {% for loc in supported_locales %}
+                  <option value="{{ loc }}" {{ 'selected' if loc==current_locale else '' }}>{{ loc|upper }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="switcher">
+              <label for="ccySel" class="sr-only">Currency</label>
+              <select id="ccySel" onchange="window.location.href='/set-ccy/'+this.value">
+                {% for c in ['GBP','EUR','USD','NGN'] %}
+                  <option value="{{ c }}" {{ 'selected' if c==current_currency else '' }}>{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          {# ▲▲ INSERTED: Language & Currency switchers (desktop) ▲▲ #}
+
           <!-- Hamburger (mobile) -->
           <div class="hamburger" onclick="toggleMobileMenu()">
             <div></div><div></div><div></div>
@@ -184,6 +214,27 @@
           </div>
           <a href="/pricing">Pricing</a>
           <a href="/employers">Employers</a>
+
+          {# ▼▼ INSERTED: Language & Currency switchers (mobile) ▼▼ #}
+          <div class="locale-ccy-switchers">
+            <div class="switcher">
+              <label for="langSelMobile" class="sr-only">Language</label>
+              <select id="langSelMobile" onchange="window.location.href='/set-lang/'+this.value">
+                {% for loc in supported_locales %}
+                  <option value="{{ loc }}" {{ 'selected' if loc==current_locale else '' }}>{{ loc|upper }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="switcher">
+              <label for="ccySelMobile" class="sr-only">Currency</label>
+              <select id="ccySelMobile" onchange="window.location.href='/set-ccy/'+this.value">
+                {% for c in ['GBP','EUR','USD','NGN'] %}
+                  <option value="{{ c }}" {{ 'selected' if c==current_currency else '' }}>{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          {# ▲▲ INSERTED: Language & Currency switchers (mobile) ▲▲ #}
         </nav>
       </header>
     {% endif %}
