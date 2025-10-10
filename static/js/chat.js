@@ -21,7 +21,7 @@ window.insertSuggestion ||= function (text) {
 })();
 
 // ──────────────────────────────────────────────────────────────
-/** Small utilities (now also exposed on window for inline handlers) */
+/** Small utilities (also exposed on window for inline handlers) */
 // ──────────────────────────────────────────────────────────────
 function removeWelcome() {
   const banner = document.getElementById("welcomeBanner");
@@ -102,7 +102,7 @@ function disableComposer(disabled) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// NEW — Feature intent router → turn user ask into on-site links
+// Feature intent router → turn user ask into on-site links
 // ──────────────────────────────────────────────────────────────
 const FEATURE_LINKS = {
   "resume-analyzer": { url: "/resume-analyzer", label: "Resume Analyzer" },
@@ -167,11 +167,37 @@ function renderFeatureSuggestions(intent, intoEl) {
   intoEl.appendChild(wrap);
 }
 
+/* ✅ NEW: auto-redirect when intent is clearly expressed */
+function maybeAutoRedirect(intent, rawMessage){
+  if (!intent) return false;
+  const m = String(rawMessage || "").toLowerCase();
+
+  // Strong signals for each tool (includes polite “can you …” forms)
+  const rules = {
+    "resume-analyzer": /\b(analy[sz]e|scan|score|ats|optimi[sz]e)\b.*\bresume\b|\bresume\b.*\b(analy[sz]er|score|ats|keywords?)\b/,
+    "resume-builder":  /\b(build|create|write|make)\b.*\bresume\b|\bresume builder\b/,
+    "cover-letter":    /\b(cover ?letter|write.*cover ?letter|generate.*cover ?letter)\b/,
+    "interview-coach": /\b(interview|practice|mock|jeni)\b.*\b(prepare|coach|help|practice|simulate)?\b/,
+    "skill-gap":       /\b(skill gap|gap analysis|missing skills|what skills|upskilling|transition)\b/,
+    "job-insights":    /\b(job insights?|market|salary|salaries|demand|trends?|benchmark)\b/
+  };
+
+  const strong = rules[intent.primary] && rules[intent.primary].test(m);
+  if (!strong) return false;
+
+  // Small delay keeps UX snappy but gives the user a beat
+  const dest = FEATURE_LINKS[intent.primary]?.url;
+  if (dest) {
+    setTimeout(() => { window.location.href = dest; }, 600);
+    return true;
+  }
+  return false;
+}
+
 // ──────────────────────────────────────────────────────────────
-// NEW — chat-only plan-limit detector that uses the global upgrade UI
+// chat-only plan-limit detector using global upgrade UI
 // ──────────────────────────────────────────────────────────────
 function handleChatLimitError(err) {
-  // apiFetch throws: "Request failed <status>: <body>"
   const msg = String(err && err.message || "");
   const isLimit =
     /Request failed 402/.test(msg) ||
@@ -180,15 +206,12 @@ function handleChatLimitError(err) {
 
   if (isLimit) {
     const copy = "You’ve reached your plan limit. Upgrade to continue.";
-    // Uses the same site-wide prompt used by analyzer/builder (defined in base.js)
     if (typeof window.upgradePrompt === "function") {
       window.upgradePrompt(copy, (window.PRICING_URL || "/pricing"), 1200);
     } else if (typeof window.showUpgradeBanner === "function") {
-      // Fallback: sticky banner only
       window.showUpgradeBanner(copy);
       setTimeout(() => { window.location.href = (window.PRICING_URL || "/pricing"); }, 1200);
     }
-    // Mark so our catch block can short-circuit generic error UI
     err.kind = "limit";
     err.message = copy;
     return true;
@@ -234,7 +257,7 @@ function hideAIStatus() {
   if (bar) bar.style.display = "none";
 }
 
-// Create an inline “thinking” placeholder inside the assistant bubble
+/* ✅ UPDATED: append-only so we don't remove CTA suggestions */
 function renderThinkingPlaceholder(targetEl, label = "Thinking…") {
   if (!targetEl) return;
   const node = document.createElement("div");
@@ -243,7 +266,7 @@ function renderThinkingPlaceholder(targetEl, label = "Thinking…") {
     <span class="ai-spinner" aria-hidden="true"></span>
     <span>${label}</span>
   `;
-  targetEl.appendChild(node);             // <- append, do not replace
+  targetEl.appendChild(node);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -287,9 +310,7 @@ function initModelControls() {
 
 // ──────────────────────────────────────────────────────────────
 /** Server call helper (POST to /api/ask and return JSON) */
-// ──────────────────────────────────────────────────────────────
 async function sendMessageToAPI(payload) {
-  // apiFetch comes from base.js and already handles credentials + CSRF + 401s
   return apiFetch('/api/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -304,7 +325,7 @@ function detectJobsIntent(raw) {
   if (!raw) return null;
   const message = String(raw).toLowerCase().trim();
 
-  // Do NOT trigger on advice/strategy-style prompts
+  // Do NOT trigger on advice/strategy prompts
   if (/\b(advice|tips?|strategy|strategies|how to|guide|best practices?)\b/.test(message)) {
     return null;
   }
@@ -316,7 +337,7 @@ function detectJobsIntent(raw) {
 
   if (!wantsListings) return null;
 
-  // Extract role + location (same as before, simplified)
+  // Extract role + location (simplified)
   const inLoc = /\b(in|near|around|at)\s+([a-z0-9\s\-,.'\/]+)/i;
   const remote = /\b(remote|work from home|hybrid)\b/i;
 
@@ -377,8 +398,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.autoResize?.(input);
     scrollToBottom();
   });
-  // Initial size if prefilled
-  window.autoResize?.(input);
+  window.autoResize?.(input); // initial
 
   const escapeHtml = (s='') => s
     .replace(/&/g, '&amp;')
@@ -516,7 +536,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // 🔁 UPDATED: server-truth credits panel (USED of MAX)
+  // 🔁 Server-truth credits panel (USED of MAX)
   async function refreshCreditsPanel() {
     const planEl  = document.getElementById("credits-plan");
     const leftEl  = document.getElementById("credits-left");
@@ -528,18 +548,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const used = typeof c.used === "number" ? c.used : 0;
       const max  = typeof c.max  === "number" ? c.max  : 0;
 
-      // Show USED of MAX (or Unlimited if max falsy)
       planEl  && (planEl.textContent  = (c.plan || "free").replace(/^\w/, s => s.toUpperCase()));
       leftEl  && (leftEl.textContent  = (max ? `${used} of ${max}` : "Unlimited"));
 
       const resets = { total: "Trial", week: "Resets weekly", month: "Resets monthly", year: "Resets yearly", day: "Resets daily", hour: "Resets hourly" };
       resetEl && (resetEl.textContent = resets[c.period_kind] || "");
-    } catch (e) {
-      // Keep UI from breaking on error; do nothing
-    }
+    } catch (_) { /* no-op */ }
   }
 
-  // Sidebar open/close (use functions exposed by base.js)
+  // Sidebar open/close
   const chatMenuToggle = document.getElementById("chatMenuToggle");
   const chatOverlay    = document.getElementById("chatOverlay");
   const chatCloseBtn   = document.getElementById("chatSidebarClose");
@@ -558,7 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
   maybeShowScrollIcon?.();
   scrollToBottom();
 
-  // ---- send handler (self-contained and async) ----
+  // ---- send handler ----
   form?.addEventListener("submit", async (evt) => {
     evt.preventDefault();
 
@@ -588,36 +605,15 @@ document.addEventListener("DOMContentLoaded", () => {
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
 
+    // Intent suggestions + autoroute
     const featureIntent = detectFeatureIntent(message);
     if (featureIntent) {
-      // keep the inline CTAs so users still have buttons
-      renderFeatureSuggestions(featureIntent, aiBlock);
-    
-      // NEW: auto-route when intent is very explicit
-      const veryStrong = /\b(open|start|take me|go to|launch|use|begin)\b/.test(message.toLowerCase())
-                      || /^(scan|analy[sz]e|build|create|write)\b/.test(message.toLowerCase());
-    
-      // Optional: make analyzer/builder always strong when user mentions resume + action
-      const strongKeys = ["resume-analyzer", "resume-builder", "cover-letter", "interview-coach", "skill-gap", "job-insights"];
-      const isSupported = strongKeys.includes(featureIntent.primary);
-    
-      if (isSupported && veryStrong) {
-        const dest = FEATURE_LINKS[featureIntent.primary]?.url || "/";
-        // Tiny “opening…” strip the user can cancel
-        const bar = document.createElement("div");
-        bar.className = "feature-autoroute";
-        bar.innerHTML = `
-          <span>Opening <strong>${FEATURE_LINKS[featureIntent.primary].label}</strong>…</span>
-          <button type="button" class="cancel">Cancel</button>
-        `;
-        aiBlock.appendChild(bar);
-    
-        let cancelled = false;
-        bar.querySelector(".cancel")?.addEventListener("click", () => { cancelled = true; bar.remove(); });
-    
-        setTimeout(() => {
-          if (!cancelled) window.location.href = dest;
-        }, 900); // quick, but gives the user a moment to cancel
+      renderFeatureSuggestions(featureIntent, aiBlock); // keep inline CTAs
+
+      // Try an auto-redirect for clear asks like “can you analyze my resume…”
+      if (maybeAutoRedirect(featureIntent, message)) {
+        renderThinkingPlaceholder(aiBlock, "Opening…");
+        return; // stop normal chat path; we are navigating
       }
     }
 
@@ -632,13 +628,12 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       disableComposer(true);
 
-      // Jobs quick-intent (supports natural language + "jobs:" shortcut)
+      // Jobs quick-intent (natural language + "jobs:" shortcut)
       const jobIntent = detectJobsIntent(message) || (
         (/^\s*jobs?:/i.test(message) ? { query: message.replace(/^\s*jobs?:/i, "").trim() || message.trim() } : null)
       );
 
       if (jobIntent) {
-        // status while fetching
         showAIStatus("Finding jobs…");
 
         let jobs;
@@ -663,7 +658,6 @@ document.addEventListener("DOMContentLoaded", () => {
           });
         }
 
-        // replace the thinking bubble with the actual job list
         aiBlock.innerHTML = "";
         displayJobs(jobs, aiBlock);
         if (![...(jobs?.remotive||[]), ...(jobs?.adzuna||[]), ...(jobs?.jsearch||[])].length) {
@@ -674,7 +668,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         await refreshCreditsPanel?.();
         window.syncState?.();
-        hideAIStatus();               // ✅ hide the sticky status
+        hideAIStatus();
         scrollToBottom();
         return;
       }
@@ -686,7 +680,6 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
       });
 
-      // Save conv id after first reply
       if (data.conversation_id && data.conversation_id !== conversationId) {
         conversationId = data.conversation_id;
         localStorage.setItem("chat:conversationId", conversationId);
@@ -694,11 +687,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
     } catch (err) {
-      hideAIStatus();  // ✅ ensure status bar is removed on error
+      hideAIStatus();
 
-      // NEW — show the same upgrade modal/banner + gentle redirect (chat only)
       if (handleChatLimitError(err)) {
-        aiBlock.innerHTML = ""; // suppress raw JSON message
+        aiBlock.innerHTML = "";
         scrollToBottom();
         return;
       }
@@ -716,7 +708,6 @@ document.addEventListener("DOMContentLoaded", () => {
       input?.focus();
     }
 
-    // ✅ Model returned — stop the status bar now (success path)
     hideAIStatus();
 
     const copyId = `ai-${Date.now()}`;
@@ -749,7 +740,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         saveMessage("assistant", finalReply);
 
-        // 🔁 UPDATED: refresh from server instead of local "chatUsed"
         (async () => { await refreshCreditsPanel?.(); })();
         window.syncState?.();
 
@@ -762,21 +752,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const sendBtn = document.getElementById("sendButton");
   sendBtn?.addEventListener("click", () => {
-    // Trigger the form submit programmatically
     form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
 
-  // If DOM changes inside chatbox (e.g., images/markdown), keep view at bottom
   new MutationObserver(() => {
     const box = document.getElementById("chatbox");
     if (box) box.scrollTop = box.scrollHeight;
   }).observe(chatbox, { childList: true, subtree: true });
 
-  // Keep bottom on resize
   window.addEventListener("resize", scrollToBottom);
 });
 
-// AUTO-CONSUME prefilled question from home page
 // AUTO-CONSUME prefilled question from home page
 (function(){
   try {
@@ -788,10 +774,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const form  = document.getElementById('chat-form');
     if (!input || !form) return;
     input.value = q;
-    // small delay lets the page finish wiring handlers
     setTimeout(() => {
       form.dispatchEvent(new Event("submit", { bubbles:true, cancelable:true }));
-      // Clean the querystring so refreshes don't resend
       const nextURL = location.pathname + location.hash;
       history.replaceState({}, "", nextURL);
     }, 100);
@@ -810,7 +794,6 @@ async function fetchJobs(query, aiBlock) {
     });
     const data = await res.json();
     displayJobs(data, aiBlock);
-    // Also show a friendly fallback if nothing came back when called directly
     if (![...(data?.remotive||[]), ...(data?.adzuna||[]), ...(data?.jsearch||[])].length) {
       aiBlock.insertAdjacentHTML('beforeend',
         `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
