@@ -237,12 +237,13 @@ function hideAIStatus() {
 // Create an inline “thinking” placeholder inside the assistant bubble
 function renderThinkingPlaceholder(targetEl, label = "Thinking…") {
   if (!targetEl) return;
-  targetEl.innerHTML = `
-    <div class="ai-thinking">
-      <span class="ai-spinner" aria-hidden="true"></span>
-      <span>${label}</span>
-    </div>
+  const node = document.createElement("div");
+  node.className = "ai-thinking";
+  node.innerHTML = `
+    <span class="ai-spinner" aria-hidden="true"></span>
+    <span>${label}</span>
   `;
+  targetEl.appendChild(node);             // <- append, do not replace
 }
 
 // ──────────────────────────────────────────────────────────────
