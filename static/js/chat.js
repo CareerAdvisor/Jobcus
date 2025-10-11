@@ -167,31 +167,69 @@ function renderFeatureSuggestions(intent, intoEl) {
   intoEl.appendChild(wrap);
 }
 
-/* ✅ NEW: auto-redirect when intent is clearly expressed */
-function maybeAutoRedirect(intent, rawMessage){
-  if (!intent) return false;
-  const m = String(rawMessage || "").toLowerCase();
-
-  // Strong signals for each tool (includes polite “can you …” forms)
-  const rules = {
-    "resume-analyzer": /\b(analy[sz]e|scan|score|ats|optimi[sz]e)\b.*\bresume\b|\bresume\b.*\b(analy[sz]er|score|ats|keywords?)\b/,
-    "resume-builder":  /\b(build|create|write|make)\b.*\bresume\b|\bresume builder\b/,
-    "cover-letter":    /\b(cover ?letter|write.*cover ?letter|generate.*cover ?letter)\b/,
-    "interview-coach": /\b(interview|practice|mock|jeni)\b.*\b(prepare|coach|help|practice|simulate)?\b/,
-    "skill-gap":       /\b(skill gap|gap analysis|missing skills|what skills|upskilling|transition)\b/,
-    "job-insights":    /\b(job insights?|market|salary|salaries|demand|trends?|benchmark)\b/
-  };
-
-  const strong = rules[intent.primary] && rules[intent.primary].test(m);
-  if (!strong) return false;
-
-  // Small delay keeps UX snappy but gives the user a beat
-  const dest = FEATURE_LINKS[intent.primary]?.url;
-  if (dest) {
-    setTimeout(() => { window.location.href = dest; }, 600);
-    return true;
-  }
+/* 🚫 Auto-redirect disabled: keep users on /chat, just show links */
+function maybeAutoRedirect(/* intent, rawMessage */){
   return false;
+}
+
+/* Helper: remove only the spinner/thinking line */
+function removeThinking(el){
+  try { el?.querySelectorAll(".ai-thinking")?.forEach(n => n.remove()); } catch {}
+}
+
+/* Helper: append an assistant answer block (do NOT replace suggestions) */
+function appendAssistantAnswer(aiBlock, markdownText){
+  const copyId = `ai-${Date.now()}`;
+  const outWrap = document.createElement("div");
+  outWrap.innerHTML = `
+    <div id="${copyId}" class="markdown"></div>
+    <div class="response-footer">
+      <span class="copy-wrapper">
+        <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
+        <span class="copy-text">Copy</span>
+      </span>
+    </div>
+    <hr class="response-separator" />
+  `;
+  aiBlock.appendChild(outWrap);
+  const targetDiv = outWrap.querySelector("#" + CSS.escape(copyId));
+
+  // typewriter feel
+  let i = 0, buffer = "";
+  (function typeWriter() {
+    if (i < markdownText.length) {
+      buffer += markdownText[i++];
+      targetDiv.textContent = buffer;
+      scrollToAI(aiBlock);
+      scrollToBottom();
+      setTimeout(typeWriter, 5);
+    } else {
+      if (window.marked?.parse) targetDiv.innerHTML = window.marked.parse(buffer);
+      else targetDiv.textContent = buffer;
+      scrollToAI(aiBlock);
+      scrollToBottom();
+      maybeShowScrollIcon();
+    }
+  })();
+
+  return { id: copyId, node: outWrap };
+}
+
+/* Compose a concise site-aware reply for feature intents */
+function composeFeatureReply(intent) {
+  if (!intent) return null;
+  const primary = FEATURE_LINKS[intent.primary];
+  const alts    = (intent.alts || []).map(k => FEATURE_LINKS[k]).filter(Boolean);
+
+  // Short, confident, and helpful. Uses relative links so it works on any domain.
+  let msg = `**Yes — I can help with that.** You can use **${primary.label}** here: [${primary.url}](${primary.url}).`;
+
+  if (alts.length) {
+    const links = alts.map(a => `[${a.label}](${a.url})`).join(", ");
+    msg += `\n\nYou might also like: ${links}.`;
+  }
+
+  return msg;
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -257,7 +295,7 @@ function hideAIStatus() {
   if (bar) bar.style.display = "none";
 }
 
-/* ✅ UPDATED: append-only so we don't remove CTA suggestions */
+/* Append-only thinking placeholder */
 function renderThinkingPlaceholder(targetEl, label = "Thinking…") {
   if (!targetEl) return;
   const node = document.createElement("div");
@@ -605,10 +643,10 @@ document.addEventListener("DOMContentLoaded", () => {
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
 
-    // Intent suggestions + autoroute
+    // Intent suggestions (inline CTAs)
     const featureIntent = detectFeatureIntent(message);
     if (featureIntent) {
-      renderFeatureSuggestions(featureIntent, aiBlock); // keep inline CTAs
+      renderFeatureSuggestions(featureIntent, aiBlock);
     }
 
     renderThinkingPlaceholder(aiBlock, "Thinking…");
@@ -667,7 +705,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Normal AI chat
+      // Normal AI chat → ask backend
       const data = await apiFetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -679,22 +717,35 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("chat:conversationId", conversationId);
       }
 
-      finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
+      // If we detected a site feature intent, we prefer a concise, site-aware answer we compose locally.
+      if (featureIntent) {
+        finalReply = composeFeatureReply(featureIntent);
+      } else {
+        finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
+      }
     } catch (err) {
       hideAIStatus();
 
       if (handleChatLimitError(err)) {
-        aiBlock.innerHTML = "";
+        // do not clear the suggestions
+        removeThinking(aiBlock);
         scrollToBottom();
         return;
       }
 
       if (err?.kind === "limit") {
-        aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
+        removeThinking(aiBlock);
+        const errDiv = document.createElement("div");
+        errDiv.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
+        aiBlock.appendChild(errDiv);
         scrollToBottom();
         return;
       }
-      aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
+
+      removeThinking(aiBlock);
+      const errDiv = document.createElement("div");
+      errDiv.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
+      aiBlock.appendChild(errDiv);
       scrollToBottom();
       return;
     } finally {
@@ -703,45 +754,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     hideAIStatus();
+    removeThinking(aiBlock);
 
-    const copyId = `ai-${Date.now()}`;
-    aiBlock.innerHTML = `
-      <div id="${copyId}" class="markdown"></div>
-      <div class="response-footer">
-        <span class="copy-wrapper">
-          <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
-          <span class="copy-text">Copy</span>
-        </span>
-      </div>
-      <hr class="response-separator" />
-    `;
-    const targetDiv = document.getElementById(copyId);
+    // Append the final answer (do NOT overwrite suggestions)
+    const composed = finalReply && typeof finalReply === "string" ? finalReply.trim() : "";
+    const { /*id, node*/ } = appendAssistantAnswer(aiBlock, composed || "Thanks! How else can I help?");
+
+    // Save to history
+    saveMessage("assistant", composed || "Thanks! How else can I help?");
+
+    (async () => { await refreshCreditsPanel?.(); })();
+    window.syncState?.();
+
+    scrollToAI(aiBlock);
     scrollToBottom();
-
-    let i = 0, buffer = "";
-    (function typeWriter() {
-      if (i < finalReply.length) {
-        buffer += finalReply[i++];
-        targetDiv.textContent = buffer;
-        scrollToAI(aiBlock);
-        scrollToBottom();
-        setTimeout(typeWriter, 5);
-      } else {
-        if (window.marked?.parse) {
-          targetDiv.innerHTML = window.marked.parse(buffer);
-        } else {
-          targetDiv.textContent = buffer;
-        }
-        saveMessage("assistant", finalReply);
-
-        (async () => { await refreshCreditsPanel?.(); })();
-        window.syncState?.();
-
-        scrollToAI(aiBlock);
-        scrollToBottom();
-        maybeShowScrollIcon();
-      }
-    })();
+    maybeShowScrollIcon();
   });
 
   const sendBtn = document.getElementById("sendButton");
