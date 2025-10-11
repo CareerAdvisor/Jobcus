@@ -43,8 +43,9 @@ function sharePage() {
   navigator.clipboard.writeText(window.location.href);
   alert("Link copied!");
 }
+function handleMic()   { alert("Voice input coming soon!"); }
 
-// --- Attachments (front-end tray & upload trigger) ---
+// ───────────── Attachments (front-end tray & upload trigger) ─────────────
 let _attachments = []; // [{filename, size, text}]
 function renderAttachmentTray() {
   let tray = document.getElementById("attachTray");
@@ -64,6 +65,7 @@ function renderAttachmentTray() {
     <span class="attach-chip" style="display:inline-flex;align-items:center;gap:6px;background:#f1f5ff;border:1px solid #dbe6ff;border-radius:9999px;padding:6px 10px;font-size:12px">
       <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 13l5-5 5 5" fill="none" stroke="#104879" stroke-width="2"/></svg>
       <span title="${att.filename}">${att.filename.length>26?att.filename.slice(0,23)+'…':att.filename}</span>
+      <em style="font-style:normal;color:#6b7280">${att.text && att.text !== "Uploading…" ? "" : att.text}</em>
       <button type="button" aria-label="Remove" onclick="removeAttachment(${i})" style="border:0;background:transparent;color:#104879;font-weight:700;cursor:pointer">×</button>
     </span>
   `).join("");
@@ -73,6 +75,7 @@ window.removeAttachment = function(i){
   _attachments.splice(i,1);
   renderAttachmentTray();
 };
+
 function ensureUploadInput() {
   if (document.getElementById("chatUpload")) return;
   const inp = document.createElement("input");
@@ -95,12 +98,14 @@ window.handleAttach = function(){
   ensureUploadInput();
   document.getElementById("chatUpload").click();
 };
+
 async function uploadOneFile(file) {
   const maxBytes = 5 * 1024 * 1024; // 5 MB
   const allowed = /\.(pdf|docx?|txt|rtf)$/i.test(file.name);
   if (!allowed) { alert("Please upload PDF, DOC, DOCX, TXT, or RTF."); return; }
   if (file.size > maxBytes) { alert("Max file size is 5 MB."); return; }
 
+  // Show chip immediately
   _attachments.push({ filename: file.name, size: file.size, text: "Uploading…" });
   renderAttachmentTray();
 
@@ -111,18 +116,24 @@ async function uploadOneFile(file) {
     if (!res.ok) throw new Error(`Upload failed (${res.status})`);
     const data = await res.json(); // { filename, size, text }
     const idx = _attachments.findIndex(a => a.filename === file.name && a.text === "Uploading…");
-    if (idx >= 0) _attachments[idx] = { filename: data.filename || file.name, size: data.size || file.size, text: data.text || "" };
+    if (idx >= 0) _attachments[idx] = {
+      filename: data.filename || file.name,
+      size:     data.size || file.size,
+      text:     data.text || ""
+    };
     renderAttachmentTray();
   } catch (e) {
     const idx = _attachments.findIndex(a => a.filename === file.name && a.text === "Uploading…");
     if (idx >= 0) _attachments[idx].text = "(upload failed)";
     renderAttachmentTray();
-    alert(`Could not upload ${file.name}.`);
+    console.error("Upload error:", e);
+    alert(`Could not upload ${file.name}. Please try again.`);
   }
 }
 
-function handleMic()   { alert("Voice input coming soon!"); }
-
+// ──────────────────────────────────────────────────────────────
+// Copy
+// ──────────────────────────────────────────────────────────────
 function copyToClipboard(id) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -342,35 +353,25 @@ function detectDirectoryIntent(raw) {
   return null;
 }
 
-function renderDirectoryResponse(intent, aiBlock) {
-  const wrap = document.createElement("div");
-  wrap.className = "directory-answer";
-  wrap.style.marginTop = "8px";
-
+function directoryHTML(intent) {
   const cardCss = `
-    .dir-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin:10px 0 4px}
-    .dir-card{border:1px solid #e6ecf5;border-radius:12px;padding:12px;background:#fff}
-    .dir-card a{font-weight:600;color:#104879;text-decoration:underline}
-    .dir-sub{color:#2a3f55;font-size:13px;margin-top:4px}
+    <style id="directoryStylesPersist">
+      .dir-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin:10px 0 4px}
+      .dir-card{border:1px solid #e6ecf5;border-radius:12px;padding:12px;background:#fff}
+      .dir-card a{font-weight:600;color:#104879;text-decoration:underline}
+      .dir-sub{color:#2a3f55;font-size:13px;margin-top:4px}
+      .ai-note{background:#f7fbff;border:1px solid #d8e7ff;color:#104879;padding:12px;border-radius:10px;margin-bottom:10px}
+    </style>
   `;
-  if (!document.getElementById("directoryStyles")) {
-    const st = document.createElement("style");
-    st.id = "directoryStyles";
-    st.textContent = cardCss;
-    document.head.appendChild(st);
-  }
 
-  // Header + on-site CTA
-  let html = `
-    <div class="ai-note" style="background:#f7fbff;border:1px solid #d8e7ff;color:#104879;padding:12px;border-radius:10px;margin-bottom:10px">
+  let html = `${cardCss}
+    <div class="ai-note">
       Prefer using Jobcus? Try our on-site tools:
       <a href="/resume-analyzer">Resume Analyzer</a>,
       <a href="/resume-builder">Resume Builder</a>,
       <a href="/cover-letter">Cover Letter</a>.
     </div>
   `;
-
-  // Section: analyzers
   if (intent.wantAnalysis) {
     html += `<h3 style="margin:6px 0 4px">Resume-analysis / ATS check tools</h3>
              <div class="dir-grid">
@@ -381,7 +382,6 @@ function renderDirectoryResponse(intent, aiBlock) {
                  </div>`).join("")}
              </div>`;
   }
-  // Section: builders
   if (intent.wantBuilders) {
     html += `<h3 style="margin:10px 0 4px">Resume builders</h3>
              <div class="dir-grid">
@@ -392,16 +392,23 @@ function renderDirectoryResponse(intent, aiBlock) {
                  </div>`).join("")}
              </div>`;
   }
+  html += `<hr class="response-separator" />`;
+  return html;
+}
 
-  wrap.innerHTML = html + `<hr class="response-separator" />`;
+// Persist + render directory response
+function renderDirectoryResponse(intent, aiBlock) {
+  const html = directoryHTML(intent);
+
+  // 1) Render now
+  const wrap = document.createElement("div");
+  wrap.className = "directory-answer";
+  wrap.style.marginTop = "8px";
+  wrap.innerHTML = html;
   aiBlock.appendChild(wrap);
 
-  // Save a short message to history (so your sidebar has a label)
-  const label = [
-    intent.wantAnalysis ? "Resume analysis tools" : null,
-    intent.wantBuilders ? "Resume builders" : null
-  ].filter(Boolean).join(" + ");
-  window.saveMessage?.("assistant", `Here are popular ${label} (with links).`);
+  // 2) Persist the REAL HTML so it survives refresh
+  window.saveMessage?.("assistant_html", html);
 
   scrollToAI(aiBlock);
   scrollToBottom();
@@ -437,7 +444,7 @@ window.insertSuggestion = insertSuggestion;
 window.copyToClipboard  = copyToClipboard;
 window.autoResize       = autoResize;
 window.sharePage        = sharePage;
-window.handleMic        = handleMic;
+window.handleAttach     = handleAttach;
 window.removeWelcome    = removeWelcome;
 
 // ──────────────────────────────────────────────────────────────
@@ -572,7 +579,7 @@ function detectJobsIntent(raw) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Scroll-to-bottom button (centered above composer)
+// Scroll-to-bottom button (centered above composer) using scrolldown.svg
 // ──────────────────────────────────────────────────────────────
 function ensureScrollButtonStyles() {
   if (document.getElementById("scrollToBottomStyles")) return;
@@ -591,14 +598,14 @@ function ensureScrollButtonStyles() {
       color: #fff;
       border: 0;
       border-radius: 9999px;
-      padding: 10px 14px;
+      padding: 8px 12px;
       font-size: 14px;
       box-shadow: 0 6px 16px rgba(0,0,0,.18);
       cursor: pointer;
-      z-index: 30;
+      z-index: 999;
     }
+    #scrollDown img{ width:18px;height:18px; display:inline-block; filter: invert(1); }
     #scrollDown:hover { filter: brightness(1.05); }
-    #scrollDown svg { display:inline-block; }
   `;
   document.head.appendChild(st);
 }
@@ -611,9 +618,7 @@ function ensureScrollButton() {
   btn.setAttribute("aria-label", "Scroll to latest");
   btn.title = "Scroll to latest";
   btn.innerHTML = `
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 16l-6-6h12l-6 6z" fill="currentColor"/>
-    </svg>
+    <img src="/static/icons/scrolldown.svg" alt="" aria-hidden="true" />
     <span>Scroll to latest</span>
   `;
   btn.addEventListener("click", scrollToBottomSmooth);
@@ -654,7 +659,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Storage keys
   const STORAGE = {
-    current: "jobcus:chat:current",
+    current: "jobcus:chat:current",   // array of message objects
     history: "jobcus:chat:history"
   };
 
@@ -683,6 +688,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+  // LocalStorage helpers
   const getCurrent = () => JSON.parse(localStorage.getItem(STORAGE.current) || "[]");
   const setCurrent = (arr) => localStorage.setItem(STORAGE.current, JSON.stringify(arr));
   const getHistory = () => JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
@@ -709,6 +715,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateScrollButtonVisibility();
   }
 
+  // 🔄 RENDER: supports plain markdown and persisted HTML blocks
   function renderChat(messages){
     chatbox.innerHTML = "";
     if (!messages.length){
@@ -718,8 +725,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     messages.forEach(msg => {
       const div = document.createElement("div");
-      div.className = `chat-entry ${msg.role === "assistant" ? "ai-answer" : "user"}`;
-      if (msg.role === "assistant") {
+      const role = (msg.role === "assistant_html") ? "assistant" : msg.role;
+      div.className = `chat-entry ${role === "assistant" ? "ai-answer" : "user"}`;
+
+      if (role === "assistant" && (msg.format === "html" || msg.role === "assistant_html")) {
+        // Persisted directory/cards/etc.
+        const id = `ai-${Math.random().toString(36).slice(2)}`;
+        div.innerHTML = `
+          <div id="${id}" class="markdown"></div>
+          <div class="response-footer">
+            <span class="copy-wrapper">
+              <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${id}')">
+              <span class="copy-text">Copy</span>
+            </span>
+          </div>
+          <hr class="response-separator" />
+        `;
+        const target = div.querySelector("#" + CSS.escape(id));
+        target.innerHTML = msg.html || msg.content || "";
+      } else if (role === "assistant") {
         const id = `ai-${Math.random().toString(36).slice(2)}`;
         div.innerHTML = `
           <div id="${id}" class="markdown"></div>
@@ -734,14 +758,14 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         const target = div.querySelector(`#${id}`);
         if (window.marked && typeof window.marked.parse === "function") {
-          target.innerHTML = window.marked.parse(msg.content);
+          target.innerHTML = window.marked.parse(msg.content || "");
         } else {
-          target.textContent = msg.content;
+          target.textContent = msg.content || "";
         }
       } else {
         div.innerHTML = `
           <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 .5rem;color:#104879;">
-            ${escapeHtml(msg.content)}
+            ${escapeHtml(msg.content || "")}
           </h2>
         `;
       }
@@ -750,6 +774,18 @@ document.addEventListener("DOMContentLoaded", () => {
     scrollToBottom();
     updateScrollButtonVisibility();
   }
+
+  // 🧠 Save helpers (now support HTML messages)
+  window.saveMessage = function(role, content){
+    const msgs = getCurrent();
+    msgs.push({ role, content });
+    setCurrent(msgs);
+  };
+  window.saveMessageHTML = function(html){
+    const msgs = getCurrent();
+    msgs.push({ role: "assistant_html", format: "html", html });
+    setCurrent(msgs);
+  };
 
   function renderHistory(){
     const list = document.getElementById("chatHistory");
@@ -778,12 +814,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  window.saveMessage = function(role, content){
-    const msgs = getCurrent();
-    msgs.push({ role, content });
-    setCurrent(msgs);
-  };
-
   let clearInProgress = false;
   window.clearChat = function(){
     if (clearInProgress) return;
@@ -806,12 +836,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       setCurrent([]);
       localStorage.removeItem("chat:conversationId");
-      conversationId = null;
       renderChat([]);
       renderHistory();
-    } finally {
-      setTimeout(() => { clearInProgress = false; }, 50);
-    }
+    } finally { setTimeout(() => { clearInProgress = false; }, 50); }
   };
 
   // 🔁 Server-truth credits panel (USED of MAX)
@@ -834,11 +861,10 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (_) { /* no-op */ }
   }
 
-  // Sidebar open/close
+  // Sidebar buttons
   const chatMenuToggle = document.getElementById("chatMenuToggle");
   const chatOverlay    = document.getElementById("chatOverlay");
   const chatCloseBtn   = document.getElementById("chatSidebarClose");
-
   chatMenuToggle?.addEventListener("click", window.openChatMenu);
   chatOverlay?.addEventListener("click", window.closeChatMenu);
   chatCloseBtn?.addEventListener("click", window.closeChatMenu);
@@ -877,7 +903,8 @@ document.addEventListener("DOMContentLoaded", () => {
     chatbox.appendChild(userMsg);
     scrollToBottom();
 
-    saveMessage("user", message);
+    // Persist user message
+    window.saveMessage("user", message);
 
     if (input) {
       input.value = "";
@@ -894,18 +921,17 @@ document.addEventListener("DOMContentLoaded", () => {
       renderFeatureSuggestions(featureIntent, aiBlock);
     }
 
-    // Directory/list intent? Render our curated answer and stop.
+    // Directory/list intent? Render curated answer and persist HTML, then finish.
     const dirIntent = detectDirectoryIntent(message);
     if (dirIntent) {
-      renderDirectoryResponse(dirIntent, aiBlock);
-      // Also append a short “site-aware” line so it feels conversational
+      renderDirectoryResponse(dirIntent, aiBlock);     // render + save HTML
       const composed = composeFeatureReply(featureIntent) ||
         "**Here’s a handy list of tools with links above.** If you want, I can narrow it by free options, AI-powered only, or UK-friendly pricing.";
       appendAssistantAnswer(aiBlock, composed);
-      saveMessage("assistant", "Shared curated list of resume analyzers/builders with links.");
+      window.saveMessage("assistant", composed);
       _attachments = []; renderAttachmentTray();
       scrollToAI(aiBlock); scrollToBottom(); updateScrollButtonVisibility();
-      return; // ✅ Skip calling the model for this specific directory ask
+      return; // ✅ Skip model call for this directory ask
     }
 
     renderThinkingPlaceholder(aiBlock, "Thinking…");
@@ -913,6 +939,9 @@ document.addEventListener("DOMContentLoaded", () => {
     scrollToAI(aiBlock);
     scrollToBottom();
 
+    // Model selection from UI
+    const shell = document.getElementById("chatShell");
+    const modelCtl = initModelControls();
     const currentModel = modelCtl.getSelectedModel();
     let finalReply = "";
 
@@ -926,37 +955,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (jobIntent) {
         showAIStatus("Finding jobs…");
-
-        let jobs;
-        if (Array.isArray(jobIntent.queries) && jobIntent.queries.length > 1) {
-          const results = await Promise.all(jobIntent.queries.map(q =>
-            apiFetch("/jobs", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ query: q })
-            }).catch(() => ({ remotive:[], adzuna:[], jsearch:[] }))
-          ));
-          jobs = results.reduce((acc, r) => ({
-            remotive: [...(acc.remotive||[]), ...(r.remotive||[])],
-            adzuna:   [...(acc.adzuna  ||[]), ...(r.adzuna  ||[])],
-            jsearch:  [...(acc.jsearch ||[]), ...(r.jsearch ||[])],
-          }), {remotive:[], adzuna:[], jsearch:[]});
-        } else {
-          jobs = await apiFetch("/jobs", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: jobIntent.query })
-          });
-        }
-
+        let jobs = await apiFetch("/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: jobIntent.query })
+        });
         aiBlock.innerHTML = "";
         displayJobs(jobs, aiBlock);
         if (![...(jobs?.remotive||[]), ...(jobs?.adzuna||[]), ...(jobs?.jsearch||[])].length) {
           aiBlock.insertAdjacentHTML('beforeend',
             `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
         }
-        saveMessage("assistant", `Here are jobs for “${(jobIntent.queries || [jobIntent.query]).join(' | ')}”.`);
-
+        window.saveMessage("assistant", `Here are jobs for “${jobIntent.query}”.`);
         await refreshCreditsPanel?.();
         window.syncState?.();
         hideAIStatus();
@@ -971,43 +981,26 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({
           message,
           model: currentModel,
-          conversation_id: conversationId,
+          conversation_id: localStorage.getItem("chat:conversationId") || null,
           attachments: _attachments.map(a => ({ filename: a.filename, text: a.text || "" }))
         })
       });
 
-      if (data.conversation_id && data.conversation_id !== conversationId) {
-        conversationId = data.conversation_id;
-        localStorage.setItem("chat:conversationId", conversationId);
+      if (data.conversation_id && data.conversation_id !== localStorage.getItem("chat:conversationId")) {
+        localStorage.setItem("chat:conversationId", data.conversation_id);
       }
 
-      // If we detected a site feature intent, prefer a concise, site-aware answer we compose locally.
-      if (featureIntent) {
-        finalReply = composeFeatureReply(featureIntent);
-      } else {
-        finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
-      }
+      // Prefer concise site-aware answer if feature intent exists
+      if (featureIntent) finalReply = composeFeatureReply(featureIntent);
+      else finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
     } catch (err) {
       hideAIStatus();
 
-      if (handleChatLimitError(err)) {
-        removeThinking(aiBlock);
-        scrollToBottom();
-        return;
-      }
-
-      if (err?.kind === "limit") {
-        removeThinking(aiBlock);
-        const errDiv = document.createElement("div");
-        errDiv.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
-        aiBlock.appendChild(errDiv);
-        scrollToBottom();
-        return;
-      }
+      if (handleChatLimitError(err)) { removeThinking(aiBlock); scrollToBottom(); return; }
 
       removeThinking(aiBlock);
       const errDiv = document.createElement("div");
-      errDiv.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
+      errDiv.innerHTML = `<p style="margin:8px 0;color:#a00;">${(err && err.message) || "Sorry, something went wrong."}</p><hr class="response-separator" />`;
       aiBlock.appendChild(errDiv);
       scrollToBottom();
       return;
@@ -1022,13 +1015,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Append the final answer (do NOT overwrite suggestions)
     const composed = finalReply && typeof finalReply === "string" ? finalReply.trim() : "";
     appendAssistantAnswer(aiBlock, composed || "Thanks! How else can I help?");
+    window.saveMessage("assistant", composed || "Thanks! How else can I help?");
 
     // clear attachments after a completed turn
     _attachments = [];
     renderAttachmentTray();
-
-    // Save to history
-    saveMessage("assistant", composed || "Thanks! How else can I help?");
 
     (async () => { await refreshCreditsPanel?.(); })();
     window.syncState?.();
