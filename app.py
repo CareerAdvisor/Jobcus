@@ -2,7 +2,7 @@ import os, stripe, hashlib, hmac, time
 import traceback
 from io import BytesIO
 from collections import Counter
-import re, json, base64, logging, requests
+import re, json, base64, logging, requests, io, tempfile, uuid
 from functools import wraps
 from auth_utils import api_login_required, is_staff, is_superadmin, require_superadmin
 
@@ -39,6 +39,7 @@ from supabase import create_client
 from abuse_guard import allow_free_use
 from urllib.parse import quote, urlencode, urlparse
 import httpx
+from werkzeug.utils import secure_filename
 
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
@@ -325,6 +326,35 @@ def change_plan(user_id: str, new_plan: str):
         supabase.table("users").update({
             "plan": plan
         }).eq("id", user_id).execute()
+
+ALLOWED_EXTS = {"pdf","txt","rtf","doc","docx"}
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
+
+def _allowed(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".",1)[1].lower() in ALLOWED_EXTS
+
+def _extract_text(path: str, ext: str) -> str:
+    ext = ext.lower()
+    try:
+        if ext == "pdf":
+            from pypdf import PdfReader
+            out = []
+            with open(path, "rb") as f:
+                reader = PdfReader(f)
+                for page in reader.pages:
+                    out.append(page.extract_text() or "")
+            return "\n".join(out).strip()
+        elif ext in ("doc", "docx"):
+            import docx2txt
+            return (docx2txt.process(path) or "").strip()
+        elif ext == "rtf":
+            # very light RTF strip (not perfect but safe)
+            raw = open(path, "rb").read().decode(errors="ignore")
+            return re.sub(r"{\\.*?}|\\[a-z]+\d* ?|[{}]", " ", raw).strip()
+        else:  # txt
+            return open(path, "rb").read().decode(errors="ignore").strip()
+    except Exception:
+        return ""
 
 # --- Local fallbacks to remove services/* dependency -------------------------
 def get_or_bootstrap_user(supabase_admin, auth_id: str, email: str | None):
@@ -1787,6 +1817,24 @@ def api_ask():
     if not message:
         return jsonify(error="bad_request", message="message is required"), 400
 
+    # --- Attachment context (from client) ---
+    # Expecting: attachments: [{ filename, text }]
+    attachments = data.get("attachments") or []
+    att_blocks = []
+    for att in attachments:
+        fname = (att.get("filename") or "attachment.txt")[:80]
+        text  = (att.get("text") or "")
+        if not text:
+            continue
+        # keep token budget sane
+        snippet = text[:8000]
+        att_blocks.append(f"--- {fname} ---\n{snippet}")
+
+    att_context = "\n\n".join(att_blocks)
+    if att_context:
+        message = f"{message}\n\n[Attachment context]\n{att_context}"
+    # --- end attachment block ---
+
     auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
     plan    = (getattr(current_user, "plan", "free") or "free").lower()
 
@@ -1827,7 +1875,7 @@ def api_ask():
         ).execute()
         conv_id = row.data[0]["id"]
 
-    # 4) persist user message
+    # 4) persist user message (includes attachment context if present)
     admin.table("conversation_messages").insert({
         "conversation_id": conv_id, "role": "user", "content": message
     }).execute()
@@ -2537,6 +2585,52 @@ def employer_job_post_download():
         )
 
     return jsonify(error="Unsupported format"), 400
+
+@app.post("/api/upload")
+@login_required
+def api_upload():
+    if "file" not in request.files:
+        return jsonify(error="no_file", message="No file provided"), 400
+
+    f = request.files["file"]
+    if not f or not f.filename:
+        return jsonify(error="no_filename", message="No filename"), 400
+
+    if not _allowed(f.filename):
+        return jsonify(error="bad_type", message="Unsupported file type"), 400
+
+    # size check (stream into temp to measure)
+    tmp = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        total = 0
+        chunk = f.read(1024 * 1024)
+        while chunk:
+            total += len(chunk)
+            if total > MAX_UPLOAD_BYTES:
+                tmp.close()
+                os.unlink(tmp.name)
+                return jsonify(error="too_large", message="Max size is 5 MB"), 413
+            tmp.write(chunk)
+            chunk = f.read(1024 * 1024)
+        tmp.flush()
+
+        filename = secure_filename(f.filename)
+        ext = filename.rsplit(".",1)[1].lower()
+        text = _extract_text(tmp.name, ext)
+        # trim to a reasonable budget to keep prompts small
+        text = (text or "")[:200_000]  # ~200k chars max
+
+        return jsonify({
+            "filename": filename,
+            "size": total,
+            "text": text
+        })
+    finally:
+        try:
+            tmp.close()
+            os.unlink(tmp.name)
+        except Exception:
+            pass
 
 # --- Entrypoint ---
 if __name__ == "__main__":
