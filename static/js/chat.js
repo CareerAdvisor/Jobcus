@@ -156,7 +156,6 @@ function scrollToBottomSmooth() {
   const box = document.getElementById("chatbox");
   if (!box) return;
   box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
-  // small delay to re-check
   setTimeout(() => updateScrollButtonVisibility?.(), 250);
 }
 
@@ -180,7 +179,7 @@ function disableComposer(disabled) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Feature intent router → turn user ask into on-site links
+// Feature intent router → on-site links
 // ──────────────────────────────────────────────────────────────
 const FEATURE_LINKS = {
   "resume-analyzer": { url: "/resume-analyzer", label: "Resume Analyzer" },
@@ -196,7 +195,6 @@ const FEATURE_LINKS = {
 function detectFeatureIntent(message) {
   const m = String(message || "").toLowerCase();
 
-  // priority-ordered checks
   if (/\b(analy[sz]e|scan|score|optimi[sz]e).*\bresume\b|\bresume\b.*\b(analy[sz]er|score|ats|keywords?)\b/.test(m))
     return { primary: "resume-analyzer", alts: ["resume-builder", "cover-letter", "skill-gap"] };
 
@@ -223,7 +221,6 @@ function detectFeatureIntent(message) {
 
 function renderFeatureSuggestions(intent, intoEl) {
   if (!intent || !intoEl) return;
-
   const primary = FEATURE_LINKS[intent.primary];
   const alts = (intent.alts || []).map(k => FEATURE_LINKS[k]).filter(Boolean);
 
@@ -246,9 +243,7 @@ function renderFeatureSuggestions(intent, intoEl) {
 }
 
 /* 🚫 Auto-redirect disabled: keep users on /chat, just show links */
-function maybeAutoRedirect(/* intent, rawMessage */){
-  return false;
-}
+function maybeAutoRedirect(){ return false; }
 
 /* Helper: remove only the spinner/thinking line */
 function removeThinking(el){
@@ -299,13 +294,117 @@ function composeFeatureReply(intent) {
   const primary = FEATURE_LINKS[intent.primary];
   const alts    = (intent.alts || []).map(k => FEATURE_LINKS[k]).filter(Boolean);
 
-  // Short, confident, helpful.
   let msg = `**Yes — I can help with that.** You can use **${primary.label}** here: [${primary.url}](${primary.url}).`;
   if (alts.length) {
     const links = alts.map(a => `[${a.label}](${a.url})`).join(", ");
     msg += `\n\nYou might also like: ${links}.`;
   }
   return msg;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Directory intent: curated lists with outbound links
+// ──────────────────────────────────────────────────────────────
+const RESUME_ANALYZERS = [
+  { name: "Resume Worded", url: "https://resumeworded.com", blurb: "AI feedback on resume & LinkedIn; “Score My Resume”." },
+  { name: "Jobscan", url: "https://www.jobscan.co", blurb: "ATS resume checker + optimization for specific postings." },
+  { name: "Enhancv Resume Checker", url: "https://enhancv.com/tools/resume-checker/", blurb: "Free checks across key resume criteria." },
+  { name: "Zety ATS Resume Checker", url: "https://zety.com/resume-checker", blurb: "Personalized score + actionable tips." },
+  { name: "ResumeGo", url: "https://www.resumego.net/resume-checker/", blurb: "Free scanner for potential ATS pitfalls." },
+  { name: "Hiration", url: "https://www.hiration.com", blurb: "AI-powered detailed resume review." },
+  { name: "ResyMatch (Cultivated Culture)", url: "https://resymatch.io", blurb: "Free ATS scanner + JD matching tool." },
+  { name: "SkillSyncer", url: "https://www.skillsyncer.com", blurb: "Scanner/optimizer against job descriptions." },
+  { name: "LiveCareer ATS Checker", url: "https://www.livecareer.com/resume-check", blurb: "Checks formatting, customization, design." },
+  { name: "Mployee / ResuScan", url: "https://mployee.me", blurb: "Online ATS checks over many criteria." }
+];
+
+const RESUME_BUILDERS = [
+  { name: "Novorésumé", url: "https://novoresume.com", blurb: "Recruiter-designed templates, modern layouts." },
+  { name: "ResumeBuilder.com", url: "https://www.resumebuilder.com", blurb: "Large template library, ATS-friendly." },
+  { name: "Canva (Resume maker)", url: "https://www.canva.com/resumes/templates/", blurb: "Drag-and-drop designs, many templates." },
+  { name: "Kickresume", url: "https://www.kickresume.com", blurb: "Builder + AI checker/score." },
+  { name: "Huntr", url: "https://huntr.co", blurb: "Builder + job tracking + cover letters." },
+  { name: "Resume.org", url: "https://resume.org", blurb: "Free resume templates & tools." },
+  { name: "Enhancv", url: "https://enhancv.com", blurb: "Builder with AI suggestions." }
+];
+
+// Robust detector for "give me many sites / list / majority" style asks
+function detectDirectoryIntent(raw) {
+  const m = String(raw || "").toLowerCase();
+  const asksForList =
+    /\b(list|give me|show me|suggest|recommend|some|many|majority|a lot|best|top|websites?|sites?)\b/.test(m);
+  const mentionsAnalysis = /\b(resume|cv)\b.*\b(analy(ze|sis|zer)|checker|ats|review|score|scanner)\b/.test(m);
+  const mentionsBuilder  = /\b(resume|cv)\b.*\b(builder|build|create|maker|template|templates)\b/.test(m);
+  if (!asksForList) return null;
+  if (mentionsAnalysis || mentionsBuilder) {
+    return { wantAnalysis: mentionsAnalysis, wantBuilders: mentionsBuilder };
+  }
+  return null;
+}
+
+function renderDirectoryResponse(intent, aiBlock) {
+  const wrap = document.createElement("div");
+  wrap.className = "directory-answer";
+  wrap.style.marginTop = "8px";
+
+  const cardCss = `
+    .dir-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin:10px 0 4px}
+    .dir-card{border:1px solid #e6ecf5;border-radius:12px;padding:12px;background:#fff}
+    .dir-card a{font-weight:600;color:#104879;text-decoration:underline}
+    .dir-sub{color:#2a3f55;font-size:13px;margin-top:4px}
+  `;
+  if (!document.getElementById("directoryStyles")) {
+    const st = document.createElement("style");
+    st.id = "directoryStyles";
+    st.textContent = cardCss;
+    document.head.appendChild(st);
+  }
+
+  // Header + on-site CTA
+  let html = `
+    <div class="ai-note" style="background:#f7fbff;border:1px solid #d8e7ff;color:#104879;padding:12px;border-radius:10px;margin-bottom:10px">
+      Prefer using Jobcus? Try our on-site tools:
+      <a href="/resume-analyzer">Resume Analyzer</a>,
+      <a href="/resume-builder">Resume Builder</a>,
+      <a href="/cover-letter">Cover Letter</a>.
+    </div>
+  `;
+
+  // Section: analyzers
+  if (intent.wantAnalysis) {
+    html += `<h3 style="margin:6px 0 4px">Resume-analysis / ATS check tools</h3>
+             <div class="dir-grid">
+               ${RESUME_ANALYZERS.map(t => `
+                 <div class="dir-card">
+                   <a href="${t.url}" target="_blank" rel="noopener noreferrer">${t.name}</a>
+                   <div class="dir-sub">${t.blurb}</div>
+                 </div>`).join("")}
+             </div>`;
+  }
+  // Section: builders
+  if (intent.wantBuilders) {
+    html += `<h3 style="margin:10px 0 4px">Resume builders</h3>
+             <div class="dir-grid">
+               ${RESUME_BUILDERS.map(t => `
+                 <div class="dir-card">
+                   <a href="${t.url}" target="_blank" rel="noopener noreferrer">${t.name}</a>
+                   <div class="dir-sub">${t.blurb}</div>
+                 </div>`).join("")}
+             </div>`;
+  }
+
+  wrap.innerHTML = html + `<hr class="response-separator" />`;
+  aiBlock.appendChild(wrap);
+
+  // Save a short message to history (so your sidebar has a label)
+  const label = [
+    intent.wantAnalysis ? "Resume analysis tools" : null,
+    intent.wantBuilders ? "Resume builders" : null
+  ].filter(Boolean).join(" + ");
+  window.saveMessage?.("assistant", `Here are popular ${label} (with links).`);
+
+  scrollToAI(aiBlock);
+  scrollToBottom();
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -339,7 +438,6 @@ window.copyToClipboard  = copyToClipboard;
 window.autoResize       = autoResize;
 window.sharePage        = sharePage;
 window.handleMic        = handleMic;
-// handleAttach defined above
 window.removeWelcome    = removeWelcome;
 
 // ──────────────────────────────────────────────────────────────
@@ -439,19 +537,16 @@ function detectJobsIntent(raw) {
   if (!raw) return null;
   const message = String(raw).toLowerCase().trim();
 
-  // Do NOT trigger on advice/strategy prompts
   if (/\b(advice|tips?|strategy|strategies|how to|guide|best practices?)\b/.test(message)) {
     return null;
   }
 
-  // Trigger only if the user clearly wants listings
   const wantsListings =
     /\b(openings?|vacancies|list(?:ing)?s?|show (me )?jobs?|find (me )?jobs?|roles? available|positions? available)\b/.test(message) ||
     /^\s*jobs?:/i.test(message);
 
   if (!wantsListings) return null;
 
-  // Extract role + location (simplified)
   const inLoc = /\b(in|near|around|at)\s+([a-z0-9\s\-,.'\/]+)/i;
   const remote = /\b(remote|work from home|hybrid)\b/i;
 
@@ -488,7 +583,7 @@ function ensureScrollButtonStyles() {
       position: fixed;
       left: 50%;
       transform: translateX(-50%);
-      bottom: 96px; /* slightly above composer */
+      bottom: 96px;
       display: none;
       align-items: center;
       gap: 8px;
@@ -522,7 +617,6 @@ function ensureScrollButton() {
     <span>Scroll to latest</span>
   `;
   btn.addEventListener("click", scrollToBottomSmooth);
-  // place at end of body so it's fixed relative to viewport
   document.body.appendChild(btn);
 }
 function updateScrollButtonVisibility() {
@@ -533,12 +627,11 @@ function updateScrollButtonVisibility() {
   const nearBottom = (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight) < 32;
   btn.style.display = (overflow && !nearBottom) ? "inline-flex" : "none";
 }
-// Backward-compatible hook if something else calls this name
 function maybeShowScrollIcon() { updateScrollButtonVisibility(); }
 
 // ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  // Spinners CSS (if not present)
+  // Spinners CSS
   if (!document.getElementById("aiSpinnerStyles")) {
     const st = document.createElement("style");
     st.id = "aiSpinnerStyles";
@@ -561,8 +654,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Storage keys
   const STORAGE = {
-    current: "jobcus:chat:current",   // [{role:'user'|'assistant', content:'...'}]
-    history: "jobcus:chat:history"    // [{id,title,created,messages:[...] }]
+    current: "jobcus:chat:current",
+    history: "jobcus:chat:history"
   };
 
   // DOM refs
@@ -575,7 +668,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.autoResize?.(input);
     scrollToBottom();
   });
-  window.autoResize?.(input); // initial
+  window.autoResize?.(input);
 
   // Show/hide scroll-to-bottom based on scroll & size
   chatbox?.addEventListener("scroll", updateScrollButtonVisibility);
@@ -729,7 +822,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!planEl && !leftEl && !resetEl) return;
 
     try {
-      const c = await apiFetch("/api/credits"); // { plan, used, max, left, period_kind, period_key }
+      const c = await apiFetch("/api/credits");
       const used = typeof c.used === "number" ? c.used : 0;
       const max  = typeof c.max  === "number" ? c.max  : 0;
 
@@ -799,6 +892,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const featureIntent = detectFeatureIntent(message);
     if (featureIntent) {
       renderFeatureSuggestions(featureIntent, aiBlock);
+    }
+
+    // Directory/list intent? Render our curated answer and stop.
+    const dirIntent = detectDirectoryIntent(message);
+    if (dirIntent) {
+      renderDirectoryResponse(dirIntent, aiBlock);
+      // Also append a short “site-aware” line so it feels conversational
+      const composed = composeFeatureReply(featureIntent) ||
+        "**Here’s a handy list of tools with links above.** If you want, I can narrow it by free options, AI-powered only, or UK-friendly pricing.";
+      appendAssistantAnswer(aiBlock, composed);
+      saveMessage("assistant", "Shared curated list of resume analyzers/builders with links.");
+      _attachments = []; renderAttachmentTray();
+      scrollToAI(aiBlock); scrollToBottom(); updateScrollButtonVisibility();
+      return; // ✅ Skip calling the model for this specific directory ask
     }
 
     renderThinkingPlaceholder(aiBlock, "Thinking…");
