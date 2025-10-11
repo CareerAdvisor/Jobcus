@@ -13,3 +13,6 @@ weasyprint
 docxtpl
 gotrue
 stripe
+pypdf
+docx2txt
+
