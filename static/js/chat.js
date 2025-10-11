@@ -21,7 +21,7 @@ window.insertSuggestion ||= function (text) {
 })();
 
 // ──────────────────────────────────────────────────────────────
-/** Small utilities (also exposed on window for inline handlers) */
+/** Small utilities (now also exposed on window for inline handlers) */
 // ──────────────────────────────────────────────────────────────
 function removeWelcome() {
   const banner = document.getElementById("welcomeBanner");
@@ -44,96 +44,8 @@ function sharePage() {
   alert("Link copied!");
 }
 function handleMic()   { alert("Voice input coming soon!"); }
+function handleAttach(){ alert("File upload coming soon!"); }
 
-// ───────────── Attachments (front-end tray & upload trigger) ─────────────
-let _attachments = []; // [{filename, size, text}]
-function renderAttachmentTray() {
-  let tray = document.getElementById("attachTray");
-  if (!_attachments.length) {
-    if (tray) tray.remove();
-    return;
-  }
-  if (!tray) {
-    tray = document.createElement("div");
-    tray.id = "attachTray";
-    tray.className = "attach-tray";
-    tray.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;";
-    const composer = document.querySelector(".composer") || document.getElementById("chat-form");
-    composer?.parentNode?.insertBefore(tray, composer);
-  }
-  tray.innerHTML = _attachments.map((att, i) => `
-    <span class="attach-chip" style="display:inline-flex;align-items:center;gap:6px;background:#f1f5ff;border:1px solid #dbe6ff;border-radius:9999px;padding:6px 10px;font-size:12px">
-      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 13l5-5 5 5" fill="none" stroke="#104879" stroke-width="2"/></svg>
-      <span title="${att.filename}">${att.filename.length>26?att.filename.slice(0,23)+'…':att.filename}</span>
-      <em style="font-style:normal;color:#6b7280">${att.text && att.text !== "Uploading…" ? "" : att.text}</em>
-      <button type="button" aria-label="Remove" onclick="removeAttachment(${i})" style="border:0;background:transparent;color:#104879;font-weight:700;cursor:pointer">×</button>
-    </span>
-  `).join("");
-  updateScrollButtonVisibility?.();
-}
-window.removeAttachment = function(i){
-  _attachments.splice(i,1);
-  renderAttachmentTray();
-};
-
-function ensureUploadInput() {
-  if (document.getElementById("chatUpload")) return;
-  const inp = document.createElement("input");
-  inp.type = "file";
-  inp.id = "chatUpload";
-  inp.accept = ".pdf,.doc,.docx,.txt,.rtf";
-  inp.multiple = true;
-  inp.style.display = "none";
-  inp.addEventListener("change", async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    for (const f of files) {
-      await uploadOneFile(f);
-    }
-    e.target.value = "";
-  });
-  document.body.appendChild(inp);
-}
-window.handleAttach = function(){
-  ensureUploadInput();
-  document.getElementById("chatUpload").click();
-};
-
-async function uploadOneFile(file) {
-  const maxBytes = 5 * 1024 * 1024; // 5 MB
-  const allowed = /\.(pdf|docx?|txt|rtf)$/i.test(file.name);
-  if (!allowed) { alert("Please upload PDF, DOC, DOCX, TXT, or RTF."); return; }
-  if (file.size > maxBytes) { alert("Max file size is 5 MB."); return; }
-
-  // Show chip immediately
-  _attachments.push({ filename: file.name, size: file.size, text: "Uploading…" });
-  renderAttachmentTray();
-
-  try {
-    const form = new FormData();
-    form.append("file", file);
-    const res = await fetch("/api/upload", { method: "POST", body: form, credentials: "same-origin" });
-    if (!res.ok) throw new Error(`Upload failed (${res.status})`);
-    const data = await res.json(); // { filename, size, text }
-    const idx = _attachments.findIndex(a => a.filename === file.name && a.text === "Uploading…");
-    if (idx >= 0) _attachments[idx] = {
-      filename: data.filename || file.name,
-      size:     data.size || file.size,
-      text:     data.text || ""
-    };
-    renderAttachmentTray();
-  } catch (e) {
-    const idx = _attachments.findIndex(a => a.filename === file.name && a.text === "Uploading…");
-    if (idx >= 0) _attachments[idx].text = "(upload failed)";
-    renderAttachmentTray();
-    console.error("Upload error:", e);
-    alert(`Could not upload ${file.name}. Please try again.`);
-  }
-}
-
-// ──────────────────────────────────────────────────────────────
-// Copy
-// ──────────────────────────────────────────────────────────────
 function copyToClipboard(id) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -155,19 +67,19 @@ function scrollToAI(el) {
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+function maybeShowScrollIcon() {
+  const chatboxEl = document.getElementById("chatbox");
+  const scrollIcon = document.getElementById("scrollDown");
+  if (!chatboxEl || !scrollIcon) return;
+  scrollIcon.style.display =
+    chatboxEl.scrollHeight > chatboxEl.clientHeight + 20 ? "block" : "none";
+}
 
-// NEW: always snap the chat view to the latest message (instant)
+// NEW: always snap the chat view to the latest message
 function scrollToBottom() {
   const box = document.getElementById("chatbox");
   if (!box) return;
   box.scrollTop = box.scrollHeight;
-  updateScrollButtonVisibility?.();
-}
-function scrollToBottomSmooth() {
-  const box = document.getElementById("chatbox");
-  if (!box) return;
-  box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
-  setTimeout(() => updateScrollButtonVisibility?.(), 250);
 }
 
 // Minimal helpers your old code referenced
@@ -190,7 +102,7 @@ function disableComposer(disabled) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Feature intent router → on-site links
+// NEW — Feature intent router → turn user ask into on-site links
 // ──────────────────────────────────────────────────────────────
 const FEATURE_LINKS = {
   "resume-analyzer": { url: "/resume-analyzer", label: "Resume Analyzer" },
@@ -206,6 +118,7 @@ const FEATURE_LINKS = {
 function detectFeatureIntent(message) {
   const m = String(message || "").toLowerCase();
 
+  // priority-ordered checks
   if (/\b(analy[sz]e|scan|score|optimi[sz]e).*\bresume\b|\bresume\b.*\b(analy[sz]er|score|ats|keywords?)\b/.test(m))
     return { primary: "resume-analyzer", alts: ["resume-builder", "cover-letter", "skill-gap"] };
 
@@ -232,6 +145,7 @@ function detectFeatureIntent(message) {
 
 function renderFeatureSuggestions(intent, intoEl) {
   if (!intent || !intoEl) return;
+
   const primary = FEATURE_LINKS[intent.primary];
   const alts = (intent.alts || []).map(k => FEATURE_LINKS[k]).filter(Boolean);
 
@@ -253,253 +167,11 @@ function renderFeatureSuggestions(intent, intoEl) {
   intoEl.appendChild(wrap);
 }
 
-/* 🚫 Auto-redirect disabled: keep users on /chat, just show links */
-function maybeAutoRedirect(){ return false; }
-
-/* Helper: remove only the spinner/thinking line */
-function removeThinking(el){
-  try { el?.querySelectorAll(".ai-thinking")?.forEach(n => n.remove()); } catch {}
-}
-
-/* Helper: append an assistant answer block (do NOT replace suggestions) */
-function appendAssistantAnswer(aiBlock, markdownText){
-  const copyId = `ai-${Date.now()}`;
-  const outWrap = document.createElement("div");
-  outWrap.innerHTML = `
-    <div id="${copyId}" class="markdown"></div>
-    <div class="response-footer">
-      <span class="copy-wrapper">
-        <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
-        <span class="copy-text">Copy</span>
-      </span>
-    </div>
-    <hr class="response-separator" />
-  `;
-  aiBlock.appendChild(outWrap);
-  const targetDiv = outWrap.querySelector("#" + CSS.escape(copyId));
-
-  // typewriter feel
-  let i = 0, buffer = "";
-  (function typeWriter() {
-    if (i < markdownText.length) {
-      buffer += markdownText[i++];
-      targetDiv.textContent = buffer;
-      scrollToAI(aiBlock);
-      scrollToBottom();
-      setTimeout(typeWriter, 5);
-    } else {
-      if (window.marked?.parse) targetDiv.innerHTML = window.marked.parse(buffer);
-      else targetDiv.textContent = buffer;
-      scrollToAI(aiBlock);
-      scrollToBottom();
-      maybeShowScrollIcon();
-    }
-  })();
-
-  return { id: copyId, node: outWrap };
-}
-
-/* Compose a concise site-aware reply for feature intents */
-function composeFeatureReply(intent) {
-  if (!intent) return null;
-  const primary = FEATURE_LINKS[intent.primary];
-  const alts    = (intent.alts || []).map(k => FEATURE_LINKS[k]).filter(Boolean);
-
-  let msg = `**Yes — I can help with that.** You can use **${primary.label}** here: [${primary.url}](${primary.url}).`;
-  if (alts.length) {
-    const links = alts.map(a => `[${a.label}](${a.url})`).join(", ");
-    msg += `\n\nYou might also like: ${links}.`;
-  }
-  return msg;
-}
-
 // ──────────────────────────────────────────────────────────────
-// Directory intent: curated lists with outbound links
-// ──────────────────────────────────────────────────────────────
-const RESUME_ANALYZERS = [
-  { name: "Resume Worded", url: "https://resumeworded.com", blurb: "AI feedback on resume & LinkedIn; “Score My Resume”." },
-  { name: "Jobscan", url: "https://www.jobscan.co", blurb: "ATS resume checker + optimization for specific postings." },
-  { name: "Enhancv Resume Checker", url: "https://enhancv.com/tools/resume-checker/", blurb: "Free checks across key resume criteria." },
-  { name: "Zety ATS Resume Checker", url: "https://zety.com/resume-checker", blurb: "Personalized score + actionable tips." },
-  { name: "ResumeGo", url: "https://www.resumego.net/resume-checker/", blurb: "Free scanner for potential ATS pitfalls." },
-  { name: "Hiration", url: "https://www.hiration.com", blurb: "AI-powered detailed resume review." },
-  { name: "ResyMatch (Cultivated Culture)", url: "https://resymatch.io", blurb: "Free ATS scanner + JD matching tool." },
-  { name: "SkillSyncer", url: "https://www.skillsyncer.com", blurb: "Scanner/optimizer against job descriptions." },
-  { name: "LiveCareer ATS Checker", url: "https://www.livecareer.com/resume-check", blurb: "Checks formatting, customization, design." },
-  { name: "Mployee / ResuScan", url: "https://mployee.me", blurb: "Online ATS checks over many criteria." }
-];
-
-const RESUME_BUILDERS = [
-  { name: "Novorésumé", url: "https://novoresume.com", blurb: "Recruiter-designed templates, modern layouts." },
-  { name: "ResumeBuilder.com", url: "https://www.resumebuilder.com", blurb: "Large template library, ATS-friendly." },
-  { name: "Canva (Resume maker)", url: "https://www.canva.com/resumes/templates/", blurb: "Drag-and-drop designs, many templates." },
-  { name: "Kickresume", url: "https://www.kickresume.com", blurb: "Builder + AI checker/score." },
-  { name: "Huntr", url: "https://huntr.co", blurb: "Builder + job tracking + cover letters." },
-  { name: "Resume.org", url: "https://resume.org", blurb: "Free resume templates & tools." },
-  { name: "Enhancv", url: "https://enhancv.com", blurb: "Builder with AI suggestions." }
-];
-
-// Robust detector for "give me many sites / list / majority" style asks
-function detectDirectoryIntent(raw) {
-  const m = String(raw || "").toLowerCase();
-  const asksForList =
-    /\b(list|give me|show me|suggest|recommend|some|many|majority|a lot|best|top|websites?|sites?)\b/.test(m);
-  const mentionsAnalysis = /\b(resume|cv)\b.*\b(analy(ze|sis|zer)|checker|ats|review|score|scanner)\b/.test(m);
-  const mentionsBuilder  = /\b(resume|cv)\b.*\b(builder|build|create|maker|template|templates)\b/.test(m);
-  if (!asksForList) return null;
-  if (mentionsAnalysis || mentionsBuilder) {
-    return { wantAnalysis: mentionsAnalysis, wantBuilders: mentionsBuilder };
-  }
-  return null;
-}
-
-function directoryHTML(intent) {
-  const cardCss = `
-    <style id="directoryStylesPersist">
-      .dir-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin:10px 0 4px}
-      .dir-card{border:1px solid #e6ecf5;border-radius:12px;padding:12px;background:#fff}
-      .dir-card a{font-weight:600;color:#104879;text-decoration:underline}
-      .dir-sub{color:#2a3f55;font-size:13px;margin-top:4px}
-      .ai-note{background:#f7fbff;border:1px solid #d8e7ff;color:#104879;padding:12px;border-radius:10px;margin-bottom:10px}
-    </style>
-  `;
-
-  let html = `${cardCss}
-    <div class="ai-note">
-      Prefer using Jobcus? Try our on-site tools:
-      <a href="/resume-analyzer">Resume Analyzer</a>,
-      <a href="/resume-builder">Resume Builder</a>,
-      <a href="/cover-letter">Cover Letter</a>.
-    </div>
-  `;
-  if (intent.wantAnalysis) {
-    html += `<h3 style="margin:6px 0 4px">Resume-analysis / ATS check tools</h3>
-             <div class="dir-grid">
-               ${RESUME_ANALYZERS.map(t => `
-                 <div class="dir-card">
-                   <a href="${t.url}" target="_blank" rel="noopener noreferrer">${t.name}</a>
-                   <div class="dir-sub">${t.blurb}</div>
-                 </div>`).join("")}
-             </div>`;
-  }
-  if (intent.wantBuilders) {
-    html += `<h3 style="margin:10px 0 4px">Resume builders</h3>
-             <div class="dir-grid">
-               ${RESUME_BUILDERS.map(t => `
-                 <div class="dir-card">
-                   <a href="${t.url}" target="_blank" rel="noopener noreferrer">${t.name}</a>
-                   <div class="dir-sub">${t.blurb}</div>
-                 </div>`).join("")}
-             </div>`;
-  }
-  html += `<hr class="response-separator" />`;
-  return html;
-}
-
-// Persist + render directory response
-function renderDirectoryResponse(intent, aiBlock) {
-  const html = directoryHTML(intent);
-
-  // 1) Render now
-  const wrap = document.createElement("div");
-  wrap.className = "directory-answer";
-  wrap.style.marginTop = "8px";
-  wrap.innerHTML = html;
-  aiBlock.appendChild(wrap);
-
-  // 2) Persist the REAL HTML so it survives refresh
-  window.saveMessage?.("assistant_html", html);
-
-  scrollToAI(aiBlock);
-  scrollToBottom();
-}
-
-// Detect rich "interview tips" ask (UX or general)
-function detectInterviewTipsIntent(raw){
-  const m = String(raw || "").toLowerCase();
-  const wantsTips = /\b(interview|interviewing|interview tips?|prep|prepare)\b/.test(m);
-  const mentionsUX = /\b(ux|user experience|product designer|ux researcher|ui\/?ux)\b/.test(m);
-  if (!wantsTips) return null;
-  return { kind: "interview-tips", ux: mentionsUX };
-}
-
-// Curated, markdown-rich guide (ChatGPT-like)
-function interviewTipsMarkdown(isUX){
-  return `**Absolutely — here’s a practical, structured guide of interview tips ${isUX ? "for a UX role" : ""}.**
-
----
-
-## 🎯 Understand the role
-- **UX Designer:** flows, wireframes, prototyping, usability.
-- **UX Researcher:** studies, synthesis, insights.
-- **Product/UX-UI Designer:** UX + visual + product thinking.
-
-**Tip:** Mirror the job description: tools, skills, impact.
-
----
-
-## 🧩 Explain your process clearly
-1. **Research** → 2. **Define** → 3. **Ideate** → 4. **Design** → 5. **Test** → 6. **Iterate**  
-Walk through a real project like a story: problem → decisions → impact.
-
----
-
-## 💬 Tell strong case-study stories (STAR/PAR)
-- **Situation / Problem** — context & constraints  
-- **Action** — what you did and *why*  
-- **Result** — metrics, outcomes, learnings
-
----
-
-## 🧠 Prepare for common questions
-- Balancing **business goals** vs **user needs**
-- Handling **contradictory feedback** or **trade-offs**
-- Working with **PM/Engineering**
-- Ensuring **accessibility & inclusivity**
-- Favorite project & **what you’d improve**
-
----
-
-## 📊 Use impact metrics
-- “Reduced drop-off **25%** after usability fixes”
-- “Shortened onboarding from **3m → 1m**”
-- If no numbers, use qualitative outcomes (“clearer navigation”, “task success improved”).
-
----
-
-## 🧪 Whiteboard/design challenges
-- Clarify the problem; think aloud
-- Map assumptions & constraints
-- Show options, choose one, outline next steps
-
----
-
-## ❓Great questions to ask them
-- How do you **define UX success** here?
-- What’s design’s relationship with **Product & Eng**?
-- How do you **prioritize research** and ship cadence?
-
----
-
-If you want, I can tailor this for your next interview (role level, company type, and sample answers).`;
-}
-
-// Short site-aware links footer (always includes on-site tools)
-function featureLinksFooter(intent){
-  const primary = FEATURE_LINKS[intent?.primary || "interview-coach"];
-  const alts = (intent?.alts || []).map(k => FEATURE_LINKS[k]).filter(Boolean);
-  const links = [
-    `You can use **${primary.label}** here: [${primary.url}](${primary.url}).`,
-    alts.length ? `You might also like: ${alts.map(a => `[${a.label}](${a.url})`).join(", ")}.` : ""
-  ].filter(Boolean).join("\n\n");
-  return `\n\n---\n\n${links}`;
-}
-
-
-// ──────────────────────────────────────────────────────────────
-// chat-only plan-limit detector using global upgrade UI
+// NEW — chat-only plan-limit detector that uses the global upgrade UI
 // ──────────────────────────────────────────────────────────────
 function handleChatLimitError(err) {
+  // apiFetch throws: "Request failed <status>: <body>"
   const msg = String(err && err.message || "");
   const isLimit =
     /Request failed 402/.test(msg) ||
@@ -508,12 +180,15 @@ function handleChatLimitError(err) {
 
   if (isLimit) {
     const copy = "You’ve reached your plan limit. Upgrade to continue.";
+    // Uses the same site-wide prompt used by analyzer/builder (defined in base.js)
     if (typeof window.upgradePrompt === "function") {
       window.upgradePrompt(copy, (window.PRICING_URL || "/pricing"), 1200);
     } else if (typeof window.showUpgradeBanner === "function") {
+      // Fallback: sticky banner only
       window.showUpgradeBanner(copy);
       setTimeout(() => { window.location.href = (window.PRICING_URL || "/pricing"); }, 1200);
     }
+    // Mark so our catch block can short-circuit generic error UI
     err.kind = "limit";
     err.message = copy;
     return true;
@@ -526,6 +201,7 @@ window.insertSuggestion = insertSuggestion;
 window.copyToClipboard  = copyToClipboard;
 window.autoResize       = autoResize;
 window.sharePage        = sharePage;
+window.handleMic        = handleMic;
 window.handleAttach     = handleAttach;
 window.removeWelcome    = removeWelcome;
 
@@ -558,7 +234,7 @@ function hideAIStatus() {
   if (bar) bar.style.display = "none";
 }
 
-/* Append-only thinking placeholder */
+// Create an inline “thinking” placeholder inside the assistant bubble
 function renderThinkingPlaceholder(targetEl, label = "Thinking…") {
   if (!targetEl) return;
   const node = document.createElement("div");
@@ -567,7 +243,7 @@ function renderThinkingPlaceholder(targetEl, label = "Thinking…") {
     <span class="ai-spinner" aria-hidden="true"></span>
     <span>${label}</span>
   `;
-  targetEl.appendChild(node);
+  targetEl.appendChild(node);             // <- append, do not replace
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -611,7 +287,9 @@ function initModelControls() {
 
 // ──────────────────────────────────────────────────────────────
 /** Server call helper (POST to /api/ask and return JSON) */
+// ──────────────────────────────────────────────────────────────
 async function sendMessageToAPI(payload) {
+  // apiFetch comes from base.js and already handles credentials + CSRF + 401s
   return apiFetch('/api/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -626,16 +304,19 @@ function detectJobsIntent(raw) {
   if (!raw) return null;
   const message = String(raw).toLowerCase().trim();
 
+  // Do NOT trigger on advice/strategy-style prompts
   if (/\b(advice|tips?|strategy|strategies|how to|guide|best practices?)\b/.test(message)) {
     return null;
   }
 
+  // Trigger only if the user clearly wants listings
   const wantsListings =
     /\b(openings?|vacancies|list(?:ing)?s?|show (me )?jobs?|find (me )?jobs?|roles? available|positions? available)\b/.test(message) ||
     /^\s*jobs?:/i.test(message);
 
   if (!wantsListings) return null;
 
+  // Extract role + location (same as before, simplified)
   const inLoc = /\b(in|near|around|at)\s+([a-z0-9\s\-,.'\/]+)/i;
   const remote = /\b(remote|work from home|hybrid)\b/i;
 
@@ -661,64 +342,8 @@ function detectJobsIntent(raw) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Scroll-to-bottom button (centered above composer) using scrolldown.svg
-// ──────────────────────────────────────────────────────────────
-function ensureScrollButtonStyles() {
-  if (document.getElementById("scrollToBottomStyles")) return;
-  const st = document.createElement("style");
-  st.id = "scrollToBottomStyles";
-  st.textContent = `
-    #scrollDown{
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 96px;
-      display: none;
-      align-items: center;
-      gap: 8px;
-      background: #104879;
-      color: #fff;
-      border: 0;
-      border-radius: 9999px;
-      padding: 8px 12px;
-      font-size: 14px;
-      box-shadow: 0 6px 16px rgba(0,0,0,.18);
-      cursor: pointer;
-      z-index: 999;
-    }
-    #scrollDown img{ width:18px;height:18px; display:inline-block; filter: invert(1); }
-    #scrollDown:hover { filter: brightness(1.05); }
-  `;
-  document.head.appendChild(st);
-}
-function ensureScrollButton() {
-  ensureScrollButtonStyles();
-  if (document.getElementById("scrollDown")) return;
-  const btn = document.createElement("button");
-  btn.id = "scrollDown";
-  btn.type = "button";
-  btn.setAttribute("aria-label", "Scroll to latest");
-  btn.title = "Scroll to latest";
-  btn.innerHTML = `
-    <img src="/static/icons/scrolldown.svg" alt="" aria-hidden="true" />
-    <span>Scroll to latest</span>
-  `;
-  btn.addEventListener("click", scrollToBottomSmooth);
-  document.body.appendChild(btn);
-}
-function updateScrollButtonVisibility() {
-  const chatbox = document.getElementById("chatbox");
-  const btn = document.getElementById("scrollDown");
-  if (!chatbox || !btn) return;
-  const overflow = chatbox.scrollHeight > chatbox.clientHeight + 8;
-  const nearBottom = (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight) < 32;
-  btn.style.display = (overflow && !nearBottom) ? "inline-flex" : "none";
-}
-function maybeShowScrollIcon() { updateScrollButtonVisibility(); }
-
-// ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  // Spinners CSS
+  // (Optional) Inject minimal CSS for spinner if not present
   if (!document.getElementById("aiSpinnerStyles")) {
     const st = document.createElement("style");
     st.id = "aiSpinnerStyles";
@@ -730,9 +355,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.head.appendChild(st);
   }
 
-  // Create scroll-to-bottom button
-  ensureScrollButton();
-
   // Init model UI/logic first
   const modelCtl = initModelControls();
 
@@ -741,8 +363,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Storage keys
   const STORAGE = {
-    current: "jobcus:chat:current",   // array of message objects
-    history: "jobcus:chat:history"
+    current: "jobcus:chat:current",   // [{role:'user'|'assistant', content:'...'}]
+    history: "jobcus:chat:history"    // [{id,title,created,messages:[...] }]
   };
 
   // DOM refs
@@ -755,13 +377,8 @@ document.addEventListener("DOMContentLoaded", () => {
     window.autoResize?.(input);
     scrollToBottom();
   });
+  // Initial size if prefilled
   window.autoResize?.(input);
-
-  // Show/hide scroll-to-bottom based on scroll & size
-  chatbox?.addEventListener("scroll", updateScrollButtonVisibility);
-  window.addEventListener("resize", updateScrollButtonVisibility);
-  new MutationObserver(() => updateScrollButtonVisibility())
-    .observe(chatbox || document.body, { childList: true, subtree: true });
 
   const escapeHtml = (s='') => s
     .replace(/&/g, '&amp;')
@@ -770,7 +387,6 @@ document.addEventListener("DOMContentLoaded", () => {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-  // LocalStorage helpers
   const getCurrent = () => JSON.parse(localStorage.getItem(STORAGE.current) || "[]");
   const setCurrent = (arr) => localStorage.setItem(STORAGE.current, JSON.stringify(arr));
   const getHistory = () => JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
@@ -794,10 +410,8 @@ document.addEventListener("DOMContentLoaded", () => {
           <button type="button" onclick="insertSuggestion('Show me job market insights for London')" class="chip">Job insights</button>
         </div>
       </div>`;
-    updateScrollButtonVisibility();
   }
 
-  // 🔄 RENDER: supports plain markdown and persisted HTML blocks
   function renderChat(messages){
     chatbox.innerHTML = "";
     if (!messages.length){
@@ -807,25 +421,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     messages.forEach(msg => {
       const div = document.createElement("div");
-      const role = (msg.role === "assistant_html") ? "assistant" : msg.role;
-      div.className = `chat-entry ${role === "assistant" ? "ai-answer" : "user"}`;
-
-      if (role === "assistant" && (msg.format === "html" || msg.role === "assistant_html")) {
-        // Persisted directory/cards/etc.
-        const id = `ai-${Math.random().toString(36).slice(2)}`;
-        div.innerHTML = `
-          <div id="${id}" class="markdown"></div>
-          <div class="response-footer">
-            <span class="copy-wrapper">
-              <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${id}')">
-              <span class="copy-text">Copy</span>
-            </span>
-          </div>
-          <hr class="response-separator" />
-        `;
-        const target = div.querySelector("#" + CSS.escape(id));
-        target.innerHTML = msg.html || msg.content || "";
-      } else if (role === "assistant") {
+      div.className = `chat-entry ${msg.role === "assistant" ? "ai-answer" : "user"}`;
+      if (msg.role === "assistant") {
         const id = `ai-${Math.random().toString(36).slice(2)}`;
         div.innerHTML = `
           <div id="${id}" class="markdown"></div>
@@ -840,34 +437,21 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         const target = div.querySelector(`#${id}`);
         if (window.marked && typeof window.marked.parse === "function") {
-          target.innerHTML = window.marked.parse(msg.content || "");
+          target.innerHTML = window.marked.parse(msg.content);
         } else {
-          target.textContent = msg.content || "";
+          target.textContent = msg.content;
         }
       } else {
         div.innerHTML = `
           <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 .5rem;color:#104879;">
-            ${escapeHtml(msg.content || "")}
+            ${escapeHtml(msg.content)}
           </h2>
         `;
       }
       chatbox.appendChild(div);
     });
     scrollToBottom();
-    updateScrollButtonVisibility();
   }
-
-  // 🧠 Save helpers (now support HTML messages)
-  window.saveMessage = function(role, content){
-    const msgs = getCurrent();
-    msgs.push({ role, content });
-    setCurrent(msgs);
-  };
-  window.saveMessageHTML = function(html){
-    const msgs = getCurrent();
-    msgs.push({ role: "assistant_html", format: "html", html });
-    setCurrent(msgs);
-  };
 
   function renderHistory(){
     const list = document.getElementById("chatHistory");
@@ -896,6 +480,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  window.saveMessage = function(role, content){
+    const msgs = getCurrent();
+    msgs.push({ role, content });
+    setCurrent(msgs);
+  };
+
   let clearInProgress = false;
   window.clearChat = function(){
     if (clearInProgress) return;
@@ -918,12 +508,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       setCurrent([]);
       localStorage.removeItem("chat:conversationId");
+      conversationId = null;
       renderChat([]);
       renderHistory();
-    } finally { setTimeout(() => { clearInProgress = false; }, 50); }
+    } finally {
+      setTimeout(() => { clearInProgress = false; }, 50);
+    }
   };
 
-  // 🔁 Server-truth credits panel (USED of MAX)
+  // 🔁 UPDATED: server-truth credits panel (USED of MAX)
   async function refreshCreditsPanel() {
     const planEl  = document.getElementById("credits-plan");
     const leftEl  = document.getElementById("credits-left");
@@ -931,22 +524,26 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!planEl && !leftEl && !resetEl) return;
 
     try {
-      const c = await apiFetch("/api/credits");
+      const c = await apiFetch("/api/credits"); // { plan, used, max, left, period_kind, period_key }
       const used = typeof c.used === "number" ? c.used : 0;
       const max  = typeof c.max  === "number" ? c.max  : 0;
 
+      // Show USED of MAX (or Unlimited if max falsy)
       planEl  && (planEl.textContent  = (c.plan || "free").replace(/^\w/, s => s.toUpperCase()));
       leftEl  && (leftEl.textContent  = (max ? `${used} of ${max}` : "Unlimited"));
 
       const resets = { total: "Trial", week: "Resets weekly", month: "Resets monthly", year: "Resets yearly", day: "Resets daily", hour: "Resets hourly" };
       resetEl && (resetEl.textContent = resets[c.period_kind] || "");
-    } catch (_) { /* no-op */ }
+    } catch (e) {
+      // Keep UI from breaking on error; do nothing
+    }
   }
 
-  // Sidebar buttons
+  // Sidebar open/close (use functions exposed by base.js)
   const chatMenuToggle = document.getElementById("chatMenuToggle");
   const chatOverlay    = document.getElementById("chatOverlay");
   const chatCloseBtn   = document.getElementById("chatSidebarClose");
+
   chatMenuToggle?.addEventListener("click", window.openChatMenu);
   chatOverlay?.addEventListener("click", window.closeChatMenu);
   chatCloseBtn?.addEventListener("click", window.closeChatMenu);
@@ -958,15 +555,10 @@ document.addEventListener("DOMContentLoaded", () => {
   renderChat(getCurrent());
   renderHistory();
   refreshCreditsPanel();
-  updateScrollButtonVisibility();
+  maybeShowScrollIcon?.();
   scrollToBottom();
 
-  // ---- send handler ----
-  const sendBtn = document.getElementById("sendButton");
-  sendBtn?.addEventListener("click", () => {
-    form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-  });
-
+  // ---- send handler (self-contained and async) ----
   form?.addEventListener("submit", async (evt) => {
     evt.preventDefault();
 
@@ -985,8 +577,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chatbox.appendChild(userMsg);
     scrollToBottom();
 
-    // Persist user message
-    window.saveMessage("user", message);
+    saveMessage("user", message);
 
     if (input) {
       input.value = "";
@@ -997,35 +588,37 @@ document.addEventListener("DOMContentLoaded", () => {
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
 
-    // Intent suggestions (inline CTAs)
     const featureIntent = detectFeatureIntent(message);
     if (featureIntent) {
+      // keep the inline CTAs so users still have buttons
       renderFeatureSuggestions(featureIntent, aiBlock);
-    }
     
-    // 🔥 Enriched “Interview tips” answer (skip model)
-    const interviewIntent = detectInterviewTipsIntent(message);
-    if (interviewIntent) {
-      const md = interviewTipsMarkdown(interviewIntent.ux) + featureLinksFooter(featureIntent || { primary: "interview-coach", alts: ["resume-analyzer","cover-letter","job-insights"] });
-      // render + persist
-      const { id } = appendAssistantAnswer(aiBlock, md);
-      window.saveMessage("assistant", md);
-      scrollToAI(aiBlock); scrollToBottom(); updateScrollButtonVisibility();
-      return; // ✅ done — no backend call needed
-    }
-
-
-    // Directory/list intent? Render curated answer and persist HTML, then finish.
-    const dirIntent = detectDirectoryIntent(message);
-    if (dirIntent) {
-      renderDirectoryResponse(dirIntent, aiBlock);     // render + save HTML
-      const composed = composeFeatureReply(featureIntent) ||
-        "**Here’s a handy list of tools with links above.** If you want, I can narrow it by free options, AI-powered only, or UK-friendly pricing.";
-      appendAssistantAnswer(aiBlock, composed);
-      window.saveMessage("assistant", composed);
-      _attachments = []; renderAttachmentTray();
-      scrollToAI(aiBlock); scrollToBottom(); updateScrollButtonVisibility();
-      return; // ✅ Skip model call for this directory ask
+      // NEW: auto-route when intent is very explicit
+      const veryStrong = /\b(open|start|take me|go to|launch|use|begin)\b/.test(message.toLowerCase())
+                      || /^(scan|analy[sz]e|build|create|write)\b/.test(message.toLowerCase());
+    
+      // Optional: make analyzer/builder always strong when user mentions resume + action
+      const strongKeys = ["resume-analyzer", "resume-builder", "cover-letter", "interview-coach", "skill-gap", "job-insights"];
+      const isSupported = strongKeys.includes(featureIntent.primary);
+    
+      if (isSupported && veryStrong) {
+        const dest = FEATURE_LINKS[featureIntent.primary]?.url || "/";
+        // Tiny “opening…” strip the user can cancel
+        const bar = document.createElement("div");
+        bar.className = "feature-autoroute";
+        bar.innerHTML = `
+          <span>Opening <strong>${FEATURE_LINKS[featureIntent.primary].label}</strong>…</span>
+          <button type="button" class="cancel">Cancel</button>
+        `;
+        aiBlock.appendChild(bar);
+    
+        let cancelled = false;
+        bar.querySelector(".cancel")?.addEventListener("click", () => { cancelled = true; bar.remove(); });
+    
+        setTimeout(() => {
+          if (!cancelled) window.location.href = dest;
+        }, 900); // quick, but gives the user a moment to cancel
+      }
     }
 
     renderThinkingPlaceholder(aiBlock, "Thinking…");
@@ -1033,69 +626,89 @@ document.addEventListener("DOMContentLoaded", () => {
     scrollToAI(aiBlock);
     scrollToBottom();
 
-    // Model selection from UI
-    const shell = document.getElementById("chatShell");
-    const modelCtl = initModelControls();
     const currentModel = modelCtl.getSelectedModel();
     let finalReply = "";
 
     try {
       disableComposer(true);
 
-      // Jobs quick-intent (natural language + "jobs:" shortcut)
+      // Jobs quick-intent (supports natural language + "jobs:" shortcut)
       const jobIntent = detectJobsIntent(message) || (
         (/^\s*jobs?:/i.test(message) ? { query: message.replace(/^\s*jobs?:/i, "").trim() || message.trim() } : null)
       );
 
       if (jobIntent) {
+        // status while fetching
         showAIStatus("Finding jobs…");
-        let jobs = await apiFetch("/jobs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: jobIntent.query })
-        });
+
+        let jobs;
+        if (Array.isArray(jobIntent.queries) && jobIntent.queries.length > 1) {
+          const results = await Promise.all(jobIntent.queries.map(q =>
+            apiFetch("/jobs", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ query: q })
+            }).catch(() => ({ remotive:[], adzuna:[], jsearch:[] }))
+          ));
+          jobs = results.reduce((acc, r) => ({
+            remotive: [...(acc.remotive||[]), ...(r.remotive||[])],
+            adzuna:   [...(acc.adzuna  ||[]), ...(r.adzuna  ||[])],
+            jsearch:  [...(acc.jsearch ||[]), ...(r.jsearch ||[])],
+          }), {remotive:[], adzuna:[], jsearch:[]});
+        } else {
+          jobs = await apiFetch("/jobs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: jobIntent.query })
+          });
+        }
+
+        // replace the thinking bubble with the actual job list
         aiBlock.innerHTML = "";
         displayJobs(jobs, aiBlock);
         if (![...(jobs?.remotive||[]), ...(jobs?.adzuna||[]), ...(jobs?.jsearch||[])].length) {
           aiBlock.insertAdjacentHTML('beforeend',
             `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
         }
-        window.saveMessage("assistant", `Here are jobs for “${jobIntent.query}”.`);
+        saveMessage("assistant", `Here are jobs for “${(jobIntent.queries || [jobIntent.query]).join(' | ')}”.`);
+
         await refreshCreditsPanel?.();
         window.syncState?.();
-        hideAIStatus();
+        hideAIStatus();               // ✅ hide the sticky status
         scrollToBottom();
         return;
       }
 
-      // Normal AI chat → ask backend (include attachments)
+      // Normal AI chat
       const data = await apiFetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message,
-          model: currentModel,
-          conversation_id: localStorage.getItem("chat:conversationId") || null,
-          attachments: _attachments.map(a => ({ filename: a.filename, text: a.text || "" }))
-        })
+        body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
       });
 
-      if (data.conversation_id && data.conversation_id !== localStorage.getItem("chat:conversationId")) {
-        localStorage.setItem("chat:conversationId", data.conversation_id);
+      // Save conv id after first reply
+      if (data.conversation_id && data.conversation_id !== conversationId) {
+        conversationId = data.conversation_id;
+        localStorage.setItem("chat:conversationId", conversationId);
       }
 
-      // Prefer concise site-aware answer if feature intent exists
-      if (featureIntent) finalReply = composeFeatureReply(featureIntent);
-      else finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
+      finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
     } catch (err) {
-      hideAIStatus();
+      hideAIStatus();  // ✅ ensure status bar is removed on error
 
-      if (handleChatLimitError(err)) { removeThinking(aiBlock); scrollToBottom(); return; }
+      // NEW — show the same upgrade modal/banner + gentle redirect (chat only)
+      if (handleChatLimitError(err)) {
+        aiBlock.innerHTML = ""; // suppress raw JSON message
+        scrollToBottom();
+        return;
+      }
 
-      removeThinking(aiBlock);
-      const errDiv = document.createElement("div");
-      errDiv.innerHTML = `<p style="margin:8px 0;color:#a00;">${(err && err.message) || "Sorry, something went wrong."}</p><hr class="response-separator" />`;
-      aiBlock.appendChild(errDiv);
+      if (err?.kind === "limit") {
+        aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
+        scrollToBottom();
+        return;
+      }
+      aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
       scrollToBottom();
       return;
     } finally {
@@ -1103,35 +716,67 @@ document.addEventListener("DOMContentLoaded", () => {
       input?.focus();
     }
 
+    // ✅ Model returned — stop the status bar now (success path)
     hideAIStatus();
-    removeThinking(aiBlock);
 
-    // Append the final answer (do NOT overwrite suggestions)
-    const composed = finalReply && typeof finalReply === "string" ? finalReply.trim() : "";
-    appendAssistantAnswer(aiBlock, composed || "Thanks! How else can I help?");
-    window.saveMessage("assistant", composed || "Thanks! How else can I help?");
-
-    // clear attachments after a completed turn
-    _attachments = [];
-    renderAttachmentTray();
-
-    (async () => { await refreshCreditsPanel?.(); })();
-    window.syncState?.();
-
-    scrollToAI(aiBlock);
+    const copyId = `ai-${Date.now()}`;
+    aiBlock.innerHTML = `
+      <div id="${copyId}" class="markdown"></div>
+      <div class="response-footer">
+        <span class="copy-wrapper">
+          <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
+          <span class="copy-text">Copy</span>
+        </span>
+      </div>
+      <hr class="response-separator" />
+    `;
+    const targetDiv = document.getElementById(copyId);
     scrollToBottom();
-    updateScrollButtonVisibility();
+
+    let i = 0, buffer = "";
+    (function typeWriter() {
+      if (i < finalReply.length) {
+        buffer += finalReply[i++];
+        targetDiv.textContent = buffer;
+        scrollToAI(aiBlock);
+        scrollToBottom();
+        setTimeout(typeWriter, 5);
+      } else {
+        if (window.marked?.parse) {
+          targetDiv.innerHTML = window.marked.parse(buffer);
+        } else {
+          targetDiv.textContent = buffer;
+        }
+        saveMessage("assistant", finalReply);
+
+        // 🔁 UPDATED: refresh from server instead of local "chatUsed"
+        (async () => { await refreshCreditsPanel?.(); })();
+        window.syncState?.();
+
+        scrollToAI(aiBlock);
+        scrollToBottom();
+        maybeShowScrollIcon();
+      }
+    })();
   });
 
+  const sendBtn = document.getElementById("sendButton");
+  sendBtn?.addEventListener("click", () => {
+    // Trigger the form submit programmatically
+    form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+
+  // If DOM changes inside chatbox (e.g., images/markdown), keep view at bottom
   new MutationObserver(() => {
     const box = document.getElementById("chatbox");
     if (box) box.scrollTop = box.scrollHeight;
-    updateScrollButtonVisibility();
   }).observe(chatbox, { childList: true, subtree: true });
 
-  window.addEventListener("resize", () => updateScrollButtonVisibility());
+  // Keep bottom on resize
+  window.addEventListener("resize", scrollToBottom);
 });
 
+// AUTO-CONSUME prefilled question from home page
 // AUTO-CONSUME prefilled question from home page
 (function(){
   try {
@@ -1143,8 +788,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const form  = document.getElementById('chat-form');
     if (!input || !form) return;
     input.value = q;
+    // small delay lets the page finish wiring handlers
     setTimeout(() => {
       form.dispatchEvent(new Event("submit", { bubbles:true, cancelable:true }));
+      // Clean the querystring so refreshes don't resend
       const nextURL = location.pathname + location.hash;
       history.replaceState({}, "", nextURL);
     }, 100);
@@ -1163,6 +810,7 @@ async function fetchJobs(query, aiBlock) {
     });
     const data = await res.json();
     displayJobs(data, aiBlock);
+    // Also show a friendly fallback if nothing came back when called directly
     if (![...(data?.remotive||[]), ...(data?.adzuna||[]), ...(data?.jsearch||[])].length) {
       aiBlock.insertAdjacentHTML('beforeend',
         `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
@@ -1192,5 +840,4 @@ function displayJobs(data, aiBlock) {
   });
   aiBlock.appendChild(jobsContainer);
   scrollToBottom();
-  updateScrollButtonVisibility();
 }
