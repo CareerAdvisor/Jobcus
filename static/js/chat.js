@@ -43,8 +43,85 @@ function sharePage() {
   navigator.clipboard.writeText(window.location.href);
   alert("Link copied!");
 }
+
+// --- Attachments (front-end tray & upload trigger) ---
+let _attachments = []; // [{filename, size, text}]
+function renderAttachmentTray() {
+  let tray = document.getElementById("attachTray");
+  if (!_attachments.length) {
+    if (tray) tray.remove();
+    return;
+  }
+  if (!tray) {
+    tray = document.createElement("div");
+    tray.id = "attachTray";
+    tray.className = "attach-tray";
+    tray.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;";
+    const composer = document.querySelector(".composer") || document.getElementById("chat-form");
+    composer?.parentNode?.insertBefore(tray, composer);
+  }
+  tray.innerHTML = _attachments.map((att, i) => `
+    <span class="attach-chip" style="display:inline-flex;align-items:center;gap:6px;background:#f1f5ff;border:1px solid #dbe6ff;border-radius:9999px;padding:6px 10px;font-size:12px">
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 13l5-5 5 5" fill="none" stroke="#104879" stroke-width="2"/></svg>
+      <span title="${att.filename}">${att.filename.length>26?att.filename.slice(0,23)+'…':att.filename}</span>
+      <button type="button" aria-label="Remove" onclick="removeAttachment(${i})" style="border:0;background:transparent;color:#104879;font-weight:700;cursor:pointer">×</button>
+    </span>
+  `).join("");
+  updateScrollButtonVisibility?.();
+}
+window.removeAttachment = function(i){
+  _attachments.splice(i,1);
+  renderAttachmentTray();
+};
+function ensureUploadInput() {
+  if (document.getElementById("chatUpload")) return;
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.id = "chatUpload";
+  inp.accept = ".pdf,.doc,.docx,.txt,.rtf";
+  inp.multiple = true;
+  inp.style.display = "none";
+  inp.addEventListener("change", async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    for (const f of files) {
+      await uploadOneFile(f);
+    }
+    e.target.value = "";
+  });
+  document.body.appendChild(inp);
+}
+window.handleAttach = function(){
+  ensureUploadInput();
+  document.getElementById("chatUpload").click();
+};
+async function uploadOneFile(file) {
+  const maxBytes = 5 * 1024 * 1024; // 5 MB
+  const allowed = /\.(pdf|docx?|txt|rtf)$/i.test(file.name);
+  if (!allowed) { alert("Please upload PDF, DOC, DOCX, TXT, or RTF."); return; }
+  if (file.size > maxBytes) { alert("Max file size is 5 MB."); return; }
+
+  _attachments.push({ filename: file.name, size: file.size, text: "Uploading…" });
+  renderAttachmentTray();
+
+  try {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch("/api/upload", { method: "POST", body: form, credentials: "same-origin" });
+    if (!res.ok) throw new Error(`Upload failed (${res.status})`);
+    const data = await res.json(); // { filename, size, text }
+    const idx = _attachments.findIndex(a => a.filename === file.name && a.text === "Uploading…");
+    if (idx >= 0) _attachments[idx] = { filename: data.filename || file.name, size: data.size || file.size, text: data.text || "" };
+    renderAttachmentTray();
+  } catch (e) {
+    const idx = _attachments.findIndex(a => a.filename === file.name && a.text === "Uploading…");
+    if (idx >= 0) _attachments[idx].text = "(upload failed)";
+    renderAttachmentTray();
+    alert(`Could not upload ${file.name}.`);
+  }
+}
+
 function handleMic()   { alert("Voice input coming soon!"); }
-function handleAttach(){ alert("File upload coming soon!"); }
 
 function copyToClipboard(id) {
   const el = document.getElementById(id);
@@ -67,19 +144,20 @@ function scrollToAI(el) {
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-function maybeShowScrollIcon() {
-  const chatboxEl = document.getElementById("chatbox");
-  const scrollIcon = document.getElementById("scrollDown");
-  if (!chatboxEl || !scrollIcon) return;
-  scrollIcon.style.display =
-    chatboxEl.scrollHeight > chatboxEl.clientHeight + 20 ? "block" : "none";
-}
 
-// NEW: always snap the chat view to the latest message
+// NEW: always snap the chat view to the latest message (instant)
 function scrollToBottom() {
   const box = document.getElementById("chatbox");
   if (!box) return;
   box.scrollTop = box.scrollHeight;
+  updateScrollButtonVisibility?.();
+}
+function scrollToBottomSmooth() {
+  const box = document.getElementById("chatbox");
+  if (!box) return;
+  box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
+  // small delay to re-check
+  setTimeout(() => updateScrollButtonVisibility?.(), 250);
 }
 
 // Minimal helpers your old code referenced
@@ -221,14 +299,12 @@ function composeFeatureReply(intent) {
   const primary = FEATURE_LINKS[intent.primary];
   const alts    = (intent.alts || []).map(k => FEATURE_LINKS[k]).filter(Boolean);
 
-  // Short, confident, and helpful. Uses relative links so it works on any domain.
+  // Short, confident, helpful.
   let msg = `**Yes — I can help with that.** You can use **${primary.label}** here: [${primary.url}](${primary.url}).`;
-
   if (alts.length) {
     const links = alts.map(a => `[${a.label}](${a.url})`).join(", ");
     msg += `\n\nYou might also like: ${links}.`;
   }
-
   return msg;
 }
 
@@ -263,7 +339,7 @@ window.copyToClipboard  = copyToClipboard;
 window.autoResize       = autoResize;
 window.sharePage        = sharePage;
 window.handleMic        = handleMic;
-window.handleAttach     = handleAttach;
+// handleAttach defined above
 window.removeWelcome    = removeWelcome;
 
 // ──────────────────────────────────────────────────────────────
@@ -401,8 +477,68 @@ function detectJobsIntent(raw) {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Scroll-to-bottom button (centered above composer)
+// ──────────────────────────────────────────────────────────────
+function ensureScrollButtonStyles() {
+  if (document.getElementById("scrollToBottomStyles")) return;
+  const st = document.createElement("style");
+  st.id = "scrollToBottomStyles";
+  st.textContent = `
+    #scrollDown{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 96px; /* slightly above composer */
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: #104879;
+      color: #fff;
+      border: 0;
+      border-radius: 9999px;
+      padding: 10px 14px;
+      font-size: 14px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.18);
+      cursor: pointer;
+      z-index: 30;
+    }
+    #scrollDown:hover { filter: brightness(1.05); }
+    #scrollDown svg { display:inline-block; }
+  `;
+  document.head.appendChild(st);
+}
+function ensureScrollButton() {
+  ensureScrollButtonStyles();
+  if (document.getElementById("scrollDown")) return;
+  const btn = document.createElement("button");
+  btn.id = "scrollDown";
+  btn.type = "button";
+  btn.setAttribute("aria-label", "Scroll to latest");
+  btn.title = "Scroll to latest";
+  btn.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 16l-6-6h12l-6 6z" fill="currentColor"/>
+    </svg>
+    <span>Scroll to latest</span>
+  `;
+  btn.addEventListener("click", scrollToBottomSmooth);
+  // place at end of body so it's fixed relative to viewport
+  document.body.appendChild(btn);
+}
+function updateScrollButtonVisibility() {
+  const chatbox = document.getElementById("chatbox");
+  const btn = document.getElementById("scrollDown");
+  if (!chatbox || !btn) return;
+  const overflow = chatbox.scrollHeight > chatbox.clientHeight + 8;
+  const nearBottom = (chatbox.scrollHeight - chatbox.scrollTop - chatbox.clientHeight) < 32;
+  btn.style.display = (overflow && !nearBottom) ? "inline-flex" : "none";
+}
+// Backward-compatible hook if something else calls this name
+function maybeShowScrollIcon() { updateScrollButtonVisibility(); }
+
+// ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  // (Optional) Inject minimal CSS for spinner if not present
+  // Spinners CSS (if not present)
   if (!document.getElementById("aiSpinnerStyles")) {
     const st = document.createElement("style");
     st.id = "aiSpinnerStyles";
@@ -413,6 +549,9 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     document.head.appendChild(st);
   }
+
+  // Create scroll-to-bottom button
+  ensureScrollButton();
 
   // Init model UI/logic first
   const modelCtl = initModelControls();
@@ -437,6 +576,12 @@ document.addEventListener("DOMContentLoaded", () => {
     scrollToBottom();
   });
   window.autoResize?.(input); // initial
+
+  // Show/hide scroll-to-bottom based on scroll & size
+  chatbox?.addEventListener("scroll", updateScrollButtonVisibility);
+  window.addEventListener("resize", updateScrollButtonVisibility);
+  new MutationObserver(() => updateScrollButtonVisibility())
+    .observe(chatbox || document.body, { childList: true, subtree: true });
 
   const escapeHtml = (s='') => s
     .replace(/&/g, '&amp;')
@@ -468,6 +613,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <button type="button" onclick="insertSuggestion('Show me job market insights for London')" class="chip">Job insights</button>
         </div>
       </div>`;
+    updateScrollButtonVisibility();
   }
 
   function renderChat(messages){
@@ -509,6 +655,7 @@ document.addEventListener("DOMContentLoaded", () => {
       chatbox.appendChild(div);
     });
     scrollToBottom();
+    updateScrollButtonVisibility();
   }
 
   function renderHistory(){
@@ -610,10 +757,15 @@ document.addEventListener("DOMContentLoaded", () => {
   renderChat(getCurrent());
   renderHistory();
   refreshCreditsPanel();
-  maybeShowScrollIcon?.();
+  updateScrollButtonVisibility();
   scrollToBottom();
 
   // ---- send handler ----
+  const sendBtn = document.getElementById("sendButton");
+  sendBtn?.addEventListener("click", () => {
+    form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+
   form?.addEventListener("submit", async (evt) => {
     evt.preventDefault();
 
@@ -705,11 +857,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Normal AI chat → ask backend
+      // Normal AI chat → ask backend (include attachments)
       const data = await apiFetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
+        body: JSON.stringify({
+          message,
+          model: currentModel,
+          conversation_id: conversationId,
+          attachments: _attachments.map(a => ({ filename: a.filename, text: a.text || "" }))
+        })
       });
 
       if (data.conversation_id && data.conversation_id !== conversationId) {
@@ -717,7 +874,7 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("chat:conversationId", conversationId);
       }
 
-      // If we detected a site feature intent, we prefer a concise, site-aware answer we compose locally.
+      // If we detected a site feature intent, prefer a concise, site-aware answer we compose locally.
       if (featureIntent) {
         finalReply = composeFeatureReply(featureIntent);
       } else {
@@ -727,7 +884,6 @@ document.addEventListener("DOMContentLoaded", () => {
       hideAIStatus();
 
       if (handleChatLimitError(err)) {
-        // do not clear the suggestions
         removeThinking(aiBlock);
         scrollToBottom();
         return;
@@ -758,7 +914,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Append the final answer (do NOT overwrite suggestions)
     const composed = finalReply && typeof finalReply === "string" ? finalReply.trim() : "";
-    const { /*id, node*/ } = appendAssistantAnswer(aiBlock, composed || "Thanks! How else can I help?");
+    appendAssistantAnswer(aiBlock, composed || "Thanks! How else can I help?");
+
+    // clear attachments after a completed turn
+    _attachments = [];
+    renderAttachmentTray();
 
     // Save to history
     saveMessage("assistant", composed || "Thanks! How else can I help?");
@@ -768,20 +928,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     scrollToAI(aiBlock);
     scrollToBottom();
-    maybeShowScrollIcon();
-  });
-
-  const sendBtn = document.getElementById("sendButton");
-  sendBtn?.addEventListener("click", () => {
-    form?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    updateScrollButtonVisibility();
   });
 
   new MutationObserver(() => {
     const box = document.getElementById("chatbox");
     if (box) box.scrollTop = box.scrollHeight;
+    updateScrollButtonVisibility();
   }).observe(chatbox, { childList: true, subtree: true });
 
-  window.addEventListener("resize", scrollToBottom);
+  window.addEventListener("resize", () => updateScrollButtonVisibility());
 });
 
 // AUTO-CONSUME prefilled question from home page
@@ -844,4 +1000,5 @@ function displayJobs(data, aiBlock) {
   });
   aiBlock.appendChild(jobsContainer);
   scrollToBottom();
+  updateScrollButtonVisibility();
 }
