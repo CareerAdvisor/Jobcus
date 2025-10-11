@@ -261,22 +261,23 @@ function removeThinking(el){
   try { el?.querySelectorAll(".ai-thinking")?.forEach(n => n.remove()); } catch {}
 }
 
-/* Helper: append an assistant answer block (do NOT replace suggestions) */
-function appendAssistantAnswer(aiBlock, markdownText){
-  const copyId = `ai-${Date.now()}`;
-  const outWrap = document.createElement("div");
-  outWrap.innerHTML = `
-    <div id="${copyId}" class="markdown"></div>
+// Helper: append an assistant answer block (keeps suggestions intact)
+function appendAssistantAnswer(container, markdown){
+  const id = `ai-${Date.now()}`;
+  container.insertAdjacentHTML("beforeend", `
+    <div id="${id}" class="markdown"></div>
     <div class="response-footer">
       <span class="copy-wrapper">
-        <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${copyId}')">
+        <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${id}')">
         <span class="copy-text">Copy</span>
       </span>
     </div>
     <hr class="response-separator" />
-  `;
-  aiBlock.appendChild(outWrap);
-  const targetDiv = outWrap.querySelector("#" + CSS.escape(copyId));
+  `);
+  const el = document.getElementById(id);
+  el.innerHTML = (window.marked?.parse ? window.marked.parse(markdown) : markdown);
+  return { id, el };
+}
 
   // typewriter feel
   let i = 0, buffer = "";
@@ -997,35 +998,38 @@ document.addEventListener("DOMContentLoaded", () => {
     aiBlock.className = "chat-entry ai-answer";
     chatbox.appendChild(aiBlock);
 
-    // Intent suggestions (inline CTAs)
+    // 1) Inline CTAs for on-site features
     const featureIntent = detectFeatureIntent(message);
-    if (featureIntent) {
-      renderFeatureSuggestions(featureIntent, aiBlock);
-    }
+    if (featureIntent) renderFeatureSuggestions(featureIntent, aiBlock);
     
-    // 🔥 Enriched “Interview tips” answer (skip model)
+    // 2) 🔥 Enriched “Interview tips” (skip model)
     const interviewIntent = detectInterviewTipsIntent(message);
     if (interviewIntent) {
-      const md = interviewTipsMarkdown(interviewIntent.ux) + featureLinksFooter(featureIntent || { primary: "interview-coach", alts: ["resume-analyzer","cover-letter","job-insights"] });
-      // render + persist
-      const { id } = appendAssistantAnswer(aiBlock, md);
-      window.saveMessage("assistant", md);
-      scrollToAI(aiBlock); scrollToBottom(); updateScrollButtonVisibility();
-      return; // ✅ done — no backend call needed
+      const md = interviewTipsMarkdown(interviewIntent.ux) +
+                 featureLinksFooter(featureIntent || {
+                   primary: "interview-coach",
+                   alts: ["resume-analyzer","cover-letter","job-insights"]
+                 });
+    
+      appendAssistantAnswer(aiBlock, md);
+      window.saveMessage("assistant", md);      // persists; survives refresh
+      scrollToAI(aiBlock);
+      scrollToBottom();
+      updateScrollButtonVisibility?.();
+      return;                                   // ⛔ no /api/ask here
     }
-
-
-    // Directory/list intent? Render curated answer and persist HTML, then finish.
+    
+    // 3) Curated directory answers (skip model too)
     const dirIntent = detectDirectoryIntent(message);
     if (dirIntent) {
-      renderDirectoryResponse(dirIntent, aiBlock);     // render + save HTML
+      renderDirectoryResponse(dirIntent, aiBlock);  // renders + saves HTML
       const composed = composeFeatureReply(featureIntent) ||
-        "**Here’s a handy list of tools with links above.** If you want, I can narrow it by free options, AI-powered only, or UK-friendly pricing.";
+        "**Here’s a handy list of tools with links above.** I can also narrow by free, AI-powered only, or UK-friendly options.";
       appendAssistantAnswer(aiBlock, composed);
       window.saveMessage("assistant", composed);
       _attachments = []; renderAttachmentTray();
-      scrollToAI(aiBlock); scrollToBottom(); updateScrollButtonVisibility();
-      return; // ✅ Skip model call for this directory ask
+      scrollToAI(aiBlock); scrollToBottom(); updateScrollButtonVisibility?.();
+      return;
     }
 
     renderThinkingPlaceholder(aiBlock, "Thinking…");
