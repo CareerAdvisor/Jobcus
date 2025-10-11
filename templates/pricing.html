@@ -7,7 +7,6 @@
 
 {% block content %}
 {% set forwarded_next = request.args.get('next','') %}
-{# Use currency injected by base.html (ccy = current_currency) #}
 
 <section class="pricing-wrap">
   <!-- Hero -->
@@ -23,8 +22,8 @@
         <div class="plan__left">
           <h3 class="plan__title">Free</h3>
           <div class="price">
-            <span class="amount">{{ 0|fmt_ccy(ccy) }}</span>
-            <span class="period">/{{ _('mo') }}</span>
+            <span class="currency">£</span><span class="amount">0</span>
+            <span class="period">/mo</span>
           </div>
         </div>
         <p class="plan__tagline">Great for a quick check</p>
@@ -51,13 +50,10 @@
       <header class="plan__head">
         <div class="plan__left">
           <h3 class="plan__title">Weekly Pass</h3>
-          <!-- ▼ INSERTED (weekly price + form) -->
-          <div class="price">{{ 7.99|fmt_ccy(ccy) }} / {{ _('week') }}</div>
-          <form action="/checkout" method="post">
-            <input type="hidden" name="price_id" value="{{ price_id_for('weekly', ccy) }}">
-            <button class="btn btn-primary w-full">{{ _('Get Weekly Pass') }}</button>
-          </form>
-          <!-- ▲ INSERTED -->
+          <div class="price">
+            <span class="currency">£</span><span class="amount">7<span class="cents">.99</span></span>
+            <span class="period">/week</span>
+          </div>
         </div>
         <p class="plan__tagline">For urgent applications</p>
       </header>
@@ -74,7 +70,10 @@
       </ul>
 
       <footer class="plan__foot">
-        {# You can keep this as a secondary link if you want, but the form above posts the correct price_id #}
+        <a class="btn btn-primary w-full"
+           href="{{ url_for('subscribe') }}?plan=weekly&next={{ forwarded_next|urlencode }}">
+          Get Weekly Pass
+        </a>
       </footer>
     </article>
 
@@ -84,13 +83,10 @@
       <header class="plan__head">
         <div class="plan__left">
           <h3 class="plan__title">Standard</h3>
-          <!-- ▼ INSERTED (standard price + form) -->
-          <div class="price">{{ 23.99|fmt_ccy(ccy) }} / {{ _('month') }}</div>
-          <form action="/checkout" method="post">
-            <input type="hidden" name="price_id" value="{{ price_id_for('standard', ccy) }}">
-            <button class="btn btn-primary w-full">{{ _('Get Standard') }}</button>
-          </form>
-          <!-- ▲ INSERTED -->
+          <div class="price">
+            <span class="currency">£</span><span class="amount">23<span class="cents">.99</span></span>
+            <span class="period">/mo</span>
+          </div>
         </div>
         <p class="plan__tagline">Serious applications, smarter tools</p>
       </header>
@@ -109,7 +105,11 @@
       </ul>
 
       <footer class="plan__foot">
-        {# Removed duplicate <a> and premium link here; Standard should point to Standard #}
+        <a class="btn btn-primary w-full"
+           <a class="btn btn-primary w-full"
+           href="{{ url_for('subscribe') }}?plan=premium&next={{ forwarded_next|urlencode }}">
+          Get Premium
+        </a>
       </footer>
     </article>
 
@@ -118,13 +118,10 @@
       <header class="plan__head">
         <div class="plan__left">
           <h3 class="plan__title">Premium</h3>
-          <!-- ▼ INSERTED (premium price + form) -->
-          <div class="price">{{ 229|fmt_ccy(ccy) }} / {{ _('year') }}</div>
-          <form action="/checkout" method="post">
-            <input type="hidden" name="price_id" value="{{ price_id_for('premium', ccy) }}">
-            <button class="btn btn-primary w-full">{{ _('Get Premium') }}</button>
-          </form>
-          <!-- ▲ INSERTED -->
+          <div class="price">
+            <span class="currency">£</span><span class="amount">229</span>
+            <span class="period">/yr</span>
+          </div>
         </div>
         <p class="plan__tagline">Best value for ongoing career growth</p>
       </header>
@@ -138,7 +135,7 @@
       </ul>
 
       <footer class="plan__foot">
-        {# Form above posts with price_id; you can remove old link #}
+        <a class="btn btn-primary w-full" href="/subscribe?plan=premium">Get Premium</a>
       </footer>
     </article>
   </div>
