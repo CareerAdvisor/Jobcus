@@ -414,6 +414,88 @@ function renderDirectoryResponse(intent, aiBlock) {
   scrollToBottom();
 }
 
+// Detect rich "interview tips" ask (UX or general)
+function detectInterviewTipsIntent(raw){
+  const m = String(raw || "").toLowerCase();
+  const wantsTips = /\b(interview|interviewing|interview tips?|prep|prepare)\b/.test(m);
+  const mentionsUX = /\b(ux|user experience|product designer|ux researcher|ui\/?ux)\b/.test(m);
+  if (!wantsTips) return null;
+  return { kind: "interview-tips", ux: mentionsUX };
+}
+
+// Curated, markdown-rich guide (ChatGPT-like)
+function interviewTipsMarkdown(isUX){
+  return `**Absolutely — here’s a practical, structured guide of interview tips ${isUX ? "for a UX role" : ""}.**
+
+---
+
+## 🎯 Understand the role
+- **UX Designer:** flows, wireframes, prototyping, usability.
+- **UX Researcher:** studies, synthesis, insights.
+- **Product/UX-UI Designer:** UX + visual + product thinking.
+
+**Tip:** Mirror the job description: tools, skills, impact.
+
+---
+
+## 🧩 Explain your process clearly
+1. **Research** → 2. **Define** → 3. **Ideate** → 4. **Design** → 5. **Test** → 6. **Iterate**  
+Walk through a real project like a story: problem → decisions → impact.
+
+---
+
+## 💬 Tell strong case-study stories (STAR/PAR)
+- **Situation / Problem** — context & constraints  
+- **Action** — what you did and *why*  
+- **Result** — metrics, outcomes, learnings
+
+---
+
+## 🧠 Prepare for common questions
+- Balancing **business goals** vs **user needs**
+- Handling **contradictory feedback** or **trade-offs**
+- Working with **PM/Engineering**
+- Ensuring **accessibility & inclusivity**
+- Favorite project & **what you’d improve**
+
+---
+
+## 📊 Use impact metrics
+- “Reduced drop-off **25%** after usability fixes”
+- “Shortened onboarding from **3m → 1m**”
+- If no numbers, use qualitative outcomes (“clearer navigation”, “task success improved”).
+
+---
+
+## 🧪 Whiteboard/design challenges
+- Clarify the problem; think aloud
+- Map assumptions & constraints
+- Show options, choose one, outline next steps
+
+---
+
+## ❓Great questions to ask them
+- How do you **define UX success** here?
+- What’s design’s relationship with **Product & Eng**?
+- How do you **prioritize research** and ship cadence?
+
+---
+
+If you want, I can tailor this for your next interview (role level, company type, and sample answers).`;
+}
+
+// Short site-aware links footer (always includes on-site tools)
+function featureLinksFooter(intent){
+  const primary = FEATURE_LINKS[intent?.primary || "interview-coach"];
+  const alts = (intent?.alts || []).map(k => FEATURE_LINKS[k]).filter(Boolean);
+  const links = [
+    `You can use **${primary.label}** here: [${primary.url}](${primary.url}).`,
+    alts.length ? `You might also like: ${alts.map(a => `[${a.label}](${a.url})`).join(", ")}.` : ""
+  ].filter(Boolean).join("\n\n");
+  return `\n\n---\n\n${links}`;
+}
+
+
 // ──────────────────────────────────────────────────────────────
 // chat-only plan-limit detector using global upgrade UI
 // ──────────────────────────────────────────────────────────────
@@ -920,6 +1002,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (featureIntent) {
       renderFeatureSuggestions(featureIntent, aiBlock);
     }
+    
+    // 🔥 Enriched “Interview tips” answer (skip model)
+    const interviewIntent = detectInterviewTipsIntent(message);
+    if (interviewIntent) {
+      const md = interviewTipsMarkdown(interviewIntent.ux) + featureLinksFooter(featureIntent || { primary: "interview-coach", alts: ["resume-analyzer","cover-letter","job-insights"] });
+      // render + persist
+      const { id } = appendAssistantAnswer(aiBlock, md);
+      window.saveMessage("assistant", md);
+      scrollToAI(aiBlock); scrollToBottom(); updateScrollButtonVisibility();
+      return; // ✅ done — no backend call needed
+    }
+
 
     // Directory/list intent? Render curated answer and persist HTML, then finish.
     const dirIntent = detectDirectoryIntent(message);
