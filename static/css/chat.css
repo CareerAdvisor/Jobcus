@@ -573,3 +573,13 @@ html { -webkit-text-size-adjust: 100%; }
   border:1px solid #cfe0f8; border-radius:8px; padding:6px 10px; cursor:pointer;
 }
 .feature-autoroute .cancel:hover{ background:#e9f1ff; }
+
+// === Highlight style for active conversation in the history ===
+{
+  const st = document.createElement('style');
+  st.textContent = `
+    .history-item.active { background: #eef5ff; }
+    .history-item.active .history-item-title { color: #104879; font-weight: 600; }
+  `;
+  document.head.appendChild(st);
+}
