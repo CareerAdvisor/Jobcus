@@ -119,7 +119,7 @@ async function uploadOneFile(file) {
     if (idx >= 0) _attachments[idx] = {
       filename: data.filename || file.name,
       size:     data.size || file.size,
-      text:     data.text || ""
+      text:     data.text || ""        // ← backend should return extracted text
     };
     renderAttachmentTray();
   } catch (e) {
@@ -279,27 +279,6 @@ function appendAssistantAnswer(container, markdown){
   return { id, el };
 }
 
-  // typewriter feel
-  let i = 0, buffer = "";
-  (function typeWriter() {
-    if (i < markdownText.length) {
-      buffer += markdownText[i++];
-      targetDiv.textContent = buffer;
-      scrollToAI(aiBlock);
-      scrollToBottom();
-      setTimeout(typeWriter, 5);
-    } else {
-      if (window.marked?.parse) targetDiv.innerHTML = window.marked.parse(buffer);
-      else targetDiv.textContent = buffer;
-      scrollToAI(aiBlock);
-      scrollToBottom();
-      maybeShowScrollIcon();
-    }
-  })();
-
-  return { id: copyId, node: outWrap };
-}
-
 /* Compose a concise site-aware reply for feature intents */
 function composeFeatureReply(intent) {
   if (!intent) return null;
@@ -315,7 +294,7 @@ function composeFeatureReply(intent) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Directory intent: curated lists with outbound links
+// Directory intent: curated lists with outbound links (persisted)
 // ──────────────────────────────────────────────────────────────
 const RESUME_ANALYZERS = [
   { name: "Resume Worded", url: "https://resumeworded.com", blurb: "AI feedback on resume & LinkedIn; “Score My Resume”." },
@@ -397,19 +376,19 @@ function directoryHTML(intent) {
   return html;
 }
 
-// Persist + render directory response
+// Persist + render directory response (use HTML persistence)
 function renderDirectoryResponse(intent, aiBlock) {
   const html = directoryHTML(intent);
 
-  // 1) Render now
+  // Render now
   const wrap = document.createElement("div");
   wrap.className = "directory-answer";
   wrap.style.marginTop = "8px";
   wrap.innerHTML = html;
   aiBlock.appendChild(wrap);
 
-  // 2) Persist the REAL HTML so it survives refresh
-  window.saveMessage?.("assistant_html", html);
+  // Persist the REAL HTML so it survives refresh
+  window.saveMessageHTML?.(html);
 
   scrollToAI(aiBlock);
   scrollToBottom();
@@ -496,6 +475,108 @@ function featureLinksFooter(intent){
   return `\n\n---\n\n${links}`;
 }
 
+// ──────────────────────────────────────────────────────────────
+// Enriched answers for core Jobcus tools (prewritten markdown)
+// ──────────────────────────────────────────────────────────────
+function detectEnrichedIntent(raw){
+  const m = String(raw || "").toLowerCase();
+  if (/\b(analy[sz]e|scan|score|ats|keywords?|optimi[sz]e)\b.*\bresume\b|\bresume\b.*\b(analy[sz]er|ats|score|keywords?)\b/.test(m))
+    return { key: "resume-analyzer" };
+  if (/\b(build|create|write|make|revamp|redesign)\b.*\bresume\b|\bresume builder\b/.test(m))
+    return { key: "resume-builder" };
+  if (/\b(cover ?letter|write.*cover ?letter|generate.*cover ?letter)\b/.test(m))
+    return { key: "cover-letter" };
+  if (/\b(skill gap|gap analysis|skills? (i|i'm|im)? missing|upskilling|transition)\b/.test(m))
+    return { key: "skill-gap" };
+  if (/\b(job insights?|market|salary|salaries|demand|trends?|benchmark)\b/.test(m))
+    return { key: "job-insights" };
+  if (/\b(interview|practice|mock|jeni|interview tips?)\b/.test(m))
+    return { key: "interview-coach" };
+  return null;
+}
+
+const ENRICHED_TEMPLATES = {
+  "resume-analyzer": () => `
+**Yes — I can help with that.**  
+Use our **Resume Analyzer** to scan your resume for ATS-readiness, missing keywords, formatting issues, and strengths to highlight.
+
+**What you’ll get**
+- ATS keyword match & section health
+- Actionable suggestions (impact verbs, quantification, clarity)
+- Quick fixes for format & readability
+
+**Tips**
+- Upload PDF/DOCX for best results
+- If applying to a specific role, paste the JD for a tighter match
+`,
+  "resume-builder": () => `
+**Absolutely — let’s build a strong resume.**  
+Use **Resume Builder** to create or redesign a resume with recruiter-tested structure and ATS-friendly formatting.
+
+**What you’ll get**
+- Clean templates with proper hierarchy
+- Bullet guidance (STAR/PAR)
+- Fast export to PDF/DOCX
+
+**Tips**
+- Lead bullets with outcomes (numbers if possible)
+- Keep to 1 page (early career) or 2 (experienced)
+`,
+  "cover-letter": () => `
+**Yes — we can draft a tailored cover letter.**  
+Start in **Cover Letter**, pick your role, and we’ll generate a concise, personalized letter you can refine.
+
+**What you’ll get**
+- Role-specific intro & value proposition
+- 1–2 impact stories aligned to the JD
+- Close that invites next steps
+`,
+  "skill-gap": () => `
+**We can map your skills to the roles you want.**  
+Use **Skill Gap** to compare your current skills to target roles and get a focused upskilling plan.
+
+**What you’ll get**
+- “Have vs Need” skill map
+- Priority learning list & resources
+- Project ideas to prove the skills
+`,
+  "job-insights": () => `
+**Curious about the market?**  
+**Job Insights** shows trending roles, top keywords, and salary bands so you can position your resume smartly.
+
+**What you’ll get**
+- Demand trends by role/location
+- Common keywords & tools
+- Salary ranges where available
+`,
+  "interview-coach": () => `
+**Let’s prep effectively.**  
+Try **Interview Coach (Jeni)** for structured practice: role-specific questions, sample answers, and feedback.
+
+**What you’ll get**
+- Realistic interview prompts
+- STAR/PAR structuring help
+- Follow-up coaching to tighten answers
+`,
+};
+
+function enrichedMarkdownFor(key, featureIntent){
+  const fn = ENRICHED_TEMPLATES[key];
+  if (!fn) return null;
+  const altKeysByPrimary = {
+    "resume-analyzer": ["resume-builder", "cover-letter", "skill-gap"],
+    "resume-builder":  ["resume-analyzer", "cover-letter", "job-insights"],
+    "cover-letter":    ["resume-analyzer", "resume-builder", "job-insights"],
+    "skill-gap":       ["resume-analyzer", "job-insights", "cover-letter"],
+    "job-insights":    ["resume-analyzer", "skill-gap", "cover-letter"],
+    "interview-coach": ["resume-analyzer", "cover-letter", "job-insights"],
+  };
+  const alts = altKeysByPrimary[key] || [];
+  const footer = featureLinksFooter(
+    featureIntent || { primary: key, alts }
+  );
+  return fn().trim() + footer;
+}
 
 // ──────────────────────────────────────────────────────────────
 // chat-only plan-limit detector using global upgrade UI
@@ -531,7 +612,7 @@ window.handleAttach     = handleAttach;
 window.removeWelcome    = removeWelcome;
 
 // ──────────────────────────────────────────────────────────────
-// Lightweight status bar shown above the input while AI works
+/** Lightweight status bar shown above the input while AI works */
 // ──────────────────────────────────────────────────────────────
 function showAIStatus(text = "Thinking…") {
   let bar = document.getElementById("aiStatusBar");
@@ -662,7 +743,7 @@ function detectJobsIntent(raw) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Scroll-to-bottom button (centered above composer) using scrolldown.svg
+// Scroll-to-bottom button (centered above composer)
 // ──────────────────────────────────────────────────────────────
 function ensureScrollButtonStyles() {
   if (document.getElementById("scrollToBottomStyles")) return;
@@ -673,7 +754,7 @@ function ensureScrollButtonStyles() {
       position: fixed;
       left: 50%;
       transform: translateX(-50%);
-      bottom: 96px;
+      bottom: 96px; /* sits above composer */
       display: none;
       align-items: center;
       gap: 8px;
@@ -1001,8 +1082,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1) Inline CTAs for on-site features
     const featureIntent = detectFeatureIntent(message);
     if (featureIntent) renderFeatureSuggestions(featureIntent, aiBlock);
-    
-    // 2) 🔥 Enriched “Interview tips” (skip model)
+
+    // 2a) Deep "Interview tips" (skip model)
     const interviewIntent = detectInterviewTipsIntent(message);
     if (interviewIntent) {
       const md = interviewTipsMarkdown(interviewIntent.ux) +
@@ -1010,15 +1091,27 @@ document.addEventListener("DOMContentLoaded", () => {
                    primary: "interview-coach",
                    alts: ["resume-analyzer","cover-letter","job-insights"]
                  });
-    
+
       appendAssistantAnswer(aiBlock, md);
       window.saveMessage("assistant", md);      // persists; survives refresh
       scrollToAI(aiBlock);
       scrollToBottom();
       updateScrollButtonVisibility?.();
-      return;                                   // ⛔ no /api/ask here
+      return; // ⛔ no /api/ask here
     }
-    
+
+    // 2b) Enriched answers for core tools (skip model)
+    const enriched = detectEnrichedIntent(message);
+    if (enriched) {
+      const md = enrichedMarkdownFor(enriched.key, featureIntent);
+      if (md) {
+        appendAssistantAnswer(aiBlock, md);
+        window.saveMessage("assistant", md);     // persists; survives refresh
+        scrollToAI(aiBlock); scrollToBottom(); updateScrollButtonVisibility?.();
+        return; // ⛔ no /api/ask here
+      }
+    }
+
     // 3) Curated directory answers (skip model too)
     const dirIntent = detectDirectoryIntent(message);
     if (dirIntent) {
@@ -1038,7 +1131,6 @@ document.addEventListener("DOMContentLoaded", () => {
     scrollToBottom();
 
     // Model selection from UI
-    const shell = document.getElementById("chatShell");
     const modelCtl = initModelControls();
     const currentModel = modelCtl.getSelectedModel();
     let finalReply = "";
@@ -1053,7 +1145,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (jobIntent) {
         showAIStatus("Finding jobs…");
-        let jobs = await apiFetch("/jobs", {
+        const jobs = await apiFetch("/jobs", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: jobIntent.query })
