@@ -152,9 +152,11 @@
     </form>
   </section>
 
+  {# Scroll-to-bottom icon — now present in DOM #}
   <img id="scrollDown" class="scroll-down-icon"
        src="{{ url_for('static', filename='icons/scrolldown.svg') }}"
        alt="Scroll Down"
+       title="Jump to latest"
        onclick="(function(){const c=document.getElementById('chatbox'); if(c){c.scrollTop=c.scrollHeight;}})()" />
 </main>
 {% endblock %}
@@ -174,6 +176,17 @@
     })();
   </script>
 
-  <!-- DO NOT include base.js here if it’s already in base.html -->
+  <!-- Main chat logic -->
   <script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
+
+  <!-- Small boot script to wire the scroll icon immediately -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const box = document.getElementById('chatbox');
+      if (box) {
+        box.addEventListener('scroll', () => window.maybeShowScrollIcon?.());
+      }
+      window.maybeShowScrollIcon?.();
+    });
+  </script>
 {% endblock %}
