@@ -351,6 +351,69 @@ function detectJobsIntent(raw) {
   return queries.length ? { query: queries.join(" | "), queries, role: role || null, location } : null;
 }
 
+async function shareConversation(convId, title) {
+  const url = `${location.origin}${location.pathname}?cid=${encodeURIComponent(convId)}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    alert("Share link copied to clipboard!");
+  } catch {
+    prompt("Copy this link:", url);
+  }
+}
+
+async function renameConversation(convId, currentTitle, isServer = true) {
+  const next = (prompt("Rename conversation:", currentTitle || "Conversation") || "").trim();
+  if (!next) return;
+
+  if (isServer) {
+    try {
+      await apiFetch(`/api/conversations/${convId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: next })
+      });
+      await renderHistory();
+    } catch (e) {
+      alert("Could not rename on server. Falling back to local if available.");
+    }
+  } else {
+    const STORAGE = { history: "jobcus:chat:history" };
+    const hist = JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
+    const row = hist.find(h => h.id === convId);
+    if (row) {
+      row.title = next;
+      localStorage.setItem(STORAGE.history, JSON.stringify(hist));
+      await renderHistory();
+    }
+  }
+}
+
+async function deleteConversation(convId, isServer = true) {
+  if (!confirm("Delete this conversation? This cannot be undone.")) return;
+
+  if (isServer) {
+    try {
+      await apiFetch(`/api/conversations/${convId}`, { method: "DELETE" });
+      if (localStorage.getItem("chat:conversationId") === String(convId)) {
+        localStorage.removeItem("chat:conversationId");
+      }
+      await renderHistory();
+    } catch (e) {
+      alert("Failed to delete conversation.");
+    }
+  } else {
+    const STORAGE = { history: "jobcus:chat:history", current: "jobcus:chat:current" };
+    const next = (JSON.parse(localStorage.getItem(STORAGE.history) || "[]")).filter(h => h.id !== convId);
+    localStorage.setItem(STORAGE.history, JSON.stringify(next));
+    if (localStorage.getItem('jobcus:chat:activeId') === convId) {
+      localStorage.removeItem('jobcus:chat:activeId');
+      localStorage.removeItem(STORAGE.current);
+      window.renderChat?.([]);
+    }
+    await renderHistory();
+  }
+}
+
 // ──────────────────────────────────────────────────────────────
 // SERVER-FIRST history with active highlight (+ local fallback)
 // ──────────────────────────────────────────────────────────────
@@ -390,8 +453,16 @@ async function renderHistory(){
         <span class="history-item-title" title="${escapeHtml(row.title || 'Conversation')}">
           ${escapeHtml(row.title || 'Conversation')}
         </span>
+        <div class="history-actions">
+          <button class="share"  title="Copy share link">Share</button>
+          <button class="rename" title="Rename">Rename</button>
+          <button class="delete" title="Delete">Delete</button>
+        </div>
       `;
-      li.addEventListener("click", async () => {
+      
+      // open conversation on row click
+      li.addEventListener("click", async (e) => {
+        if (e.target.closest(".history-actions")) return; // ignore clicks on action buttons
         try {
           const msgs = await apiFetch(`/api/conversations/${rowId}/messages`);
           const formatted = (msgs || []).map(m => ({ role: m.role, content: m.content }));
@@ -404,6 +475,12 @@ async function renderHistory(){
           console.error("Failed to load messages", e);
         }
       });
+      
+      // actions (server mode)
+      li.querySelector(".share") ?.addEventListener("click", (e) => { e.stopPropagation(); shareConversation(rowId, row.title); });
+      li.querySelector(".rename")?.addEventListener("click", async (e) => { e.stopPropagation(); await renameConversation(rowId, row.title, true); });
+      li.querySelector(".delete")?.addEventListener("click", async (e) => { e.stopPropagation(); await deleteConversation(rowId, true); });
+      
       list.appendChild(li);
     });
     return;
@@ -423,25 +500,26 @@ async function renderHistory(){
     li.className = "history-item" + (h.id === activeLocalId ? " active" : "");
     li.innerHTML = `
       <span class="history-item-title" title="${escapeHtml(h.title)}">${escapeHtml(h.title)}</span>
-      <button class="delete" aria-label="Delete">✕</button>
+      <div class="history-actions">
+        <button class="share"  title="Copy share link">Share</button>
+        <button class="rename" title="Rename">Rename</button>
+        <button class="delete" title="Delete">Delete</button>
+      </div>
     `;
+    
     li.addEventListener("click", (e) => {
-      if (e.target.closest(".delete")) return;
+      if (e.target.closest(".history-actions")) return;
       localStorage.setItem(STORAGE.current, JSON.stringify(h.messages || []));
       localStorage.setItem('jobcus:chat:activeId', h.id);
       renderChat(h.messages || []);
       renderHistory();
       try { closeChatMenu?.(); } catch {}
     });
-    li.querySelector(".delete").addEventListener("click", (e) => {
-      e.stopPropagation();
-      const next = getHistory().filter(x => x.id !== h.id);
-      setHistory(next);
-      if ((localStorage.getItem('jobcus:chat:activeId')||'') === h.id){
-        localStorage.removeItem('jobcus:chat:activeId');
-      }
-      renderHistory();
-    });
+    
+    li.querySelector(".share") ?.addEventListener("click", (e) => { e.stopPropagation(); shareConversation(h.id, h.title); });
+    li.querySelector(".rename")?.addEventListener("click", async (e) => { e.stopPropagation(); await renameConversation(h.id, h.title, false); });
+    li.querySelector(".delete")?.addEventListener("click", async (e) => { e.stopPropagation(); await deleteConversation(h.id, false); });
+    
     list.appendChild(li);
   });
 }
@@ -465,6 +543,20 @@ document.addEventListener("DOMContentLoaded", () => {
     st2.id = "historyActiveStyles";
     st2.textContent = `.history-item.active{background:#eef5ff}.history-item.active .history-item-title{color:#104879;font-weight:600}`;
     document.head.appendChild(st2);
+  }
+  
+  // add this (new)
+  if (!document.getElementById("historyActionStyles")) {
+    const st = document.createElement("style");
+    st.id = "historyActionStyles";
+    st.textContent = `
+      .history-item{display:flex;align-items:center;justify-content:space-between;gap:8px}
+      .history-item .history-item-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .history-actions{display:flex;gap:10px;opacity:.8}
+      .history-actions button{background:none;border:none;padding:2px 4px;cursor:pointer;color:#104879;font-size:12px}
+      .history-actions button:hover{text-decoration:underline}
+    `;
+    document.head.appendChild(st);
   }
 
   // Init model UI/logic first
