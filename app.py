@@ -1949,23 +1949,69 @@ def api_ask():
 
     return jsonify(reply=ai_reply, modelUsed=model, conversation_id=conv_id), 200
 
+# --- Conversations list ---
 @app.get("/api/conversations")
 @api_login_required
 def list_conversations():
-    rows = supabase_admin.table("conversations")\
-        .select("id,title,created_at")\
-        .eq("auth_id", current_user.id)\
-        .order("created_at", desc=True).execute().data or []
-    return jsonify(rows)
+    admin = current_app.config.get("SUPABASE_ADMIN")
+    if not admin:
+        return jsonify(error="server_config", message="Supabase admin client is not configured."), 500
 
+    try:
+        auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
+        rows = (
+            admin.table("conversations")
+            .select("id,title,created_at")
+            .eq("auth_id", auth_id)
+            .order("created_at", desc=True)
+            .limit(50)
+            .execute()
+            .data or []
+        )
+        return jsonify(rows)
+    except Exception as e:
+        current_app.logger.exception("list_conversations failed")
+        return jsonify(error="server_error", message=str(e)), 500
+
+
+# --- Messages for a conversation (UUID path converter preserved) ---
 @app.get("/api/conversations/<uuid:conv_id>/messages")
 @api_login_required
 def list_messages(conv_id):
-    rows = supabase_admin.table("conversation_messages")\
-        .select("id,role,content,created_at")\
-        .eq("conversation_id", str(conv_id))\
-        .order("created_at", asc=True).execute().data or []
-    return jsonify(rows)
+    admin = current_app.config.get("SUPABASE_ADMIN")
+    if not admin:
+        return jsonify(error="server_config", message="Supabase admin client is not configured."), 500
+
+    auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
+
+    try:
+        # Verify the conversation belongs to the current user
+        owns = (
+            admin.table("conversations")
+            .select("id")
+            .eq("id", str(conv_id))
+            .eq("auth_id", auth_id)
+            .limit(1)
+            .execute()
+            .data
+        )
+        if not owns:
+            return jsonify(error="not_found", message="Conversation not found."), 404
+
+        rows = (
+            admin.table("conversation_messages")
+            .select("role,content,created_at")
+            .eq("conversation_id", str(conv_id))
+            .order("created_at", asc=True)   # same ordering you had before
+            .limit(200)
+            .execute()
+            .data or []
+        )
+        return jsonify(rows)
+    except Exception as e:
+        current_app.logger.exception("list_messages failed")
+        return jsonify(error="server_error", message=str(e)), 500
+
 
 @app.get("/api/credits")
 @login_required
