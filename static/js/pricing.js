@@ -18,32 +18,41 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (_) { /* ignore */ }
     });
   });
+
+  // Ensure all plan links behave consistently (go to /subscribe first)
+  document.querySelectorAll('.plan a[href*="/subscribe"]').forEach(a => {
+    a.classList.add('subscribe-link');
+  });
 });
 
+// Helper: always start at /subscribe?plan=...
+function navigateToSubscribe(plan) {
+  if (!plan) plan = 'free';
+  const params = new URLSearchParams({ plan });
+  // Preserve "next" if present on current URL
+  const currentNext = new URLSearchParams(location.search).get('next');
+  if (currentNext) params.set('next', currentNext);
+  window.location.assign(`/subscribe?${params.toString()}`);
+  // Remember for UI highlights
+  localStorage.setItem("userPlan", plan);
+}
+
 const PLAN_ROUTES = {
-  free() {
-    localStorage.setItem("userPlan", "free");
-    // lightweight onboarding: jump to dashboard
-    window.location.href = "/dashboard";
-  },
-  weekly() {
-    routePaid("weekly");
-  },
-  standard() {
-    routePaid("standard");
-  },
-  premium() {
-    routePaid("premium");
-  }
+  free()       { navigateToSubscribe("free"); },
+  weekly()     { navigateToSubscribe("weekly"); },
+  standard()   { navigateToSubscribe("standard"); },
+  premium()    { navigateToSubscribe("premium"); },
+  employer_jd(){ navigateToSubscribe("employer_jd"); } // NEW
 };
 
-function routePaid(plan) {
-  localStorage.setItem("userPlan", plan);
-  // depends on body data-authed provided by base.html
-  const authed = document.body?.dataset?.authed === "1";
-  if (authed) window.location.href = `/checkout?plan=£{encodeURIComponent(plan)}`;
-  else window.location.href = `/account?next=£{encodeURIComponent("/checkout?plan=" + plan)}`;
-}
+// (Old direct-checkout path fixed, but unused now)
+// Kept for reference; if you ever restore direct checkout, fix the interpolation.
+// function routePaid(plan) {
+//   localStorage.setItem("userPlan", plan);
+//   const authed = document.body?.dataset?.authed === "1";
+//   if (authed) window.location.href = `/checkout?plan=${encodeURIComponent(plan)}`;
+//   else window.location.href = `/account?next=${encodeURIComponent("/checkout?plan=" + plan)}`;
+// }
 
 document.addEventListener("DOMContentLoaded", () => {
   // Highlight previously chosen plan (optional)
@@ -54,16 +63,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Intercept clicks on subscribe links
-  document.querySelectorAll(".subscribe-link").forEach(a => {
+  // Intercept clicks on subscribe links so all plans route uniformly
+  document.querySelectorAll('.plan a[href*="/subscribe"]').forEach(a => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
-      let plan;
+      let plan = "";
       try {
         const url = new URL(a.getAttribute("href"), location.origin);
         plan = url.searchParams.get("plan");
       } catch { /* ignore */ }
-      plan = plan || a.closest(".plan")?.dataset?.plan || "free";
+      if (!plan) {
+        plan = a.closest(".plan")?.dataset?.plan || "free";
+      }
       (PLAN_ROUTES[plan] || PLAN_ROUTES.free)();
     });
   });
