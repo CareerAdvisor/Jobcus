@@ -866,14 +866,16 @@ def index():
 def chat():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
 
-    # ⛔ Gate: if this plan doesn't include Chat, redirect to pricing
-    has_chat = feature_enabled(plan, "has_chat", True)
-    if not has_chat:
+    # Gate: only show Chat if the plan allows it
+    if not feature_enabled(plan, "has_chat"):
         flash("AI Chat isn’t included in your current plan. Please upgrade to use Chat.", "error")
         return redirect(url_for("pricing") + "#employer-pricing")
 
     allowed = allowed_models_for_plan(plan)
-    is_paid_chat = plan in ("weekly", "standard", "premium")  # employer_jd is limited, not paid chat
+    is_paid_chat = plan in ("weekly", "standard", "premium")  # employer_jd has limited chat
+
+    # ✅ define cloud_history before using it
+    ch_flag = feature_enabled(plan, "cloud_history")
 
     return render_template(
         "chat.html",
@@ -882,7 +884,7 @@ def chat():
         model_options=allowed,
         free_model=allowed_models_for_plan("free")[0],
         model_default=allowed[0],
-        cloud_history=1 if cloud_history else 0,
+        cloud_history=1 if ch_flag else 0,   # pass as 1/0 for JS
         show_upgrade=(plan in ("free", "employer_jd")),
     )
 
