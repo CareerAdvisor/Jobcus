@@ -237,6 +237,47 @@ function renderChat(messages) {
 window.renderChat = renderChat;
 
 // ──────────────────────────────────────────────────────────────
+// Lightweight status bar shown above the input while AI works
+// ──────────────────────────────────────────────────────────────
+function showAIStatus(text = "Thinking…") {
+  let bar = document.getElementById("aiStatusBar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "aiStatusBar";
+    bar.style.cssText = `
+      position: sticky; bottom: 0; left: 0; right: 0;
+      display: flex; align-items: center; gap: 8px;
+      background: #f7fbff; border: 1px solid #d8e7ff;
+      color: #104879; padding: 10px 12px; border-radius: 10px;
+      margin: 8px 0 0; font-size: 14px; z-index: 5;
+    `;
+    const container = document.querySelector(".composer") || document.querySelector(".chat-footer") || document.body;
+    container.parentNode.insertBefore(bar, container);
+  }
+  bar.innerHTML = `
+    <span class="ai-spinner" aria-hidden="true"></span>
+    <strong>${text}</strong>
+  `;
+  bar.style.display = "flex";
+}
+function hideAIStatus() {
+  const bar = document.getElementById("aiStatusBar");
+  if (bar) bar.style.display = "none";
+}
+
+// Create an inline “thinking” placeholder inside the assistant bubble
+function renderThinkingPlaceholder(targetEl, label = "Thinking…") {
+  if (!targetEl) return;
+  const node = document.createElement("div");
+  node.className = "ai-thinking";
+  node.innerHTML = `
+    <span class="ai-spinner" aria-hidden="true"></span>
+    <span>${label}</span>
+  `;
+  targetEl.appendChild(node);             // <- append, do not replace
+}
+
+// ──────────────────────────────────────────────────────────────
 // Model controls
 // ──────────────────────────────────────────────────────────────
 function initModelControls() {
@@ -377,7 +418,7 @@ async function renderHistory(){
           const formatted = (msgs || []).map(m => ({ role: m.role, content: m.content }));
           localStorage.setItem(STORAGE.current, JSON.stringify(formatted));
           localStorage.setItem("chat:conversationId", rowId);
-          renderChat(formatted);     // <-- uses the new global renderer
+          renderChat(formatted);
           renderHistory(); // refresh highlight
           try { closeChatMenu?.(); } catch {}
         } catch (e) {
@@ -409,7 +450,7 @@ async function renderHistory(){
       if (e.target.closest(".delete")) return;
       localStorage.setItem(STORAGE.current, JSON.stringify(h.messages || []));
       localStorage.setItem('jobcus:chat:activeId', h.id);
-      renderChat(h.messages || []); // <-- uses the new global renderer
+      renderChat(h.messages || []);
       renderHistory();
       try { closeChatMenu?.(); } catch {}
     });
@@ -484,7 +525,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const firstUser = messages.find(m => m.role === "user");
     const raw = (firstUser?.content || "Conversation").trim();
     return raw.length > 60 ? raw.slice(0,60) + "…" : raw;
-    }
+  }
 
   function renderWelcome(){
     const shell = document.getElementById("chatShell");
@@ -500,8 +541,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>`;
   }
 
-  // ⤵︎ Renamed to avoid shadowing the new global renderer
-  function renderChatLocal(messages){
+  function renderChat(messages){
     chatbox.innerHTML = "";
     if (!messages.length){
       renderWelcome();
@@ -574,7 +614,7 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.removeItem("chat:conversationId");
       localStorage.removeItem('jobcus:chat:activeId'); // clear local active flag (fallback mode)
       conversationId = null;
-      renderChatLocal([]);   // <- use local renderer
+      renderChat([]);
       renderHistory();
     } finally {
       setTimeout(() => { clearInProgress = false; }, 50);
@@ -623,8 +663,8 @@ document.addEventListener("DOMContentLoaded", () => {
     window.closeChatMenu?.();
   });
 
-  // Initial paint (use local rich renderer for the live view)
-  renderChatLocal(getCurrent());
+  // Initial paint
+  renderChat(getCurrent());
   renderHistory();
   refreshCreditsPanel();
   maybeShowScrollIcon();
