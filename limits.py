@@ -120,40 +120,44 @@ PLAN_QUOTAS = {
 # Feature gates (booleans / levels)
 FEATURE_FLAGS = {
     "free": {
+        "has_chat":       True,
+        "cloud_history":  False,
         "rebuild_with_ai": False,
         "optimize_ai":     False,
         "downloads":       False,
-        "cloud_history":   False,
         "job_insights":    "basic",
     },
     "weekly": {
+        "has_chat":       True,
+        "cloud_history":  True,   # was False before; now aligned with paid chat tiers
         "rebuild_with_ai": True,
         "optimize_ai":     False,
         "downloads":       False,
-        "cloud_history":   False,
         "job_insights":    "full",
     },
     "standard": {
+        "has_chat":       True,
+        "cloud_history":  True,
         "rebuild_with_ai": True,
         "optimize_ai":     True,
         "downloads":       True,
-        "cloud_history":   True,
         "job_insights":    "full",
     },
     "premium": {
+        "has_chat":       True,
+        "cloud_history":  True,
         "rebuild_with_ai": True,
         "optimize_ai":     True,
         "downloads":       True,
-        "cloud_history":   True,
         "job_insights":    "full",
     },
     "employer_jd": {
-        "has_chat": True,           # ← limited chat enabled
-        "cloud_history": False,     # keep history off
+        "has_chat":       True,    # limited chat enabled
+        "cloud_history":  False,   # keep history off
         "rebuild_with_ai": False,
-        "optimize_ai": False,
-        "downloads": False,
-        "job_insights": "basic",
+        "optimize_ai":     False,
+        "downloads":       False,
+        "job_insights":    "basic",
     },
 }
 
@@ -327,15 +331,14 @@ def check_and_add(
         "added": amount,
     }
 
-def feature_enabled(plan: str, flag: str):
+def feature_enabled(plan: str, flag: str, default=False):
     """
     Return a feature flag value for a plan.
-    For boolean flags, returns bool. For string-valued flags (like 'job_insights'),
-    returns the string (e.g., 'basic' or 'full'). Defaults to False if missing.
+    For booleans, returns bool. For string-valued flags (like 'job_insights'),
+    returns the string. If the flag is missing, returns `default`.
     """
     plan_flags = FEATURE_FLAGS.get(_plan_code(plan), FEATURE_FLAGS["free"])
-    return plan_flags.get(flag, False)
-
+    return plan_flags.get(flag, default)
 
 def job_insights_level(plan: str) -> str:
     """
