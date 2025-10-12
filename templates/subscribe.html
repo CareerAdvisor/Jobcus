@@ -118,6 +118,7 @@
 
     <form method="POST" action="/subscribe" class="confirm-cta">
       <input type="hidden" name="plan" value="{{ plan_data.code }}">
+      <input type="hidden" name="next" value="{{ request.args.get('next','') }}">  <!-- add this -->
       <button type="submit" class="btn btn-primary">
         {% if plan_data.code == 'free' %}Activate Free Plan{% else %}Continue to secure checkout{% endif %}
       </button>
