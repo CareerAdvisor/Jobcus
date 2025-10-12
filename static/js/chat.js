@@ -216,27 +216,6 @@ window.handleAttach     = handleAttach;
 window.removeWelcome    = removeWelcome;
 
 // ──────────────────────────────────────────────────────────────
-// ✅ INSERTED: Simple global renderer (as requested)
-//    Adapted to use #chatbox instead of a <ul id="messages">
-// ──────────────────────────────────────────────────────────────
-function renderChat(messages) {
-  const box = document.getElementById('chatbox'); // adapt to your DOM
-  if (!box) return;
-
-  box.innerHTML = '';
-  for (const m of (messages || [])) {
-    const div = document.createElement('div');
-    div.className = `msg msg--${m.role}`;
-    div.textContent = m.content; // or your markdown renderer
-    box.appendChild(div);
-  }
-  scrollToBottom();
-  maybeShowScrollIcon();
-}
-// make sure the click handler can see it
-window.renderChat = renderChat;
-
-// ──────────────────────────────────────────────────────────────
 // Lightweight status bar shown above the input while AI works
 // ──────────────────────────────────────────────────────────────
 function showAIStatus(text = "Thinking…") {
@@ -583,6 +562,9 @@ document.addEventListener("DOMContentLoaded", () => {
     scrollToBottom();
     maybeShowScrollIcon();
   }
+  
+  // 🔑 make it available to other click handlers (history, etc.)
+  window.renderChat = renderChat;
 
   window.saveMessage = function(role, content){
     const msgs = getCurrent();
