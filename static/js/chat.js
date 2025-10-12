@@ -216,45 +216,25 @@ window.handleAttach     = handleAttach;
 window.removeWelcome    = removeWelcome;
 
 // ──────────────────────────────────────────────────────────────
-// Lightweight status bar shown above the input while AI works
+// ✅ INSERTED: Simple global renderer (as requested)
+//    Adapted to use #chatbox instead of a <ul id="messages">
 // ──────────────────────────────────────────────────────────────
-function showAIStatus(text = "Thinking…") {
-  let bar = document.getElementById("aiStatusBar");
-  if (!bar) {
-    bar = document.createElement("div");
-    bar.id = "aiStatusBar";
-    bar.style.cssText = `
-      position: sticky; bottom: 0; left: 0; right: 0;
-      display: flex; align-items: center; gap: 8px;
-      background: #f7fbff; border: 1px solid #d8e7ff;
-      color: #104879; padding: 10px 12px; border-radius: 10px;
-      margin: 8px 0 0; font-size: 14px; z-index: 5;
-    `;
-    const container = document.querySelector(".composer") || document.querySelector(".chat-footer") || document.body;
-    container.parentNode.insertBefore(bar, container);
-  }
-  bar.innerHTML = `
-    <span class="ai-spinner" aria-hidden="true"></span>
-    <strong>${text}</strong>
-  `;
-  bar.style.display = "flex";
-}
-function hideAIStatus() {
-  const bar = document.getElementById("aiStatusBar");
-  if (bar) bar.style.display = "none";
-}
+function renderChat(messages) {
+  const box = document.getElementById('chatbox'); // adapt to your DOM
+  if (!box) return;
 
-// Create an inline “thinking” placeholder inside the assistant bubble
-function renderThinkingPlaceholder(targetEl, label = "Thinking…") {
-  if (!targetEl) return;
-  const node = document.createElement("div");
-  node.className = "ai-thinking";
-  node.innerHTML = `
-    <span class="ai-spinner" aria-hidden="true"></span>
-    <span>${label}</span>
-  `;
-  targetEl.appendChild(node);             // <- append, do not replace
+  box.innerHTML = '';
+  for (const m of (messages || [])) {
+    const div = document.createElement('div');
+    div.className = `msg msg--${m.role}`;
+    div.textContent = m.content; // or your markdown renderer
+    box.appendChild(div);
+  }
+  scrollToBottom();
+  maybeShowScrollIcon();
 }
+// make sure the click handler can see it
+window.renderChat = renderChat;
 
 // ──────────────────────────────────────────────────────────────
 // Model controls
@@ -397,7 +377,7 @@ async function renderHistory(){
           const formatted = (msgs || []).map(m => ({ role: m.role, content: m.content }));
           localStorage.setItem(STORAGE.current, JSON.stringify(formatted));
           localStorage.setItem("chat:conversationId", rowId);
-          renderChat(formatted);
+          renderChat(formatted);     // <-- uses the new global renderer
           renderHistory(); // refresh highlight
           try { closeChatMenu?.(); } catch {}
         } catch (e) {
@@ -429,7 +409,7 @@ async function renderHistory(){
       if (e.target.closest(".delete")) return;
       localStorage.setItem(STORAGE.current, JSON.stringify(h.messages || []));
       localStorage.setItem('jobcus:chat:activeId', h.id);
-      renderChat(h.messages || []);
+      renderChat(h.messages || []); // <-- uses the new global renderer
       renderHistory();
       try { closeChatMenu?.(); } catch {}
     });
@@ -504,7 +484,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const firstUser = messages.find(m => m.role === "user");
     const raw = (firstUser?.content || "Conversation").trim();
     return raw.length > 60 ? raw.slice(0,60) + "…" : raw;
-  }
+    }
 
   function renderWelcome(){
     const shell = document.getElementById("chatShell");
@@ -520,7 +500,8 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>`;
   }
 
-  function renderChat(messages){
+  // ⤵︎ Renamed to avoid shadowing the new global renderer
+  function renderChatLocal(messages){
     chatbox.innerHTML = "";
     if (!messages.length){
       renderWelcome();
@@ -593,7 +574,7 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.removeItem("chat:conversationId");
       localStorage.removeItem('jobcus:chat:activeId'); // clear local active flag (fallback mode)
       conversationId = null;
-      renderChat([]);
+      renderChatLocal([]);   // <- use local renderer
       renderHistory();
     } finally {
       setTimeout(() => { clearInProgress = false; }, 50);
@@ -642,8 +623,8 @@ document.addEventListener("DOMContentLoaded", () => {
     window.closeChatMenu?.();
   });
 
-  // Initial paint
-  renderChat(getCurrent());
+  // Initial paint (use local rich renderer for the live view)
+  renderChatLocal(getCurrent());
   renderHistory();
   refreshCreditsPanel();
   maybeShowScrollIcon();
