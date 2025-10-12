@@ -2013,6 +2013,50 @@ def list_messages(conv_id):
         return jsonify(error="server_error", message=str(e)), 500
 
 
+# --- Rename conversation ---
+@app.patch("/api/conversations/<uuid:cid>")
+@api_login_required
+def rename_conversation(cid):
+    admin = current_app.config.get("SUPABASE_ADMIN")
+    if not admin:
+        return jsonify(error="server_config", message="Supabase admin client is not configured."), 500
+
+    data = request.get_json(silent=True) or {}
+    title = (data.get("title") or "").strip()
+    if not title:
+        return jsonify(error="bad_request", message="Missing title"), 400
+
+    auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
+
+    # ensure ownership & update
+    owns = admin.table("conversations").select("id").eq("id", str(cid)).eq("auth_id", auth_id).limit(1).execute().data
+    if not owns:
+        return jsonify(error="not_found", message="Conversation not found."), 404
+
+    r = admin.table("conversations").update({"title": title}).eq("id", str(cid)).eq("auth_id", auth_id).execute()
+    return jsonify(ok=True)
+
+# --- Delete conversation (and its messages) ---
+@app.delete("/api/conversations/<uuid:cid>")
+@api_login_required
+def delete_conversation(cid):
+    admin = current_app.config.get("SUPABASE_ADMIN")
+    if not admin:
+        return jsonify(error="server_config", message="Supabase admin client is not configured."), 500
+
+    auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
+
+    # verify ownership first
+    owns = admin.table("conversations").select("id").eq("id", str(cid)).eq("auth_id", auth_id).limit(1).execute().data
+    if not owns:
+        return jsonify(error="not_found", message="Conversation not found."), 404
+
+    # delete children then parent (adjust table names if yours differ)
+    admin.table("conversation_messages").delete().eq("conversation_id", str(cid)).eq("auth_id", auth_id).execute()
+    admin.table("conversations").delete().eq("id", str(cid)).eq("auth_id", auth_id).execute()
+    return ("", 204)
+
+
 @app.get("/api/credits")
 @login_required
 def api_credits():
