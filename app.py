@@ -209,6 +209,7 @@ PLAN_TO_PRICE = {
     "weekly":   os.getenv("STRIPE_PRICE_WEEKLY"),
     "standard": os.getenv("STRIPE_PRICE_STANDARD"),
     "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
+    "employer_jd":  os.getenv("STRIPE_PRICE_EMPLOYER_JD"),
 }
     
 # ---- Model selection helpers ----
@@ -233,51 +234,70 @@ def allowed_models_for_plan(plan: str) -> list[str]:
     """
     Plan-specific model defaults + allow-lists (UI + server guard can reuse this).
     Free  -> forced to FREE_MODEL (single choice).
-    Weekly/Standard/Premium -> <PLAN>_MODEL_DEFAULT + <PLAN>_MODEL_ALLOW (deduped).
+    Weekly/Standard/Premium/Employer_JD -> <PLAN>_MODEL_DEFAULT + <PLAN>_MODEL_ALLOW (deduped).
     We optionally filter the final list by models available to the API key.
     Env vars you can set:
       FREE_MODEL
       WEEKLY_MODEL_DEFAULT,   WEEKLY_MODEL_ALLOW
       STANDARD_MODEL_DEFAULT, STANDARD_MODEL_ALLOW
       PREMIUM_MODEL_DEFAULT,  PREMIUM_MODEL_ALLOW
+      EMPLOYER_JD_MODEL_DEFAULT, EMPLOYER_JD_MODEL_ALLOW
       (Legacy fallbacks: PAID_MODEL_DEFAULT / PAID_MODEL_ALLOW)
     """
     plan = (plan or "free").lower()
 
     # ---- Defaults (safe fallbacks if envs are missing) ----
-    FREE_DEFAULT     = (os.getenv("FREE_MODEL", "gpt-4o-mini") or "gpt-4o-mini").strip()
-    WEEKLY_DEFAULT   = (os.getenv("WEEKLY_MODEL_DEFAULT",
-                         os.getenv("PAID_MODEL_DEFAULT", "gpt-4o-mini")) or "gpt-4o-mini").strip()
-    STANDARD_DEFAULT = (os.getenv("STANDARD_MODEL_DEFAULT", "gpt-4o-mini") or "gpt-4o").strip()
-    PREMIUM_DEFAULT  = (os.getenv("PREMIUM_MODEL_DEFAULT", "gpt-4o") or "gpt-5-thinking").strip()
+    FREE_DEFAULT      = (os.getenv("FREE_MODEL", "gpt-4o-mini") or "gpt-4o-mini").strip()
+    WEEKLY_DEFAULT    = (os.getenv("WEEKLY_MODEL_DEFAULT",
+                           os.getenv("PAID_MODEL_DEFAULT", "gpt-4o-mini")) or "gpt-4o-mini").strip()
+    STANDARD_DEFAULT  = (os.getenv("STANDARD_MODEL_DEFAULT", "gpt-4o-mini") or "gpt-4o-mini").strip()
+    PREMIUM_DEFAULT   = (os.getenv("PREMIUM_MODEL_DEFAULT", "gpt-4o") or "gpt-4o").strip()
+
+    # NEW: Employer JD default (choose your desired default)
+    EMPLOYER_JD_DEFAULT = (os.getenv("EMPLOYER_MODEL_DEFAULT",
+                              os.getenv("EMPLOYER_JD_MODEL_DEFAULT",
+                              os.getenv("STANDARD_MODEL_DEFAULT", "gpt-4o-mini"))) or "gpt-4o-mini").strip()
 
     # ---- Allow-lists (comma-separated) ----
-    WEEKLY_ALLOW   = [s.strip() for s in (os.getenv("WEEKLY_MODEL_ALLOW",
-                        os.getenv("PAID_MODEL_ALLOW", "")) or "").split(",") if s.strip()]
-    STANDARD_ALLOW = [s.strip() for s in (os.getenv("STANDARD_MODEL_ALLOW",
-                        os.getenv("PAID_MODEL_ALLOW", "")) or "").split(",") if s.strip()]
-    PREMIUM_ALLOW  = [s.strip() for s in (os.getenv("PREMIUM_MODEL_ALLOW",
-                        "gpt-4o,gpt-5-thinking") or "").split(",") if s.strip()]
+    WEEKLY_ALLOW    = [s.strip() for s in (os.getenv("WEEKLY_MODEL_ALLOW",
+                           os.getenv("PAID_MODEL_ALLOW", "")) or "").split(",") if s.strip()]
+    STANDARD_ALLOW  = [s.strip() for s in (os.getenv("STANDARD_MODEL_ALLOW",
+                           os.getenv("PAID_MODEL_ALLOW", "")) or "").split(",") if s.strip()]
+    PREMIUM_ALLOW   = [s.strip() for s in (os.getenv("PREMIUM_MODEL_ALLOW",
+                           "gpt-4o,gpt-5-thinking") or "").split(",") if s.strip()]
+
+    # NEW: Employer JD allow-list
+    EMPLOYER_JD_ALLOW = [s.strip() for s in (
+        os.getenv("EMPLOYER_MODEL_ALLOW",
+                  os.getenv("EMPLOYER_JD_MODEL_ALLOW",
+                            os.getenv("STANDARD_MODEL_ALLOW", ""))) or ""
+    ).split(",") if s.strip()]
 
     if plan == "free":
-        out = [FREE_DEFAULT]  # force a single option
+        out = [FREE_DEFAULT]  # single option
     elif plan == "weekly":
         out = _dedupe([WEEKLY_DEFAULT] + WEEKLY_ALLOW)
     elif plan == "standard":
         out = _dedupe([STANDARD_DEFAULT] + STANDARD_ALLOW)
     elif plan == "premium":
         out = _dedupe([PREMIUM_DEFAULT] + PREMIUM_ALLOW)
+    elif plan == "employer_jd":
+        # Pick one policy:
+        # 1) Mirror Standard:
+        # out = _dedupe([STANDARD_DEFAULT] + STANDARD_ALLOW)
+        # 2) Dedicated employer settings (recommended):
+        out = _dedupe([EMPLOYER_JD_DEFAULT] + EMPLOYER_JD_ALLOW)
+        # 3) No chat access: comment the line above and use out = [FREE_DEFAULT]
     else:
         # unknown plan -> treat as free
         out = [FREE_DEFAULT]
 
-    # ---- Optional safety: keep only models actually available to your key ----
+    # ---- Optional: keep only models actually available to your key ----
     avail = _available_models()
     if avail:
         filtered = [m for m in out if m in avail]
         if filtered:
             return filtered
-        # Fallback so UI/server still work even if none matched
         if FREE_DEFAULT in avail:
             return [FREE_DEFAULT]
     return out
@@ -845,15 +865,25 @@ def index():
 @login_required
 def chat():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
-    is_paid = plan in ("weekly", "standard", "premium")
+    has_chat = feature_enabled(plan, "has_chat")
+    cloud_history = feature_enabled(plan, "cloud_history")
+
+    if not has_chat:
+        flash("AI Chat isn’t included in your current plan. Please upgrade to use Chat.", "error")
+        return redirect(url_for("pricing") + "#employer-pricing")
+
+    allowed = allowed_models_for_plan(plan)
+    is_paid_chat = plan in ("weekly", "standard", "premium")  # employer_jd is limited, not paid chat
 
     return render_template(
         "chat.html",
-        is_paid=is_paid,
+        is_paid=is_paid_chat,
         plan=plan,
-        model_options=allowed_models_for_plan(plan),
+        model_options=allowed,
         free_model=allowed_models_for_plan("free")[0],
-        model_default=allowed_models_for_plan(plan)[0],
+        model_default=allowed[0],
+        cloud_history=1 if cloud_history else 0,
+        show_upgrade=(plan in ("free", "employer_jd")),
     )
 
 # keep this single definition only
@@ -1243,11 +1273,13 @@ def _deactivate_user_plan_by_customer(supabase, customer_id):
 
 # Map Stripe Price IDs -> your internal plan codes
 PRICE_TO_PLAN = {
-    os.getenv("STRIPE_PRICE_WEEKLY"):   "weekly",
-    os.getenv("STRIPE_PRICE_STANDARD"): "standard",
-    os.getenv("STRIPE_PRICE_PREMIUM"):  "premium",
-}
+    os.getenv("STRIPE_PRICE_WEEKLY"):       "weekly",
+    os.getenv("STRIPE_PRICE_STANDARD"):     "standard",
+    os.getenv("STRIPE_PRICE_PREMIUM"):      "premium",
 
+    # NEW — Employer JD Generator (£25/mo)
+    os.getenv("STRIPE_PRICE_EMPLOYER_JD"):  "employer_jd",
+}
 
 def _find_user_id_by_customer(supabase, customer_id: str):
     if not customer_id:
@@ -1824,17 +1856,18 @@ def _chat_completion(model: str, user_msg: str, history=None) -> str:
 @app.post("/api/ask")
 @api_login_required
 def api_ask():
+    from limits import check_and_increment, feature_enabled  # <- make sure feature_enabled is imported
+
     data = request.get_json(silent=True) or {}
-    message = (data.get("message") or "").strip()
-    requested = (data.get("model") or "").strip()
-    model = choose_model(requested)
-    conv_id = data.get("conversation_id")
+    message   = (data.get("message") or "").strip()
+    requested = (data.get("model")   or "").strip()
+    model     = choose_model(requested)
+    conv_id   = data.get("conversation_id")
 
     if not message:
         return jsonify(error="bad_request", message="message is required"), 400
 
     # --- Attachment context (from client) ---
-    # Expecting: attachments: [{ filename, text }]
     attachments = data.get("attachments") or []
     att_blocks = []
     for att in attachments:
@@ -1842,10 +1875,8 @@ def api_ask():
         text  = (att.get("text") or "")
         if not text:
             continue
-        # keep token budget sane
-        snippet = text[:8000]
+        snippet = text[:8000]  # keep token/word budget sane
         att_blocks.append(f"--- {fname} ---\n{snippet}")
-
     att_context = "\n\n".join(att_blocks)
     if att_context:
         message = f"{message}\n\n[Attachment context]\n{att_context}"
@@ -1854,7 +1885,11 @@ def api_ask():
     auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
     plan    = (getattr(current_user, "plan", "free") or "free").lower()
 
-    # 1) free plan guard (per-device/day)
+    # 🔒 Hard gate: if plan has no chat, stop here
+    if not feature_enabled(plan, "has_chat"):
+        return jsonify(error="upgrade_required", message="Chat not included in your plan."), 402
+
+    # 1) free/abuse guard (device-based)
     try:
         ok, payload = allow_free_use(str(auth_id), plan)
         if not ok:
@@ -1865,7 +1900,7 @@ def api_ask():
     except Exception:
         pass  # fail-open
 
-    # 2) credits/quota — this is what fixes the “0 of 10” staying at 0
+    # 2) credits/quota — increments the plan’s chat counter atomically
     admin = current_app.config.get("SUPABASE_ADMIN")
     if not admin:
         return jsonify(error="server_config", message="Supabase admin client is not configured."), 500
@@ -1883,7 +1918,7 @@ def api_ask():
     except Exception:
         pass
 
-    # 3) ensure conversation row (optional but nice to have)
+    # 3) ensure conversation row
     if not conv_id:
         title = (message[:60] + "…") if len(message) > 60 else message
         row = admin.table("conversations").insert(
@@ -1891,12 +1926,12 @@ def api_ask():
         ).execute()
         conv_id = row.data[0]["id"]
 
-    # 4) persist user message (includes attachment context if present)
+    # 4) persist user message
     admin.table("conversation_messages").insert({
         "conversation_id": conv_id, "role": "user", "content": message
     }).execute()
 
-    # 5) grab short history window
+    # 5) short history window
     ctx = admin.table("conversation_messages") \
         .select("role,content") \
         .eq("conversation_id", conv_id) \
