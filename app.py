@@ -865,9 +865,9 @@ def index():
 @login_required
 def chat():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
-    has_chat = feature_enabled(plan, "has_chat")
-    cloud_history = feature_enabled(plan, "cloud_history")
 
+    # ⛔ Gate: if this plan doesn't include Chat, redirect to pricing
+    has_chat = feature_enabled(plan, "has_chat", True)
     if not has_chat:
         flash("AI Chat isn’t included in your current plan. Please upgrade to use Chat.", "error")
         return redirect(url_for("pricing") + "#employer-pricing")
@@ -1884,8 +1884,8 @@ def api_ask():
     auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
     plan    = (getattr(current_user, "plan", "free") or "free").lower()
 
-    # 🔒 Hard gate: if plan has no chat, stop here
-    if not feature_enabled(plan, "has_chat"):
+    # ⛔ Hard gate for API: if this plan doesn't include Chat, stop here
+    if not feature_enabled(plan, "has_chat", True):
         return jsonify(error="upgrade_required", message="Chat not included in your plan."), 402
 
     # 1) free/abuse guard (device-based)
