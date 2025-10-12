@@ -1,5 +1,15 @@
 // /static/js/chat.js
 
+// --- global HTML-escaper used across the file ---
+window.escapeHtml = function (s = "") {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+};
+
 // ——— Safe global for inline onclick="insertSuggestion(...)" ———
 window.insertSuggestion ||= function (text) {
   const el = document.getElementById('userInput');
@@ -484,13 +494,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   // Initial size if prefilled
   window.autoResize?.(input);
-
-  const escapeHtml = (s='') => s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 
   const getCurrent = () => JSON.parse(localStorage.getItem(STORAGE.current) || "[]");
   const setCurrent = (arr) => localStorage.setItem(STORAGE.current, JSON.stringify(arr));
