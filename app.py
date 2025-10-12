@@ -1003,6 +1003,21 @@ def _plans():
                 "Priority support & early access to new AI tools",
             ],
         },
+        # NEW — Employer (B2B) starter plan
+        "employer_jd": {
+            "code":"employer_jd",
+            "title":"JD Generator",
+            "amount":"25",          # show "£25"
+            "period":"/mo",
+            "tagline":"AI Job Description Generator",
+            "features":[
+                "Unlimited* JD generations (fair use)",
+                "Brand tone presets",
+                "Export to DOCX/PDF",
+                "JD–skills taxonomy suggestions",
+                "Email support",
+            ],
+        },
     }
 
 @app.route("/subscribe", methods=["GET", "POST"])
@@ -1062,9 +1077,10 @@ def subscribe():
     # --- PAID: redirect to Stripe Checkout ---
     if request.method == "POST":
         PLAN_TO_PRICE = {
-            "weekly":   os.getenv("STRIPE_PRICE_WEEKLY"),
-            "standard": os.getenv("STRIPE_PRICE_STANDARD"),
-            "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
+            "weekly":       os.getenv("STRIPE_PRICE_WEEKLY"),
+            "standard":     os.getenv("STRIPE_PRICE_STANDARD"),
+            "premium":      os.getenv("STRIPE_PRICE_PREMIUM"),
+            "employer_jd":  os.getenv("STRIPE_PRICE_EMPLOYER_JD"),  # NEW
         }
         price_id = PLAN_TO_PRICE.get(plan_code)
         if not price_id:
