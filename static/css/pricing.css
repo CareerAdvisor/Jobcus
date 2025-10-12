@@ -184,3 +184,7 @@
 
 /* Optional: highlight the currently selected plan */
 .plan.is-current{ outline:2px solid #104879; outline-offset:2px; }
+
+.pill { display:inline-block; margin-left:.5rem; padding:.15rem .4rem; font-size:.7rem; border-radius:.4rem; background:#eef4ff; color:#104879; }
+.pill-new { background:#e8fff3; color:#087443; }
+
