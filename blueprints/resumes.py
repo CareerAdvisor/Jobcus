@@ -754,7 +754,19 @@ def build_resume():
 
 # ---------- Template-based resume (DOCX) ----------
 @resumes_bp.post("/build-resume-docx")
+@login_required
 def build_resume_docx():
+    # ⛔ block file downloads for plans that don't include them (incl. employer_jd)
+    plan = (getattr(current_user, "plan", "free") or "free").lower()
+    if not feature_enabled(plan, "downloads"):
+        pricing_url = "/pricing#employer-pricing" if plan == "employer_jd" else "/pricing"
+        return jsonify(
+            error="upgrade_required",
+            message="File downloads are available on Standard and Premium.",
+            message_html=f'File downloads are available on Standard and Premium. <a href="{pricing_url}">Upgrade now →</a>',
+            pricing_url=pricing_url
+        ), 403
+
     try:
         data = request.get_json(force=True) or {}
 
@@ -1449,10 +1461,16 @@ def resume_analysis():
     # FIX: align quota key with limits/UI: resume_analyzer
     allowed, info = check_and_increment(supabase_admin, current_user.id, plan, "resume_analyzer")
     if not allowed:
-        PRICING_URL = "https://www.jobcus.com/pricing"
+        base = "https://www.jobcus.com"
+        anchor = "#employer-pricing" if plan == "employer_jd" else ""
+        PRICING_URL = f"{base}/pricing{anchor}"
+    
         info.setdefault("error", "quota_exceeded")
         info.setdefault("message", "You’ve reached your plan limit for this feature.")
-        info.setdefault("message_html", f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>')
+        info.setdefault(
+            "message_html",
+            f'You’ve reached your plan limit for this feature. <a href="{PRICING_URL}">Upgrade now →</a>'
+        )
         info.setdefault("pricing_url", PRICING_URL)
         return jsonify(info), 402
 
