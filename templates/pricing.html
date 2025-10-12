@@ -139,16 +139,16 @@
     </article>
   </div>
 
-  <!-- EMPLOYER PRICING (visible, same white-card layout) -->
+  <!-- EMPLOYER PRICING (initial plan only) -->
   <hr class="pricing-divider" />
 
   <header class="pricing-head" id="employer-pricing">
     <h2>Pricing for employers &amp; recruiters</h2>
-    <p>Start with the AI Job Description Generator. Scale to posting, matching, and insights.</p>
+    <p>Start with the AI Job Description Generator. Posting, matching &amp; insights will be added later.</p>
   </header>
 
   <div class="plans plans--employers">
-    <!-- Employers: Starter (JD Generator) -->
+    <!-- Employers: Starter (JD Generator only) -->
     <article class="plan" data-plan="employer_jd">
       <header class="plan__head">
         <div class="plan__left">
@@ -173,68 +173,6 @@
         <a class="btn btn-primary w-full"
            href="{{ url_for('subscribe') }}?plan=employer_jd&next={{ forwarded_next|urlencode }}">
           Start JD Generator
-        </a>
-      </footer>
-    </article>
-
-    <!-- Employers: Pro (Year 3 feature set) -->
-    <article class="plan plan--popular" data-plan="employer_pro">
-      <div class="plan__badge" aria-hidden="true">Most Popular</div>
-      <header class="plan__head">
-        <div class="plan__left">
-          <h3 class="plan__title">Pro</h3>
-          <div class="price">
-            <span class="currency">£</span><span class="amount">75</span>
-            <span class="period">/mo</span>
-          </div>
-        </div>
-        <p class="plan__tagline">Posting + Matching (beta)</p>
-      </header>
-
-      <ul class="plan__list">
-        <li>Everything in JD Generator</li>
-        <li><strong>Job posting</strong> to Jobcus (Year 3)</li>
-        <li><strong>Candidate matching</strong> (Year 3)</li>
-        <li>Talent inbox &amp; pipeline notes</li>
-        <li>Basic hiring insights dashboard</li>
-        <li>Team seats (up to 3)</li>
-        <li>Priority email support</li>
-      </ul>
-
-      <footer class="plan__foot">
-        <a class="btn btn-primary w-full"
-           href="{{ url_for('subscribe') }}?plan=employer_pro&next={{ forwarded_next|urlencode }}">
-          Get Pro
-        </a>
-      </footer>
-    </article>
-
-    <!-- Employers: Scale (aligns with higher ARPU) -->
-    <article class="plan" data-plan="employer_scale">
-      <header class="plan__head">
-        <div class="plan__left">
-          <h3 class="plan__title">Scale</h3>
-          <div class="price">
-            <span class="currency">£</span><span class="amount">149</span>
-            <span class="period">/mo</span>
-          </div>
-        </div>
-        <p class="plan__tagline">Advanced insights &amp; ATS sync</p>
-      </header>
-
-      <ul class="plan__list">
-        <li>Everything in Pro</li>
-        <li>Advanced insights dashboard (Year 3)</li>
-        <li>Bulk posting &amp; scheduling</li>
-        <li>ATS/HRIS export (CSV/API)</li>
-        <li>Team seats (up to 10)</li>
-        <li>Priority support &amp; onboarding</li>
-      </ul>
-
-      <footer class="plan__foot">
-        <a class="btn btn-primary w-full"
-           href="{{ url_for('subscribe') }}?plan=employer_scale&next={{ forwarded_next|urlencode }}">
-          Get Scale
         </a>
       </footer>
     </article>
