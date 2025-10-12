@@ -1856,7 +1856,6 @@ def _chat_completion(model: str, user_msg: str, history=None) -> str:
 @app.post("/api/ask")
 @api_login_required
 def api_ask():
-    from limits import check_and_increment, feature_enabled  # <- make sure feature_enabled is imported
 
     data = request.get_json(silent=True) or {}
     message   = (data.get("message") or "").strip()
