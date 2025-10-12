@@ -99,7 +99,12 @@
       <h1 class="confirm-title">Confirm your plan</h1>
 
       <div class="plan-line">
-        <div class="plan-name">{{ plan_data.title }}</div>
+        <div class="plan-name">
+          {{ plan_data.title }}
+          {% if plan_data.code == 'employer_jd' %}
+            <span class="pill pill-new">Chat included</span>
+          {% endif %}
+        </div>
         <div class="plan-price">
           <span class="currency">£</span><span class="amount">{{ plan_data.amount|safe }}</span>
           <span class="period">{{ plan_data.period }}</span>
