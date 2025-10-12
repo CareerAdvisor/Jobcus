@@ -140,35 +140,45 @@
   </div></br>
 
   <!-- EMPLOYER PRICING (initial plan only) -->
-  <hr class="pricing-divider" />
+  <hr class="pricing-divider" /></br>
 
   <header class="pricing-head" id="employer-pricing">
     <h2>Pricing for employers &amp; recruiters</h2>
-    <p>Start with the AI Job Description Generator. Posting, matching &amp; insights will be added later.</p>
+    <p>Start with the AI Job Description Generator — now with built-in employer chat for drafting, revisions, and hiring workflows.</p>
   </header>
-
+  
   <div class="plans plans--employers">
-    <!-- Employers: Starter (JD Generator only) -->
+    <!-- Employers: JD Generator -->
     <article class="plan" data-plan="employer_jd">
       <header class="plan__head">
         <div class="plan__left">
-          <h3 class="plan__title">JD Generator</h3>
+          <h3 class="plan__title">
+            JD Generator
+            <span class="pill pill-new" aria-hidden="true">Chat included</span>
+          </h3>
           <div class="price">
             <span class="currency">£</span><span class="amount">25</span>
             <span class="period">/mo</span>
           </div>
         </div>
-        <p class="plan__tagline">AI Job Description Generator</p>
+        <p class="plan__tagline">AI Job Description Generator + Employer Chat</p>
       </header>
-
+  
       <ul class="plan__list">
+        <li>Employer Chat:
+          {% if employer_jd_chat_credits %}
+            <strong>{{ employer_jd_chat_credits }}</strong> messages / month
+          {% else %}
+            <strong>included</strong> (pilot)
+          {% endif %}
+        </li>
         <li>Unlimited* JD generations (fair use)</li>
         <li>Brand tone presets</li>
         <li>Export to DOCX/PDF</li>
         <li>JD–skills taxonomy suggestions</li>
         <li>Email support</li>
       </ul>
-
+  
       <footer class="plan__foot">
         <a class="btn btn-primary w-full"
            href="{{ url_for('subscribe') }}?plan=employer_jd&next={{ forwarded_next|urlencode }}">
@@ -177,9 +187,8 @@
       </footer>
     </article>
   </div>
-
+  
   <p class="pricing-fine">
     *Fair use policy applies. Need enterprise or annual? <a href="/employers#contact">Contact sales</a>.
   </p>
-</section>
 {% endblock %}
