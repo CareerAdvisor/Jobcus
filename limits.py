@@ -148,12 +148,12 @@ FEATURE_FLAGS = {
         "job_insights":    "full",
     },
     "employer_jd": {
+        "has_chat": True,           # ← limited chat enabled
+        "cloud_history": False,     # keep history off
         "rebuild_with_ai": False,
-        "optimize_ai":     False,
-        "downloads":       False,
-        "cloud_history":   False,  # keep history off for this plan
-        "job_insights":    "basic",
-        # add more flags if you need them later
+        "optimize_ai": False,
+        "downloads": False,
+        "job_insights": "basic",
     },
 }
 
@@ -326,7 +326,6 @@ def check_and_add(
         "feature": f,
         "added": amount,
     }
-
 
 def feature_enabled(plan: str, flag: str):
     """
