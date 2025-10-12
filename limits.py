@@ -98,6 +98,23 @@ PLAN_QUOTAS = {
         "resume_analyzer_hour": Quota("hour", None),
         "resume_analyzer_day":  Quota("day", None),
     },
+
+    "employer_jd": {
+        "chat_messages":       Quota("month", 50),   # small monthly quota
+        "chat_messages_hour":  Quota("hour", 10),    # optional soft caps
+        "chat_messages_day":   Quota("day", 30),
+    
+        # If you ever measure words/tokens, keep them conservative here
+        "chat_words_hour":     Quota("hour", 3000),
+        "chat_words_day":      Quota("day", 12000),
+    
+        # Employer plan is for JD features; other job-seeker tools usually not included
+        "resume_analyzer":     Quota("month", 0),    # or remove if you don't count 0
+        "cover_letter":        Quota("month", 0),
+        "skill_gap":           Quota("month", 0),
+        "interview_coach":     Quota("month", 0),
+        "resume_builder":      Quota("month", 0),
+    },
 }
 
 # Feature gates (booleans / levels)
@@ -129,6 +146,14 @@ FEATURE_FLAGS = {
         "downloads":       True,
         "cloud_history":   True,
         "job_insights":    "full",
+    },
+    "employer_jd": {
+        "rebuild_with_ai": False,
+        "optimize_ai":     False,
+        "downloads":       False,
+        "cloud_history":   False,  # keep history off for this plan
+        "job_insights":    "basic",
+        # add more flags if you need them later
     },
 }
 
@@ -164,6 +189,9 @@ def period_key(kind: str, d: date | None = None) -> str:
         return d.strftime("%Y")
     return "all"
 
+def has_chat(plan: str) -> bool:
+    return bool(FEATURE_FLAGS.get((plan or "free").lower(), {}).get("cloud_history", False) or True)
+    # ↑ or add an explicit FEATURE_FLAGS[plan]["has_chat"] if you prefer
 
 # ---------- Counters ----------
 
