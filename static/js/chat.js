@@ -351,14 +351,26 @@ function detectJobsIntent(raw) {
   return queries.length ? { query: queries.join(" | "), queries, role: role || null, location } : null;
 }
 
+// Closes any open history ellipsis menus when clicking outside
+document.addEventListener("click", (e) => {
+  document.querySelectorAll(".history-menu.open").forEach(m => {
+    if (!m.contains(e.target) && !m.parentElement?.querySelector(".history-ellipsis")?.contains(e.target)) {
+      m.classList.remove("open");
+    }
+  });
+});
+
 async function shareConversation(convId, title) {
   const url = `${location.origin}${location.pathname}?cid=${encodeURIComponent(convId)}`;
   try {
-    await navigator.clipboard.writeText(url);
-    alert("Share link copied to clipboard!");
-  } catch {
-    prompt("Copy this link:", url);
-  }
+    if (navigator.share) {               // prefer OS share sheet
+      await navigator.share({ title: title || "Conversation", url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      // lightweight toast
+      alert("Share link copied to clipboard!");
+    }
+  } catch {}
 }
 
 async function renameConversation(convId, currentTitle, isServer = true) {
@@ -372,20 +384,22 @@ async function renameConversation(convId, currentTitle, isServer = true) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: next })
       });
-      await renderHistory();
     } catch (e) {
-      alert("Could not rename on server. Falling back to local if available.");
+      // 404 means your backend route doesn't exist
+      console.warn("PATCH /api/conversations/:id not found; using local fallback");
+      isServer = false;
     }
-  } else {
+  }
+  if (!isServer) {
     const STORAGE = { history: "jobcus:chat:history" };
     const hist = JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
     const row = hist.find(h => h.id === convId);
     if (row) {
       row.title = next;
       localStorage.setItem(STORAGE.history, JSON.stringify(hist));
-      await renderHistory();
     }
   }
+  await renderHistory();
 }
 
 async function deleteConversation(convId, isServer = true) {
@@ -394,14 +408,17 @@ async function deleteConversation(convId, isServer = true) {
   if (isServer) {
     try {
       await apiFetch(`/api/conversations/${convId}`, { method: "DELETE" });
+      // clear active id if you deleted the open one
       if (localStorage.getItem("chat:conversationId") === String(convId)) {
         localStorage.removeItem("chat:conversationId");
+        window.renderChat?.([]);
       }
-      await renderHistory();
     } catch (e) {
-      alert("Failed to delete conversation.");
+      console.warn("DELETE /api/conversations/:id not found; using local fallback");
+      isServer = false;
     }
-  } else {
+  }
+  if (!isServer) {
     const STORAGE = { history: "jobcus:chat:history", current: "jobcus:chat:current" };
     const next = (JSON.parse(localStorage.getItem(STORAGE.history) || "[]")).filter(h => h.id !== convId);
     localStorage.setItem(STORAGE.history, JSON.stringify(next));
@@ -410,8 +427,8 @@ async function deleteConversation(convId, isServer = true) {
       localStorage.removeItem(STORAGE.current);
       window.renderChat?.([]);
     }
-    await renderHistory();
   }
+  await renderHistory();
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -449,38 +466,57 @@ async function renderHistory(){
       const rowId = String(row.id);
       li.className = "history-item" + (rowId === activeServerId ? " active" : "");
       li.dataset.id = rowId;
-      li.innerHTML = `
+    
+      // container for relative menu positioning
+      const wrap = document.createElement("div");
+      wrap.style.position = "relative";
+      wrap.style.display = "flex";
+      wrap.style.alignItems = "center";
+      wrap.style.width = "100%";
+    
+      wrap.innerHTML = `
         <span class="history-item-title" title="${escapeHtml(row.title || 'Conversation')}">
           ${escapeHtml(row.title || 'Conversation')}
         </span>
-        <div class="history-actions">
-          <button class="share"  title="Copy share link">Share</button>
-          <button class="rename" title="Rename">Rename</button>
-          <button class="delete" title="Delete">Delete</button>
+        <button class="history-ellipsis" aria-label="More">
+          <img src="/static/icons/ellipsis.svg" alt="">
+        </button>
+        <div class="history-menu" role="menu" aria-hidden="true">
+          <button class="share"  role="menuitem">Share</button>
+          <button class="rename" role="menuitem">Rename</button>
+          <button class="delete danger" role="menuitem">Delete</button>
         </div>
       `;
-      
-      // open conversation on row click
-      li.addEventListener("click", async (e) => {
-        if (e.target.closest(".history-actions")) return; // ignore clicks on action buttons
+    
+      // open conversation when row (not menu) is clicked
+      wrap.addEventListener("click", async (e) => {
+        if (e.target.closest(".history-ellipsis") || e.target.closest(".history-menu")) return;
         try {
           const msgs = await apiFetch(`/api/conversations/${rowId}/messages`);
           const formatted = (msgs || []).map(m => ({ role: m.role, content: m.content }));
           localStorage.setItem(STORAGE.current, JSON.stringify(formatted));
           localStorage.setItem("chat:conversationId", rowId);
           renderChat(formatted);
-          renderHistory(); // refresh highlight
+          renderHistory();
           try { closeChatMenu?.(); } catch {}
-        } catch (e) {
-          console.error("Failed to load messages", e);
-        }
+        } catch (e) { console.error("Failed to load messages", e); }
       });
-      
-      // actions (server mode)
-      li.querySelector(".share") ?.addEventListener("click", (e) => { e.stopPropagation(); shareConversation(rowId, row.title); });
-      li.querySelector(".rename")?.addEventListener("click", async (e) => { e.stopPropagation(); await renameConversation(rowId, row.title, true); });
-      li.querySelector(".delete")?.addEventListener("click", async (e) => { e.stopPropagation(); await deleteConversation(rowId, true); });
-      
+    
+      // menu open/close
+      const ellipsisBtn = wrap.querySelector(".history-ellipsis");
+      const menu = wrap.querySelector(".history-menu");
+      ellipsisBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        document.querySelectorAll(".history-menu.open").forEach(m => m.classList.remove("open"));
+        menu.classList.toggle("open");
+      });
+    
+      // actions
+      menu.querySelector(".share") .addEventListener("click", (e) => { e.stopPropagation(); menu.classList.remove("open"); shareConversation(rowId, row.title); });
+      menu.querySelector(".rename").addEventListener("click", async (e) => { e.stopPropagation(); menu.classList.remove("open"); await renameConversation(rowId, row.title, true); });
+      menu.querySelector(".delete").addEventListener("click", async (e) => { e.stopPropagation(); menu.classList.remove("open"); await deleteConversation(rowId, true); });
+    
+      li.appendChild(wrap);
       list.appendChild(li);
     });
     return;
@@ -498,28 +534,47 @@ async function renderHistory(){
   hist.forEach(h => {
     const li = document.createElement("li");
     li.className = "history-item" + (h.id === activeLocalId ? " active" : "");
-    li.innerHTML = `
+  
+    const wrap = document.createElement("div");
+    wrap.style.position = "relative";
+    wrap.style.display = "flex";
+    wrap.style.alignItems = "center";
+    wrap.style.width = "100%";
+  
+    wrap.innerHTML = `
       <span class="history-item-title" title="${escapeHtml(h.title)}">${escapeHtml(h.title)}</span>
-      <div class="history-actions">
-        <button class="share"  title="Copy share link">Share</button>
-        <button class="rename" title="Rename">Rename</button>
-        <button class="delete" title="Delete">Delete</button>
+      <button class="history-ellipsis" aria-label="More">
+        <img src="/static/icons/ellipsis.svg" alt="">
+      </button>
+      <div class="history-menu" role="menu" aria-hidden="true">
+        <button class="share"  role="menuitem">Share</button>
+        <button class="rename" role="menuitem">Rename</button>
+        <button class="delete danger" role="menuitem">Delete</button>
       </div>
     `;
-    
-    li.addEventListener("click", (e) => {
-      if (e.target.closest(".history-actions")) return;
+  
+    wrap.addEventListener("click", (e) => {
+      if (e.target.closest(".history-ellipsis") || e.target.closest(".history-menu")) return;
       localStorage.setItem(STORAGE.current, JSON.stringify(h.messages || []));
       localStorage.setItem('jobcus:chat:activeId', h.id);
       renderChat(h.messages || []);
       renderHistory();
       try { closeChatMenu?.(); } catch {}
     });
-    
-    li.querySelector(".share") ?.addEventListener("click", (e) => { e.stopPropagation(); shareConversation(h.id, h.title); });
-    li.querySelector(".rename")?.addEventListener("click", async (e) => { e.stopPropagation(); await renameConversation(h.id, h.title, false); });
-    li.querySelector(".delete")?.addEventListener("click", async (e) => { e.stopPropagation(); await deleteConversation(h.id, false); });
-    
+  
+    const ellipsisBtn = wrap.querySelector(".history-ellipsis");
+    const menu = wrap.querySelector(".history-menu");
+    ellipsisBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.querySelectorAll(".history-menu.open").forEach(m => m.classList.remove("open"));
+      menu.classList.toggle("open");
+    });
+  
+    menu.querySelector(".share") .addEventListener("click", (e) => { e.stopPropagation(); menu.classList.remove("open"); shareConversation(h.id, h.title); });
+    menu.querySelector(".rename").addEventListener("click", async (e) => { e.stopPropagation(); menu.classList.remove("open"); await renameConversation(h.id, h.title, false); });
+    menu.querySelector(".delete").addEventListener("click", async (e) => { e.stopPropagation(); menu.classList.remove("open"); await deleteConversation(h.id, false); });
+  
+    li.appendChild(wrap);
     list.appendChild(li);
   });
 }
@@ -545,16 +600,38 @@ document.addEventListener("DOMContentLoaded", () => {
     document.head.appendChild(st2);
   }
   
-  // add this (new)
+
+  // ACTION MENU styles (add alongside your other injected styles)
   if (!document.getElementById("historyActionStyles")) {
     const st = document.createElement("style");
     st.id = "historyActionStyles";
     st.textContent = `
-      .history-item{display:flex;align-items:center;justify-content:space-between;gap:8px}
-      .history-item .history-item-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .history-actions{display:flex;gap:10px;opacity:.8}
-      .history-actions button{background:none;border:none;padding:2px 4px;cursor:pointer;color:#104879;font-size:12px}
-      .history-actions button:hover{text-decoration:underline}
+      .history-item{
+        display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px
+      }
+      .history-item .history-item-title{
+        flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+      }
+      .history-ellipsis{
+        width:28px;height:28px;border:none;background:transparent;cursor:pointer;
+        display:inline-grid;place-items:center;border-radius:6px;
+      }
+      .history-ellipsis:hover{background:#f2f6ff}
+      .history-ellipsis img{width:16px;height:16px}
+  
+      .history-menu{
+        position:absolute; right:6px; top:100%;
+        background:#fff; border:1px solid #e5e9f2; border-radius:10px;
+        box-shadow:0 8px 24px rgba(16,24,40,.08);
+        min-width:160px; padding:6px; z-index:50; display:none;
+      }
+      .history-menu.open{display:block}
+      .history-menu button{
+        width:100%; text-align:left; background:none; border:none; cursor:pointer;
+        padding:8px 10px; border-radius:8px; font-size:13px; color:#102a43;
+      }
+      .history-menu button:hover{background:#f6f9ff}
+      .history-menu .danger{color:#b42318}
     `;
     document.head.appendChild(st);
   }
@@ -970,10 +1047,25 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("resize", () => { scrollToBottom(); maybeShowScrollIcon(); });
 });
 
-// AUTO-CONSUME prefilled question from home page
+// Load by shared conversation id, if present
+(function(){
+  const params = new URLSearchParams(location.search);
+  const cid = params.get("cid");
+  if (!cid) return;
+  apiFetch(`/api/conversations/${cid}/messages`).then(msgs => {
+    const formatted = (msgs || []).map(m => ({ role: m.role, content: m.content }));
+    localStorage.setItem("jobcus:chat:current", JSON.stringify(formatted));
+    localStorage.setItem("chat:conversationId", cid);
+    renderChat(formatted);
+    renderHistory();
+  }).catch(()=>{});
+})();
+
+// AUTO-CONSUME prefilled question from home page (skip if cid present)
 (function(){
   try {
     const params = new URLSearchParams(location.search);
+    if (params.get('cid')) return; // shared view takes precedence
     const q = params.get('q') || localStorage.getItem('chat:prefill') || '';
     if (!q) return;
     localStorage.removeItem('chat:prefill');
@@ -981,12 +1073,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const form  = document.getElementById('chat-form');
     if (!input || !form) return;
     input.value = q;
-    // small delay lets the page finish wiring handlers
     setTimeout(() => {
       form.dispatchEvent(new Event("submit", { bubbles:true, cancelable:true }));
-      // Clean the querystring so refreshes don't resend
-      const nextURL = location.pathname + location.hash;
-      history.replaceState({}, "", nextURL);
+      history.replaceState({}, "", location.pathname + location.hash);
     }, 100);
   } catch {}
 })();
