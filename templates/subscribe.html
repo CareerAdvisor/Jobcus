@@ -39,7 +39,7 @@
       background:#16a34a; box-shadow:0 0 0 3px #e8f7ee inset;
     }
 
-    /* --- CTAs (full width, centered text) --- */
+    /* --- CTAs --- */
     .confirm-cta{ margin-top:16px; display:grid; gap:10px; }
     .confirm-cta .btn-primary{
       width:100%; border-radius:14px; padding:12px 16px;
@@ -51,26 +51,17 @@
       background:#f6fbff; border:2px solid #104879; color:#104879; font-weight:700;
     }
 
-    /* Push the card down below the fixed header and keep it centered */
-.confirm-wrap{
-  max-width:640px;
-  /* top margin = header height + extra breathing room */
-  margin: calc(var(--header-h, 60px) + 28px) auto 32px;
-  padding: 0 12px;
-}
+    /* Header offset / centering */
+    .confirm-wrap{
+      max-width:640px;
+      margin: calc(var(--header-h, 60px) + 28px) auto 32px;
+      padding: 0 12px;
+      min-height: calc(100vh - var(--header-h, 60px) - 48px);
+      display:flex; align-items:center;
+    }
+    .account-page main{ padding-top: calc(var(--header-h, 60px) + 16px); }
 
-/* (Optional) If some pages don’t use .confirm-wrap, give all account pages a header offset */
-.account-page main{
-  padding-top: calc(var(--header-h, 60px) + 16px);
-}
-
-.confirm-wrap{
-  max-width:640px; padding: 0 12px; margin: 0 auto;
-  min-height: calc(100vh - var(--header-h, 60px) - 48px);
-  display:flex; align-items:center;
-}
-
-    /* --- Mobile tweaks --- */
+    /* Mobile tweaks */
     @media (max-width:480px){
       .confirm-title{ font-size:28px; }
       .plan-name{ font-size:18px; }
@@ -81,6 +72,25 @@
 {% endblock %}
 
 {% block content %}
+{# Fallback: ensure employer_jd renders even if server didn't set plan_data yet #}
+{% set q_plan = request.args.get('plan','') %}
+{% if (plan_data is not defined or not plan_data) and q_plan == 'employer_jd' %}
+  {% set plan_data = {
+    'code': 'employer_jd',
+    'title': 'JD Generator',
+    'amount': '25',
+    'period': '/mo',
+    'tagline': 'AI Job Description Generator',
+    'features': [
+      'Unlimited* JD generations (fair use)',
+      'Brand tone presets',
+      'Export to DOCX/PDF',
+      'JD–skills taxonomy suggestions',
+      'Email support'
+    ]
+  } %}
+{% endif %}
+
 <section class="confirm-wrap">
   <div class="confirm-card">
 
