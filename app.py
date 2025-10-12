@@ -2002,7 +2002,7 @@ def list_messages(conv_id):
             admin.table("conversation_messages")
             .select("role,content,created_at")
             .eq("conversation_id", str(conv_id))
-            .order("created_at", asc=True)   # same ordering you had before
+            .order("created_at")      # <-- fixed
             .limit(200)
             .execute()
             .data or []
