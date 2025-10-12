@@ -342,8 +342,103 @@ function detectJobsIntent(raw) {
 }
 
 // ──────────────────────────────────────────────────────────────
+// SERVER-FIRST history with active highlight (+ local fallback)
+// ──────────────────────────────────────────────────────────────
+async function renderHistory(){
+  const list = document.getElementById("chatHistory");
+  const empty = document.getElementById("historyEmpty");
+  if (!list) return;
+
+  // Local store helpers
+  const STORAGE = {
+    current: "jobcus:chat:current",
+    history: "jobcus:chat:history"
+  };
+  const getHistory = () => JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
+  const setHistory = (arr) => localStorage.setItem(STORAGE.history, JSON.stringify(arr));
+
+  list.innerHTML = "";
+  const activeServerId = (localStorage.getItem("chat:conversationId") || "").toString();
+
+  // Try server-backed
+  let rows = null;
+  try {
+    rows = await apiFetch("/api/conversations"); // [{id,title,created_at}]
+    if (!Array.isArray(rows)) rows = [];
+  } catch {
+    rows = null;
+  }
+
+  if (rows && rows.length){
+    if (empty) empty.hidden = true;
+    rows.forEach(row => {
+      const li = document.createElement("li");
+      const rowId = String(row.id);
+      li.className = "history-item" + (rowId === activeServerId ? " active" : "");
+      li.dataset.id = rowId;
+      li.innerHTML = `
+        <span class="history-item-title" title="${escapeHtml(row.title || 'Conversation')}">
+          ${escapeHtml(row.title || 'Conversation')}
+        </span>
+      `;
+      li.addEventListener("click", async () => {
+        try {
+          const msgs = await apiFetch(`/api/conversations/${rowId}/messages`);
+          const formatted = (msgs || []).map(m => ({ role: m.role, content: m.content }));
+          localStorage.setItem(STORAGE.current, JSON.stringify(formatted));
+          localStorage.setItem("chat:conversationId", rowId);
+          renderChat(formatted);
+          renderHistory(); // refresh highlight
+          try { closeChatMenu?.(); } catch {}
+        } catch (e) {
+          console.error("Failed to load messages", e);
+        }
+      });
+      list.appendChild(li);
+    });
+    return;
+  }
+
+  // Fallback to local history with local "activeId"
+  const hist = getHistory();
+  const activeLocalId = localStorage.getItem('jobcus:chat:activeId') || '';
+  if (!hist.length){
+    if (empty) empty.hidden = false;
+    return;
+  }
+  if (empty) empty.hidden = true;
+
+  hist.forEach(h => {
+    const li = document.createElement("li");
+    li.className = "history-item" + (h.id === activeLocalId ? " active" : "");
+    li.innerHTML = `
+      <span class="history-item-title" title="${escapeHtml(h.title)}">${escapeHtml(h.title)}</span>
+      <button class="delete" aria-label="Delete">✕</button>
+    `;
+    li.addEventListener("click", (e) => {
+      if (e.target.closest(".delete")) return;
+      localStorage.setItem(STORAGE.current, JSON.stringify(h.messages || []));
+      localStorage.setItem('jobcus:chat:activeId', h.id);
+      renderChat(h.messages || []);
+      renderHistory();
+      try { closeChatMenu?.(); } catch {}
+    });
+    li.querySelector(".delete").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const next = getHistory().filter(x => x.id !== h.id);
+      setHistory(next);
+      if ((localStorage.getItem('jobcus:chat:activeId')||'') === h.id){
+        localStorage.removeItem('jobcus:chat:activeId');
+      }
+      renderHistory();
+    });
+    list.appendChild(li);
+  });
+}
+
+// ──────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  // (Optional) Inject minimal CSS for spinner if not present
+  // Inject minimal CSS for spinner if not present
   if (!document.getElementById("aiSpinnerStyles")) {
     const st = document.createElement("style");
     st.id = "aiSpinnerStyles";
@@ -354,11 +449,18 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     document.head.appendChild(st);
   }
+  // Inject highlight style for active conversation in history
+  if (!document.getElementById("historyActiveStyles")) {
+    const st2 = document.createElement("style");
+    st2.id = "historyActiveStyles";
+    st2.textContent = `.history-item.active{background:#eef5ff}.history-item.active .history-item-title{color:#104879;font-weight:600}`;
+    document.head.appendChild(st2);
+  }
 
   // Init model UI/logic first
   const modelCtl = initModelControls();
 
-  // 0) Server-backed conversation id (created on first send)
+  // Server-backed conversation id (created on first send)
   let conversationId = localStorage.getItem("chat:conversationId") || null;
 
   // Storage keys
@@ -371,6 +473,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatbox = document.getElementById("chatbox");
   const form    = document.getElementById("chat-form");
   const input   = document.getElementById("userInput");
+
+  // Bind scroll listener so scrolldown icon shows/hides properly
+  chatbox?.addEventListener("scroll", () => maybeShowScrollIcon());
 
   // Keep textarea autosizing in sync
   input?.addEventListener("input", () => {
@@ -417,6 +522,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!messages.length){
       renderWelcome();
       scrollToBottom();
+      maybeShowScrollIcon();
       return;
     }
     messages.forEach(msg => {
@@ -451,33 +557,7 @@ document.addEventListener("DOMContentLoaded", () => {
       chatbox.appendChild(div);
     });
     scrollToBottom();
-  }
-
-  function renderHistory(){
-    const list = document.getElementById("chatHistory");
-    if (!list) return;
-    const hist = getHistory();
-    list.innerHTML = "";
-    hist.forEach(h => {
-      const li = document.createElement("li");
-      li.className = "history-item";
-      li.innerHTML = `
-        <span class="history-item-title" title="${escapeHtml(h.title)}">${escapeHtml(h.title)}</span>
-        <button class="delete" aria-label="Delete">✕</button>
-      `;
-      li.addEventListener("click", (e) => {
-        if (e.target.closest(".delete")) return;
-        setCurrent(h.messages || []);
-        renderChat(getCurrent());
-        try { closeChatMenu?.(); } catch {}
-      });
-      li.querySelector(".delete").addEventListener("click", (e) => {
-        e.stopPropagation();
-        setHistory(getHistory().filter(x => x.id !== h.id));
-        renderHistory();
-      });
-      list.appendChild(li);
-    });
+    maybeShowScrollIcon();
   }
 
   window.saveMessage = function(role, content){
@@ -508,6 +588,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       setCurrent([]);
       localStorage.removeItem("chat:conversationId");
+      localStorage.removeItem('jobcus:chat:activeId'); // clear local active flag (fallback mode)
       conversationId = null;
       renderChat([]);
       renderHistory();
@@ -549,13 +630,20 @@ document.addEventListener("DOMContentLoaded", () => {
   chatCloseBtn?.addEventListener("click", window.closeChatMenu);
   document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") window.closeChatMenu?.(); });
 
-  document.getElementById("newChatBtn")?.addEventListener("click", () => { clearChat(); window.closeChatMenu?.(); });
-  document.getElementById("clearChatBtn")?.addEventListener("click", () => { clearChat(); window.closeChatMenu?.(); });
+  document.getElementById("newChatBtn")?.addEventListener("click", () => {
+    clearChat();
+    window.closeChatMenu?.();
+  });
+  document.getElementById("clearChatBtn")?.addEventListener("click", () => {
+    clearChat();
+    window.closeChatMenu?.();
+  });
 
+  // Initial paint
   renderChat(getCurrent());
   renderHistory();
   refreshCreditsPanel();
-  maybeShowScrollIcon?.();
+  maybeShowScrollIcon();
   scrollToBottom();
 
   // ---- send handler (self-contained and async) ----
@@ -576,8 +664,12 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     chatbox.appendChild(userMsg);
     scrollToBottom();
+    maybeShowScrollIcon();
 
-    saveMessage("user", message);
+    // Save user message locally
+    const msgs = getCurrent();
+    msgs.push({ role: "user", content: message });
+    setCurrent(msgs);
 
     if (input) {
       input.value = "";
@@ -592,18 +684,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (featureIntent) {
       // keep the inline CTAs so users still have buttons
       renderFeatureSuggestions(featureIntent, aiBlock);
-    
-      // NEW: auto-route when intent is very explicit
+
+      // Auto-route when intent is explicit
       const veryStrong = /\b(open|start|take me|go to|launch|use|begin)\b/.test(message.toLowerCase())
                       || /^(scan|analy[sz]e|build|create|write)\b/.test(message.toLowerCase());
-    
-      // Optional: make analyzer/builder always strong when user mentions resume + action
       const strongKeys = ["resume-analyzer", "resume-builder", "cover-letter", "interview-coach", "skill-gap", "job-insights"];
       const isSupported = strongKeys.includes(featureIntent.primary);
-    
       if (isSupported && veryStrong) {
         const dest = FEATURE_LINKS[featureIntent.primary]?.url || "/";
-        // Tiny “opening…” strip the user can cancel
         const bar = document.createElement("div");
         bar.className = "feature-autoroute";
         bar.innerHTML = `
@@ -611,13 +699,9 @@ document.addEventListener("DOMContentLoaded", () => {
           <button type="button" class="cancel">Cancel</button>
         `;
         aiBlock.appendChild(bar);
-    
         let cancelled = false;
         bar.querySelector(".cancel")?.addEventListener("click", () => { cancelled = true; bar.remove(); });
-    
-        setTimeout(() => {
-          if (!cancelled) window.location.href = dest;
-        }, 900); // quick, but gives the user a moment to cancel
+        setTimeout(() => { if (!cancelled) window.location.href = dest; }, 900);
       }
     }
 
@@ -625,6 +709,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showAIStatus("Thinking…");
     scrollToAI(aiBlock);
     scrollToBottom();
+    maybeShowScrollIcon();
 
     const currentModel = modelCtl.getSelectedModel();
     let finalReply = "";
@@ -670,12 +755,15 @@ document.addEventListener("DOMContentLoaded", () => {
           aiBlock.insertAdjacentHTML('beforeend',
             `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
         }
-        saveMessage("assistant", `Here are jobs for “${(jobIntent.queries || [jobIntent.query]).join(' | ')}”.`);
+        // Save assistant summary to local thread
+        const updated = [...getCurrent(), { role: "assistant", content: `Here are jobs for “${(jobIntent.queries || [jobIntent.query]).join(' | ')}”.` }];
+        setCurrent(updated);
 
         await refreshCreditsPanel?.();
         window.syncState?.();
-        hideAIStatus();               // ✅ hide the sticky status
+        hideAIStatus();
         scrollToBottom();
+        maybeShowScrollIcon();
         return;
       }
 
@@ -686,10 +774,11 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
       });
 
-      // Save conv id after first reply
+      // Save conv id after first reply and refresh history for highlight
       if (data.conversation_id && data.conversation_id !== conversationId) {
         conversationId = data.conversation_id;
         localStorage.setItem("chat:conversationId", conversationId);
+        renderHistory(); // <-- update highlight to current
       }
 
       finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
@@ -700,16 +789,19 @@ document.addEventListener("DOMContentLoaded", () => {
       if (handleChatLimitError(err)) {
         aiBlock.innerHTML = ""; // suppress raw JSON message
         scrollToBottom();
+        maybeShowScrollIcon();
         return;
       }
 
       if (err?.kind === "limit") {
         aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Free limit reached.")}</p><hr class="response-separator" />`;
         scrollToBottom();
+        maybeShowScrollIcon();
         return;
       }
       aiBlock.innerHTML = `<p style="margin:8px 0;color:#a00;">${escapeHtml(err.message || "Sorry, something went wrong.")}</p><hr class="response-separator" />`;
       scrollToBottom();
+      maybeShowScrollIcon();
       return;
     } finally {
       disableComposer(false);
@@ -732,6 +824,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     const targetDiv = document.getElementById(copyId);
     scrollToBottom();
+    maybeShowScrollIcon();
 
     let i = 0, buffer = "";
     (function typeWriter() {
@@ -740,6 +833,7 @@ document.addEventListener("DOMContentLoaded", () => {
         targetDiv.textContent = buffer;
         scrollToAI(aiBlock);
         scrollToBottom();
+        maybeShowScrollIcon();
         setTimeout(typeWriter, 5);
       } else {
         if (window.marked?.parse) {
@@ -747,7 +841,8 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           targetDiv.textContent = buffer;
         }
-        saveMessage("assistant", finalReply);
+        const updated = [...getCurrent(), { role: "assistant", content: finalReply }];
+        setCurrent(updated);
 
         // 🔁 UPDATED: refresh from server instead of local "chatUsed"
         (async () => { await refreshCreditsPanel?.(); })();
@@ -770,13 +865,13 @@ document.addEventListener("DOMContentLoaded", () => {
   new MutationObserver(() => {
     const box = document.getElementById("chatbox");
     if (box) box.scrollTop = box.scrollHeight;
+    maybeShowScrollIcon();
   }).observe(chatbox, { childList: true, subtree: true });
 
   // Keep bottom on resize
-  window.addEventListener("resize", scrollToBottom);
+  window.addEventListener("resize", () => { scrollToBottom(); maybeShowScrollIcon(); });
 });
 
-// AUTO-CONSUME prefilled question from home page
 // AUTO-CONSUME prefilled question from home page
 (function(){
   try {
@@ -840,4 +935,5 @@ function displayJobs(data, aiBlock) {
   });
   aiBlock.appendChild(jobsContainer);
   scrollToBottom();
+  maybeShowScrollIcon();
 }
