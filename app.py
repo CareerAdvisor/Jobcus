@@ -2045,30 +2045,23 @@ def delete_conversation(cid):
         return jsonify(error="server_config", message="Supabase admin client is not configured."), 500
 
     auth_id = getattr(current_user, "id", None) or getattr(current_user, "auth_id", None)
-    try:
-        # 1) Verify the conversation belongs to this user
-        owns = (
-            admin.table("conversations")
-            .select("id")
-            .eq("id", str(cid))
-            .eq("auth_id", auth_id)
-            .limit(1)
-            .execute()
-            .data
-        )
-        if not owns:
-            return jsonify(error="not_found", message="Conversation not found."), 404
 
-        # 2) Delete children by conversation_id ONLY (no auth_id column there)
-        admin.table("conversation_messages").delete().eq("conversation_id", str(cid)).execute()
+    # 1) Verify ownership on the parent
+    owns = (
+        admin.table("conversations")
+        .select("id").eq("id", str(cid)).eq("auth_id", auth_id)
+        .limit(1).execute().data
+    )
+    if not owns:
+        return jsonify(error="not_found", message="Conversation not found."), 404
 
-        # 3) Delete the conversation (filter with auth_id to be safe)
-        admin.table("conversations").delete().eq("id", str(cid)).eq("auth_id", auth_id).execute()
+    # 2) Delete children by conversation_id ONLY (no auth_id in this table)
+    admin.table("conversation_messages").delete().eq("conversation_id", str(cid)).execute()
 
-        return ("", 204)
-    except Exception as e:
-        current_app.logger.exception("delete_conversation failed")
-        return jsonify(error="server_error", message=str(e)), 500
+    # 3) Now delete the parent — THIS is where the line goes
+    admin.table("conversations").delete().eq("id", str(cid)).eq("auth_id", auth_id).execute()
+
+    return "", 204
 
 
 @app.get("/api/credits")
