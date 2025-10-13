@@ -366,9 +366,13 @@
       if (res.status === 404) return fallbackDownload(fmt);
 
       if (!res.ok) {
+        // Try client-side fallback for server errors (e.g. PDF/DOCX libs missing)
+        if (res.status >= 500) {
+          return fallbackDownload(fmt);
+        }
         const msg = (await res.text()) || "Download failed.";
         window.showUpgradeBanner?.(msg);
-        return;
+          return;
       }
 
       const blob = await res.blob();
