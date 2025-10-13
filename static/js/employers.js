@@ -416,46 +416,51 @@
         body: JSON.stringify({ format: fmt, text })
       });
 
+      // 403: paywall (show upgrade and stop)
       if (res.status === 403) {
         const info = await res.json().catch(() => ({}));
         const url  = info?.pricing_url || (window.PRICING_URL || "/pricing");
-        const html = info?.message_html || `File downloads are available on Standard and Premium. <a href="${url}">Upgrade now →</a>`;
+        const html = info?.message_html || `File downloads are available on the JD Generator and Premium plans. <a href="${url}">Upgrade now →</a>`;
         window.upgradePrompt?.(html, url, 1200);
         return;
       }
+      
+      // 401 or redirect: force login
       if (res.status === 401 || res.redirected) {
         window.location.href = "/account?mode=login";
         return;
       }
+      
+      // 400: bad input (do NOT fall back to client download)
       if (res.status === 400) {
-        if (fmt === "docx") return fallbackDownload(fmt);
         const t = (await res.text()).toLowerCase();
-        if (t.includes("unsupported")) {
-          window.showUpgradeBanner?.("DOCX download not available yet. Please use PDF for now.");
-          return;
+        if (t.includes("no text")) {
+          window.showUpgradeBanner?.("Please generate a job description first.");
+        } else {
+          window.showUpgradeBanner?.("Download failed.");
         }
-        window.showUpgradeBanner?.("Download failed.");
         return;
       }
-      if (res.status === 404 || (res.status === 400 && fmt === "docx")) {
-        return fallbackDownload(fmt);
-      }
+      
+      // 404 or any !ok: show message; do NOT fall back to client download
       if (!res.ok) {
-        if (res.status >= 500) return fallbackDownload(fmt);
         const msg = (await res.text()) || "Download failed.";
         window.showUpgradeBanner?.(msg);
         return;
       }
-
+      
+      // Success → stream to file
       const blob = await res.blob();
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = (fmt === "pdf") ? "job-description.pdf" : "job-description.docx";
+      const url = URL.createObjectURL(blob);
+      a.href = url;
+      a.download = (fmt === "pdf" ? "job-description.pdf"
+                 : fmt === "docx" ? "job-description.docx"
+                 : "job-description.txt");
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(a.href);
-    }
+      URL.revokeObjectURL(url);
 
     dlPdfBtn?.addEventListener("click",  () => downloadJD("pdf"));
     dlDocxBtn?.addEventListener("click", () => downloadJD("docx"));
