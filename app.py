@@ -2804,13 +2804,17 @@ def employer_job_post_download():
         return jsonify(error="No text provided"), 400
 
     plan = (getattr(current_user, "plan", "free") or "free").lower()
-    if not feature_enabled(plan, "downloads"):
-        return jsonify(
-            error="upgrade_required",
-            message="File downloads are available on Standard and Premium.",
-            message_html=f'File downloads are available on Standard and Premium. <a href="{PRICING_URL}">Upgrade now →</a>',
-            pricing_url=PRICING_URL
-        ), 403
+
+    # Superadmin bypass; otherwise enforce downloads flag
+    if not is_superadmin(current_user):
+        if not feature_enabled(plan, "downloads", default=False):
+            PRICING_URL = url_for("pricing", _external=True)
+            return jsonify(
+                error="upgrade_required",
+                message="File downloads are available on the JD Generator and Premium plans.",
+                message_html=f'File downloads are available on the JD Generator and Premium plans. <a href="{PRICING_URL}">Upgrade now →</a>',
+                pricing_url=PRICING_URL,
+            ), 403
 
     if fmt == "txt":
         return send_file(BytesIO(text.encode("utf-8")),
