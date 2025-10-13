@@ -1,23 +1,16 @@
 // /static/js/employers.js
 (function () {
   "use strict";
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // One-time init guard (prevents double-execution if the script is included
-  // twice or re-run by client-side navigation)
-  // ──────────────────────────────────────────────────────────────────────────
   if (window.__JOBCUS_EMPLOYERS_INIT__) return;
   window.__JOBCUS_EMPLOYERS_INIT__ = true;
 
   document.addEventListener("DOMContentLoaded", function () {
-    // Ensure cookies are sent (SameSite=Lax)
     const _fetch = window.fetch.bind(window);
     window.fetch = (input, init = {}) => {
       if (!("credentials" in init)) init.credentials = "same-origin";
       return _fetch(input, init);
     };
 
-    // Small helpers
     function escapeHtml(s = "") {
       return String(s)
         .replace(/&/g, "&amp;")
@@ -27,9 +20,6 @@
         .replace(/'/g, "&#39;");
     }
 
-    // ───────────────────────────────────────────────
-    // Watermark helpers (email-safe + strip fallbacks)
-    // ───────────────────────────────────────────────
     const EMAIL_RE = /@.+\./;
     function sanitizeWM(t) {
       const raw = String(t || "").trim();
@@ -50,19 +40,17 @@
           `;
           (doc.head || doc.documentElement).appendChild(st);
         }
-        (root.querySelectorAll
-          ? root.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']")
-          : []
-        ).forEach(el => {
-          el.removeAttribute?.("data-watermark");
-          el.removeAttribute?.("data-watermark-tile");
-          el.classList?.remove("wm-tiled");
-          if (el.style) {
-            el.style.backgroundImage = "";
-            el.style.backgroundSize = "";
-            el.style.backgroundBlendMode = "";
-          }
-        });
+        (root.querySelectorAll ? root.querySelectorAll("[data-watermark], [data-watermark-tile], .wm-tiled, [style*='background-image']") : [])
+          .forEach(el => {
+            el.removeAttribute?.("data-watermark");
+            el.removeAttribute?.("data-watermark-tile");
+            el.classList?.remove("wm-tiled");
+            if (el.style) {
+              el.style.backgroundImage = "";
+              el.style.backgroundSize = "";
+              el.style.backgroundBlendMode = "";
+            }
+          });
         (root.querySelectorAll ? root.querySelectorAll(".wm-overlay") : []).forEach(n => {
           try { n._ro?.disconnect?.(); } catch {}
           n.remove();
@@ -70,13 +58,10 @@
       } catch {}
     }
 
-    // Sparse big-stamp watermark (3–4 placements)
     function applySparseWM(el, text = "JOBCUS.COM", opts = {}) {
       text = sanitizeWM(text);
       if (!el || !text) return;
-
       try { el.querySelectorAll(":scope > .wm-overlay").forEach(x => { x._ro?.disconnect?.(); x.remove(); }); } catch {}
-
       const overlay = document.createElement("canvas");
       overlay.className = "wm-overlay";
       el.appendChild(overlay);
@@ -108,11 +93,8 @@
         ctx.font = `700 ${fontPx}px ${baseFont}`;
 
         let points;
-        if (count <= 2) {
-          points = [[0.22,0.30],[0.50,0.55],[0.78,0.80]];
-        } else {
-          points = [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
-        }
+        if (count <= 2) points = [[0.22,0.30],[0.50,0.55],[0.78,0.80]];
+        else points = [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
 
         points.forEach(([fx, fy]) => {
           const x = fx * w, y = fy * h;
@@ -127,7 +109,6 @@
       overlay._ro = ro;
     }
 
-    // Original tiled fallback (kept)
     function applyWM(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
       text = sanitizeWM(text);
       if (!el || !text) return;
@@ -199,29 +180,67 @@
       throw new Error(msg);
     }
 
-    // Plan flags from <body data-*>, set in base.html
     const plan         = (document.body.dataset.plan || "guest").toLowerCase();
     const isPaid       = (plan === "standard" || plan === "premium");
     const isSuperadmin = (document.body.dataset.superadmin === "1");
 
-    // Elements
     const inquiryForm     = document.getElementById("employer-inquiry-form");
     const jobPostForm     = document.getElementById("job-post-form");
     const output          = document.getElementById("job-description-output");
     const downloadOptions = document.getElementById("download-options");
     const dlPdfBtn        = document.getElementById("download-pdf");
     const dlDocxBtn       = document.getElementById("download-docx");
+    const clearBtn        = document.getElementById("clear-jd"); // optional
 
     const wrap = document.getElementById("jobDescriptionWrap");
     const out  = output;
 
     // ───────────────────────────────────────────────
-    // Suggest skills button — INSERTED
+    // Suggest skills (with selectable chips)
     // ───────────────────────────────────────────────
-    const suggestBtn = document.getElementById("suggest-skills");
-    const titleInput = document.getElementById("jp-title");
+    const suggestBtn  = document.getElementById("suggest-skills");
+    const titleInput  = document.getElementById("jp-title");
+    const suggestBox  = document.getElementById("skills-suggest-box"); // container for chips
+    const skillsText  = document.getElementById("jp-skills");          // textarea (optional)
+    const skillsHidden= document.getElementById("jp-skills-hidden");   // hidden input (fallback)
+    const includeTaxo = document.getElementById("jp-include-taxonomy");// checkbox (optional)
 
-    // Enable/disable by title length
+    function setSkillsValue(arr) {
+      const val = arr.join(", ");
+      if (skillsText) {
+        skillsText.style.display = "block";
+        skillsText.value = val;
+      }
+      if (skillsHidden) skillsHidden.value = val;
+    }
+    function getSkillsValue() {
+      const raw = (skillsText?.value || skillsHidden?.value || "").trim();
+      if (!raw) return [];
+      return raw.split(",").map(s => s.trim()).filter(Boolean);
+    }
+
+    function renderChips(skills = []) {
+      if (!suggestBox) return;
+      suggestBox.innerHTML = "";
+      const current = new Set(getSkillsValue().map(s => s.toLowerCase()));
+      skills.forEach(skill => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chip";
+        btn.textContent = skill;
+        btn.setAttribute("aria-pressed", current.has(skill.toLowerCase()) ? "true" : "false");
+        btn.addEventListener("click", () => {
+          const selected = getSkillsValue();
+          const i = selected.findIndex(s => s.toLowerCase() === skill.toLowerCase());
+          if (i === -1) selected.push(skill);
+          else selected.splice(i, 1);
+          setSkillsValue(selected);
+          btn.setAttribute("aria-pressed", i === -1 ? "true" : "false");
+        });
+        suggestBox.appendChild(btn);
+      });
+    }
+
     function refreshSuggestState() {
       const ok = (titleInput?.value || "").trim().length >= 2;
       if (suggestBtn) {
@@ -232,7 +251,6 @@
     titleInput?.addEventListener("input", refreshSuggestState);
     refreshSuggestState();
 
-    // Click handler
     suggestBtn?.addEventListener("click", async () => {
       if (suggestBtn.disabled) return;
       const jobTitle = (titleInput?.value || "").trim();
@@ -243,21 +261,24 @@
       suggestBtn.disabled = true;
 
       try {
+        const body = { jobTitle };
+        if (includeTaxo) body.includeTaxonomy = !!includeTaxo.checked;
+
         const res = await fetch("/api/employer/skills-suggest", {
           method: "POST",
           headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ jobTitle })
+          body: JSON.stringify(body)
         });
         await handleCommonErrors(res);
         const data = await res.json().catch(() => ({}));
-        const skills = data?.skills || [];
+        const skills = Array.isArray(data?.skills) ? data.skills : [];
+
         if (!skills.length) {
           window.showUpgradeBanner?.("No skills found for this title.");
         } else {
-          const block = `\n\nSuggested skills:\n- ${skills.join("\n- ")}`;
-          const pre = output?.querySelector("pre");
-          if (pre) pre.textContent = (pre.textContent || "") + block;
-          else paintJD(block.trim());
+          renderChips(skills);
+          // If there are no current selections, prefill with the first 5
+          if (getSkillsValue().length === 0) setSkillsValue(skills.slice(0, 5));
         }
       } catch (e) {
         console.error(e);
@@ -267,6 +288,7 @@
         refreshSuggestState();
       }
     });
+
     // ───────────────────────────────────────────────
 
     function renderJobDescription(html) {
@@ -283,7 +305,6 @@
       downloadOptions?.classList.add("hidden");
     }
 
-    // No-copy / no-screenshot guard (free tier only)
     function enableNoCopyNoShot(el){
       if (!el) return;
       const kill = e => { e.preventDefault(); e.stopPropagation(); };
@@ -339,7 +360,6 @@
       return (out?.innerText || "").trim();
     }
 
-    // Local fallback (dev only)
     async function fallbackDownload(fmt) {
       const text = readOutputText();
       if (!text) { alert("Generate a job description first."); return; }
@@ -384,7 +404,6 @@
       alert("Unsupported format.");
     }
 
-    // Unified (gated) downloader — CALLS SERVER FIRST
     async function downloadJD(fmt) {
       if (!["pdf", "docx"].includes(fmt)) { alert("Unsupported format."); return; }
       const text = readOutputText();
@@ -409,10 +428,7 @@
         return;
       }
       if (res.status === 400) {
-        // If server can’t build DOCX, fall back client-side
-        if (fmt === "docx") {
-          return fallbackDownload(fmt);
-        }
+        if (fmt === "docx") return fallbackDownload(fmt);
         const t = (await res.text()).toLowerCase();
         if (t.includes("unsupported")) {
           window.showUpgradeBanner?.("DOCX download not available yet. Please use PDF for now.");
@@ -421,17 +437,11 @@
         window.showUpgradeBanner?.("Download failed.");
         return;
       }
-      // Also fall back on 404 (endpoint available in dev only)
       if (res.status === 404 || (res.status === 400 && fmt === "docx")) {
-        // server missing DOCX — use client fallback
         return fallbackDownload(fmt);
       }
-
       if (!res.ok) {
-        // Try client-side fallback for server errors (e.g. PDF/DOCX libs missing)
-        if (res.status >= 500) {
-          return fallbackDownload(fmt);
-        }
+        if (res.status >= 500) return fallbackDownload(fmt);
         const msg = (await res.text()) || "Download failed.";
         window.showUpgradeBanner?.(msg);
         return;
@@ -450,6 +460,15 @@
     dlPdfBtn?.addEventListener("click",  () => downloadJD("pdf"));
     dlDocxBtn?.addEventListener("click", () => downloadJD("docx"));
 
+    // Clear button (optional)
+    clearBtn?.addEventListener("click", () => {
+      clearJobDescription();
+      hideDownloads();
+      jobPostForm?.reset();
+      if (suggestBox) suggestBox.innerHTML = "";
+      setSkillsValue([]);
+    });
+
     // 📨 Employer Inquiry Handler
     if (inquiryForm) {
       inquiryForm.addEventListener("submit", async function (e) {
@@ -461,19 +480,15 @@
           if (statusEl) statusEl.innerText = "❌ Missing endpoint.";
           return;
         }
-
         const payload = Object.fromEntries(new FormData(inquiryForm).entries());
         statusEl && (statusEl.innerText = "Sending…");
-
         try {
           const res = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
-
           await handleCommonErrors(res);
-
           const data = await res.json().catch(() => ({}));
           const ok = !!(data && (data.success || data.ok || data.status === "ok"));
           statusEl && (statusEl.innerText = ok ? "✅ Inquiry submitted!" : "❌ Submission failed.");
@@ -496,7 +511,13 @@
           return;
         }
 
-        const payload = Object.fromEntries(new FormData(jobPostForm).entries());
+        // Make sure selected skills & taxonomy flag are in the payload
+        const fd = new FormData(jobPostForm);
+        const selectedSkills = getSkillsValue();
+        if (selectedSkills.length) fd.set("skills", selectedSkills.join(", "));
+        if (includeTaxo) fd.set("includeTaxonomy", includeTaxo.checked ? "true" : "false");
+
+        const payload = Object.fromEntries(fd.entries());
         out.innerHTML = "Generating…";
         hideDownloads();
 
@@ -515,7 +536,6 @@
           if (text) {
             const html = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text)}</pre>`;
             renderJobDescription(html);
-
             stripWatermarks(output);
             if (!isPaid && !isSuperadmin) {
               applySparseWM(output, "JOBCUS.COM", {
