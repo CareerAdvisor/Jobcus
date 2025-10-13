@@ -215,6 +215,60 @@
     const wrap = document.getElementById("jobDescriptionWrap");
     const out  = output;
 
+    // ───────────────────────────────────────────────
+    // Suggest skills button — INSERTED
+    // ───────────────────────────────────────────────
+    const suggestBtn = document.getElementById("suggest-skills");
+    const titleInput = document.getElementById("jp-title");
+
+    // Enable/disable by title length
+    function refreshSuggestState() {
+      const ok = (titleInput?.value || "").trim().length >= 2;
+      if (suggestBtn) {
+        suggestBtn.disabled = !ok;
+        suggestBtn.setAttribute("aria-disabled", String(!ok));
+      }
+    }
+    titleInput?.addEventListener("input", refreshSuggestState);
+    refreshSuggestState();
+
+    // Click handler
+    suggestBtn?.addEventListener("click", async () => {
+      if (suggestBtn.disabled) return;
+      const jobTitle = (titleInput?.value || "").trim();
+      if (!jobTitle) return;
+
+      const original = suggestBtn.textContent;
+      suggestBtn.textContent = "Suggesting…";
+      suggestBtn.disabled = true;
+
+      try {
+        const res = await fetch("/api/employer/skills-suggest", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ jobTitle })
+        });
+        await handleCommonErrors(res);
+        const data = await res.json().catch(() => ({}));
+        const skills = data?.skills || [];
+        if (!skills.length) {
+          window.showUpgradeBanner?.("No skills found for this title.");
+        } else {
+          const block = `\n\nSuggested skills:\n- ${skills.join("\n- ")}`;
+          const pre = output?.querySelector("pre");
+          if (pre) pre.textContent = (pre.textContent || "") + block;
+          else paintJD(block.trim());
+        }
+      } catch (e) {
+        console.error(e);
+        window.showUpgradeBanner?.(e.message || "Could not suggest skills.");
+      } finally {
+        suggestBtn.textContent = original;
+        refreshSuggestState();
+      }
+    });
+    // ───────────────────────────────────────────────
+
     function renderJobDescription(html) {
       if (!out) return;
       out.innerHTML = html || "";
@@ -355,6 +409,10 @@
         return;
       }
       if (res.status === 400) {
+        // If server can’t build DOCX, fall back client-side
+        if (fmt === "docx") {
+          return fallbackDownload(fmt);
+        }
         const t = (await res.text()).toLowerCase();
         if (t.includes("unsupported")) {
           window.showUpgradeBanner?.("DOCX download not available yet. Please use PDF for now.");
@@ -363,7 +421,11 @@
         window.showUpgradeBanner?.("Download failed.");
         return;
       }
-      if (res.status === 404) return fallbackDownload(fmt);
+      // Also fall back on 404 (endpoint available in dev only)
+      if (res.status === 404 || (res.status === 400 && fmt === "docx")) {
+        // server missing DOCX — use client fallback
+        return fallbackDownload(fmt);
+      }
 
       if (!res.ok) {
         // Try client-side fallback for server errors (e.g. PDF/DOCX libs missing)
@@ -372,7 +434,7 @@
         }
         const msg = (await res.text()) || "Download failed.";
         window.showUpgradeBanner?.(msg);
-          return;
+        return;
       }
 
       const blob = await res.blob();
