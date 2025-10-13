@@ -2791,7 +2791,7 @@ Return PLAIN TEXT only (no Markdown). Length 500–900 words.
 @login_required
 def employer_job_post_download():
     """
-    JSON body: { "format": "txt"|"pdf", "text": "<job description>" }
+    JSON body: { "format": "txt" | "pdf" | "docx", "text": "<job description>" }
     Enforces plan 'downloads' gate, returns file as attachment.
     """
     PRICING_URL = "https://www.jobcus.com/pricing"
@@ -2813,6 +2813,7 @@ def employer_job_post_download():
             pricing_url=PRICING_URL
         ), 403
 
+    # --- TXT (always available if gated above) ---
     if fmt == "txt":
         buf = BytesIO(text.encode("utf-8"))
         return send_file(
@@ -2822,24 +2823,61 @@ def employer_job_post_download():
             mimetype="text/plain"
         )
 
-    if fmt == "pdf":
-        safe_html = f"""
-        <html><head><meta charset="utf-8"></head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height:1.5; font-size:12pt;">
-          <pre style="white-space:pre-wrap; word-wrap:break-word; margin:0;">{escape(text)}</pre>
-        </body></html>
-        """.strip()
-        pdf_bytes = HTML(string=safe_html, base_url=current_app.root_path).write_pdf(
-            stylesheets=[CSS(string="@page{size:A4;margin:0.75in}")]
-        )
-        return send_file(
-            BytesIO(pdf_bytes),
-            mimetype="application/pdf",
-            as_attachment=True,
-            download_name="job-description.pdf"
-        )
+    # --- DOCX ---
+    if fmt == "docx":
+        try:
+            from docx import Document
+            from docx.shared import Pt
 
-    return jsonify(error="Unsupported format"), 400
+            doc = Document()
+            # optional: basic formatting
+            style = doc.styles["Normal"]
+            style.font.name = "Arial"
+            style.font.size = Pt(11)
+
+            for line in text.split("\n"):
+                doc.add_paragraph(line)
+
+            mem = BytesIO()
+            doc.save(mem)
+            mem.seek(0)
+            return send_file(
+                mem,
+                as_attachment=True,
+                download_name="job-description.docx",
+                mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        except Exception:
+            current_app.logger.exception("DOCX generation failed")
+            # Let the client fall back to JS generation
+            return jsonify(error="docx_failed", message="DOCX generation failed"), 500
+
+    # --- PDF ---
+    if fmt == "pdf":
+        try:
+            from weasyprint import HTML, CSS
+            safe_html = f"""
+            <html><head><meta charset="utf-8"></head>
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height:1.5; font-size:12pt;">
+              <pre style="white-space:pre-wrap; word-wrap:break-word; margin:0;">{escape(text)}</pre>
+            </body></html>
+            """.strip()
+            pdf_bytes = HTML(string=safe_html, base_url=current_app.root_path).write_pdf(
+                stylesheets=[CSS(string="@page{{size:A4;margin:0.75in}}")]
+            )
+            return send_file(
+                BytesIO(pdf_bytes),
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name="job-description.pdf"
+            )
+        except Exception:
+            current_app.logger.exception("PDF generation failed")
+            # Let the client fall back to JS generation
+            return jsonify(error="pdf_failed", message="PDF generation failed"), 500
+
+    return jsonify(error="unsupported", message="Unsupported format"), 400
+
 
 @app.post("/api/upload")
 @login_required
