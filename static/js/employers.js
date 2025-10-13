@@ -18,6 +18,9 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
+  const debounce = (fn, ms=350) => {
+    let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); };
+  };
 
   // ───────────────────────────────────────────────
   // Watermark helpers (email-safe + strip fallbacks)
@@ -55,7 +58,6 @@ document.addEventListener("DOMContentLoaded", function () {
           el.style.backgroundBlendMode = "";
         }
       });
-      // NEW: also clear any prior sparse overlays so they don't stack
       (root.querySelectorAll ? root.querySelectorAll(".wm-overlay") : []).forEach(n => {
         try { n._ro?.disconnect?.(); } catch {}
         n.remove();
@@ -63,12 +65,10 @@ document.addEventListener("DOMContentLoaded", function () {
     } catch {}
   }
 
-  // NEW: Sparse big-stamp watermark (3–4 placements)
+  // Sparse big-stamp watermark (3–4 placements)
   function applySparseWM(el, text = "JOBCUS.COM", opts = {}) {
     text = sanitizeWM(text);
     if (!el || !text) return;
-
-    // remove any previous overlays on this element
     try { el.querySelectorAll(":scope > .wm-overlay").forEach(x => { x._ro?.disconnect?.(); x.remove(); }); } catch {}
 
     const overlay = document.createElement("canvas");
@@ -101,13 +101,9 @@ document.addEventListener("DOMContentLoaded", function () {
       const fontPx = opts.fontSize || Math.max(96, Math.min(Math.floor((w + h) / 10), 180));
       ctx.font = `700 ${fontPx}px ${baseFont}`;
 
-      // 2 or 3 placement points
       let points;
-      if (count <= 2) {
-        points = [[0.22,0.30],[0.50,0.55],[0.78,0.80]];
-      } else {
-        points = [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
-      }
+      if (count <= 2) points = [[0.22,0.30],[0.50,0.55],[0.78,0.80]];
+      else points = [[0.28,0.30],[0.72,0.30],[0.28,0.72],[0.72,0.72]];
 
       points.forEach(([fx, fy]) => {
         const x = fx * w, y = fy * h;
@@ -122,7 +118,7 @@ document.addEventListener("DOMContentLoaded", function () {
     overlay._ro = ro;
   }
 
-  // Original tiled fallback (kept for completeness; not used in free block anymore)
+  // Original tiled fallback
   function applyWM(el, text = "JOBCUS.COM", opts = { size: 460, alpha: 0.16, angles: [-32, 32] }) {
     text = sanitizeWM(text);
     if (!el || !text) return;
@@ -131,7 +127,6 @@ document.addEventListener("DOMContentLoaded", function () {
       window.applyTiledWatermark(el, text, opts);
       return;
     }
-    // minimal fallback
     stripWatermarks(el);
     const size = opts.size || 420;
     const angles = Array.isArray(opts.angles) && opts.angles.length ? opts.angles : [-32, 32];
@@ -169,15 +164,12 @@ document.addEventListener("DOMContentLoaded", function () {
     try { body = ct.includes("application/json") ? await res.json() : { message: await res.text() }; }
     catch { body = null; }
 
-    // Auth
     if (res.status === 401 || res.status === 403) {
       const msg = body?.message || "Please sign in to continue.";
       window.showUpgradeBanner?.(msg);
       setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
       throw new Error(msg);
     }
-
-    // Upgrade/quota
     if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
       const url  = body?.pricing_url || (window.PRICING_URL || "/pricing");
       const msg  = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
@@ -186,14 +178,11 @@ document.addEventListener("DOMContentLoaded", function () {
       if (window.upgradePrompt) window.upgradePrompt(html, url, 1200);
       throw new Error(msg);
     }
-
-    // Abuse guard
     if (res.status === 429 && body?.error === "too_many_free_accounts") {
       const msg = body?.message || "You have reached the limit for the free version, upgrade to enjoy more features";
       window.showUpgradeBanner?.(msg);
       throw new Error(msg);
     }
-
     const msg = body?.message || `Request failed (${res.status})`;
     throw new Error(msg);
   }
@@ -209,27 +198,33 @@ document.addEventListener("DOMContentLoaded", function () {
   const output          = document.getElementById("job-description-output");
   const downloadOptions = document.getElementById("download-options");
   const dlPdfBtn        = document.getElementById("download-pdf");
-  const dlDocxBtn       = document.getElementById("download-docx"); // only PDF & DOCX
+  const dlDocxBtn       = document.getElementById("download-docx");
+  const wrap            = document.getElementById("jobDescriptionWrap");
 
-  // 🔹 Your requested overlay controller (shows WM only after content exists)
-  const wrap = document.getElementById("jobDescriptionWrap");
-  const out  = output; // alias
+  // NEW tone + skills controls
+  const toneSelect      = document.getElementById("jp-tone");
+  const useSkillsCbx    = document.getElementById("jp-use-skills");
+  const suggestBtn      = document.getElementById("btn-suggest-skills");
+  const clearSkillsBtn  = document.getElementById("btn-clear-skills");
+  const skillsPanel     = document.getElementById("skills-panel");
+  const skillsChips     = document.getElementById("skills-chips");
+  const titleInput      = document.getElementById("jp-title");
+  const summaryInput    = document.getElementById("jp-summary");
 
   function renderJobDescription(html) {
-    if (!out) return;
-    out.innerHTML = html || "";
-    if (wrap?.dataset?.watermark) wrap.classList.add("wm-active"); // show overlay now
+    if (!output) return;
+    output.innerHTML = html || "";
+    if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
     downloadOptions?.classList.remove("hidden");
     if (downloadOptions) downloadOptions.style.display = "";
   }
   function clearJobDescription() {
-    if (!out) return;
-    out.textContent = "";
+    if (!output) return;
+    output.textContent = "";
     wrap?.classList.remove("wm-active");
     downloadOptions?.classList.add("hidden");
   }
 
-  // ── No-copy / no-screenshot guard (free tier only) ─────────────────────────
   function enableNoCopyNoShot(el){
     if (!el) return;
     const kill = e => { e.preventDefault(); e.stopPropagation(); };
@@ -245,58 +240,189 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // ── Helper to render JD & enforce policy (uses overlay + sparse stamps) ─
-  function paintJD(text) {
-    if (!out) return;
-
-    // 1) Render and show overlay watermark now
-    const html = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text || "")}</pre>`;
-    renderJobDescription(html);
-
-    // 2) Always strip any pre-existing/email watermark from the inner content
-    stripWatermarks(out);
-
-    // 3) FREE users: 3–4 big sparse stamps + protect copy
-    if (!isPaid && !isSuperadmin) {
-      stripWatermarks(out); // ensure clean
-      applySparseWM(out, "JOBCUS.COM", {
-        fontSize: 150,
-        rotate: -30,
-        count: (out.scrollHeight > 1400 ? 4 : 3)
-      });
-      out.classList.add("nocopy");
-      enableNoCopyNoShot(out);
-    }
-
-    // 4) enable download buttons
-    downloadOptions?.classList.remove("hidden");
-    if (downloadOptions) downloadOptions.style.display = "";
-    if (dlPdfBtn) dlPdfBtn.disabled = false;
-    if (dlDocxBtn) dlDocxBtn.disabled = false;
-  }
-
-  // Hide downloads while loading/empty + clear any prior watermark
   function hideDownloads() {
     downloadOptions?.classList.add("hidden");
     if (downloadOptions) downloadOptions.style.display = "none";
     if (dlPdfBtn) dlPdfBtn.disabled = true;
     if (dlDocxBtn) dlDocxBtn.disabled = true;
 
-    if (out) {
-      stripWatermarks(out);
-      out.classList.remove("nocopy");
+    if (output) {
+      stripWatermarks(output);
+      output.classList.remove("nocopy");
       wrap?.classList.remove("wm-active");
     }
   }
 
-  // Helper: extract plain text from the output box
   function readOutputText() {
-    const pre = out?.querySelector("pre");
+    const pre = output?.querySelector("pre");
     if (pre) return (pre.innerText || pre.textContent || "").trim();
-    return (out?.innerText || "").trim();
+    return (output?.innerText || "").trim();
   }
 
-  // Local fallback (dev only; used on 404 so you don’t bypass gating in prod)
+  // 🔹 Skills rendering helpers
+  function getSelectedSkills() {
+    return Array.from(skillsChips.querySelectorAll("input[type='checkbox']:checked"))
+      .map(cb => cb.value)
+      .filter(Boolean);
+  }
+  function clearSelectedSkills() {
+    skillsChips.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = false);
+  }
+  function paintChips(skills = []) {
+    skillsChips.innerHTML = "";
+    if (!skills.length) return;
+    const frag = document.createDocumentFragment();
+    skills.forEach(s => {
+      const lab = document.createElement("label");
+      lab.className = "skill-chip";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = s;
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(" " + s));
+      frag.appendChild(lab);
+    });
+    skillsChips.appendChild(frag);
+    skillsPanel.hidden = false;
+  }
+
+  // 🔎 Fetch skill suggestions
+  async function fetchSkillsSuggestions() {
+    const endpoint = window.EMPLOYER_SKILLS_ENDPOINT;
+    if (!endpoint) return;
+
+    const jobTitle = (titleInput?.value || "").trim();
+    const summary  = (summaryInput?.value || "").trim();
+    if (!jobTitle) {
+      skillsPanel.hidden = false;
+      paintChips([]);
+      return;
+    }
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobTitle, summary })
+    });
+    await handleCommonErrors(res);
+    const data = await res.json().catch(() => ({}));
+    const skills = Array.isArray(data?.skills) ? data.skills : [];
+    paintChips(skills.slice(0, 30)); // cap for UI sanity
+  }
+
+  // Debounced auto-suggest when title changes
+  titleInput?.addEventListener("input", debounce(() => {
+    if (useSkillsCbx?.checked) fetchSkillsSuggestions();
+  }, 450));
+  suggestBtn?.addEventListener("click", () => fetchSkillsSuggestions());
+  clearSkillsBtn?.addEventListener("click", () => clearSelectedSkills());
+
+  // ----------------------------------
+  // 🤖 AI Job Post Generator Handler
+  // ----------------------------------
+  if (jobPostForm) {
+    jobPostForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const endpoint = jobPostForm.dataset.endpoint;
+      if (!endpoint) {
+        console.error("No job-post endpoint on form.");
+        output.innerHTML = `<div class="ai-response">❌ Missing endpoint.</div>`;
+        return;
+      }
+
+      const formPayload = Object.fromEntries(new FormData(jobPostForm).entries());
+      const tonePreset  = (toneSelect?.value || "friendly").toLowerCase();
+      const includeSkills = !!useSkillsCbx?.checked;
+      const selectedSkills = includeSkills ? getSelectedSkills() : [];
+
+      const payload = { ...formPayload, tonePreset, selectedSkills, includeSkills };
+
+      output.innerHTML = "Generating…";
+      hideDownloads();
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        await handleCommonErrors(res);
+
+        const data = await res.json().catch(() => ({}));
+        const text = data?.description || data?.jobDescription || "";
+
+        if (text) {
+          const html = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text)}</pre>`;
+          renderJobDescription(html);
+
+          // Watermark for free users
+          stripWatermarks(output);
+          const plan = (document.body.dataset.plan || "guest").toLowerCase();
+          const isPaid = (plan === "standard" || plan === "premium");
+          const isSuperadmin = (document.body.dataset.superadmin === "1");
+          if (!isPaid && !isSuperadmin) {
+            applySparseWM(output, "JOBCUS.COM", {
+              fontSize: 150,
+              rotate: -30,
+              count: (output.scrollHeight > 1400 ? 4 : 3)
+            });
+            output.classList.add("nocopy");
+            enableNoCopyNoShot(output);
+          }
+        } else {
+          output.innerHTML = `<div class="ai-response">No content returned.</div>`;
+          hideDownloads();
+        }
+      } catch (err) {
+        console.error("Job Post Error:", err);
+        output.innerHTML = `<div class="ai-response">❌ ${escapeHtml(err.message || "Something went wrong.")}</div>`;
+        hideDownloads();
+      }
+    });
+  }
+
+  // ----------------------------
+  // 📨 Employer Inquiry Handler
+  // ----------------------------
+  const inquiryForm = document.getElementById("employer-inquiry-form");
+  if (inquiryForm) {
+    inquiryForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const statusEl = document.getElementById("inquiry-response");
+      const endpoint = inquiryForm.dataset.endpoint;
+      if (!endpoint) {
+        console.error("No employer inquiry endpoint on form.");
+        if (statusEl) statusEl.innerText = "❌ Missing endpoint.";
+        return;
+      }
+
+      const payload = Object.fromEntries(new FormData(inquiryForm).entries());
+      statusEl && (statusEl.innerText = "Sending…");
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        await handleCommonErrors(res);
+
+        const data = await res.json().catch(() => ({}));
+        const ok = !!(data && (data.success || data.ok || data.status === "ok"));
+        statusEl && (statusEl.innerText = ok ? "✅ Inquiry submitted!" : "❌ Submission failed.");
+        if (ok) inquiryForm.reset();
+      } catch (error) {
+        console.error("Employer Inquiry Error:", error);
+        statusEl && (statusEl.innerText = `❌ ${error.message || "Something went wrong."}`);
+      }
+    });
+  }
+
+  // ----------------------------
+  // ⬇️ Download binding
+  // ----------------------------
   async function fallbackDownload(fmt) {
     const text = readOutputText();
     if (!text) { alert("Generate a job description first."); return; }
@@ -341,7 +467,6 @@ document.addEventListener("DOMContentLoaded", function () {
     alert("Unsupported format.");
   }
 
-  // Unified (gated) downloader — CALLS SERVER FIRST
   async function downloadJD(fmt) {
     if (!["pdf", "docx"].includes(fmt)) { alert("Unsupported format."); return; }
     const text = readOutputText();
@@ -354,7 +479,6 @@ document.addEventListener("DOMContentLoaded", function () {
       body: JSON.stringify({ format: fmt, text })
     });
 
-    // 🔐 Gating & auth checks
     if (res.status === 403) {
       const info = await res.json().catch(() => ({}));
       const url  = info?.pricing_url || (window.PRICING_URL || "/pricing");
@@ -375,7 +499,7 @@ document.addEventListener("DOMContentLoaded", function () {
       window.showUpgradeBanner?.("Download failed.");
       return;
     }
-    if (res.status === 404) return fallbackDownload(fmt); // dev only
+    if (res.status === 404) return fallbackDownload(fmt);
 
     if (!res.ok) {
       const msg = (await res.text()) || "Download failed.";
@@ -383,7 +507,6 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    // Success: stream file to user
     const blob = await res.blob();
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -394,101 +517,6 @@ document.addEventListener("DOMContentLoaded", function () {
     URL.revokeObjectURL(a.href);
   }
 
-  // Bind download buttons (only PDF & DOCX)
   dlPdfBtn?.addEventListener("click",  () => downloadJD("pdf"));
   dlDocxBtn?.addEventListener("click", () => downloadJD("docx"));
-
-  // ----------------------------
-  // 📨 Employer Inquiry Handler
-  // ----------------------------
-  if (inquiryForm) {
-    inquiryForm.addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const statusEl = document.getElementById("inquiry-response");
-      const endpoint = inquiryForm.dataset.endpoint; // injected by Jinja
-      if (!endpoint) {
-        console.error("No employer inquiry endpoint on form.");
-        if (statusEl) statusEl.innerText = "❌ Missing endpoint.";
-        return;
-      }
-
-      const payload = Object.fromEntries(new FormData(inquiryForm).entries());
-      statusEl && (statusEl.innerText = "Sending…");
-
-      try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        await handleCommonErrors(res);
-
-        const data = await res.json().catch(() => ({}));
-        const ok = !!(data && (data.success || data.ok || data.status === "ok"));
-        statusEl && (statusEl.innerText = ok ? "✅ Inquiry submitted!" : "❌ Submission failed.");
-        if (ok) inquiryForm.reset();
-      } catch (error) {
-        console.error("Employer Inquiry Error:", error);
-        statusEl && (statusEl.innerText = `❌ ${error.message || "Something went wrong."}`);
-      }
-    });
-  }
-
-  // ----------------------------------
-  // 🤖 AI Job Post Generator Handler
-  // ----------------------------------
-  if (jobPostForm) {
-    jobPostForm.addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const endpoint = jobPostForm.dataset.endpoint; // injected by Jinja
-      if (!endpoint) {
-        console.error("No job-post endpoint on form.");
-        out.innerHTML = `<div class="ai-response">❌ Missing endpoint.</div>`;
-        return;
-      }
-
-      const payload = Object.fromEntries(new FormData(jobPostForm).entries());
-      out.innerHTML = "Generating…";
-      hideDownloads();
-
-      try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        await handleCommonErrors(res);
-
-        const data = await res.json().catch(() => ({}));
-        const text = data?.description || data?.jobDescription || "";
-
-        if (text) {
-          // inside jobPostForm submit → if (text) { … }
-          const html = `<pre style="white-space:pre-wrap;margin:0">${escapeHtml(text)}</pre>`;
-          renderJobDescription(html);  // shows overlay (wm-active) only after content exists
-
-          // Use the same sparse 3–4 stamp watermark for free users
-          stripWatermarks(output);
-          if (!isPaid && !isSuperadmin) {
-            applySparseWM(output, "JOBCUS.COM", {
-              fontSize: 150,
-              rotate: -30,
-              count: (output.scrollHeight > 1400 ? 4 : 3)
-            });
-            output.classList.add("nocopy");
-            enableNoCopyNoShot(output);
-          }
-        } else {
-          out.innerHTML = `<div class="ai-response">No content returned.</div>`;
-          hideDownloads();
-        }
-      } catch (err) {
-        console.error("Job Post Error:", err);
-        out.innerHTML = `<div class="ai-response">❌ ${escapeHtml(err.message || "Something went wrong.")}</div>`;
-        hideDownloads();
-      }
-    });
-  }
 });
