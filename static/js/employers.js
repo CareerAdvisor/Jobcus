@@ -462,6 +462,8 @@
       a.remove();
       URL.revokeObjectURL(url);
 
+    }
+
     dlPdfBtn?.addEventListener("click",  () => downloadJD("pdf"));
     dlDocxBtn?.addEventListener("click", () => downloadJD("docx"));
 
