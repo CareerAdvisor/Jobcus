@@ -156,7 +156,7 @@ FEATURE_FLAGS = {
         "cloud_history":  False,   # keep history off
         "rebuild_with_ai": False,
         "optimize_ai":     False,
-        "downloads":       False,
+        "downloads":       True,
         "job_insights":    "basic",
     },
 }
