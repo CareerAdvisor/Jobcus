@@ -376,6 +376,33 @@ def _extract_text(path: str, ext: str) -> str:
     except Exception:
         return ""
 
+
+# --- Employer JD helpers ------------------------------------------------------
+
+def _tone_instructions(name: str) -> str:
+    name = (name or "").lower()
+    presets = {
+        "friendly":  "Warm, approachable, clear. 7th–9th grade readability. Avoid jargon.",
+        "formal":    "Concise, professional, third-person. Use neutral corporate tone.",
+        "technical": "Precise and explicit. Use domain terminology where appropriate.",
+        "inclusive": "Use inclusive, bias-free language. Avoid gendered or exclusionary phrasing.",
+        "energetic": "Upbeat and motivating. Keep sentences active and concise."
+    }
+    return presets.get(name, presets["friendly"])
+
+def _static_skill_seed(title: str) -> list[str]:
+    """Very small local seed to work even without model access."""
+    t = (title or "").lower()
+    if "data" in t and "analyst" in t:
+        return ["SQL", "Excel", "Python", "Tableau/ Power BI", "A/B testing", "Stakeholder communication", "Statistics"]
+    if "product" in t and "manager" in t:
+        return ["Roadmapping", "User research", "Backlog management", "A/B testing", "Analytics", "PRD writing", "Stakeholder management"]
+    if ("software" in t or "engineer" in t or "developer" in t):
+        return ["Git", "Code review", "Testing/QA", "REST APIs", "CI/CD", "Agile/Scrum", "Cloud (AWS/GCP/Azure)"]
+    if "designer" in t:
+        return ["Figma", "Prototyping", "User research", "Design systems", "Accessibility", "Heuristic evaluation", "Handoff to dev"]
+    return ["Communication", "Time management", "Collaboration", "Problem-solving"]
+
 # --- Local fallbacks to remove services/* dependency -------------------------
 def get_or_bootstrap_user(supabase_admin, auth_id: str, email: str | None):
     """
@@ -2606,6 +2633,52 @@ def employer_inquiry():
         current_app.logger.exception("employer_inquiry failed")
         return jsonify(error="Server error"), 500
 
+@app.post("/api/employer/skills-suggest")
+def employer_skills_suggest():
+    data = request.get_json(silent=True) or {}
+    title   = (data.get("jobTitle") or "").strip()
+    summary = (data.get("summary") or "").strip()
+
+    # Try LLM first; fallback to small seed so UI still works
+    skills = []
+    try:
+        client = current_app.config.get("OPENAI_CLIENT")
+        if client and title:
+            system = (
+                "You suggest skills for job descriptions. "
+                "Return a concise, de-duplicated list (max 25) of canonical skill names; "
+                "mix core skills, domain tools, and soft skills when relevant. "
+                "Response must be JSON with a top-level 'skills' string array."
+            )
+            usermsg = f"JOB TITLE: {title}\nSUMMARY: {summary or '(none)'}"
+            resp = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role":"system","content": system},
+                    {"role":"user","content": usermsg}
+                ],
+                response_format={"type":"json_object"},
+                temperature=0.2,
+            )
+            import json
+            payload = json.loads(resp.choices[0].message.content)
+            skills = [s for s in payload.get("skills", []) if isinstance(s, str)]
+    except Exception as e:
+        current_app.logger.warning("skills_suggest LLM fallback: %s", e)
+
+    if not skills:
+        skills = _static_skill_seed(title)
+
+    # unique + trimmed
+    seen = set()
+    norm = []
+    for s in skills:
+        k = s.strip()
+        if k and k.lower() not in seen:
+            seen.add(k.lower())
+            norm.append(k)
+
+    return jsonify({"skills": norm})
 
 @app.post("/api/employer/job-post")
 def employer_job_post():
@@ -2623,36 +2696,64 @@ def employer_job_post():
     deadline  = (data.get("applicationDeadline") or "").strip()
     summary   = (data.get("summary") or "").strip()
 
+    # NEW: tone + skills
+    tone_preset    = (data.get("tonePreset") or "friendly").strip().lower()
+    include_skills = bool(data.get("includeSkills"))
+    selected_skills = data.get("selectedSkills") or []
+    tone_rules = _tone_instructions(tone_preset)
+
+    # dedupe/clean skills
+    if include_skills and isinstance(selected_skills, list):
+        seen = set(); cleaned = []
+        for s in selected_skills:
+            k = (s or "").strip()
+            if k and k.lower() not in seen:
+                seen.add(k.lower()); cleaned.append(k)
+        selected_skills = cleaned
+    else:
+        selected_skills = []
+
     if not job_title or not company:
         return jsonify(error="jobTitle and company are required"), 400
 
     client = current_app.config.get("OPENAI_CLIENT")
-    prompt = f"""
-Write a clear, professional job description in UK English.
 
-Job Title: {job_title}
-Company: {company}
-Location: {location or "—"}
-Employment Type: {emp_type or "—"}
-Salary Range: {salary or "—"}
-How to Apply: {apply_to or "—"}
-Application Deadline: {deadline or "—"}
+    skills_block = ""
+    if include_skills and selected_skills:
+        skills_block = (
+            "Include a 'Required Skills' section using these canonical skills "
+            "(merge, deduplicate, and phrase naturally):\n"
+            + ", ".join(selected_skills) + "\n"
+        )
 
-Opening Summary:
+    system = (
+        "You generate clear, inclusive job descriptions with sections in plain text:\n"
+        "1) Role Summary, 2) Responsibilities, 3) Required Skills, 4) Nice-to-have, 5) Benefits, 6) How to Apply.\n"
+        "Follow the requested brand tone. Avoid bias and overly gendered terms. "
+        "Use concise bullet points and blank lines between sections."
+    )
+
+    user_prompt = f"""
+COMPANY: {company}
+JOB TITLE: {job_title}
+LOCATION: {location or "—"}
+EMPLOYMENT TYPE: {emp_type or "—"}
+SALARY RANGE: {salary or "—"}
+HOW TO APPLY: {apply_to or "—"}
+APPLICATION DEADLINE: {deadline or "—"}
+
+OPENING SUMMARY / NOTES:
 {summary or "—"}
 
-Structure:
-- Brief company/role intro (2–3 sentences)
-- Responsibilities (5–8 concise bullets)
-- Requirements (5–8 concise bullets)
-- Nice-to-haves (optional, 3–5 bullets)
-- Benefits (optional, 3–6 bullets)
-- How to apply (1–2 lines)
-Keep bullets short (8–18 words). Avoid clichés and buzzwords.
-Return PLAIN TEXT (no markdown, no headings like 'Responsibilities:'); use blank lines between sections.
+BRAND TONE PRESET: {tone_preset.upper()}
+TONE INSTRUCTIONS: {tone_rules}
+
+{skills_block}
+Return PLAIN TEXT only (no Markdown). Length 500–900 words.
 """.strip()
 
     if not client:
+        # existing lightweight fallback (kept)
         text = (
             f"{company} is hiring a {job_title} in {location or 'our UK team'}.\n\n"
             "Responsibilities:\n"
@@ -2660,26 +2761,31 @@ Return PLAIN TEXT (no markdown, no headings like 'Responsibilities:'); use blank
             "- Communicate clearly with stakeholders and manage timelines.\n"
             "- Improve processes and document best practices.\n\n"
             "Requirements:\n"
-            "- Relevant experience in similar roles.\n"
-            "- Strong communication and problem-solving skills.\n"
-            "- Ability to work independently and in teams.\n\n"
-            f"How to apply: {apply_to or 'Send your CV to careers@company.com'}"
+            + ("- " + "\n- ".join(selected_skills) + "\n\n" if selected_skills else
+               "- Relevant experience in similar roles.\n- Strong communication and problem-solving skills.\n- Ability to work independently and in teams.\n\n")
+            + f"How to apply: {apply_to or 'Send your CV to careers@company.com'}"
         )
         return jsonify(description=text)
 
     try:
         resp = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role":"user","content":prompt}],
+            messages=[
+                {"role":"system","content": system},
+                {"role":"user","content": user_prompt}
+            ],
             temperature=0.5,
             max_tokens=900
         )
         text = (resp.choices[0].message.content or "").strip()
+        # if you already import re at top; keep your cleanup
+        import re
         text = re.sub(r"```(?:\w+)?", "", text).strip()
         return jsonify(description=text)
     except Exception:
         current_app.logger.exception("job-post generation failed")
         return jsonify(error="Generation failed"), 500
+
 
 @app.post("/api/employer/job-post/download")
 @login_required
