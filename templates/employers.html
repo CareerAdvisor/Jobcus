@@ -7,23 +7,56 @@
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/employers.css') }}">
   <style>
-    /* ── Tone + Skills UI bits ───────────────────────────────── */
-    .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:10px 0 2px; }
-    .tone-select { min-width:210px; }
-    .tiny-note { font-size:.85rem; color:#667085; }
-    .skills-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .skills-panel { border:1px dashed #d7e3f7; border-radius:12px; padding:10px; background:#f9fbff; margin:8px 0 0; }
-    .skills-header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
-    .skills-chips { display:flex; flex-wrap:wrap; gap:8px; }
-    .skill-chip {
-      display:inline-flex; align-items:center; gap:6px;
-      border:1px solid #e5e7eb; background:#fff; border-radius:999px; padding:6px 10px;
-      font-size:.9rem; color:#0f2946;
+    /* Layout shell */
+    .employer-hero-full img{width:100%;height:auto;display:block}
+    .employer-section{max-width:960px;margin:32px auto;padding:0 16px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 8px 26px rgba(16,72,121,.08);padding:18px}
+
+    /* Headings */
+    .stacked-hero{margin-bottom:12px}
+    .subject-title{margin:0 0 4px;font-size:28px;color:#0f355e;font-weight:800}
+    .subject-subtitle{margin:0;color:#6b7280}
+
+    /* Forms — unified look, full width by default */
+    .ui-form{display:block}
+    .form-grid{
+      display:grid; gap:14px;
+      grid-template-columns: 1fr; /* mobile = single column */
     }
-    .skill-chip input { accent-color:#104879; }
-    .skill-actions { display:flex; gap:8px; }
-    .pill { display:inline-block; margin-left:.5rem; padding:.15rem .4rem; font-size:.7rem; border-radius:.4rem; background:#eef4ff; color:#104879; }
-    .pill-new { background:#e8fff3; color:#087443; }
+    .field{display:flex;flex-direction:column}
+    .field label{font-weight:700;color:#0f355e;margin-bottom:6px}
+    .field input,.field select,.field textarea{
+      width:100%; box-sizing:border-box;
+      padding:12px 14px; border:1px solid #e5e7eb; border-radius:12px;
+      background:#fff; color:#0f2946; outline:none;
+    }
+    .field textarea{min-height:120px;resize:vertical}
+    .actions{margin-top:8px;display:flex;flex-wrap:wrap;gap:10px}
+    .primary-btn,.secondary-btn{
+      border-radius:14px; padding:12px 16px; font-weight:700; cursor:pointer
+    }
+    .primary-btn{background:#104879;border:1px solid #104879;color:#fff}
+    .primary-btn:hover{opacity:.95}
+    .secondary-btn{background:#f6fbff;border:2px solid #104879;color:#104879}
+
+    /* Two-column only on wide screens */
+    @media (min-width: 900px){
+      .form-grid{grid-template-columns: 1fr 1fr}
+      .full{grid-column: 1 / -1}
+    }
+
+    /* Download bar pinned above any overlays */
+    .download-bar{display:flex;gap:10px;margin-top:12px;position:relative;z-index:5}
+    .hidden{display:none !important}
+
+    /* Preview area with low z-index overlay */
+    .preview-wrap{position:relative}
+    .preview-wrap .wm-overlay{position:absolute;inset:0;z-index:1;pointer-events:none}
+    .output-box{position:relative;z-index:2;border:1px solid #eef2f7;border-radius:12px;padding:14px;background:#fff}
+
+    /* “New” pill (kept here so you don’t hunt for a CSS file) */
+    .pill{display:inline-block;margin-left:.5rem;padding:.15rem .4rem;font-size:.7rem;border-radius:.4rem;background:#eef4ff;color:#104879}
+    .pill-new{background:#e8fff3;color:#087443}
   </style>
 {% endblock %}
 
@@ -36,7 +69,7 @@
 <section class="employer-section card">
   <header class="stacked-hero">
     <h2 class="subject-title">AI-Powered Job Post Generator</h2>
-    <p class="subject-subtitle">Instantly create an on-brand job description with precise, role-aligned skills.</p>
+    <p class="subject-subtitle">Instantly create a professional job description with the help of AI.</p>
   </header>
 
   <form id="job-post-form"
@@ -54,72 +87,54 @@
         <input id="jp-company" type="text" name="company" required>
       </div>
 
-      <div class="field two">
-        <div class="field">
-          <label for="jp-location">Location</label>
-          <input id="jp-location" type="text" name="location" placeholder="e.g. London / Manchester" required>
-        </div>
-        <div class="field">
-          <label for="jp-type">Employment Type</label>
-          <select id="jp-type" name="employmentType" required>
-            <option value="">Select Employment Type</option>
-            <option>Full-time</option>
-            <option>Part-time</option>
-            <option>Contract</option>
-            <option>Hybrid</option>
-            <option>Remote</option>
-          </select>
-        </div>
+      <div class="field">
+        <label for="jp-location">Location</label>
+        <input id="jp-location" type="text" name="location" placeholder="e.g. London / Manchester" required>
       </div>
 
-      <div class="field full">
+      <div class="field">
+        <label for="jp-type">Employment Type</label>
+        <select id="jp-type" name="employmentType" required>
+          <option value="">Select Employment Type</option>
+          <option>Full-time</option><option>Part-time</option><option>Contract</option>
+          <option>Hybrid</option><option>Remote</option>
+        </select>
+      </div>
+
+      <div class="field">
         <label for="jp-salary">Salary Range</label>
         <input id="jp-salary" type="text" name="salaryRange" placeholder="e.g. £45,000 – £60,000/year">
       </div>
 
-      <div class="field full">
+      <div class="field">
         <label for="jp-apply">Application Email or Link</label>
         <input id="jp-apply" type="text" name="applicationEmail" placeholder="careers@company.com or https://company.com/apply" required>
       </div>
 
-      <div class="field two">
-        <div class="field">
-          <label for="jp-deadline">Application Deadline</label>
-          <input id="jp-deadline" type="date" name="applicationDeadline">
-        </div>
-        <div class="field">
-          <label for="jp-summary">Summary (Optional)</label>
-          <textarea id="jp-summary" name="summary" rows="3" placeholder="Short intro or mission statement"></textarea>
-        </div>
+      <div class="field">
+        <label for="jp-deadline">Application Deadline</label>
+        <input id="jp-deadline" type="date" name="applicationDeadline">
       </div>
-    </div>
 
-    <!-- ── Brand Tone Presets + Skills Suggestions toolbar ───────────── -->
-    <div class="toolbar" role="group" aria-label="Tone and skills">
-      <label class="tone-select">
-        <span>Brand tone preset <span class="pill pill-new">New</span></span><br>
+      <div class="field">
+        <label for="jp-summary">Summary (Optional)</label>
+        <textarea id="jp-summary" name="summary" rows="3" placeholder="Short intro or mission statement"></textarea>
+      </div>
+
+      <div class="field full">
+        <label for="jp-tone">Brand tone preset <span class="pill pill-new">New</span></label>
         <select id="jp-tone" name="tonePreset">
+          <option value="">Default (balanced)</option>
           <option value="friendly">Friendly</option>
           <option value="formal">Formal</option>
           <option value="technical">Technical</option>
           <option value="inclusive">Inclusive</option>
           <option value="energetic">Energetic</option>
         </select>
-      </label>
-
-      <div class="skills-row">
-        <label><input type="checkbox" id="jp-use-skills" checked> Include skills taxonomy <span class="pill pill-new">New</span></label>
-        <div class="skill-actions">
-          <button type="button" id="btn-suggest-skills" class="secondary-btn">Suggest skills</button>
-          <button type="button" id="btn-clear-skills" class="secondary-btn" title="Clear selected skills">Clear</button>
-        </div>
       </div>
-      <div id="skills-panel" class="skills-panel" hidden>
-        <div class="skills-header">
-          <strong>Suggested skills</strong>
-          <span class="tiny-note">Tick to add. We’ll merge them into the JD.</span>
-        </div>
-        <div id="skills-chips" class="skills-chips" aria-live="polite"></div>
+
+      <div class="field full">
+        <button id="suggest-skills" type="button" class="secondary-btn" aria-disabled="true" disabled>💡 Suggest skills</button>
       </div>
     </div>
 
@@ -128,15 +143,13 @@
     </div>
   </form>
 
-  <!-- Generated content + watermark handling -->
-  <div id="jobDescriptionWrap" class="preview-wrap"
-       {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
+  <div id="jobDescriptionWrap" class="preview-wrap" {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
     <div id="job-description-output" class="output-box" aria-live="polite"></div>
   </div>
 
-  <div id="download-options" class="download-bar hidden" style="display:none;">
-    <button id="download-pdf"  class="secondary-btn">⬇️ Download .pdf</button>
-    <button id="download-docx" class="secondary-btn">⬇️ Download .docx</button>
+  <div id="download-options" class="download-bar hidden">
+    <button id="download-pdf"  type="button" class="secondary-btn">⬇️ Download .pdf</button>
+    <button id="download-docx" type="button" class="secondary-btn">⬇️ Download .docx</button>
   </div>
 </section>
 
@@ -156,20 +169,19 @@
         <input id="employer-company" type="text" name="company" autocomplete="organization">
       </div>
 
-      <div class="field full">
+      <div class="field">
         <label for="employer-name">Name</label>
         <input id="employer-name" type="text" name="name" autocomplete="name" required>
       </div>
 
-      <div class="field two">
-        <div class="field">
-          <label for="employer-email">Email</label>
-          <input id="employer-email" type="email" name="email" autocomplete="email" required>
-        </div>
-        <div class="field">
-          <label for="employer-phone">Phone</label>
-          <input id="employer-phone" type="text" name="phone" autocomplete="tel" required>
-        </div>
+      <div class="field">
+        <label for="employer-email">Email</label>
+        <input id="employer-email" type="email" name="email" autocomplete="email" required>
+      </div>
+
+      <div class="field">
+        <label for="employer-phone">Phone</label>
+        <input id="employer-phone" type="text" name="phone" autocomplete="tel" required>
       </div>
 
       <div class="field full">
@@ -196,9 +208,5 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.7.0/docx.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script>
-    /* expose API endpoints to JS */
-    window.EMPLOYER_SKILLS_ENDPOINT = "{{ url_for('employer_skills_suggest') }}";
-  </script>
   <script src="{{ url_for('static', filename='js/employers.js') }}" defer></script>
 {% endblock %}
