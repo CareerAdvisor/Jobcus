@@ -6,6 +6,28 @@
 
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/employers.css') }}">
+  <style>
+    /* light chips used for skills */
+    .pill { display:inline-block; margin:.25rem .35rem .25rem 0; padding:.22rem .5rem; font-size:.78rem; border-radius:.6rem; background:#eef4ff; color:#104879; border:1px solid #cfe0ff; cursor:pointer; user-select:none; }
+    .pill:hover{ filter:brightness(0.98); }
+    .pill.selected{ background:#e8fff3; color:#087443; border-color:#b6f3d2; }
+    .pill-new { background:#e8fff3; color:#087443; }
+
+    .tone-row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .tone-btn{
+      border:1px solid #e5e7eb; background:#fff; color:#0f355e;
+      padding:.45rem .7rem; border-radius:.6rem; cursor:pointer; font-weight:600;
+    }
+    .tone-btn[aria-pressed="true"]{ background:#f2f6ff; border-color:#cfe0ff; }
+
+    .hint{ color:#6b7280; font-size:.9rem; margin-top:.25rem; }
+
+    .skills-wrap{ margin-top:12px; }
+    .skills-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .skills-chips{ margin-top:6px; }
+    .skills-actions{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+    .secondary-btn.small{ padding:.35rem .6rem; font-size:.85rem; border-radius:.5rem; }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -24,6 +46,20 @@
         class="ui-form"
         data-endpoint="{{ url_for('employer_job_post') }}"
         novalidate>
+
+    <!-- BRAND TONE PRESETS -->
+    <div class="field full">
+      <label>Brand tone</label>
+      <div class="tone-row" role="group" aria-label="Brand tone">
+        <button type="button" class="tone-btn" data-tone="Friendly" aria-pressed="true">Friendly</button>
+        <button type="button" class="tone-btn" data-tone="Formal" aria-pressed="false">Formal</button>
+        <button type="button" class="tone-btn" data-tone="Technical" aria-pressed="false">Technical</button>
+        <button type="button" class="tone-btn" data-tone="Inclusive" aria-pressed="false">Inclusive</button>
+      </div>
+      <input type="hidden" name="tone" id="tone-input" value="Friendly">
+      <div class="hint">Presets keep voice consistent and audience-appropriate.</div>
+    </div>
+
     <div class="form-grid">
       <div class="field full">
         <label for="jp-title">Job Title</label>
@@ -75,22 +111,36 @@
       </div>
     </div>
 
+    <!-- SKILLS TAXONOMY SUGGESTIONS -->
+    <div class="field full skills-wrap">
+      <div class="skills-head">
+        <label style="margin:0;">Skills taxonomy</label>
+        <button type="button" id="btn-suggest-skills" class="secondary-btn small">Suggest skills</button>
+        <div class="hint">Pick from suggested skills to improve searchability & ATS match.</div>
+      </div>
+      <div id="skills-chips" class="skills-chips"></div>
+      <div class="skills-actions">
+        <button type="button" id="btn-clear-skills" class="secondary-btn small" style="display:none;">Clear</button>
+      </div>
+      <input type="hidden" name="selectedSkills" id="selected-skills-input" value="">
+    </div>
+
     <div class="actions">
       <button type="submit" class="primary-btn">✨ Generate Job Description</button>
     </div>
   </form>
 
-  {# around the generator output #}
+  <!-- Generated output + WM -->
   <div id="jobDescriptionWrap" class="preview-wrap"
        {% if wm_text %} data-watermark="{{ wm_text }}"{% endif %}>
     <div id="job-description-output" class="output-box" aria-live="polite"></div>
   </div>
-  
+
   <div id="download-options" class="download-bar hidden" style="display:none;">
     <button id="download-pdf"  class="secondary-btn">⬇️ Download .pdf</button>
     <button id="download-docx" class="secondary-btn">⬇️ Download .docx</button>
   </div>
-  </section>
+</section>
 
 <section class="employer-section card">
   <header class="stacked-hero">
