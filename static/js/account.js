@@ -59,9 +59,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const togglePrompt= document.getElementById('togglePrompt');
   const flash       = document.getElementById('flashMessages');
 
+  const qs = new URLSearchParams(location.search);
+
+  // ─── 2a) Respect ?mode=login|signup from URL ───
+  const qsMode = (qs.get('mode') || '').toLowerCase();
+  if (modeInput && (qsMode === 'login' || qsMode === 'signup')) {
+    modeInput.value = qsMode;
+  }
+
+  // Optional: prefill email if provided via ?email=
+  const qsEmail = qs.get('email');
+  if (qsEmail) {
+    const emailEl = document.getElementById('email');
+    if (emailEl) emailEl.value = qsEmail;
+  }
+
+  // Optional: show a friendly message after verification
+  const verified = qs.get('verified');
+  if (verified && flash) {
+    flash.innerHTML = '<div class="flash-item success">Email verified! Please sign in.</div>';
+  }
+
   // ─── 3) updateView() swaps login ↔ signup UI ───
   function updateView() {
-    const mode = modeInput.value;
+    const mode = modeInput?.value || 'signup';
 
     if (mode === 'login') {
       if (nameGroup) nameGroup.style.display = 'none';
@@ -79,7 +100,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (toggleLink)   toggleLink.textContent  = 'Sign In';
     }
 
-    if (flash) flash.innerHTML = '';
+    if (flash) {
+      // Keep “verified” message if present; otherwise clear residual flashes
+      if (!verified) flash.innerHTML = '';
+    }
   }
 
   // ─── 4) Toggle link click handler ───
@@ -87,6 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     if (!modeInput) return;
     modeInput.value = (modeInput.value === 'login' ? 'signup' : 'login');
+    // Update URL (no reload) so sharing/copying preserves the mode
+    const url = new URL(location.href);
+    url.searchParams.set('mode', modeInput.value);
+    history.replaceState(null, '', url.toString());
     updateView();
   });
 
@@ -96,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── 6) Form submit via fetch(JSON) ───
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (flash) flash.textContent = '';
+    if (flash && !verified) flash.textContent = '';
 
     const payload = {
       mode:     modeInput?.value,
@@ -125,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         if (data.code === 'email_not_confirmed' && data.redirect) {
-          window.location.assign(data.redirect); // /check-email
+          window.location.assign(data.redirect); // e.g. /check-email
           return;
         }
         if (flash) flash.textContent = data.message || 'Request failed. Please try again.';
