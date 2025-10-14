@@ -5,6 +5,7 @@
   window.__JOBCUS_EMPLOYERS_INIT__ = true;
 
   document.addEventListener("DOMContentLoaded", function () {
+    // Ensure fetch includes credentials by default (for auth-protected endpoints)
     const _fetch = window.fetch.bind(window);
     window.fetch = (input, init = {}) => {
       if (!("credentials" in init)) init.credentials = "same-origin";
@@ -155,10 +156,18 @@
       catch { body = null; }
 
       if (res.status === 401 || res.status === 403) {
+        // 403 may also be upgrade_required
         const msg = body?.message || "Please sign in to continue.";
-        window.showUpgradeBanner?.(msg);
-        setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
-        throw new Error(msg);
+        if (res.status === 403 && body?.error === "upgrade_required") {
+          const url  = body?.pricing_url || (window.PRICING_URL || "/pricing");
+          const html = body?.message_html || `${escapeHtml(msg)} <a href="${url}">Upgrade now →</a>`;
+          (window.upgradePrompt || window.showUpgradeBanner || alert)(html);
+          if (window.upgradePrompt) window.upgradePrompt(html, url, 1200);
+        } else {
+          window.showUpgradeBanner?.(msg);
+          setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
+        }
+        throw new Error(body?.message || msg);
       }
 
       if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
@@ -181,7 +190,7 @@
     }
 
     const plan         = (document.body.dataset.plan || "guest").toLowerCase();
-    const isPaid       = (plan === "standard" || plan === "premium" || plan === "employer_jd" || plan === "employer");
+    const isPaid       = (plan === "standard" || plan === "premium" || plan === "employer_jd");
     const isSuperadmin = (document.body.dataset.superadmin === "1");
 
     const inquiryForm     = document.getElementById("employer-inquiry-form");
@@ -194,13 +203,6 @@
 
     const wrap = document.getElementById("jobDescriptionWrap");
     const out  = output;
-
-    // helpers to control download buttons
-    function setDownloadsEnabled(enabled) {
-      if (!dlPdfBtn || !dlDocxBtn) return;
-      dlPdfBtn.disabled  = !enabled;
-      dlDocxBtn.disabled = !enabled;
-    }
 
     // ───────────────────────────────────────────────
     // Suggest skills (with selectable chips)
@@ -304,14 +306,15 @@
       if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
       downloadOptions?.classList.remove("hidden");
       if (downloadOptions) downloadOptions.style.display = "";
-      setDownloadsEnabled(!!readOutputText());
+      // Ensure buttons are enabled once content is present
+      if (dlPdfBtn) dlPdfBtn.disabled = false;
+      if (dlDocxBtn) dlDocxBtn.disabled = false;
     }
     function clearJobDescription() {
       if (!out) return;
       out.textContent = "";
       wrap?.classList.remove("wm-active");
       downloadOptions?.classList.add("hidden");
-      setDownloadsEnabled(false);
     }
 
     function enableNoCopyNoShot(el){
@@ -344,14 +347,17 @@
         out.classList.add("nocopy");
         enableNoCopyNoShot(out);
       }
+      downloadOptions?.classList.remove("hidden");
       if (downloadOptions) downloadOptions.style.display = "";
-      setDownloadsEnabled(true);
+      if (dlPdfBtn) dlPdfBtn.disabled = false;
+      if (dlDocxBtn) dlDocxBtn.disabled = false;
     }
 
     function hideDownloads() {
       downloadOptions?.classList.add("hidden");
       if (downloadOptions) downloadOptions.style.display = "none";
-      setDownloadsEnabled(false);
+      if (dlPdfBtn) dlPdfBtn.disabled = true;
+      if (dlDocxBtn) dlDocxBtn.disabled = true;
 
       if (out) {
         stripWatermarks(out);
@@ -366,6 +372,7 @@
       return (out?.innerText || "").trim();
     }
 
+    // Client-side fallbacks
     async function fallbackDownload(fmt) {
       const text = readOutputText();
       if (!text) { alert("Generate a job description first."); return; }
@@ -415,61 +422,77 @@
       const text = readOutputText();
       if (!text) { alert("Generate a job description first."); return; }
 
-      const res = await fetch("/api/employer/job-post/download", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ format: fmt, text })
-      });
+      // Optimistically disable buttons during the request
+      if (dlPdfBtn) dlPdfBtn.disabled = true;
+      if (dlDocxBtn) dlDocxBtn.disabled = true;
 
-      // 403: paywall (show upgrade and stop)
-      if (res.status === 403) {
-        const info = await res.json().catch(() => ({}));
-        const url  = info?.pricing_url || (window.PRICING_URL || "/pricing");
-        const html = info?.message_html || `File downloads are available on the JD Generator and Premium plans. <a href="${url}">Upgrade now →</a>`;
-        window.upgradePrompt?.(html, url, 1200);
-        return;
-      }
-      
-      // 401 or redirect: force login
-      if (res.status === 401 || res.redirected) {
-        window.location.href = "/account?mode=login";
-        return;
-      }
-      
-      // 400: bad input (do NOT fall back to client download)
-      if (res.status === 400) {
-        const t = (await res.text()).toLowerCase();
-        if (t.includes("no text")) {
-          window.showUpgradeBanner?.("Please generate a job description first.");
-        } else {
-          window.showUpgradeBanner?.("Download failed.");
+      try {
+        const res = await fetch("/api/employer/job-post/download", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ format: fmt, text })
+        });
+
+        // 403: paywall/login — handled in handleCommonErrors (no fallback for free users)
+        if (res.status === 403 || res.status === 401) {
+          await handleCommonErrors(res); // will throw
+          return;
         }
-        return;
-      }
-      
-      // 404 or any !ok: show message; do NOT fall back to client download
-      if (!res.ok) {
-        const msg = (await res.text()) || "Download failed.";
-        window.showUpgradeBanner?.(msg);
-        return;
-      }
-      
-      // Success → stream to file
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      a.href = url;
-      a.download = (fmt === "pdf" ? "job-description.pdf"
-                 : fmt === "docx" ? "job-description.docx"
-                 : "job-description.txt");
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } // ← ← ← FIX: close downloadJD properly
 
-    // Attach click handlers ONCE
+        // 400: bad input (do NOT fall back; show message)
+        if (res.status === 400) {
+          const t = (await res.text()).toLowerCase();
+          if (t.includes("no text")) {
+            window.showUpgradeBanner?.("Please generate a job description first.");
+          } else {
+            window.showUpgradeBanner?.("Download failed.");
+          }
+          return;
+        }
+
+        // 500 or other server errors → FALL BACK to client generation
+        if (res.status >= 500) {
+          // Let the user know and fallback
+          console.error("Server download failed:", await res.text().catch(() => ""));
+          window.showUpgradeBanner?.("Server download failed, generating locally…");
+          await fallbackDownload(fmt);
+          return;
+        }
+
+        // non-OK (like 404, etc.) → show message; allow fallback for 404 too
+        if (!res.ok) {
+          console.error("Download failed:", res.status, await res.text().catch(() => ""));
+          window.showUpgradeBanner?.("Download failed, generating locally…");
+          await fallbackDownload(fmt);
+          return;
+        }
+
+        // Success → stream to file
+        const blob = await res.blob();
+        const a = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        a.download = (fmt === "pdf" ? "job-description.pdf"
+                   : fmt === "docx" ? "job-description.docx"
+                   : "job-description.txt");
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        // Network error → fallback
+        console.error("Download error:", err);
+        window.showUpgradeBanner?.("Network error, generating locally…");
+        await fallbackDownload(fmt);
+      } finally {
+        // Re-enable buttons
+        if (dlPdfBtn) dlPdfBtn.disabled = false;
+        if (dlDocxBtn) dlDocxBtn.disabled = false;
+      }
+    }
+
+    // Bind download buttons once
     dlPdfBtn?.addEventListener("click",  () => downloadJD("pdf"));
     dlDocxBtn?.addEventListener("click", () => downloadJD("docx"));
 
@@ -478,9 +501,7 @@
       clearJobDescription();
       hideDownloads();
       jobPostForm?.reset();
-      if (document.getElementById("skills-suggest-box")) {
-        document.getElementById("skills-suggest-box").innerHTML = "";
-      }
+      if (suggestBox) suggestBox.innerHTML = "";
       setSkillsValue([]);
     });
 
@@ -526,7 +547,7 @@
           return;
         }
 
-        // Make sure selected skills & taxonomy flag are in the payload
+        // Include selected skills & taxonomy flag
         const fd = new FormData(jobPostForm);
         const selectedSkills = getSkillsValue();
         if (selectedSkills.length) fd.set("skills", selectedSkills.join(", "));
