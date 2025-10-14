@@ -583,3 +583,49 @@ html { -webkit-text-size-adjust: 100%; }
   `;
   document.head.appendChild(st);
 }
+
+.ai-caveat-box{
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #4b5563;
+  border-radius: 10px;
+  font-size: .875rem;
+  line-height: 1.35;
+  position: relative;
+}
+.ai-caveat-box a{
+  text-decoration: underline;
+  color: #0f355e;
+}
+.ai-caveat-close{
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.ai-caveat-inline{
+  margin: 6px 0 0;
+  font-size: .8rem;
+  color: #6b7280;
+}
+.ai-caveat-inline a{
+  text-decoration: underline;
+  color: #0f355e;
+}
+.ai-caveat-dot{
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
