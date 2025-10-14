@@ -403,6 +403,13 @@ def _static_skill_seed(title: str) -> list[str]:
         return ["Figma", "Prototyping", "User research", "Design systems", "Accessibility", "Heuristic evaluation", "Handoff to dev"]
     return ["Communication", "Time management", "Collaboration", "Problem-solving"]
 
+
+def is_superadmin(user=None):
+    from flask_login import current_user
+    user = user or current_user
+    return getattr(user, "role", "").lower() == "superadmin"
+
+
 # --- Local fallbacks to remove services/* dependency -------------------------
 def get_or_bootstrap_user(supabase_admin, auth_id: str, email: str | None):
     """
@@ -2806,7 +2813,7 @@ def employer_job_post_download():
     plan = (getattr(current_user, "plan", "free") or "free").lower()
 
     # Superadmin bypass; otherwise enforce downloads flag
-    if not is_superadmin(current_user):
+    if not is_superadmin():
         if not feature_enabled(plan, "downloads", default=False):
             PRICING_URL = url_for("pricing", _external=True)
             return jsonify(
