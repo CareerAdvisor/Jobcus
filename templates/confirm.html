@@ -19,39 +19,52 @@
 <script>
   (function () {
     const statusBox = document.getElementById('confirmStatus');
-    function flash(msg, level='info'){
+    const flash = (msg, level='info') => {
       if (!statusBox) return;
       statusBox.innerHTML = `<div class="flash-item ${level}">${msg}</div>`;
-    }
+    };
 
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
+    // Supabase sends tokens in the URL hash: #access_token=...&type=...
+    const params = new URLSearchParams(window.location.hash.slice(1));
     const accessToken = params.get("access_token");
+
+    const goLogin = (extra = "") => {
+      const qp = extra ? `?mode=login&${extra}` : "?mode=login";
+      window.location.replace("/account" + qp);
+    };
 
     if (accessToken) {
       flash("Validating your session…", "info");
       fetch("/verify_token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ access_token: accessToken })
       })
         .then(res => res.json())
         .then(data => {
-          if (data.ok) {
-            window.location.href = "/dashboard";
+          // If your backend creates a session cookie, keep dashboard redirect.
+          // If you prefer ALWAYS forcing a fresh sign-in, replace with `goLogin("verified=1")`.
+          if (data && data.ok) {
+            // EITHER auto-login:
+            // window.location.replace("/dashboard");
+
+            // OR force login screen after verify (uncomment next line if you prefer this UX):
+            goLogin("verified=1");
           } else {
-            flash("Login failed. Please try manually.", "error");
-            setTimeout(() => { window.location.href = "/account"; }, 1200);
+            flash("Verification succeeded, but sign-in is required.", "error");
+            setTimeout(() => goLogin("verified=1"), 900);
           }
         })
         .catch(() => {
           flash("Network error. Please try again.", "error");
-          setTimeout(() => { window.location.href = "/account"; }, 1200);
+          setTimeout(() => goLogin("verified=1"), 900);
         });
     } else {
-      flash("Invalid confirmation link.", "error");
-      setTimeout(() => { window.location.href = "/account"; }, 1200);
+      flash("Invalid or expired confirmation link.", "error");
+      setTimeout(() => goLogin(), 900);
     }
   })();
 </script>
+
 {% endblock %}
