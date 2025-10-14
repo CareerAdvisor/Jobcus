@@ -65,13 +65,22 @@
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            placeholder="Enter your password"
-            required
-          />
+        
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              required
+              style="flex:1 1 auto;"
+            />
+          </div>
+        
+          <label class="checkbox" style="display:flex;align-items:center;gap:.5rem;margin-top:.4rem;">
+            <input type="checkbox" id="showPassword" />
+            <span>Show password</span>
+          </label>
         </div>
 
         <button type="submit" class="btn-primary" id="submitButton">
