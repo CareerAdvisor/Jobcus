@@ -180,9 +180,8 @@
       throw new Error(msg);
     }
 
-    // NOTE: align with employers.html (premium or employer_jd are paid)
     const plan         = (document.body.dataset.plan || "guest").toLowerCase();
-    const isPaid       = (plan === "premium" || plan === "employer_jd");
+    const isPaid       = (plan === "standard" || plan === "premium" || plan === "employer_jd" || plan === "employer");
     const isSuperadmin = (document.body.dataset.superadmin === "1");
 
     const inquiryForm     = document.getElementById("employer-inquiry-form");
@@ -195,6 +194,13 @@
 
     const wrap = document.getElementById("jobDescriptionWrap");
     const out  = output;
+
+    // helpers to control download buttons
+    function setDownloadsEnabled(enabled) {
+      if (!dlPdfBtn || !dlDocxBtn) return;
+      dlPdfBtn.disabled  = !enabled;
+      dlDocxBtn.disabled = !enabled;
+    }
 
     // ───────────────────────────────────────────────
     // Suggest skills (with selectable chips)
@@ -298,12 +304,14 @@
       if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
       downloadOptions?.classList.remove("hidden");
       if (downloadOptions) downloadOptions.style.display = "";
+      setDownloadsEnabled(!!readOutputText());
     }
     function clearJobDescription() {
       if (!out) return;
       out.textContent = "";
       wrap?.classList.remove("wm-active");
       downloadOptions?.classList.add("hidden");
+      setDownloadsEnabled(false);
     }
 
     function enableNoCopyNoShot(el){
@@ -336,17 +344,14 @@
         out.classList.add("nocopy");
         enableNoCopyNoShot(out);
       }
-      downloadOptions?.classList.remove("hidden");
       if (downloadOptions) downloadOptions.style.display = "";
-      if (dlPdfBtn) dlPdfBtn.disabled = false;
-      if (dlDocxBtn) dlDocxBtn.disabled = false;
+      setDownloadsEnabled(true);
     }
 
     function hideDownloads() {
       downloadOptions?.classList.add("hidden");
       if (downloadOptions) downloadOptions.style.display = "none";
-      if (dlPdfBtn) dlPdfBtn.disabled = true;
-      if (dlDocxBtn) dlDocxBtn.disabled = true;
+      setDownloadsEnabled(false);
 
       if (out) {
         stripWatermarks(out);
@@ -417,21 +422,21 @@
         body: JSON.stringify({ format: fmt, text })
       });
 
-      // 403: paywall (show upgrade and stop) — robust fallback
+      // 403: paywall (show upgrade and stop)
       if (res.status === 403) {
         const info = await res.json().catch(() => ({}));
         const url  = info?.pricing_url || (window.PRICING_URL || "/pricing");
         const html = info?.message_html || `File downloads are available on the JD Generator and Premium plans. <a href="${url}">Upgrade now →</a>`;
-        (window.upgradePrompt || window.showUpgradeBanner || alert)(html);
+        window.upgradePrompt?.(html, url, 1200);
         return;
       }
-
+      
       // 401 or redirect: force login
       if (res.status === 401 || res.redirected) {
         window.location.href = "/account?mode=login";
         return;
       }
-
+      
       // 400: bad input (do NOT fall back to client download)
       if (res.status === 400) {
         const t = (await res.text()).toLowerCase();
@@ -442,14 +447,14 @@
         }
         return;
       }
-
+      
       // 404 or any !ok: show message; do NOT fall back to client download
       if (!res.ok) {
         const msg = (await res.text()) || "Download failed.";
         window.showUpgradeBanner?.(msg);
         return;
       }
-
+      
       // Success → stream to file
       const blob = await res.blob();
       const a = document.createElement("a");
@@ -462,9 +467,9 @@
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-    } // ← important: close downloadJD before attaching listeners
+    } // ← ← ← FIX: close downloadJD properly
 
-    // Attach listeners once the function exists
+    // Attach click handlers ONCE
     dlPdfBtn?.addEventListener("click",  () => downloadJD("pdf"));
     dlDocxBtn?.addEventListener("click", () => downloadJD("docx"));
 
@@ -473,7 +478,9 @@
       clearJobDescription();
       hideDownloads();
       jobPostForm?.reset();
-      if (suggestBox) suggestBox.innerHTML = "";
+      if (document.getElementById("skills-suggest-box")) {
+        document.getElementById("skills-suggest-box").innerHTML = "";
+      }
       setSkillsValue([]);
     });
 
