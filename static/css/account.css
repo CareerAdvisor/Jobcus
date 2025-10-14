@@ -213,3 +213,21 @@ body.account-page .auth-card{
 
 /* If your CSS is scoped by body class, this covers that too */
 .account-page .account-container { display:flex; justify-content:center; align-items:center; min-height:100vh; }
+
+/* Compact show-password row */
+.small-check{
+  margin-top: 6px;
+}
+.checkbox-compact{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;           /* smaller label text */
+  color: #6b7280;               /* subtle gray */
+  line-height: 1.2;
+}
+.checkbox-compact input[type="checkbox"]{
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
