@@ -80,6 +80,22 @@ document.addEventListener('DOMContentLoaded', () => {
     flash.innerHTML = '<div class="flash-item success">Email verified! Please sign in.</div>';
   }
 
+  // — Show/Hide password toggle —
+  const pwdInput = document.getElementById('password');
+  const showPw   = document.getElementById('showPassword');
+
+  showPw?.addEventListener('change', () => {
+    if (!pwdInput) return;
+    pwdInput.type = showPw.checked ? 'text' : 'password';
+  });
+
+  // Optional: “press-and-hold to peek” on desktop
+  // (uncomment if you add a button with id="peekPassword")
+  // const peekBtn = document.getElementById('peekPassword');
+  // peekBtn?.addEventListener('mousedown', () => { if (pwdInput) pwdInput.type = 'text'; });
+  // peekBtn?.addEventListener('mouseup',   () => { if (pwdInput) pwdInput.type = 'password'; });
+  // peekBtn?.addEventListener('mouseleave',() => { if (pwdInput) pwdInput.type = 'password'; });
+
   // ─── 3) updateView() swaps login ↔ signup UI ───
   function updateView() {
     const mode = modeInput?.value || 'signup';
