@@ -139,23 +139,23 @@
     <!-- Bottom docked input -->
     <form id="chat-form" class="input-dock" autocomplete="off" novalidate>
       <div id="inputContainer"
-       class="input-container"
-       data-ai-caveat
-       data-caveat-text="AI-generated responses may contain mistakes. Learn more!"
-       data-caveat-link="/ai-disclaimer"
-       data-caveat-inline="0"      <!-- 0 = boxed notice (your choice); use 1 for inline text-only -->
-       data-caveat-closable="1"    <!-- shows an × to dismiss -->
-       data-caveat-once="1">       <!-- remembers dismissal for this session -->
-    <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)" aria-label="Type your message"></textarea>
-    <div class="icon-group">
-      <label for="file-upload" title="Attach a file">
-        <img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach">
-      </label>
-      <input id="file-upload" type="file" style="display:none" onchange="handleAttach()">
-      <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Voice input" onclick="handleMic()">
-      <img id="sendButton" src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" role="button" tabindex="0">
-    </div>
-  </div>
+           class="input-container"
+           data-ai-caveat
+           data-caveat-text="AI-generated responses may contain mistakes. Learn more!"
+           data-caveat-link="/ai-disclaimer"
+           data-caveat-inline="0"
+           data-caveat-closable="1"
+           data-caveat-once="1">
+        <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)" aria-label="Type your message"></textarea>
+        <div class="icon-group">
+          <label for="file-upload" title="Attach a file">
+            <img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach">
+          </label>
+          <input id="file-upload" type="file" style="display:none" onchange="handleAttach()">
+          <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Voice input" onclick="handleMic()">
+          <img id="sendButton" src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" role="button" tabindex="0">
+        </div>
+      </div>
     </form>
   </section>
 
@@ -180,6 +180,48 @@
         const origParse = marked.parse.bind(marked);
         marked.parse = function(md){ return DOMPurify.sanitize(origParse(md)); };
       }
+    })();
+  </script>
+
+  {# AI caveat injector (runs only on this page) #}
+  <script>
+    (function () {
+      function injectAICaveat(el) {
+        if (!el || !el.dataset.aiCaveat) return;
+        const onceKey = 'ai-caveat-dismissed';
+        if (el.dataset.caveatOnce === '1' && sessionStorage.getItem(onceKey)) return;
+
+        const text  = el.dataset.caveatText || 'AI-generated responses may contain mistakes.';
+        const href  = el.dataset.caveatLink || '/ai-disclaimer';
+        const inline = el.dataset.caveatInline === '1';
+        const closable = el.dataset.caveatClosable === '1';
+
+        const box = document.createElement('div');
+        box.className = inline ? 'ai-caveat-inline' : 'ai-caveat-box';
+        box.innerHTML = inline
+          ? `<span class="ai-caveat-dot" aria-hidden="true"></span>${text} <a href="${href}">Learn more</a>`
+          : `<strong>Note:</strong> ${text} <a href="${href}">Learn more</a>`;
+
+        if (closable) {
+          const x = document.createElement('button');
+          x.type = 'button';
+          x.className = 'ai-caveat-close';
+          x.setAttribute('aria-label', 'Dismiss');
+          x.textContent = '×';
+          x.addEventListener('click', () => {
+            box.remove();
+            if (el.dataset.caveatOnce === '1') sessionStorage.setItem(onceKey, '1');
+          });
+          box.appendChild(x);
+        }
+
+        el.insertAdjacentElement('afterend', box);
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        const target = document.getElementById('inputContainer');
+        injectAICaveat(target);
+      });
     })();
   </script>
 
