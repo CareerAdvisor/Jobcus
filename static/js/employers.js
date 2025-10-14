@@ -180,8 +180,9 @@
       throw new Error(msg);
     }
 
+    // NOTE: align with employers.html (premium or employer_jd are paid)
     const plan         = (document.body.dataset.plan || "guest").toLowerCase();
-    const isPaid       = (plan === "standard" || plan === "premium");
+    const isPaid       = (plan === "premium" || plan === "employer_jd");
     const isSuperadmin = (document.body.dataset.superadmin === "1");
 
     const inquiryForm     = document.getElementById("employer-inquiry-form");
@@ -416,21 +417,21 @@
         body: JSON.stringify({ format: fmt, text })
       });
 
-      // 403: paywall (show upgrade and stop)
+      // 403: paywall (show upgrade and stop) — robust fallback
       if (res.status === 403) {
         const info = await res.json().catch(() => ({}));
         const url  = info?.pricing_url || (window.PRICING_URL || "/pricing");
         const html = info?.message_html || `File downloads are available on the JD Generator and Premium plans. <a href="${url}">Upgrade now →</a>`;
-        window.upgradePrompt?.(html, url, 1200);
+        (window.upgradePrompt || window.showUpgradeBanner || alert)(html);
         return;
       }
-      
+
       // 401 or redirect: force login
       if (res.status === 401 || res.redirected) {
         window.location.href = "/account?mode=login";
         return;
       }
-      
+
       // 400: bad input (do NOT fall back to client download)
       if (res.status === 400) {
         const t = (await res.text()).toLowerCase();
@@ -441,14 +442,14 @@
         }
         return;
       }
-      
+
       // 404 or any !ok: show message; do NOT fall back to client download
       if (!res.ok) {
         const msg = (await res.text()) || "Download failed.";
         window.showUpgradeBanner?.(msg);
         return;
       }
-      
+
       // Success → stream to file
       const blob = await res.blob();
       const a = document.createElement("a");
@@ -461,9 +462,9 @@
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+    } // ← important: close downloadJD before attaching listeners
 
-    }
-
+    // Attach listeners once the function exists
     dlPdfBtn?.addEventListener("click",  () => downloadJD("pdf"));
     dlDocxBtn?.addEventListener("click", () => downloadJD("docx"));
 
