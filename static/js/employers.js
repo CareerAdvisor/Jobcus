@@ -5,13 +5,16 @@
   window.__JOBCUS_EMPLOYERS_INIT__ = true;
 
   document.addEventListener("DOMContentLoaded", function () {
-    // Ensure fetch includes credentials by default (for auth-protected endpoints)
+    // Ensure fetch always includes same-origin cookies for auth-gated endpoints
     const _fetch = window.fetch.bind(window);
     window.fetch = (input, init = {}) => {
       if (!("credentials" in init)) init.credentials = "same-origin";
       return _fetch(input, init);
     };
 
+    // ───────────────────────────────────────────────
+    // Utilities
+    // ───────────────────────────────────────────────
     function escapeHtml(s = "") {
       return String(s)
         .replace(/&/g, "&amp;")
@@ -26,6 +29,7 @@
       const raw = String(t || "").trim();
       return (!raw || EMAIL_RE.test(raw)) ? "JOBCUS.COM" : raw;
     }
+
     function stripWatermarks(root = document) {
       if (typeof window.stripExistingWatermarks === "function") {
         try { window.stripExistingWatermarks(root); return; } catch {}
@@ -156,18 +160,10 @@
       catch { body = null; }
 
       if (res.status === 401 || res.status === 403) {
-        // 403 may also be upgrade_required
         const msg = body?.message || "Please sign in to continue.";
-        if (res.status === 403 && body?.error === "upgrade_required") {
-          const url  = body?.pricing_url || (window.PRICING_URL || "/pricing");
-          const html = body?.message_html || `${escapeHtml(msg)} <a href="${url}">Upgrade now →</a>`;
-          (window.upgradePrompt || window.showUpgradeBanner || alert)(html);
-          if (window.upgradePrompt) window.upgradePrompt(html, url, 1200);
-        } else {
-          window.showUpgradeBanner?.(msg);
-          setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
-        }
-        throw new Error(body?.message || msg);
+        window.showUpgradeBanner?.(msg);
+        setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
+        throw new Error(msg);
       }
 
       if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
@@ -189,8 +185,11 @@
       throw new Error(msg);
     }
 
+    // ───────────────────────────────────────────────
+    // Plan flags & DOM
+    // ───────────────────────────────────────────────
     const plan         = (document.body.dataset.plan || "guest").toLowerCase();
-    const isPaid       = (plan === "standard" || plan === "premium" || plan === "employer_jd");
+    const isPaid       = (plan === "standard" || plan === "premium" || plan === "employer_jd" || plan === "employer");
     const isSuperadmin = (document.body.dataset.superadmin === "1");
 
     const inquiryForm     = document.getElementById("employer-inquiry-form");
@@ -205,14 +204,14 @@
     const out  = output;
 
     // ───────────────────────────────────────────────
-    // Suggest skills (with selectable chips)
+    // Skills suggest (unchanged)
     // ───────────────────────────────────────────────
     const suggestBtn  = document.getElementById("suggest-skills");
     const titleInput  = document.getElementById("jp-title");
-    const suggestBox  = document.getElementById("skills-suggest-box"); // container for chips
-    const skillsText  = document.getElementById("jp-skills");          // textarea (optional)
-    const skillsHidden= document.getElementById("jp-skills-hidden");   // hidden input (fallback)
-    const includeTaxo = document.getElementById("jp-include-taxonomy");// checkbox (optional)
+    const suggestBox  = document.getElementById("skills-suggest-box");
+    const skillsText  = document.getElementById("jp-skills");
+    const skillsHidden= document.getElementById("jp-skills-hidden");
+    const includeTaxo = document.getElementById("jp-include-taxonomy");
 
     function setSkillsValue(arr) {
       const val = arr.join(", ");
@@ -286,7 +285,6 @@
           window.showUpgradeBanner?.("No skills found for this title.");
         } else {
           renderChips(skills);
-          // If there are no current selections, prefill with the first 5
           if (getSkillsValue().length === 0) setSkillsValue(skills.slice(0, 5));
         }
       } catch (e) {
@@ -299,14 +297,17 @@
     });
 
     // ───────────────────────────────────────────────
-
+    // Output + watermark + button states
+    // ───────────────────────────────────────────────
     function renderJobDescription(html) {
       if (!out) return;
       out.innerHTML = html || "";
       if (wrap?.dataset?.watermark) wrap.classList.add("wm-active");
       downloadOptions?.classList.remove("hidden");
       if (downloadOptions) downloadOptions.style.display = "";
-      // Ensure buttons are enabled once content is present
+      // Enable buttons (remove attribute too so DevTools doesn't show 'disabled')
+      dlPdfBtn?.removeAttribute("disabled");
+      dlDocxBtn?.removeAttribute("disabled");
       if (dlPdfBtn) dlPdfBtn.disabled = false;
       if (dlDocxBtn) dlDocxBtn.disabled = false;
     }
@@ -347,17 +348,13 @@
         out.classList.add("nocopy");
         enableNoCopyNoShot(out);
       }
-      downloadOptions?.classList.remove("hidden");
-      if (downloadOptions) downloadOptions.style.display = "";
-      if (dlPdfBtn) dlPdfBtn.disabled = false;
-      if (dlDocxBtn) dlDocxBtn.disabled = false;
     }
 
     function hideDownloads() {
       downloadOptions?.classList.add("hidden");
       if (downloadOptions) downloadOptions.style.display = "none";
-      if (dlPdfBtn) dlPdfBtn.disabled = true;
-      if (dlDocxBtn) dlDocxBtn.disabled = true;
+      if (dlPdfBtn) { dlPdfBtn.disabled = true; dlPdfBtn.setAttribute("disabled", ""); }
+      if (dlDocxBtn){ dlDocxBtn.disabled = true; dlDocxBtn.setAttribute("disabled", ""); }
 
       if (out) {
         stripWatermarks(out);
@@ -372,30 +369,53 @@
       return (out?.innerText || "").trim();
     }
 
-    // Client-side fallbacks
+    // ───────────────────────────────────────────────
+    // Lazy loader + client fallback (PDF/DOCX)
+    // ───────────────────────────────────────────────
+    async function loadScriptOnce(url, testReady) {
+      if (testReady && testReady()) return;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = url;
+        s.async = true;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error("Failed to load " + url));
+        document.head.appendChild(s);
+      });
+    }
+
     async function fallbackDownload(fmt) {
       const text = readOutputText();
       if (!text) { alert("Generate a job description first."); return; }
 
       if (fmt === "pdf") {
-        const { jsPDF } = window.jspdf || {};
-        if (!jsPDF) return alert("PDF library not loaded.");
+        if (!(window.jspdf && window.jspdf.jsPDF)) {
+          await loadScriptOnce(
+            "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+            () => !!(window.jspdf && window.jspdf.jsPDF)
+          );
+        }
+        const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({ unit: "mm", format: "a4" });
         const lines = pdf.splitTextToSize(text, 180);
         let y = 10;
-        lines.forEach(line => {
+        for (const line of lines) {
           if (y > 280) { pdf.addPage(); y = 10; }
           pdf.text(line, 10, y);
           y += 7;
-        });
+        }
         pdf.save("job-description.pdf");
         return;
       }
 
       if (fmt === "docx") {
-        const docx = window.docx || window["docx"];
-        if (!docx) return alert("DOCX library not loaded.");
-        const { Document, Packer, Paragraph, TextRun } = docx;
+        if (!window.docx) {
+          await loadScriptOnce(
+            "https://cdnjs.cloudflare.com/ajax/libs/docx/7.7.0/docx.umd.min.js",
+            () => !!window.docx
+          );
+        }
+        const { Document, Packer, Paragraph, TextRun } = window.docx;
         const doc = new Document({
           sections: [{
             children: text.split("\n").map(line =>
@@ -417,30 +437,39 @@
       alert("Unsupported format.");
     }
 
+    // ───────────────────────────────────────────────
+    // Server-first download with graceful fallback
+    // ───────────────────────────────────────────────
     async function downloadJD(fmt) {
       if (!["pdf", "docx"].includes(fmt)) { alert("Unsupported format."); return; }
       const text = readOutputText();
       if (!text) { alert("Generate a job description first."); return; }
 
-      // Optimistically disable buttons during the request
-      if (dlPdfBtn) dlPdfBtn.disabled = true;
-      if (dlDocxBtn) dlDocxBtn.disabled = true;
-
+      let res;
       try {
-        const res = await fetch("/api/employer/job-post/download", {
+        res = await fetch("/api/employer/job-post/download", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
           body: JSON.stringify({ format: fmt, text })
         });
 
-        // 403: paywall/login — handled in handleCommonErrors (no fallback for free users)
-        if (res.status === 403 || res.status === 401) {
-          await handleCommonErrors(res); // will throw
+        // 403: paywall (show upgrade and stop)
+        if (res.status === 403) {
+          const info = await res.json().catch(() => ({}));
+          const url  = info?.pricing_url || (window.PRICING_URL || "/pricing");
+          const html = info?.message_html || `File downloads are available on the JD Generator and Premium plans. <a href="${url}">Upgrade now →</a>`;
+          window.upgradePrompt?.(html, url, 1200);
           return;
         }
 
-        // 400: bad input (do NOT fall back; show message)
+        // 401 or redirect: force login
+        if (res.status === 401 || res.redirected) {
+          window.location.href = "/account?mode=login";
+          return;
+        }
+
+        // 400: bad input → message, do NOT fallback
         if (res.status === 400) {
           const t = (await res.text()).toLowerCase();
           if (t.includes("no text")) {
@@ -451,19 +480,10 @@
           return;
         }
 
-        // 500 or other server errors → FALL BACK to client generation
-        if (res.status >= 500) {
-          // Let the user know and fallback
-          console.error("Server download failed:", await res.text().catch(() => ""));
-          window.showUpgradeBanner?.("Server download failed, generating locally…");
-          await fallbackDownload(fmt);
-          return;
-        }
-
-        // non-OK (like 404, etc.) → show message; allow fallback for 404 too
+        // Any other non-OK (e.g., 500) → log + fallback
         if (!res.ok) {
-          console.error("Download failed:", res.status, await res.text().catch(() => ""));
-          window.showUpgradeBanner?.("Download failed, generating locally…");
+          const msg = (await res.text()) || "Download failed.";
+          console.warn("Server download failed:", msg);
           await fallbackDownload(fmt);
           return;
         }
@@ -474,25 +494,20 @@
         const url = URL.createObjectURL(blob);
         a.href = url;
         a.download = (fmt === "pdf" ? "job-description.pdf"
-                   : fmt === "docx" ? "job-description.docx"
-                   : "job-description.txt");
+                  : fmt === "docx" ? "job-description.docx"
+                  : "job-description.txt");
         document.body.appendChild(a);
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
       } catch (err) {
-        // Network error → fallback
-        console.error("Download error:", err);
-        window.showUpgradeBanner?.("Network error, generating locally…");
+        console.error("Server download error:", err);
+        // Network or unexpected error → fallback
         await fallbackDownload(fmt);
-      } finally {
-        // Re-enable buttons
-        if (dlPdfBtn) dlPdfBtn.disabled = false;
-        if (dlDocxBtn) dlDocxBtn.disabled = false;
       }
     }
 
-    // Bind download buttons once
+    // Attach download handlers (outside of any function!)
     dlPdfBtn?.addEventListener("click",  () => downloadJD("pdf"));
     dlDocxBtn?.addEventListener("click", () => downloadJD("docx"));
 
@@ -505,7 +520,9 @@
       setSkillsValue([]);
     });
 
-    // 📨 Employer Inquiry Handler
+    // ───────────────────────────────────────────────
+    // Employer Inquiry Handler
+    // ───────────────────────────────────────────────
     if (inquiryForm) {
       inquiryForm.addEventListener("submit", async function (e) {
         e.preventDefault();
@@ -536,7 +553,9 @@
       });
     }
 
-    // 🤖 AI Job Post Generator Handler
+    // ───────────────────────────────────────────────
+    // AI Job Post Generator Handler
+    // ───────────────────────────────────────────────
     if (jobPostForm) {
       jobPostForm.addEventListener("submit", async function (e) {
         e.preventDefault();
@@ -547,7 +566,7 @@
           return;
         }
 
-        // Include selected skills & taxonomy flag
+        // Ensure selected skills & taxonomy flag are in the payload
         const fd = new FormData(jobPostForm);
         const selectedSkills = getSkillsValue();
         if (selectedSkills.length) fd.set("skills", selectedSkills.join(", "));
