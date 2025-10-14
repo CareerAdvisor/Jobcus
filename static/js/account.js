@@ -83,14 +83,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // — Show/Hide password toggle —
   const pwdInput = document.getElementById('password');
   const showPw   = document.getElementById('showPassword');
-
+  
   showPw?.addEventListener('change', () => {
     if (!pwdInput) return;
     pwdInput.type = showPw.checked ? 'text' : 'password';
   });
-
-  // Optional: “press-and-hold to peek” on desktop
-  // (uncomment if you add a button with id="peekPassword")
+  
+  // Optional “press-and-hold to peek” UI (for an eye button if you add one):
   // const peekBtn = document.getElementById('peekPassword');
   // peekBtn?.addEventListener('mousedown', () => { if (pwdInput) pwdInput.type = 'text'; });
   // peekBtn?.addEventListener('mouseup',   () => { if (pwdInput) pwdInput.type = 'password'; });
