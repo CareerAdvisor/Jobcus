@@ -17,6 +17,43 @@ function qsa(root, sel) { return Array.from((root || document).querySelectorAll(
 function withinBuilder(sel) { return `#resume-builder ${sel}`; }
 const AI_ENDPOINT = "/ai/suggest";
 
+// Lightweight upgrade banner with "Upgrade" + "Not now"
+function showUpgradeBannerLocal(message) {
+  const container = document.querySelector("#resume-builder") || document.body;
+  let bar = document.getElementById("upgrade-banner");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "upgrade-banner";
+    bar.role = "alert";
+    bar.style.cssText = [
+      "position:sticky","top:0","z-index:9999",
+      "background:#fff3cd","border:1px solid #ffeeba",
+      "color:#856404","padding:10px 12px","border-radius:8px",
+      "margin:12px auto","max-width:960px","box-shadow:0 2px 8px rgba(0,0,0,.05)"
+    ].join(";");
+    if (container.firstChild) container.insertBefore(bar, container.firstChild);
+    else container.appendChild(bar);
+  }
+  const msg = (message || "You’ve reached your plan limit. Upgrade to continue.").toString();
+  const url = (window.PRICING_URL || "/pricing");
+  bar.innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;">
+      <div style="flex:1;min-width:0;">${msg.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div>
+      <div style="display:flex;gap:8px;flex:0 0 auto;">
+        <a href="${url}" class="btn-upgrade"
+           style="padding:8px 12px;border-radius:8px;border:1px solid #e0a800;background:#ffe08a;text-decoration:none;color:#5a4400;font-weight:600">
+          Upgrade
+        </a>
+        <button type="button" class="btn-dismiss"
+           style="padding:8px 12px;border-radius:8px;border:1px solid #d6d8db;background:#f8f9fa;color:#495057;">
+          Not now
+        </button>
+      </div>
+    </div>`;
+  bar.querySelector(".btn-dismiss")?.addEventListener("click", () => bar.remove());
+  if (!window.showUpgradeBanner) window.showUpgradeBanner = (m) => showUpgradeBannerLocal(m);
+}
+
 const escapeHtml = (s="") =>
   s.replace(/&/g,"&amp;").replace(/</g,"&lt;")
    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
@@ -47,7 +84,7 @@ async function handleCommonErrors(res) {
 
   if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
     const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
-    window.upgradePrompt(body?.message_html || msg, (window.PRICING_URL || "/pricing"), 1200);
+    try { showUpgradeBannerLocal(msg); } catch (_) { (window.showUpgradeBanner || alert)(msg); }
     throw new Error(msg);
   }
   if (res.status === 401 || res.status === 403) {
