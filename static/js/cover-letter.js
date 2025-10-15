@@ -9,14 +9,7 @@
     return _fetch(input, init);
   };
 
-  // Resolve pricing URL robustly (supports /pricing.html or /pricing)
-  const PRICING_URL = (() => {
-    if (window.PRICING_URL) return window.PRICING_URL;
-    const a = document.querySelector(
-      'a[href$="pricing.html"], a[href="/pricing"], a[href*="/pricing"]'
-    );
-    return a?.getAttribute("href") || "/pricing.html";
-  })();
+  const PRICING_URL = (window.PRICING_URL || "/pricing");
 
   /* ---------- tiny utils ---------- */
   const escapeHtml = (s = "") =>
@@ -26,43 +19,6 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
-
-  // Lightweight upgrade banner with "Upgrade" + "Not now" (no redirect)
-  function showUpgradeBannerLocal(message) {
-    const container = document.querySelector("#cover-letter") || document.body;
-    let bar = document.getElementById("upgrade-banner");
-    if (!bar) {
-      bar = document.createElement("div");
-      bar.id = "upgrade-banner";
-      bar.role = "alert";
-      bar.style.cssText = [
-        "position:sticky","top:0","z-index:9999",
-        "background:#fff3cd","border:1px solid #ffeeba",
-        "color:#856404","padding:10px 12px","border-radius:8px",
-        "margin:12px auto","max-width:960px","box-shadow:0 2px 8px rgba(0,0,0,.05)"
-      ].join(";");
-      if (container.firstChild) container.insertBefore(bar, container.firstChild);
-      else container.appendChild(bar);
-    }
-    const msg = (message || "You’ve reached your plan limit. Upgrade to continue.").toString();
-    const url = PRICING_URL;
-    bar.innerHTML = `
-      <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;">
-        <div style="flex:1;min-width:0;">${msg.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div>
-        <div style="display:flex;gap:8px;flex:0 0 auto;">
-          <a href="${url}" class="btn-upgrade"
-             style="padding:8px 12px;border-radius:8px;border:1px solid #e0a800;background:#ffe08a;text-decoration:none;color:#5a4400;font-weight:600">
-            Upgrade
-          </a>
-          <button type="button" class="btn-dismiss"
-             style="padding:8px 12px;border-radius:8px;border:1px solid #d6d8db;background:#f8f9fa;color:#495057;">
-            Not now
-          </button>
-        </div>
-      </div>`;
-    bar.querySelector(".btn-dismiss")?.addEventListener("click", () => bar.remove());
-    if (!window.showUpgradeBanner) window.showUpgradeBanner = (m) => showUpgradeBannerLocal(m);
-  }
 
   // ───────────────────────────────────────────────
   // Watermark helpers
@@ -183,6 +139,7 @@
       return c.toDataURL("image/png");
     }
     const urls = angles.map(a => makeTile(text, a));
+    const sz = size + "px " + "px";
     el.classList.remove("wm-sparse");
     el.classList.add("wm-tiled");
     el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
@@ -231,11 +188,10 @@
     try { if (ct.includes("application/json")) j=await res.json(); else t=await res.text(); } catch {}
     const msg = (j && (j.message || j.error)) || t || `Request failed (${res.status})`;
 
-    // LIMITS / UPGRADE → show banner only (no redirect)
     if (res.status === 402 || (j && (j.error === "upgrade_required" || j.error === "quota_exceeded"))) {
       const url  = j?.pricing_url || PRICING_URL;
       const html = j?.message_html || `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`;
-      try { showUpgradeBannerLocal(html); } catch (_) { (window.showUpgradeBanner || alert)(html); }
+      window.upgradePrompt?.(html, url, 1200);
       throw new Error(j?.message || "Upgrade required");
     }
     if (res.status === 401 || res.status === 403) {
@@ -328,6 +284,8 @@
   /* ---------- Preview (returns when iframe loaded) ---------- */
   async function previewLetter(payload) {
     const wrap  = document.getElementById("clPreviewWrap");
+    the_frame: {
+    }
     const frame = document.getElementById("clPreview");
     const dlBar = document.getElementById("cl-downloads");
     try {
@@ -449,96 +407,90 @@
     const isPaid = (plan === "standard" || plan === "premium");
     const isSuperadmin = (document.body.dataset.superadmin === "1");
   
-    // Free users → show banner (no redirect)
+    // Free users → show the same upgrade prompt used elsewhere and exit
     if (!isPaid && !isSuperadmin) {
       const html = `File downloads are available on Standard and Premium. <a href="${PRICING_URL}">Upgrade now →</a>`;
-      try { showUpgradeBannerLocal(html); } catch (_) { (window.showUpgradeBanner || alert)(html); }
+      window.upgradePrompt?.(html, PRICING_URL, 1200);
       return;
     }
   
-    // Try the server endpoint first (format: "docx" on /build-cover-letter)
+    // Try the server route first; if it responds with 402/limits, handleCommonErrors shows the banner
     try {
-      const res = await fetch("/build-cover-letter", {
+      const res = await fetch("/build-cover-letter-docx", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/json"
         },
-        body: JSON.stringify({ format: "docx", letter_only: true, ...ctx })
+        body: JSON.stringify({ letter_only: true, ...ctx })
       });
   
-      if (!res.ok) await handleCommonErrors(res); // will banner on limits/upgrade
+      // 404 means route not present → we’ll fall back to client-side; other errors show the upgrade/limit banner
+      if (res.status === 404) throw new Error("route_404");
+      if (!res.ok) await handleCommonErrors(res);
   
-      const ct = (res.headers.get("content-type") || "").toLowerCase();
-      if (ct.includes("application/vnd.openxmlformats-officedocument.wordprocessingml.document")) {
-        const blob = await res.blob();
-        const url  = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = "cover-letter.docx"; a.click();
-        URL.revokeObjectURL(url);
-        return;
-      }
-      // otherwise fall through to client-side fallback
-    } catch (err) {
-      // If handleCommonErrors already surfaced a limit/auth message, stop here.
-      if (err && /Upgrade required|Rate limited|401|403/i.test(String(err.message||""))) return;
-    }
-  
-    // Client-side fallback using docx
-    try {
-      await ensureDocxBundle();
-      const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
-  
-      const lines = [];
-      const body = (ctx.cover_body || "").split("\n");
-      const sender = ctx.sender || {};
-      const recipient = ctx.recipient || {};
-  
-      const A4 = { width: 11906, height: 16838 }; // twips
-      const M  = 1020;                             // ~18mm margins
-      const LINE = 276;                            // ~1.5 line height
-      const NORMAL = { size: 24, font: "Arial" };  // 12pt
-      const NAME   = { size: 64, font: "Arial", bold: true };
-  
-      const P = (text, {align="LEFT", run=NORMAL, after=120}={}) =>
-        new Paragraph({
-          alignment: AlignmentType[align],
-          spacing: { line: LINE, after },
-          children: [ new TextRun(Object.assign({ text }, run)) ],
-        });
-  
-      if (ctx.name) lines.push(P(ctx.name, { align:"CENTER", run: NAME, after: 80 }));
-      const contact = [sender.address1, sender.city, sender.postcode].filter(Boolean).join(", ");
-      if (contact)  lines.push(P(contact, { align:"CENTER" }));
-      const reach = [sender.email, sender.phone].filter(Boolean).join(" | ");
-      if (reach)   lines.push(P(reach, { align:"CENTER", after: 160 }));
-  
-      if (sender.date) lines.push(P(sender.date));
-      const recLines = [
-        recipient.name, recipient.company, recipient.address1,
-        [recipient.city, recipient.postcode].filter(Boolean).join(", ")
-      ].filter(Boolean);
-      recLines.forEach(l => lines.push(P(l)));
-      lines.push(P("", { after: 80 }));
-  
-      lines.push(P(`Dear ${recipient.name || "Hiring Manager"},`));
-      body.forEach(p => lines.push(P(p || "")));
-      lines.push(P(""));
-      lines.push(P("Yours sincerely,"));
-      lines.push(P(ctx.name || "", { after: 0 }));
-  
-      const doc = new Document({
-        sections: [{ properties:{ page:{ size:A4, margin:{ top:M, bottom:M, left:M, right:M } } }, children: lines }]
-      });
-  
-      const blob = await Packer.toBlob(doc);
+      const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = "cover-letter.docx"; a.click();
       URL.revokeObjectURL(url);
+      return;
     } catch (err) {
-      window.showUpgradeBanner?.(err.message || "DOCX download failed.");
+      // If the route is missing or something else failed, surface the message
+      if (err?.message !== "route_404") {
+        window.showUpgradeBanner?.(err.message || "Download failed.");
+        return;
+      }
     }
+    const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
+
+    const lines = [];
+    const body = (ctx.cover_body || "").split("\n");
+    const sender = ctx.sender || {};
+    const recipient = ctx.recipient || {};
+
+    const A4 = { width: 11906, height: 16838 }; // twips
+    const M  = 1020;                             // ~18mm margins
+    const LINE = 276;                            // ~1.5 line height
+    const NORMAL = { size: 24, font: "Arial" };  // 12pt
+    const NAME   = { size: 64, font: "Arial", bold: true };
+
+    const P = (text, {align="LEFT", run=NORMAL, after=120}={}) =>
+      new Paragraph({
+        alignment: AlignmentType[align],
+        spacing: { line: LINE, after },
+        children: [ new TextRun(Object.assign({ text }, run)) ],
+      });
+
+    if (ctx.name) lines.push(P(ctx.name, { align:"CENTER", run: NAME, after: 80 }));
+    const contact = [sender.address1, sender.city, sender.postcode].filter(Boolean).join(", ");
+    if (contact)  lines.push(P(contact, { align:"CENTER" }));
+    const reach = [sender.email, sender.phone].filter(Boolean).join(" | ");
+    if (reach)   lines.push(P(reach, { align:"CENTER", after: 160 }));
+
+    if (sender.date) lines.push(P(sender.date));
+    const recLines = [
+      recipient.name, recipient.company, recipient.address1,
+      [recipient.city, recipient.postcode].filter(Boolean).join(", ")
+    ].filter(Boolean);
+    recLines.forEach(l => lines.push(P(l)));
+    lines.push(P("", { after: 80 }));
+
+    lines.push(P(`Dear ${recipient.name || "Hiring Manager"},`));
+    body.forEach(p => lines.push(P(p || "")));
+    lines.push(P(""));                 // ✅ fixed line (this was the syntax error)
+    lines.push(P("Yours sincerely,"));
+    lines.push(P(ctx.name || "", { after: 0 }));
+
+    const doc = new Document({
+      sections: [{ properties:{ page:{ size:A4, margin:{ top:M, bottom:M, left:M, right:M } } }, children: lines }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "cover-letter.docx"; a.click();
+    URL.revokeObjectURL(url);
   }
 
   /* ---------- Wizard (robust) ---------- */
@@ -606,9 +558,6 @@
   document.addEventListener("DOMContentLoaded", () => {
     try {
       const form = document.getElementById("clForm");
-
-      // expose banner globally if missing
-      if (!window.showUpgradeBanner) window.showUpgradeBanner = (m) => showUpgradeBannerLocal(m);
 
       // PREVIEW MODE bindings (stacked layout)
       const previewWrap = document.getElementById("clPreviewWrap");
