@@ -34,6 +34,91 @@ async function loadScriptOnce(src) {
   });
 }
 
+// === Upgrade modal (no auto-redirect) ===
+(function () {
+  if (typeof window.upgradePrompt === "function") return; // don't overwrite if defined elsewhere
+
+  window.upgradePrompt = function upgradePrompt(messageHtml, pricingUrl, delayMs = 0) {
+    // Build overlay
+    const overlay = document.createElement("div");
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Upgrade required");
+    overlay.style.cssText = `
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.4);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    `;
+
+    // Card
+    const card = document.createElement("div");
+    card.style.cssText = `
+      max-width: 520px; width: 100%;
+      background: #fff; color: #111; border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.15);
+      padding: 20px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, sans-serif;
+    `;
+    card.innerHTML = `
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div style="font-size:22px;line-height:1.1">🔓 Upgrade to continue</div>
+      </div>
+      <div style="margin-top:10px;font-size:14px;line-height:1.5">
+        ${messageHtml || "You’ve reached your plan limit for this feature."}
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+        <a href="${pricingUrl || "/pricing"}"
+           class="btn-upgrade"
+           style="text-decoration:none; padding:10px 14px; border-radius:8px; border:1px solid #111;">
+           View plans
+        </a>
+        <button type="button" id="upgrade-ok"
+          style="padding:10px 14px;border-radius:8px;border:0;background:#111;color:#fff;">
+          OK
+        </button>
+      </div>
+    `;
+
+    overlay.appendChild(card);
+
+    // Close behavior
+    function close() {
+      overlay.remove();
+      document.removeEventListener("keydown", onKey);
+      // return focus to body (or last active element if you capture it)
+      document.body.focus?.();
+    }
+    function onKey(e) { if (e.key === "Escape") close(); }
+
+    // Prevent background scroll
+    const prevOverflow = document.documentElement.style.overflow;
+    function mount() {
+      document.body.appendChild(overlay);
+      document.addEventListener("keydown", onKey);
+      document.documentElement.style.overflow = "hidden";
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) close(); // click backdrop to close
+      });
+      overlay.querySelector("#upgrade-ok")?.addEventListener("click", close);
+      // focus the OK button for accessibility
+      overlay.querySelector("#upgrade-ok")?.focus();
+    }
+    function unmountCleanupOnRemove() {
+      const obs = new MutationObserver(() => {
+        if (!document.body.contains(overlay)) {
+          document.documentElement.style.overflow = prevOverflow;
+          obs.disconnect();
+        }
+      });
+      obs.observe(document.body, { childList: true, subtree: false });
+    }
+
+    setTimeout(() => { mount(); unmountCleanupOnRemove(); }, Math.max(0, delayMs || 0));
+  };
+})();
+
+
 /* ======================= Datalist (roles) ======================= */
 async function initRoleDatalist() {
   const input = document.getElementById("dashRoleSelect");
