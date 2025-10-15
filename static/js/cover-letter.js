@@ -20,8 +20,63 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
 
+  const byId = (id) => document.getElementById(id);
+  const qs = (sel, root = document) => root.querySelector(sel);
+  const qsa = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+  /* ---------- Upgrade banner (no redirect) + UI pause ---------- */
+  window.showUpgradeBanner ||= function (msg) {
+    let b = document.getElementById("upgradeBanner");
+    const pricingUrl = (window.PRICING_URL || "/pricing");
+    const esc = (t) => String(t || "")
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+
+    if (!b) {
+      b = document.createElement("div");
+      b.id = "upgradeBanner";
+      b.setAttribute("role", "alert");
+      b.setAttribute("aria-live", "polite");
+      b.style.cssText = [
+        "background:#fff3cd","color:#856404","border:1px solid #ffeeba",
+        "padding:10px 12px","border-radius:6px","margin:8px 0",
+        "font-size:14px","display:flex","align-items:center",
+        "gap:12px","flex-wrap:wrap"
+      ].join(";");
+      // Put banner above main panel if present, else on body
+      (document.querySelector(".rb-main") || document.body).prepend(b);
+    }
+
+    b.innerHTML = `
+      <span>${esc(msg || "You’ve reached your plan limit for Cover Letter. Upgrade to continue.")}</span>
+      <span style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="${pricingUrl}" class="btn-upgrade-link" style="text-decoration:underline;white-space:nowrap;">View pricing →</a>
+        <button type="button" id="upgradeNotNowBtn" style="background:transparent;border:none;color:#856404;text-decoration:underline;cursor:pointer;white-space:nowrap;">Not now</button>
+      </span>
+    `;
+
+    b.querySelector("#upgradeNotNowBtn")?.addEventListener("click", () => {
+      b.remove();
+      try { sessionStorage.setItem("jobcus:cl:upgradeBannerDismissed", "1"); } catch {}
+    });
+
+    try { b.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
+  };
+
+  function disableCoverLetterUI(disabled) {
+    ["cl-preview","rb-next","cl-download-pdf","cl-download-docx"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.disabled = !!disabled;
+        el.style.opacity = disabled ? "0.6" : "";
+        el.style.pointerEvents = disabled ? "none" : "";
+        el.title = disabled ? "Feature paused — upgrade to continue" : "";
+      }
+    });
+  }
+
   // ───────────────────────────────────────────────
-  // Watermark helpers
+  // Watermark helpers (full, as before)
   // ───────────────────────────────────────────────
   const __EMAIL_RE__ = /@.+\./;
   function __sanitizeWM__(t) {
@@ -139,7 +194,6 @@
       return c.toDataURL("image/png");
     }
     const urls = angles.map(a => makeTile(text, a));
-    const sz = size + "px " + "px";
     el.classList.remove("wm-sparse");
     el.classList.add("wm-tiled");
     el.style.backgroundImage = urls.map(u => `url(${u})`).join(", ");
@@ -181,6 +235,7 @@
     throw new Error("DOCX library failed to load.");
   }
 
+  /* ---------- API error handler (banner-only, no redirect) ---------- */
   async function handleCommonErrors(res) {
     if (res.ok) return null;
     const ct = (res.headers.get("content-type") || "").toLowerCase();
@@ -189,20 +244,20 @@
     const msg = (j && (j.message || j.error)) || t || `Request failed (${res.status})`;
 
     if (res.status === 402 || (j && (j.error === "upgrade_required" || j.error === "quota_exceeded"))) {
-      const url  = j?.pricing_url || PRICING_URL;
-      const html = j?.message_html || `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`;
-      window.upgradePrompt?.(html, url, 1200);
+      window.showUpgradeBanner?.(j?.message || "You’ve reached your plan limit for Cover Letter. Upgrade to continue.");
+      disableCoverLetterUI(true);
       throw new Error(j?.message || "Upgrade required");
     }
     if (res.status === 401 || res.status === 403) {
       const authMsg = j?.message || "Please sign up or log in to use this feature.";
       window.showUpgradeBanner?.(authMsg);
-      setTimeout(()=>{ window.location.href = "/account?mode=login"; }, 800);
+      disableCoverLetterUI(true);
       throw new Error(authMsg);
     }
     if (res.status === 429 && (j?.error === "too_many_free_accounts" || j?.error === "device_limit")) {
       const ab = j?.message || "Too many free accounts detected from your network/device.";
       window.showUpgradeBanner?.(ab);
+      disableCoverLetterUI(true);
       throw new Error(ab);
     }
     window.showUpgradeBanner?.(escapeHtml(msg));
@@ -281,11 +336,9 @@
     };
   }
 
-  /* ---------- Preview (returns when iframe loaded) ---------- */
+  /* ---------- Preview (renders HTML into sandboxed iframe) ---------- */
   async function previewLetter(payload) {
     const wrap  = document.getElementById("clPreviewWrap");
-    the_frame: {
-    }
     const frame = document.getElementById("clPreview");
     const dlBar = document.getElementById("cl-downloads");
     try {
@@ -406,14 +459,15 @@
     const plan = (document.body.dataset.plan || "guest").toLowerCase();
     const isPaid = (plan === "standard" || plan === "premium");
     const isSuperadmin = (document.body.dataset.superadmin === "1");
-  
-    // Free users → show the same upgrade prompt used elsewhere and exit
+
+    // Free users → banner only (no redirect), then pause UI
     if (!isPaid && !isSuperadmin) {
-      const html = `File downloads are available on Standard and Premium. <a href="${PRICING_URL}">Upgrade now →</a>`;
-      window.upgradePrompt?.(html, PRICING_URL, 1200);
+      const copy = "File downloads are available on Standard and Premium. View pricing to upgrade.";
+      window.showUpgradeBanner?.(copy);
+      disableCoverLetterUI(true);
       return;
     }
-  
+
     // Try the server route first; if it responds with 402/limits, handleCommonErrors shows the banner
     try {
       const res = await fetch("/build-cover-letter-docx", {
@@ -424,11 +478,11 @@
         },
         body: JSON.stringify({ letter_only: true, ...ctx })
       });
-  
-      // 404 means route not present → we’ll fall back to client-side; other errors show the upgrade/limit banner
+
+      // 404 means route not present → fall back to client-side; other errors show the banner
       if (res.status === 404) throw new Error("route_404");
       if (!res.ok) await handleCommonErrors(res);
-  
+
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -436,64 +490,69 @@
       URL.revokeObjectURL(url);
       return;
     } catch (err) {
-      // If the route is missing or something else failed, surface the message
-      if (err?.message !== "route_404") {
-        window.showUpgradeBanner?.(err.message || "Download failed.");
+      if (String(err && err.message) !== "route_404") {
+        // handleCommonErrors already showed banner for 4xx/5xx
         return;
       }
     }
-    const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
 
-    const lines = [];
-    const body = (ctx.cover_body || "").split("\n");
-    const sender = ctx.sender || {};
-    const recipient = ctx.recipient || {};
+    // Client-side DOCX using docx UMD bundle
+    try {
+      const { Document, Packer, Paragraph, TextRun, AlignmentType } = await ensureDocxBundle();
 
-    const A4 = { width: 11906, height: 16838 }; // twips
-    const M  = 1020;                             // ~18mm margins
-    const LINE = 276;                            // ~1.5 line height
-    const NORMAL = { size: 24, font: "Arial" };  // 12pt
-    const NAME   = { size: 64, font: "Arial", bold: true };
+      const lines = [];
+      const body = (ctx.cover_body || "").split("\n");
+      const sender = ctx.sender || {};
+      const recipient = ctx.recipient || {};
 
-    const P = (text, {align="LEFT", run=NORMAL, after=120}={}) =>
-      new Paragraph({
-        alignment: AlignmentType[align],
-        spacing: { line: LINE, after },
-        children: [ new TextRun(Object.assign({ text }, run)) ],
+      const A4 = { width: 11906, height: 16838 }; // twips
+      const M  = 1020;                             // ~18mm margins
+      const LINE = 276;                            // ~1.5 line height
+      const NORMAL = { size: 24, font: "Arial" };  // 12pt
+      const NAME   = { size: 64, font: "Arial", bold: true };
+
+      const P = (text, {align="LEFT", run=NORMAL, after=120}={}) =>
+        new Paragraph({
+          alignment: AlignmentType[align],
+          spacing: { line: LINE, after },
+          children: [ new TextRun(Object.assign({ text }, run)) ],
+        });
+
+      if (ctx.name) lines.push(P(ctx.name, { align:"CENTER", run: NAME, after: 80 }));
+      const contact = [sender.address1, sender.city, sender.postcode].filter(Boolean).join(", ");
+      if (contact)  lines.push(P(contact, { align:"CENTER" }));
+      const reach = [sender.email, sender.phone].filter(Boolean).join(" | ");
+      if (reach)   lines.push(P(reach, { align:"CENTER", after: 160 }));
+
+      if (sender.date) lines.push(P(sender.date));
+      const recLines = [
+        recipient.name, recipient.company, recipient.address1,
+        [recipient.city, recipient.postcode].filter(Boolean).join(", ")
+      ].filter(Boolean);
+      recLines.forEach(l => lines.push(P(l)));
+      lines.push(P("", { after: 80 }));
+
+      lines.push(P(`Dear ${recipient.name || "Hiring Manager"},`));
+      body.forEach(p => lines.push(P(p || "")));
+      lines.push(P("")); // keep a spacer line
+      lines.push(P("Yours sincerely,"));
+      lines.push(P(ctx.name || "", { after: 0 }));
+
+      const doc = new Document({
+        sections: [{ properties:{ page:{ size:A4, margin:{ top:M, bottom:M, left:M, right:M } } }, children: lines }]
       });
 
-    if (ctx.name) lines.push(P(ctx.name, { align:"CENTER", run: NAME, after: 80 }));
-    const contact = [sender.address1, sender.city, sender.postcode].filter(Boolean).join(", ");
-    if (contact)  lines.push(P(contact, { align:"CENTER" }));
-    const reach = [sender.email, sender.phone].filter(Boolean).join(" | ");
-    if (reach)   lines.push(P(reach, { align:"CENTER", after: 160 }));
-
-    if (sender.date) lines.push(P(sender.date));
-    const recLines = [
-      recipient.name, recipient.company, recipient.address1,
-      [recipient.city, recipient.postcode].filter(Boolean).join(", ")
-    ].filter(Boolean);
-    recLines.forEach(l => lines.push(P(l)));
-    lines.push(P("", { after: 80 }));
-
-    lines.push(P(`Dear ${recipient.name || "Hiring Manager"},`));
-    body.forEach(p => lines.push(P(p || "")));
-    lines.push(P(""));                 // ✅ fixed line (this was the syntax error)
-    lines.push(P("Yours sincerely,"));
-    lines.push(P(ctx.name || "", { after: 0 }));
-
-    const doc = new Document({
-      sections: [{ properties:{ page:{ size:A4, margin:{ top:M, bottom:M, left:M, right:M } } }, children: lines }]
-    });
-
-    const blob = await Packer.toBlob(doc);
-    const url  = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "cover-letter.docx"; a.click();
-    URL.revokeObjectURL(url);
+      const blob = await Packer.toBlob(doc);
+      const url  = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "cover-letter.docx"; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      window.showUpgradeBanner?.(err.message || "DOCX export failed.");
+    }
   }
 
-  /* ---------- Wizard (robust) ---------- */
+  /* ---------- Wizard (as before) ---------- */
   function initWizard() {
     const steps = Array.from(document.querySelectorAll(".rb-step"));
     const back  = document.getElementById("rb-back");
