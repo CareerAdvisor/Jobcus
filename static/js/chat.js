@@ -95,15 +95,42 @@ function scrollToBottom() {
 // Minimal helpers your old code referenced
 function showUpgradeBanner(msg) {
   let b = document.getElementById("upgradeBanner");
+  const pricingUrl = (window.PRICING_URL || "/pricing");
+
+  const esc = (t) => (typeof window.escapeHtml === "function" ? window.escapeHtml(String(t || "")) : String(t || ""));
+
   if (!b) {
     b = document.createElement("div");
     b.id = "upgradeBanner";
-    b.style.cssText = "background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:10px 12px;border-radius:6px;margin:8px 0;font-size:14px;";
+    b.setAttribute("role", "alert");
+    b.setAttribute("aria-live", "polite");
+    b.style.cssText = [
+      "background:#fff3cd", "color:#856404", "border:1px solid #ffeeba",
+      "padding:10px 12px", "border-radius:6px", "margin:8px 0",
+      "font-size:14px", "display:flex", "align-items:center",
+      "gap:12px", "flex-wrap:wrap"
+    ].join(";");
     const box = document.querySelector(".chat-main") || document.body;
     box.insertBefore(b, box.firstChild);
   }
-  b.textContent = msg || "You’ve reached your plan limit.";
+
+  b.innerHTML = `
+    <span>${esc(msg || "You’ve reached your plan limit for chat. Upgrade to continue.")}</span>
+    <span style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="${pricingUrl}" class="btn-upgrade-link" style="text-decoration:underline;white-space:nowrap;">View pricing →</a>
+      <button type="button" id="upgradeNotNowBtn" style="background:transparent;border:none;color:#856404;text-decoration:underline;cursor:pointer;white-space:nowrap;">Not now</button>
+    </span>
+  `;
+
+  // Dismiss banner (no redirect) — chat remains paused (composer disabled)
+  b.querySelector("#upgradeNotNowBtn")?.addEventListener("click", () => {
+    b.remove();
+    try { sessionStorage.setItem("jobcus:chat:upgradeBannerDismissed", "1"); } catch {}
+  });
+
+  try { b.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
 }
+
 function disableComposer(disabled) {
   const input = document.getElementById("userInput");
   const sendBtn = document.getElementById("sendButton");
@@ -178,7 +205,7 @@ function renderFeatureSuggestions(intent, intoEl) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// NEW — chat-only plan-limit detector that uses the global upgrade UI
+// NEW — chat-only plan-limit detector that shows banner (no redirect)
 // ──────────────────────────────────────────────────────────────
 function handleChatLimitError(err) {
   // apiFetch throws: "Request failed <status>: <body>"
@@ -189,15 +216,14 @@ function handleChatLimitError(err) {
     /quota_exceeded/.test(msg);
 
   if (isLimit) {
-    const copy = "You’ve reached your plan limit. Upgrade to continue.";
-    // Uses the same site-wide prompt used by analyzer/builder (defined in base.js)
-    if (typeof window.upgradePrompt === "function") {
-      window.upgradePrompt(copy, (window.PRICING_URL || "/pricing"), 1200);
-    } else if (typeof window.showUpgradeBanner === "function") {
-      // Fallback: sticky banner only
+    const copy = "You’ve reached your plan limit for chat. Upgrade to continue.";
+    // ✅ Banner only, no modal, no auto-redirect
+    if (typeof window.showUpgradeBanner === "function") {
       window.showUpgradeBanner(copy);
-      setTimeout(() => { window.location.href = (window.PRICING_URL || "/pricing"); }, 1200);
     }
+    // Pause the composer so it's obvious chat is out of credits
+    disableComposer?.(true);
+
     // Mark so our catch block can short-circuit generic error UI
     err.kind = "limit";
     err.message = copy;
@@ -960,7 +986,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       hideAIStatus();  // ✅ ensure status bar is removed on error
 
-      // NEW — show the same upgrade modal/banner + gentle redirect (chat only)
+      // NEW — show the banner and stay on page (no redirect)
       if (handleChatLimitError(err)) {
         aiBlock.innerHTML = ""; // suppress raw JSON message
         scrollToBottom();
@@ -979,7 +1005,10 @@ document.addEventListener("DOMContentLoaded", () => {
       maybeShowScrollIcon();
       return;
     } finally {
-      disableComposer(false);
+      // If we did NOT hit limit, re-enable composer; if limit, it's already disabled
+      if (!document.getElementById("upgradeBanner")) {
+        disableComposer(false);
+      }
       input?.focus();
     }
 
