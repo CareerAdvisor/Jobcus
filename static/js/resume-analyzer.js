@@ -9,6 +9,50 @@
   };
 })();
 
+/* ======================= Upgrade Modal (no-redirect) ======================= */
+function showUpgradeModal(message) {
+  try { document.getElementById("upgrade-modal-overlay")?.remove(); } catch {}
+  const overlay = document.createElement("div");
+  overlay.id = "upgrade-modal-overlay";
+  overlay.style.cssText = [
+    "position:fixed","inset:0","z-index:2147483647",
+    "background:rgba(0,0,0,.45)","display:flex",
+    "align-items:center","justify-content:center","padding:24px"
+  ].join(";");
+
+  const card = document.createElement("div");
+  card.setAttribute("role", "alertdialog");
+  card.setAttribute("aria-modal", "true");
+  card.style.cssText = [
+    "max-width:520px","width:100%","background:#fff","border-radius:12px",
+    "box-shadow:0 12px 40px rgba(0,0,0,.25)","padding:20px","border:1px solid #e5e7eb",
+    "font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+  ].join(";");
+
+  const msgHtml = (message || "You’ve reached your plan limit. Upgrade to continue.").toString();
+  const url = (window.PRICING_URL || (document.querySelector('a[href$="pricing.html"], a[href*="/pricing"]')?.getAttribute("href") || "/pricing.html"));
+
+  card.innerHTML = `
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <h3 style="margin:0 0 8px;font-size:18px;font-weight:700;color:#111827">Upgrade required</h3>
+        <div style="color:#374151;">${msgHtml.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+      <a href="${url}" class="btn-upgrade" style="padding:8px 14px;border-radius:8px;background:#111827;color:#fff;text-decoration:none;font-weight:600">Upgrade</a>
+      <button type="button" id="upgrade-modal-dismiss" style="padding:8px 14px;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#111827;">Not now</button>
+    </div>
+  `;
+
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+  card.querySelector("#upgrade-modal-dismiss")?.addEventListener("click", () => overlay.remove());
+
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  if (!window.showUpgradeBanner) window.showUpgradeBanner = (m) => showUpgradeModal(m);
+}
+
 /* ------------------------------------------------------------------
    Make the AI endpoint and helpers available to resume-analyzer-extras.js
    (ported from your inline <script> block; idempotent)
@@ -87,7 +131,7 @@
           const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
           const msg  = data?.message || "You’ve reached your plan limit for this feature.";
           const html = data?.message_html || `${msg} <a href="${url}">Upgrade now →</a>`;
-          window.upgradePrompt(html, url, 1200);
+          showUpgradeModal(html, url, 1200);
           return;
         }
         if (resp.status === 401) {
@@ -288,8 +332,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (res.status === 402) {
           const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
           const msg  = data?.message || "You’ve reached your plan limit for this feature.";
-          const html = data?.message_html || `${msg} <a href="${url}">Upgrade now →</a>`;
-          window.upgradePrompt(html, url, 1200);
+          const html = data?.message_html || `${msg
+      try { showUpgradeModal(msgHtml || (typeof msg !== "undefined" ? msg : "You’ve reached your plan limit. Upgrade to continue.")); } catch(_) { showUpgradeModal("You’ve reached your plan limit. <a href=\"" + (window.PRICING_URL||"/pricing.html") + "\">Upgrade →</a>"); }
+      return;} <a href="${url}">Upgrade now →</a>`;
+          showUpgradeModal(html, url, 1200);
           return;
         }
 
@@ -390,8 +436,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (res.status === 402) {
           const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
           const msg  = data?.message || "You’ve reached your plan limit for this feature.";
-          const html = data?.message_html || `${msg} <a href="${url}">Upgrade now →</a>`;
-          window.upgradePrompt(html, url, 1200);
+          const html = data?.message_html || `${msg
+      try { showUpgradeModal(msgHtml || (typeof msg !== "undefined" ? msg : "You’ve reached your plan limit. Upgrade to continue.")); } catch(_) { showUpgradeModal("You’ve reached your plan limit. <a href=\"" + (window.PRICING_URL||"/pricing.html") + "\">Upgrade →</a>"); }
+      return;} <a href="${url}">Upgrade now →</a>`;
+          showUpgradeModal(html, url, 1200);
           return;
         }
 
