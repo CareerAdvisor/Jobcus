@@ -9,7 +9,14 @@
     return _fetch(input, init);
   };
 
-  const PRICING_URL = (window.PRICING_URL || "/pricing");
+  // Resolve pricing URL robustly (supports /pricing.html or /pricing)
+  const PRICING_URL = (() => {
+    if (window.PRICING_URL) return window.PRICING_URL;
+    const a = document.querySelector(
+      'a[href$="pricing.html"], a[href="/pricing"], a[href*="/pricing"]'
+    );
+    return a?.getAttribute("href") || "/pricing.html";
+  })();
 
   /* ---------- tiny utils ---------- */
   const escapeHtml = (s = "") =>
@@ -449,83 +456,89 @@
       return;
     }
   
-    // Try the server route first; if it responds with 402/limits, handleCommonErrors shows the banner
+    // Try the server endpoint first (format: "docx" on /build-cover-letter)
     try {
-      const res = await fetch("/build-cover-letter-docx", {
+      const res = await fetch("/build-cover-letter", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/json"
         },
-        body: JSON.stringify({ letter_only: true, ...ctx })
+        body: JSON.stringify({ format: "docx", letter_only: true, ...ctx })
       });
   
-      // 404 means route not present → we’ll fall back to client-side; other errors show the upgrade/limit banner
-      if (res.status === 404) throw new Error("route_404");
-      if (!res.ok) await handleCommonErrors(res);
+      if (!res.ok) await handleCommonErrors(res); // will banner on limits/upgrade
   
-      const blob = await res.blob();
+      const ct = (res.headers.get("content-type") || "").toLowerCase();
+      if (ct.includes("application/vnd.openxmlformats-officedocument.wordprocessingml.document")) {
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "cover-letter.docx"; a.click();
+        URL.revokeObjectURL(url);
+        return;
+      }
+      // otherwise fall through to client-side fallback
+    } catch (err) {
+      // If handleCommonErrors already surfaced a limit/auth message, stop here.
+      if (err && /Upgrade required|Rate limited|401|403/i.test(String(err.message||""))) return;
+    }
+  
+    // Client-side fallback using docx
+    try {
+      await ensureDocxBundle();
+      const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
+  
+      const lines = [];
+      const body = (ctx.cover_body || "").split("\n");
+      const sender = ctx.sender || {};
+      const recipient = ctx.recipient || {};
+  
+      const A4 = { width: 11906, height: 16838 }; // twips
+      const M  = 1020;                             // ~18mm margins
+      const LINE = 276;                            // ~1.5 line height
+      const NORMAL = { size: 24, font: "Arial" };  // 12pt
+      const NAME   = { size: 64, font: "Arial", bold: true };
+  
+      const P = (text, {align="LEFT", run=NORMAL, after=120}={}) =>
+        new Paragraph({
+          alignment: AlignmentType[align],
+          spacing: { line: LINE, after },
+          children: [ new TextRun(Object.assign({ text }, run)) ],
+        });
+  
+      if (ctx.name) lines.push(P(ctx.name, { align:"CENTER", run: NAME, after: 80 }));
+      const contact = [sender.address1, sender.city, sender.postcode].filter(Boolean).join(", ");
+      if (contact)  lines.push(P(contact, { align:"CENTER" }));
+      const reach = [sender.email, sender.phone].filter(Boolean).join(" | ");
+      if (reach)   lines.push(P(reach, { align:"CENTER", after: 160 }));
+  
+      if (sender.date) lines.push(P(sender.date));
+      const recLines = [
+        recipient.name, recipient.company, recipient.address1,
+        [recipient.city, recipient.postcode].filter(Boolean).join(", ")
+      ].filter(Boolean);
+      recLines.forEach(l => lines.push(P(l)));
+      lines.push(P("", { after: 80 }));
+  
+      lines.push(P(`Dear ${recipient.name || "Hiring Manager"},`));
+      body.forEach(p => lines.push(P(p || "")));
+      lines.push(P(""));
+      lines.push(P("Yours sincerely,"));
+      lines.push(P(ctx.name || "", { after: 0 }));
+  
+      const doc = new Document({
+        sections: [{ properties:{ page:{ size:A4, margin:{ top:M, bottom:M, left:M, right:M } } }, children: lines }]
+      });
+  
+      const blob = await Packer.toBlob(doc);
       const url  = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url; a.download = "cover-letter.docx"; a.click();
       URL.revokeObjectURL(url);
-      return;
     } catch (err) {
-      // If the route is missing or something else failed, surface the message
-      if (err?.message !== "route_404") {
-        window.showUpgradeBanner?.(err.message || "Download failed.");
-        return;
-      }
+      window.showUpgradeBanner?.(err.message || "DOCX download failed.");
     }
-    const { Document, Packer, Paragraph, TextRun, AlignmentType } = window.docx;
-
-    const lines = [];
-    const body = (ctx.cover_body || "").split("\n");
-    const sender = ctx.sender || {};
-    const recipient = ctx.recipient || {};
-
-    const A4 = { width: 11906, height: 16838 }; // twips
-    const M  = 1020;                             // ~18mm margins
-    const LINE = 276;                            // ~1.5 line height
-    const NORMAL = { size: 24, font: "Arial" };  // 12pt
-    const NAME   = { size: 64, font: "Arial", bold: true };
-
-    const P = (text, {align="LEFT", run=NORMAL, after=120}={}) =>
-      new Paragraph({
-        alignment: AlignmentType[align],
-        spacing: { line: LINE, after },
-        children: [ new TextRun(Object.assign({ text }, run)) ],
-      });
-
-    if (ctx.name) lines.push(P(ctx.name, { align:"CENTER", run: NAME, after: 80 }));
-    const contact = [sender.address1, sender.city, sender.postcode].filter(Boolean).join(", ");
-    if (contact)  lines.push(P(contact, { align:"CENTER" }));
-    const reach = [sender.email, sender.phone].filter(Boolean).join(" | ");
-    if (reach)   lines.push(P(reach, { align:"CENTER", after: 160 }));
-
-    if (sender.date) lines.push(P(sender.date));
-    const recLines = [
-      recipient.name, recipient.company, recipient.address1,
-      [recipient.city, recipient.postcode].filter(Boolean).join(", ")
-    ].filter(Boolean);
-    recLines.forEach(l => lines.push(P(l)));
-    lines.push(P("", { after: 80 }));
-
-    lines.push(P(`Dear ${recipient.name || "Hiring Manager"},`));
-    body.forEach(p => lines.push(P(p || "")));
-    lines.push(P(""));
-    lines.push(P("Yours sincerely,"));
-    lines.push(P(ctx.name || "", { after: 0 }));
-
-    const doc = new Document({
-      sections: [{ properties:{ page:{ size:A4, margin:{ top:M, bottom:M, left:M, right:M } } }, children: lines }]
-    });
-
-    const blob = await Packer.toBlob(doc);
-    const url  = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "cover-letter.docx"; a.click();
-    URL.revokeObjectURL(url);
   }
 
   /* ---------- Wizard (robust) ---------- */
