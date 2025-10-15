@@ -1,305 +1,474 @@
 // /static/js/resume-analyzer.js
-(function () {
-  "use strict";
 
-  /* =================== Always send cookies (SameSite=Lax) =================== */
+// Keep cookies for SameSite/Lax on all fetches
+(function(){
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
     if (!("credentials" in init)) init.credentials = "same-origin";
     return _fetch(input, init);
   };
+})();
 
-  /* ======================== Pricing URL (robust) ======================== */
-  const PRICING_URL = (() => {
-    if (window.PRICING_URL) return window.PRICING_URL;
-    const a = document.querySelector('a[href$="pricing.html"], a[href="/pricing"], a[href*="/pricing"]');
-    return a?.getAttribute("href") || "/pricing.html";
-  })();
+/* ------------------------------------------------------------------
+   Make the AI endpoint and helpers available to resume-analyzer-extras.js
+   (ported from your inline <script> block; idempotent)
+-------------------------------------------------------------------*/
+(function(){
+  // Endpoint used by AI Helper / Resume analysis tabs
+  if (!window.AI_ENDPOINT) window.AI_ENDPOINT = "/api/ai-helper";
 
-  /* ================= Upgrade Modal (pop-up, no redirects) ================= */
-  function showUpgradeModal(message) {
-    // remove any existing first
-    try { document.getElementById("upgrade-modal-overlay")?.remove(); } catch {}
-
-    const overlay = document.createElement("div");
-    overlay.id = "upgrade-modal-overlay";
-    overlay.style.cssText = [
-      "position:fixed","inset:0","z-index:2147483647",
-      "background:rgba(0,0,0,.45)","display:flex",
-      "align-items:center","justify-content:center","padding:24px"
-    ].join(";");
-
-    const card = document.createElement("div");
-    card.setAttribute("role", "alertdialog");
-    card.setAttribute("aria-modal", "true");
-    card.style.cssText = [
-      "max-width:520px","width:100%","background:#fff","border-radius:12px",
-      "box-shadow:0 12px 40px rgba(0,0,0,.25)","padding:20px","border:1px solid #e5e7eb",
-      "font:14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
-    ].join(";");
-
-    const msgHtml = (message || "You’ve reached your plan limit. Upgrade to continue.").toString();
-    const url = PRICING_URL;
-
-    card.innerHTML = `
-      <div style="display:flex;gap:12px;align-items:flex-start;">
-        <div style="flex:1;min-width:0;">
-          <h3 style="margin:0 0 8px;font-size:18px;font-weight:700;color:#111827">Upgrade required</h3>
-          <div style="color:#374151;">${String(msgHtml).replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
-        <a href="${url}" class="btn-upgrade" style="padding:8px 14px;border-radius:8px;background:#111827;color:#fff;text-decoration:none;font-weight:600">Upgrade</a>
-        <button type="button" id="upgrade-modal-dismiss" style="padding:8px 14px;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#111827;">Not now</button>
-      </div>
-    `;
-
-    overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
-    card.querySelector("#upgrade-modal-dismiss")?.addEventListener("click", () => overlay.remove());
-
-    overlay.appendChild(card);
-    document.body.appendChild(overlay);
-
-    // keep compatibility with any legacy calls
-    if (!window.showUpgradeBanner) window.showUpgradeBanner = (m) => showUpgradeModal(m);
+  // Minimal escapeHtml (same contract as in resume-builder.js)
+  if (typeof window.escapeHtml !== "function") {
+    window.escapeHtml = (s = "") =>
+      s.replace(/&/g,"&amp;")
+       .replace(/</g,"&lt;")
+       .replace(/>/g,"&gt;")
+       .replace(/"/g,"&quot;")
+       .replace(/'/g,"&#39;");
   }
 
-  // ensure the modal never blocks picking files
-  function __ensureNoModalBeforePicking() {
-    try { document.getElementById("upgrade-modal-overlay")?.remove(); } catch {}
+  // Centralized response handling (ported from resume-builder.js)
+  if (typeof window.handleCommonErrors !== "function") {
+    window.handleCommonErrors = async function(res){
+      if (res.ok) return null;
+      const ct = res.headers.get("content-type") || "";
+      let body = null;
+      try {
+        body = ct.includes("application/json") ? await res.json()
+                                               : { message: await res.text() };
+      } catch {}
+
+      if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
+        const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
+        window.upgradePrompt?.(body?.message_html || msg, (window.PRICING_URL || "/pricing"), 1200);
+        throw new Error(msg);
+      }
+      if (res.status === 401 || res.status === 403) {
+        const msg = body?.message || "Please sign in to continue.";
+        window.showUpgradeBanner?.(msg);
+        setTimeout(() => { window.location.href = "/account?mode=login"; }, 800);
+        throw new Error(msg);
+      }
+      if (res.status === 429 && (body?.error === "too_many_free_accounts" || body?.error === "device_limit")) {
+        const msg = body?.message || "Too many free accounts detected from your network/device.";
+        window.showUpgradeBanner?.(msg);
+        throw new Error(msg);
+      }
+      const msg = body?.message || `Request failed (${res.status})`;
+      throw new Error(msg);
+    };
   }
+})();
 
-  /* ============================ Small helpers ============================ */
-  const escapeHtml = (s = "") =>
-    String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
+/* ---------- QUICK FORM-DATA FLOW (optional page variant) ---------- */
+/* Binds to:
+ *   - Button:  #analyzeBtn
+ *   - Form:    #resumeForm (contains file/text fields)
+ * Calls /api/resume-analysis with FormData and guards 401.
+ */
+(function(){
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  if (!analyzeBtn) return;
 
-  function formatSize(bytes) {
-    if (!Number.isFinite(bytes)) return "";
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  analyzeBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    const form = document.getElementById('resumeForm'); // adjust to your form id if different
+    if (!form) { console.error('resumeForm not found'); return; }
+    const formData = new FormData(form);
+
+    try {
+      const resp = await fetch('/api/resume-analysis', { method: 'POST', body: formData });
+      const text = await resp.text();
+      let data = null; try { data = JSON.parse(text); } catch {}
+
+      if (!resp.ok) {
+        if (resp.status === 402) {
+          const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
+          const msg  = data?.message || "You’ve reached your plan limit for this feature.";
+          const html = data?.message_html || `${msg} <a href="${url}">Upgrade now →</a>`;
+          window.upgradePrompt(html, url, 1200);
+          return;
+        }
+        if (resp.status === 401) {
+          window.location = '/account?next=' + encodeURIComponent(location.pathname);
+          return;
+        }
+        console.error('resume-analysis failed', resp.status, text);
+        window.showUpgradeBanner?.(data?.message || data?.error || "Resume analysis failed.");
+        return;
+      }
+
+      const result = data || {};
+      try {
+        // Expect a page-defined renderer
+        renderAnalysis?.(result);
+      } catch (err) {
+        console.error('renderAnalysis failed or missing:', err);
+      }
+    } catch (err) {
+      console.error(err);
+      window.showUpgradeBanner?.("Resume analysis failed.");
+    }
+  });
+})();
+
+/* ---------- Role <datalist> loader with small cache ---------- */
+async function initRoleDatalist() {
+  const input = document.getElementById("dashRoleSelect");
+  const dl    = document.getElementById("roleList");
+  if (!input || !dl) return;
+
+  try {
+    const cached = sessionStorage.getItem("jobcus:roles");
+    let roles;
+    if (cached) {
+      roles = JSON.parse(cached);
+    } else {
+      const res = await fetch("/static/data/roles.json", { credentials: "same-origin" });
+      roles = await res.json();
+      sessionStorage.setItem("jobcus:roles", JSON.stringify(roles));
+    }
+
+    const seen = new Set();
+    roles
+      .filter(r => r && typeof r === "string")
+      .map(r => r.trim())
+      .filter(r => r && !seen.has(r) && seen.add(r))
+      .sort((a,b) => a.localeCompare(b))
+      .forEach(role => {
+        const opt = document.createElement("option");
+        opt.value = role;
+        dl.appendChild(opt);
+      });
+  } catch (e) {
+    console.warn("Could not load roles.json; using a small fallback list.", e);
+    [
+      "Business Analyst","Azure Architect","Animator",
+      "IT Support Specialist","Systems Administrator","Network Engineer",
+      "Product Manager","Software Engineer","Project Manager","UI/UX Designer",
+      "QA Engineer","Data Analyst","Data Scientist","DevOps Engineer"
+    ].forEach(role => {
+      const opt = document.createElement("option");
+      opt.value = role;
+      dl.appendChild(opt);
+    });
   }
+}
+document.addEventListener("DOMContentLoaded", initRoleDatalist);
 
-  async function fileToBase64(file) {
+/* ----------------------------- Main logic ----------------------------- */
+document.addEventListener("DOMContentLoaded", () => {
+  // ---------- shared helpers ----------
+  function fileToBase64(file){
     return new Promise((resolve, reject) => {
       const fr = new FileReader();
-      fr.onload = () => resolve(String(fr.result).split(",")[1]);
+      fr.onload  = () => {
+        const s = String(fr.result || "");
+        const idx = s.indexOf(",");
+        resolve(idx >= 0 ? s.slice(idx+1) : s);
+      };
       fr.onerror = reject;
       fr.readAsDataURL(file);
     });
   }
-
-  async function handleCommonErrors(res) {
-    if (res.ok) return null;
-    const ct = (res.headers?.get?.("content-type") || "").toLowerCase();
-    let js=null, tx="";
-    try { if (ct.includes("application/json")) js = await res.json(); else tx = await res.text(); } catch {}
-    const msg = (js?.message || js?.error || tx || `Request failed (${res.status})`);
-
-    // Upgrade / quota → modal (no redirect)
-    if (res.status === 402 || js?.error === "upgrade_required" || js?.error === "quota_exceeded") {
-      const url  = js?.pricing_url || PRICING_URL;
-      const html = js?.message_html || `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`;
-      showUpgradeModal(html);
-      throw new Error(js?.message || "Upgrade required");
+  function formatSize(b){ return b<1024?`${b} B`:b<1048576?`${(b/1024).toFixed(1)} KB`:`${(b/1048576).toFixed(1)} MB`; }
+  function incCount(){
+    const n = parseInt(localStorage.getItem("analysisCount")||"0",10) + 1;
+    localStorage.setItem("analysisCount", String(n));
+  }
+  function showInlineBanner(container, msg, kind="warn"){
+    if (!container) { alert(msg); return; }
+    let b = container.querySelector(".inline-banner");
+    if (!b) {
+      b = document.createElement("div");
+      b.className = "inline-banner";
+      b.style.cssText = "margin-top:10px;padding:10px 12px;border-radius:6px;font-size:14px;";
+      container.appendChild(b);
     }
-    // Auth → modal (no redirect)
-    if (res.status === 401 || res.status === 403) {
-      showUpgradeModal(js?.message || "Please log in to use this feature.");
-      throw new Error(js?.message || "Auth required");
-    }
-    // Abuse / rate
-    if (res.status === 429) {
-      showUpgradeModal(js?.message || "You are rate limited right now.");
-      throw new Error(js?.message || "Rate limited");
-    }
-    // Generic
-    throw new Error(msg);
+    b.style.background = kind === "error" ? "#fdecea" : "#fff3cd";
+    b.style.color      = kind === "error" ? "#611a15" : "#856404";
+    b.style.border     = kind === "error" ? "1px solid #f5c2c7" : "1px solid #ffeeba";
+    b.textContent = msg;
+  }
+  // mirror the chat page UX text when limits hit
+  function showUpgradeBanner(msg, container){
+    showInlineBanner(container || document.querySelector(".upload-card"), msg || "You have reached the limit for the free version, upgrade to enjoy more features");
+  }
+  function isDocx(file){
+    return file && (
+      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      /\.docx$/i.test(file.name || "")
+    );
+  }
+  function isPdf(file){
+    return file && (file.type === "application/pdf" || /\.pdf$/i.test(file.name || ""));
+  }
+  async function parseJsonSafe(res, text){
+    try { return JSON.parse(text); } catch { return null; }
   }
 
-  /* ============================ Main wiring ============================= */
-  document.addEventListener("DOMContentLoaded", () => {
-    // Elements (support multiple common IDs/classes)
-    const dropzone   = document.getElementById("raDropzone")
-                    || document.querySelector(".ra-dropzone, #dropzone, #resumeDrop, .resume-dropzone");
-    const fileInput  = document.getElementById("raFile")
-                    || document.querySelector('input[type="file"][name="resume"], #resumeFile, #file, input[type="file"]');
-    const pickBtn    = document.getElementById("raPickBtn")
-                    || document.querySelector('[data-action="pick-resume"], .pick-resume-btn, #attachResume');
-    const fileNameEl = document.getElementById("raFileName")
-                    || document.querySelector("#fileName, .file-name, [data-role='file-name']");
-    const analyzeBtn = document.getElementById("raAnalyzeBtn")
-                    || document.querySelector("#analyzeBtn, #analyze, .analyze-btn");
-    const analyzingEl = document.getElementById("raAnalyzing")
-                    || document.querySelector("#analyzing, .analyzing");
-    const jobDescEl  = document.getElementById("raJobDesc")
-                    || document.querySelector("#dashJobDesc, #jobDesc, textarea[name='job_description']");
-    const roleEl     = document.getElementById("raRoleSelect")
-                    || document.querySelector("#dashRoleSelect, #role, input[name='role']");
+  function enableNoCopyNoShot(el){
+    if (!el) return;
+    const kill = e => { e.preventDefault(); e.stopPropagation(); };
+    el.addEventListener("copy", kill);
+    el.addEventListener("cut", kill);
+    el.addEventListener("dragstart", kill);
+    el.addEventListener("contextmenu", kill);
+    el.addEventListener("selectstart", kill);
+    document.addEventListener("keydown", (e) => {
+      const k = (e.key || "").toLowerCase();
+      if ((e.ctrlKey||e.metaKey) && ["c","x","s","p"].includes(k)) return kill(e);
+      if (k === "printscreen") return kill(e);
+    });
+  }
 
-    // Route legacy helpers to modal (kills old redirects)
-    window.upgradePrompt = function (msgHtml) { try { showUpgradeModal(msgHtml); } catch { alert("Upgrade required."); } };
-    if (!window.showUpgradeBanner) window.showUpgradeBanner = (m) => showUpgradeModal(m);
+  // =========================================================
+  // A) Dashboard-style uploader (preferred)
+  // =========================================================
+  const dashAnalyzeBtn = document.getElementById("dashAnalyzeBtn");
+  if (dashAnalyzeBtn) {
+    const dropzone    = document.getElementById("dropzone");
+    const fileInput   = document.getElementById("dashResumeFile");
+    const fileNameEl  = document.getElementById("fileName");
+    const jdInput     = document.getElementById("dashJobDesc");
+    const roleSelect  = document.getElementById("dashRoleSelect");
+    const analyzingEl = document.getElementById("dashAnalyzing");
 
-    if (fileInput) {
-      fileInput.setAttribute(
-        "accept",
-        ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      );
-    }
-
-    function showFileName(f) {
+    function showFileName(f){
       if (!fileNameEl) return;
       fileNameEl.textContent = f ? `Selected: ${f.name} (${formatSize(f.size)})` : "";
     }
 
-    function onPicked() {
-      const f = fileInput?.files?.[0];
-      showFileName(f || null);
-      if (analyzeBtn) analyzeBtn.disabled = !f;
-    }
-
-    function openPicker() {
-      __ensureNoModalBeforePicking();
-      try { fileInput?.click(); } catch {}
-    }
-
-    // Click, keyboard
-    pickBtn?.addEventListener("click", (e) => { e.preventDefault(); openPicker(); });
-    dropzone?.addEventListener("click", (e) => {
-      if (e.currentTarget === e.target) { e.preventDefault(); openPicker(); }
+    // dropzone behavior
+    function openPicker(){ fileInput?.click(); }
+    dropzone?.addEventListener("click", openPicker);
+    dropzone?.addEventListener("keydown", (e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openPicker(); }});
+    dropzone?.addEventListener("dragover",(e)=>{ e.preventDefault(); dropzone.classList.add("is-drag"); });
+    dropzone?.addEventListener("dragleave",()=> dropzone.classList.remove("is-drag"));
+    dropzone?.addEventListener("drop",(e)=>{
+      e.preventDefault(); dropzone.classList.remove("is-drag");
+      const f = e.dataTransfer.files?.[0]; if(!f) return;
+      fileInput.files = e.dataTransfer.files; dashAnalyzeBtn.disabled = false; showFileName(f);
     });
-    dropzone?.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openPicker(); }
+    fileInput?.addEventListener("change",()=>{
+      const f = fileInput.files?.[0]; dashAnalyzeBtn.disabled = !f; showFileName(f||null);
     });
 
-    // Drag & drop
-    dropzone?.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("is-drag"); });
-    dropzone?.addEventListener("dragleave", () => dropzone.classList.remove("is-drag"));
-    dropzone?.addEventListener("drop", (e) => {
-      e.preventDefault();
-      dropzone.classList.remove("is-drag");
-      const f = e.dataTransfer?.files?.[0];
-      if (!f || !fileInput) return;
-      try { const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files; }
-      catch { fileInput.files = e.dataTransfer.files; }
-      onPicked();
-    });
+    dashAnalyzeBtn.addEventListener("click", async () => {
+      const f = fileInput.files?.[0]; if(!f) return;
+      const card = dashAnalyzeBtn.closest(".upload-card");
+      analyzingEl && (analyzingEl.style.display = "inline");
+      dashAnalyzeBtn.disabled = true;
 
-    // Native selection
-    fileInput?.addEventListener("change", onPicked);
-
-    // ========== Submit for analysis ==========
-    async function sendForAnalysis(file) {
-      if (!file) throw new Error("No file selected.");
-      if (analyzingEl) analyzingEl.style.display = "inline";
-      if (analyzeBtn) analyzeBtn.disabled = true;
-
-      // Gather optional context
-      const jobDescription = jobDescEl?.value || "";
-      const jobRole        = roleEl?.value || "";
-
-      // Try JSON (base64) first
-      const tryJson = async () => {
-        const b64 = await fileToBase64(file);
-        const body = { jobDescription, jobRole };
-        if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "")) {
-          body.pdf = b64;
-        } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || /\.docx$/i.test(file.name || "")) {
-          body.docx = b64;
-        } else {
-          throw new Error("Unsupported file type. Upload PDF or DOCX.");
+      try {
+        if (!isPdf(f) && !isDocx(f)) {
+          showInlineBanner(card, "Upload a PDF or DOCX file.", "error");
+          return;
         }
 
-        const res = await fetch("/api/resume-analysis", {
-          method: "POST",
-          headers: { "Content-Type":"application/json" },
-          body: JSON.stringify(body),
-          credentials: "same-origin"
-        });
-        await handleCommonErrors(res);
-        return res.json().catch(() => ({}));
-      };
-
-      // Fallback: real multipart upload (server may expect file field)
-      const tryMultipart = async () => {
-        const fd = new FormData();
-        fd.append("file", file, file.name);
-        if (jobDescription) fd.append("jobDescription", jobDescription);
-        if (jobRole)        fd.append("jobRole", jobRole);
-
-        const res = await fetch("/api/resume-analysis", {
-          method: "POST",
-          body: fd,
-          credentials: "same-origin"
-        });
-        await handleCommonErrors(res);
-        return res.json().catch(() => ({}));
-      };
-
-      let data = null;
-      try {
-        data = await tryJson();
-        if (!data || (typeof data !== "object")) throw new Error("Unexpected response.");
-      } catch (e1) {
-        const msg = String(e1?.message || "");
-        if (/unsupported|content[- ]?type|unexpected|415|bad request|invalid/i.test(msg)) {
-          data = await tryMultipart();
-        } else {
-          throw e1;
-        }
-      }
-
-      // Persist + optional notify host page
-      try {
-        const when = new Date().toLocaleString();
-        data = data || {};
-        data.lastAnalyzed = when;
-        localStorage.setItem("resumeAnalysis", JSON.stringify(data));
-
-        const resultObject = {
-          score: Number(data.score || 0),
-          breakdown: {
-            formatting:  data?.breakdown?.formatting ?? null,
-            sections:    data?.breakdown?.sections ?? null,
-            keywords:    data?.breakdown?.keywords ?? null,
-            readability: data?.breakdown?.readability ?? null,
-            length:      data?.breakdown?.length ?? null,
-            parseable:   data?.breakdown?.parseable ?? null
-          },
-          fixes: Array.isArray(data?.analysis?.issues) ? data.analysis.issues : [],
-          lastAnalyzed: when
+        const b64  = await fileToBase64(f);
+        const body = {
+          jobDescription: jdInput?.value || "",
+          jobRole: roleSelect?.value || ""
         };
-        localStorage.setItem("resume_latest", JSON.stringify(resultObject));
-      } catch {}
+        if (isPdf(f)) body.pdf = b64;
+        else if (isDocx(f)) body.docx = b64;
 
-      return data;
-    }
+        // 🔹 MISSING BEFORE — add the fetch + parse
+        const res  = await fetch("/api/resume-analysis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const text = await res.text();
+        let data = null; try { data = JSON.parse(text); } catch {}
 
-    async function onAnalyze() {
-      const f = fileInput?.files?.[0];
-      if (!f) { alert("Please attach a PDF or DOCX resume first."); return; }
-      try {
-        const data = await sendForAnalysis(f);
-        if (window.renderResumeAnalysis) {
-          try { window.renderResumeAnalysis(data); } catch {}
+        // 402 → modal + timed redirect
+        if (res.status === 402) {
+          const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
+          const msg  = data?.message || "You’ve reached your plan limit for this feature.";
+          const html = data?.message_html || `${msg} <a href="${url}">Upgrade now →</a>`;
+          window.upgradePrompt(html, url, 1200);
+          return;
         }
-        try { document.getElementById("resume-score-card")?.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
+
+        // Handle device/IP abuse guard from backend (429)
+        if (res.status === 429) {
+          window.showUpgradeBanner?.(
+            data?.message || 'You have reached the limit for the free version, upgrade to enjoy more features'
+          );
+          showInlineBanner(
+            card,
+            data?.message || 'You have reached the limit for the free version, upgrade to enjoy more features',
+            "warn"
+          );
+          return;
+        }
+
+        // Prefer message over error when failing
+        if (!res.ok) {
+          const msg = (data?.message || data?.error) || "Resume analysis failed. Please try again.";
+          console.error("Resume analysis failed:", text);
+          showInlineBanner(card, msg, "error");
+          return;
+        }
+
+        if (!data) {
+          console.error("Invalid JSON from /api/resume-analysis:", text);
+          showInlineBanner(card, "Unexpected server response.", "error");
+          return;
+        }
+
+        // persist for dashboard + optimize
+        localStorage.setItem("resumeAnalysis", JSON.stringify(data));
+        localStorage.setItem("resumeBase64", b64);
+        localStorage.setItem("resumeKind", isPdf(f) ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+
+        incCount();
+        window.location.href = "/dashboard";
       } catch (err) {
-        console.error("[resume-analyzer] analyze failed:", err);
-        const msg = err?.message || "Analysis failed. Please try again.";
-        try { showUpgradeModal(msg); } catch { alert(msg); }
+        console.error(err);
+        showInlineBanner(dashAnalyzeBtn.closest(".upload-card"), "Analysis failed. Please try again.", "error");
       } finally {
-        if (analyzingEl) analyzingEl.style.display = "none";
-        if (analyzeBtn) analyzeBtn.disabled = false;
+        analyzingEl && (analyzingEl.style.display = "none");
+        dashAnalyzeBtn.disabled = false;
+      }
+    });
+
+    // stop here; we don't want to bind the legacy UI below
+    return;
+  }
+
+  // ===========================================
+  // B) Legacy analyzer UI (still supported)
+  // ===========================================
+  const analyzeBtnLegacy   = document.getElementById("analyze-btn");
+  const resumeText         = document.getElementById("resume-text");
+  const resumeFile         = document.getElementById("resumeFile");
+  const analyzingIndicator = document.getElementById("analyzingIndicator");
+  const resultsWrap        = document.getElementById("analysisResults");
+  const resultsSummary     = document.getElementById("analysisSummary");
+
+  if (analyzeBtnLegacy) {
+    async function sendAnalysis(file) {
+      let payload, carriedText = "";
+
+      if (!file && resumeText?.value?.trim()) {
+        carriedText = resumeText.value.trim();
+        payload = { text: carriedText };
+      } else if (file) {
+        if (!isPdf(file) && !isDocx(file)) { alert("Unsupported type. Upload PDF or DOCX."); return; }
+        const b64 = await fileToBase64(file);
+        localStorage.setItem("resumeBase64", b64);
+        payload = isPdf(file) ? { pdf: b64 } : { docx: b64 };
+      } else {
+        alert("Paste text or upload a file.");
+        return;
+      }
+
+      analyzingIndicator && (analyzingIndicator.style.display = "block");
+      resultsWrap && (resultsWrap.style.display = "none");
+
+      try {
+        const res = await fetch("/api/resume-analysis", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(payload)
+        });
+
+        const text = await res.text();
+        let data   = await parseJsonSafe(res, text);
+
+        if (res.status === 401 || res.status === 403) {
+          alert("Please sign in to analyze resumes.");
+          window.location.href = "/account?mode=login";
+          return;
+        }
+
+        // 402 → show modal + timed redirect
+        if (res.status === 402) {
+          const url  = data?.pricing_url || (window.PRICING_URL || "/pricing");
+          const msg  = data?.message || "You’ve reached your plan limit for this feature.";
+          const html = data?.message_html || `${msg} <a href="${url}">Upgrade now →</a>`;
+          window.upgradePrompt(html, url, 1200);
+          return;
+        }
+
+        if (res.status === 429 && (data?.error === "too_many_free_accounts" || data?.error === "quota_exceeded")) {
+          alert("You have reached the limit for the free version, upgrade to enjoy more features");
+          return;
+        }
+        if (!res.ok) {
+          const msg = (data?.message || data?.error) || "Analysis failed. Try again.";
+          console.error("Resume analysis failed:", text);
+          alert(msg);
+          return;
+        }
+        if (!data) { console.error(text); alert("Unexpected server response."); return; }
+
+        // basic summary on-page
+        const score = typeof data.score === "number" ? data.score : "—";
+        const issues = (data.analysis?.issues || []).slice(0,5).map(i => `<li>${i}</li>`).join("");
+        const strengths = (data.analysis?.strengths || []).slice(0,5).map(s => `<li>${s}</li>`).join("");
+        const suggestions = (data.suggestions || []).slice(0,5).map(s => `<li>${s}</li>`).join("");
+
+        resultsSummary && (resultsSummary.innerHTML = `
+          <div><strong>Score:</strong> ${score}/100</div>
+          ${issues ? `<div style="margin-top:8px;"><strong>Issues</strong><ul>${issues}</ul></div>` : ""}
+          ${strengths ? `<div style="margin-top:8px;"><strong>Strengths</strong><ul>${strengths}</ul></div>` : ""}
+          ${suggestions ? `<div style="margin-top:8px;"><strong>Suggestions</strong><ul>${suggestions}</ul></div>` : ""}
+        `);
+        resultsWrap && (resultsWrap.style.display = "block");
+
+        if (carriedText) localStorage.setItem("resumeTextRaw", carriedText);
+        incCount();
+      } catch (err) {
+        console.error("Analyzer error:", err);
+        alert("Analysis failed. Try again.");
+      } finally {
+        analyzingIndicator && (analyzingIndicator.style.display = "none");
       }
     }
 
-    analyzeBtn?.addEventListener("click", (e) => { e.preventDefault(); onAnalyze(); });
+    analyzeBtnLegacy.addEventListener("click", () => {
+      const file = resumeFile?.files?.[0] || null;
+      sendAnalysis(file);
+    });
+
+    document.getElementById("rebuildButton")?.addEventListener("click", () => {
+      window.location.href = "/resume-builder";
+    });
+  }
+});
+
+/* --- Cover letter handoff (unchanged logic, hardened) --- */
+(function(){
+  function guessNameFromText(txt="") {
+    const firstLine = (txt.split(/\r?\n/).find(Boolean) || "").trim();
+    if (firstLine && /\b[A-Za-z]+(?:\s+[A-Za-z\.\-']+){1,3}\b/.test(firstLine)) return firstLine;
+    return "";
+  }
+  function toContactLine(){ return ""; }
+
+  const openCLBtn = document.getElementById("openCoverLetter");
+  if (!openCLBtn) return;
+
+  openCLBtn.addEventListener("click", () => {
+    try {
+      const raw = document.getElementById("resume-text")?.value?.trim() || "";
+      let firstName="", lastName="";
+      const fullName = guessNameFromText(raw);
+      if (fullName) {
+        const parts = fullName.split(/\s+/);
+        firstName = parts.shift() || "";
+        lastName  = parts.join(" ");
+      }
+      const seed = { firstName, lastName, contact: toContactLine(raw), role: "", company: "" };
+      localStorage.setItem("coverLetterSeed", JSON.stringify(seed));
+    } catch (e) {
+      console.warn("CL seed not set:", e);
+    }
+    window.location.href = "/cover-letter";
   });
 })();
