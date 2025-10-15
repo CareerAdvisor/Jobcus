@@ -1080,6 +1080,70 @@ document.addEventListener("DOMContentLoaded", () => {
   } catch {}
 })();
 
+// --- AI caveat injector (robust, CSP-safe) ---
+(function () {
+  function buildCaveat(el) {
+    const onceKey = 'ai-caveat-dismissed';
+    if (el.dataset.caveatOnce === '1' && sessionStorage.getItem(onceKey)) return null;
+
+    const text     = el.dataset.caveatText || 'AI-generated responses may contain mistakes.';
+    const href     = el.dataset.caveatLink || '/ai-disclaimer';
+    const inline   = el.dataset.caveatInline === '1';
+    const closable = el.dataset.caveatClosable === '1';
+
+    const box = document.createElement('div');
+    box.className = inline ? 'ai-caveat-inline' : 'ai-caveat-box';
+    box.setAttribute('data-ai-caveat-rendered', '1');
+    box.innerHTML = inline
+      ? `<span class="ai-caveat-dot" aria-hidden="true"></span>${text} <a href="${href}">Learn more</a>`
+      : `<strong>Note:</strong> ${text} <a href="${href}">Learn more</a>`;
+
+    if (closable) {
+      const x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'ai-caveat-close';
+      x.setAttribute('aria-label', 'Dismiss');
+      x.textContent = '×';
+      x.addEventListener('click', () => {
+        box.remove();
+        if (el.dataset.caveatOnce === '1') sessionStorage.setItem(onceKey, '1');
+      });
+      box.appendChild(x);
+    }
+    return box;
+  }
+
+  function injectAICaveat() {
+    const el = document.getElementById('inputContainer');
+    if (!el || !el.dataset.aiCaveat) return;
+
+    // Avoid duplicates
+    if (el.nextElementSibling && el.nextElementSibling.matches('[data-ai-caveat-rendered]')) return;
+
+    const box = buildCaveat(el);
+    if (!box) return;
+
+    // Place it directly under the input container, inside the same form
+    el.insertAdjacentElement('afterend', box);
+  }
+
+  // Try on DOM ready…
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectAICaveat);
+  } else {
+    injectAICaveat();
+  }
+
+  // …and also observe in case the input dock is mounted later
+  const obs = new MutationObserver(() => {
+    if (document.getElementById('inputContainer')) {
+      injectAICaveat();
+      obs.disconnect();
+    }
+  });
+  obs.observe(document.documentElement, { childList: true, subtree: true });
+})();
+
 // ──────────────────────────────────────────────────────────────
 // Optional job suggestions (kept from your original)
 // ──────────────────────────────────────────────────────────────
