@@ -877,14 +877,20 @@ document.addEventListener("DOMContentLoaded", () => {
       autoResize(input);
     }
 
-    const aiBlock = document.createElement("div");
-    aiBlock.className = "chat-entry ai-answer";
+    const suggestRegion = document.createElement("div");
+    suggestRegion.className = "feature-suggest-region";
+    
+    const answerRegion = document.createElement("div");
+    answerRegion.className = "ai-answer-region";
+    
+    aiBlock.appendChild(suggestRegion);
+    aiBlock.appendChild(answerRegion);
     chatbox.appendChild(aiBlock);
 
     const featureIntent = detectFeatureIntent(message);
     if (featureIntent) {
       // keep the inline CTAs so users still have buttons
-      renderFeatureSuggestions(featureIntent, aiBlock);
+      renderFeatureSuggestions(featureIntent, suggestRegion);
 
       // Auto-route when intent is explicit
       const veryStrong = /\b(open|start|take me|go to|launch|use|begin)\b/.test(message.toLowerCase())
@@ -1058,6 +1064,40 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     })();
   });
+
+  function addJobcusNudges(finalReply) {
+    const lower = (finalReply || "").toLowerCase();
+  
+    const NUDGES = [
+      { test: /\bresume\b.*\b(analy[sz]e|score|ats|keyword)s?\b|\banaly[sz]e\b.*\bresume\b/,
+        url:  "https://www.jobcus.com/resume-analyzer",
+        copy: "Tip: You can also analyze your resume with **Jobcus Resume Analyzer** — https://www.jobcus.com/resume-analyzer" },
+      { test: /\b(build|create|write|make)\b.*\bresume\b|\bresume builder\b/,
+        url:  "https://www.jobcus.com/resume-builder",
+        copy: "Tip: Try the **Jobcus Resume Builder** — https://www.jobcus.com/resume-builder" },
+      { test: /\bcover letter|write.*cover.?letter|generate.*cover.?letter\b/,
+        url:  "https://www.jobcus.com/cover-letter",
+        copy: "Tip: Generate one with the **Jobcus Cover Letter tool** — https://www.jobcus.com/cover-letter" },
+      { test: /\b(interview|mock|practice|questions?)\b.*\b(coach|prepare|practice|simulate)\b|\bjeni\b/,
+        url:  "https://www.jobcus.com/interview-coach",
+        copy: "Tip: Practice with **Jeni, the Interview Coach** — https://www.jobcus.com/interview-coach" },
+      { test: /\b(skill gap|gap analysis|what skills|missing skills|upskilling|transition)\b/,
+        url:  "https://www.jobcus.com/skill-gap",
+        copy: "Tip: Run a **Skill Gap analysis** — https://www.jobcus.com/skill-gap" },
+      { test: /\b(employer|recruiter|post(ing)?|job description|jd generator)\b/,
+        url:  "https://www.jobcus.com/employers",
+        copy: "Tip: Create a JD with **Jobcus Employer Tools** — https://www.jobcus.com/employers" }
+    ];
+  
+    const tips = [];
+    for (const n of NUDGES) {
+      if (n.test.test(lower) && !lower.includes(n.url.toLowerCase())) {
+        tips.push(`> ${n.copy}`);
+      }
+    }
+    if (tips.length) finalReply += `\n\n${tips.slice(0,2).join("\n\n")}`;
+    return finalReply;
+  }
 
   const sendBtn = document.getElementById("sendButton");
   sendBtn?.addEventListener("click", () => {
