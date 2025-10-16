@@ -191,7 +191,7 @@
     if (res.status === 402 || (j && (j.error === "upgrade_required" || j.error === "quota_exceeded"))) {
       const url  = j?.pricing_url || PRICING_URL;
       const html = j?.message_html || `You’ve reached your plan limit. <a href="${url}">Upgrade now →</a>`;
-      window.upgradePrompt?.(html, url, 1200);
+      window.upgradePrompt?.(html, url, 0);
       throw new Error(j?.message || "Upgrade required");
     }
     if (res.status === 401 || res.status === 403) {
