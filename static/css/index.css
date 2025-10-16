@@ -292,7 +292,17 @@
 .trust-row { display:flex; align-items:center; gap:16px; flex-wrap:wrap; justify-content:center; }
 .trust-row .rating { font-weight:700; color:#104879; display:flex; gap:8px; align-items:center; }
 .trust-sep { width:1px; height:20px; background:#e5eefc; }
-.trust-logos { display:flex; gap:18px; align-items:center; opacity:.8; }
+.trust-logos {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  align-items: center; justify-content: center;
+  margin-top: 16px;
+}
+.trust-badge {
+  font-size: 14px; color: #104879; background: #f2f7ff;
+  border: 1px solid #dbe8ff; border-radius: 999px;
+  padding: 8px 12px; white-space: nowrap;
+}
+
 .trust-logos img{ height:22px; filter:grayscale(1); opacity:.75 }
 
 .benefits { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:16px 0 0; padding:0; list-style:none; }
