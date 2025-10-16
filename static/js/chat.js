@@ -877,6 +877,9 @@ document.addEventListener("DOMContentLoaded", () => {
       autoResize(input);
     }
 
+    const aiBlock = document.createElement("div");
+    aiBlock.className = "chat-entry ai-answer";
+
     const suggestRegion = document.createElement("div");
     suggestRegion.className = "feature-suggest-region";
     
@@ -912,9 +915,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    renderThinkingPlaceholder(aiBlock, "Thinking…");
+    renderThinkingPlaceholder(answerRegion, "Thinking…");   // note answerRegion
     showAIStatus("Thinking…");
-    scrollToAI(aiBlock);
+    scrollToAI(answerRegion);
     scrollToBottom();
     maybeShowScrollIcon();
 
@@ -956,10 +959,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // replace the thinking bubble with the actual job list
-        aiBlock.innerHTML = "";
-        displayJobs(jobs, aiBlock);
+        answerRegion.innerHTML = "";          // ✅ not aiBlock.innerHTML
+        displayJobs(jobs, answerRegion);
         if (![...(jobs?.remotive||[]), ...(jobs?.adzuna||[]), ...(jobs?.jsearch||[])].length) {
-          aiBlock.insertAdjacentHTML('beforeend',
+          answerRegion.insertAdjacentHTML('beforeend',
             `<p style="margin-top:8px;color:#a00;">No jobs found right now. Try another role or location.</p>`);
         }
         // Save assistant summary to local thread
@@ -988,7 +991,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderHistory(); // <-- update highlight to current
       }
 
-      finalReply = (data && data.reply) ? String(data.reply) : "Sorry, I didn't get a response.";
+      finalReply = addJobcusNudges(finalReply);
     } catch (err) {
       hideAIStatus();  // ✅ ensure status bar is removed on error
 
@@ -1022,7 +1025,8 @@ document.addEventListener("DOMContentLoaded", () => {
     hideAIStatus();
 
     const copyId = `ai-${Date.now()}`;
-    aiBlock.innerHTML = `
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `
       <div id="${copyId}" class="markdown"></div>
       <div class="response-footer">
         <span class="copy-wrapper">
@@ -1032,6 +1036,8 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
       <hr class="response-separator" />
     `;
+    answerRegion.appendChild(wrap);
+    
     const targetDiv = document.getElementById(copyId);
     scrollToBottom();
     maybeShowScrollIcon();
