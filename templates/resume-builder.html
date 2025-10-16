@@ -7,6 +7,52 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resume-builder.css') }}">
+
+{# ── JSON-LD: SoftwareApplication for Resume Builder ── #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Jobcus Resume Builder",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "url": "https://www.jobcus.com/resume-builder",
+  "image": "https://www.jobcus.com/static/images/og/jobcus-og.jpg",
+  "description": "Build an ATS-friendly resume using modern templates, AI bullet suggestions, and instant preview/download.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "url": "https://www.jobcus.com/pricing"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Jobcus",
+    "url": "https://www.jobcus.com",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://www.jobcus.com/static/icons/apple-touch-icon.png"
+    }
+  },
+  "potentialAction": {
+    "@type": "Action",
+    "name": "Build resume",
+    "target": "https://www.jobcus.com/resume-builder"
+  }
+}
+</script>
+
+{# ── JSON-LD: Breadcrumbs ── #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.jobcus.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Resume Builder", "item": "https://www.jobcus.com/resume-builder" }
+  ]
+}
+</script>
 {% endblock %}
 
 {% block content %}
