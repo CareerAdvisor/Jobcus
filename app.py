@@ -7,8 +7,8 @@ from functools import wraps
 from auth_utils import api_login_required, is_staff, is_superadmin, require_superadmin
 
 from flask import (
-    Blueprint, Flask, request, jsonify, render_template, redirect,
-    session, flash, url_for, send_file, current_app, make_response, g
+    Blueprint, Flask, request, jsonify, render_template, redirect, session,
+    flash, url_for, send_file, current_app, Response, make_response, g
 )
 from flask_cors import CORS
 from flask_login import (
@@ -894,6 +894,48 @@ def _get_or_create_stripe_customer(user):
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/robots.txt")
+def robots_txt():
+    body = f"""User-agent: *
+Allow: /
+
+Sitemap: https://www.jobcus.com/sitemap.xml
+"""
+    # If you WANT OpenAI training crawler to read your site, keep this.
+    # If you don't, add: User-agent: GPTBot\nDisallow: /
+    return Response(body, mimetype="text/plain")
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    # canonical list – add/adjust as you ship pages
+    pages = [
+        (url_for("index", _external=True), "weekly"),
+        (url_for("pricing", _external=True), "weekly"),
+        (url_for("dashboard", _external=True), "daily"),
+        ("https://www.jobcus.com/resume-analyzer", "daily"),
+        ("https://www.jobcus.com/resume-builder", "daily"),
+        ("https://www.jobcus.com/cover-letter", "daily"),
+        ("https://www.jobcus.com/employers", "weekly"),
+        ("https://www.jobcus.com/skill-gap", "weekly"),
+        ("https://www.jobcus.com/interview-coach", "weekly"),
+        ("https://www.jobcus.com/chat", "daily"),
+    ]
+    now = datetime.utcnow().strftime("%Y-%m-%d")
+    xml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+    ]
+    for loc, freq in pages:
+        xml += [
+            "<url>",
+            f"<loc>{loc}</loc>",
+            f"<lastmod>{now}</lastmod>",
+            f"<changefreq>{freq}</changefreq>",
+            "</url>"
+        ]
+    xml.append("</urlset>")
+    return Response("\n".join(xml), mimetype="application/xml")
 
 @app.route("/chat")
 @login_required
