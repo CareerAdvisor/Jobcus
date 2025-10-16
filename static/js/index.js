@@ -83,3 +83,55 @@
   }
   fixPictureFallback();
 })();
+
+/* ─────────────────────────────────────────────────────────────
+   NEW: How-it-works slider + Testimonials carousel
+   (safe to run alongside your existing IIFEs)
+   ───────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  // --- How it works slider ---
+  const hiw = document.querySelector('.hiw-slider');
+  if (hiw) {
+    const track = hiw.querySelector('.hiw-track');
+    const slides = [...hiw.querySelectorAll('.hiw-slide')];
+    const prev = hiw.querySelector('.hiw-prev');
+    const next = hiw.querySelector('.hiw-next');
+    let i = 0, timer;
+
+    function go(n){
+      i = (n + slides.length) % slides.length;
+      track.style.transform = `translateX(-${i * 100}%)`;
+    }
+    function auto(){ clearInterval(timer); timer = setInterval(() => go(i+1), 3500); }
+    prev?.addEventListener('click', () => { go(i-1); auto(); });
+    next?.addEventListener('click', () => { go(i+1); auto(); });
+
+    auto();
+    window.addEventListener('visibilitychange', () => document.hidden ? clearInterval(timer) : auto());
+  }
+
+  // --- Testimonials dots + auto ---
+  const tCarousel = document.querySelector('.t-carousel');
+  if (tCarousel) {
+    const track = tCarousel.querySelector('.t-track');
+    const cards = [...tCarousel.querySelectorAll('.t-card')];
+    const dotsWrap = tCarousel.querySelector('.t-dots');
+    let j = 0, tmr;
+
+    cards.forEach((_, idx) => {
+      const b = document.createElement('button');
+      b.setAttribute('aria-label', `Go to testimonial ${idx+1}`);
+      b.addEventListener('click', () => { j = idx; paint(); auto(); });
+      dotsWrap.appendChild(b);
+    });
+
+    function paint(){
+      track.style.transform = `translateX(-${j * 100}%)`;
+      dotsWrap.querySelectorAll('button').forEach((d, k) => d.setAttribute('aria-selected', k===j ? 'true' : 'false'));
+    }
+    function auto(){ clearInterval(tmr); tmr = setInterval(()=>{ j = (j+1) % cards.length; paint(); }, 4200); }
+
+    paint(); auto();
+    window.addEventListener('visibilitychange', () => document.hidden ? clearInterval(tmr) : auto());
+  }
+});
