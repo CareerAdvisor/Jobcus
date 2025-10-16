@@ -4,6 +4,53 @@
 {% set is_paid  = current_user.is_authenticated and (current_user.plan|lower in ['standard','premium']) %}
 {% set wm_text  = '' if is_paid else 'JOBCUS.COM' %}
 
+{# NEW: page-level JSON-LD goes to head via extra_css #}
+{% block extra_css %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Jobcus Cover Letter",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.jobcus.com/cover-letter",
+    "image": "https://www.jobcus.com/static/images/og/jobcus-og.jpg",
+    "description": "Generate a tailored, professional cover letter in minutes using your resume details and target role.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "url": "https://www.jobcus.com/pricing"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Jobcus",
+      "url": "https://www.jobcus.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.jobcus.com/static/icons/apple-touch-icon.png"
+      }
+    },
+    "potentialAction": {
+      "@type": "Action",
+      "name": "Create cover letter",
+      "target": "https://www.jobcus.com/cover-letter"
+    }
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.jobcus.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Cover Letter", "item": "https://www.jobcus.com/cover-letter" }
+    ]
+  }
+  </script>
+{% endblock %}
+
 {% block content %}
 <main id="cover-letter" class="rb-wrap">
   <!-- Hero -->
