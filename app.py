@@ -897,14 +897,22 @@ def index():
 
 @app.route("/robots.txt")
 def robots_txt():
-    body = f"""User-agent: *
+    body = """User-agent: *
 Allow: /
+Disallow: /account
+Disallow: /logout
+Disallow: /dashboard
+Disallow: /api/
+# Note: Do NOT block static assets (CSS, JS, images), so we omit /static/
 
 Sitemap: https://www.jobcus.com/sitemap.xml
+
+# OpenAI crawler — explicitly allowed
+User-agent: GPTBot
+Allow: /
 """
-    # If you WANT OpenAI training crawler to read your site, keep this.
-    # If you don't, add: User-agent: GPTBot\nDisallow: /
     return Response(body, mimetype="text/plain")
+
 
 @app.route("/sitemap.xml")
 def sitemap_xml():
