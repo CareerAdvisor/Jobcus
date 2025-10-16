@@ -47,7 +47,7 @@ async function handleCommonErrors(res) {
 
   if (res.status === 402 || (res.status === 403 && body?.error === "upgrade_required")) {
     const msg = body?.message || "You’ve reached your plan limit. Upgrade to continue.";
-    window.upgradePrompt(body?.message_html || msg, (window.PRICING_URL || "/pricing"), 1200);
+    window.upgradePrompt(body?.message_html || msg, (window.PRICING_URL || "/pricing"), 0);
     throw new Error(msg);
   }
   if (res.status === 401 || res.status === 403) {
@@ -790,3 +790,71 @@ document.addEventListener("DOMContentLoaded", () => {
     // If building HTML directly, set: frameFin.srcdoc = html;
   });
 });
+
+// === Upgrade modal (hard override; no auto-redirect) ===
+window.upgradePrompt = function upgradePrompt(messageHtml, pricingUrl, delayMs = 0) {
+  const overlay = document.createElement("div");
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", "Upgrade required");
+  overlay.style.cssText = `
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.4);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  `;
+
+  const card = document.createElement("div");
+  card.style.cssText = `
+    max-width: 520px; width: 100%;
+    background: #fff; color: #111; border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.15);
+    padding: 20px;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, sans-serif;
+  `;
+  const pricing = pricingUrl || (window.PRICING_URL || "/pricing");
+  const html = messageHtml || `You’ve reached your plan limit for this feature. <a href="${pricing}">Upgrade now →</a>`;
+
+  card.innerHTML = `
+    <div style="display:flex;gap:10px;align-items:flex-start">
+      <div style="font-size:22px;line-height:1.1">🔓 Upgrade to continue</div>
+    </div>
+    <div style="margin-top:10px;font-size:14px;line-height:1.5">${html}</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <a href="${pricing}" style="text-decoration:none; padding:10px 14px; border-radius:8px; border:1px solid #111;">View plans</a>
+      <button type="button" id="upgrade-ok" style="padding:10px 14px;border-radius:8px;border:0;background:#111;color:#fff;">OK</button>
+    </div>
+  `;
+
+  overlay.appendChild(card);
+
+  function close() {
+    overlay.remove();
+    document.removeEventListener("keydown", onKey);
+    document.documentElement.style.overflow = prevOverflow;
+  }
+  function onKey(e) { if (e.key === "Escape") close(); }
+
+  const prevOverflow = document.documentElement.style.overflow;
+
+  function mount() {
+    document.body.appendChild(overlay);
+    document.addEventListener("keydown", onKey);
+    document.documentElement.style.overflow = "hidden";
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector("#upgrade-ok")?.addEventListener("click", close);
+    overlay.querySelector("#upgrade-ok")?.focus();
+  }
+
+  setTimeout(mount, Math.max(0, delayMs || 0));
+};
+
+// Route any legacy "banner" calls (e.g., 429/auth prompts) to the same modal UX
+window.showUpgradeBanner = function (msg) {
+  const pricing = window.PRICING_URL || "/pricing";
+  const esc = (s) => String(s || "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  const html = `${esc(msg || "You’ve reached the current limit.")} <a href="${pricing}">Upgrade now →</a>`;
+  window.upgradePrompt(html, pricing, 0);
+};
