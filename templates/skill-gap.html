@@ -8,6 +8,47 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/skill-gap.css') }}">
+
+{# JSON-LD: SoftwareApplication for Skill Gap Analyzer #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Jobcus Skill Gap Analyzer",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "url": "https://www.jobcus.com/skill-gap",
+  "image": "https://www.jobcus.com/static/images/og/jobcus-og.jpg",
+  "description": "Identify missing skills for your target role and get personalized learning suggestions powered by AI.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "url": "https://www.jobcus.com/pricing"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Jobcus",
+    "url": "https://www.jobcus.com",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://www.jobcus.com/static/icons/apple-touch-icon.png"
+    }
+  }
+}
+</script>
+
+{# JSON-LD: Breadcrumbs for richer SERP trails #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.jobcus.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Skill Gap Analysis", "item": "https://www.jobcus.com/skill-gap" }
+  ]
+}
+</script>
 {% endblock %}
 
 {% block content %}
