@@ -4,6 +4,47 @@
 
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+
+  {# JSON-LD: SoftwareApplication for the chat experience #}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Jobcus AI Career Chat",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "url": "https://www.jobcus.com/chat",
+    "image": "https://www.jobcus.com/static/images/og/jobcus-og.jpg",
+    "description": "Ask career questions in natural language. Jobcus routes you to Resume Analyzer/Builder, Cover Letters, Interview Coach, Skill-Gap, and Job Insights.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "url": "https://www.jobcus.com/pricing"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Jobcus",
+      "url": "https://www.jobcus.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.jobcus.com/static/icons/apple-touch-icon.png"
+      }
+    }
+  }
+  </script>
+
+  {# JSON-LD: Breadcrumbs for the Chat page #}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.jobcus.com/" },
+      { "@type": "ListItem", "position": 2, "name": "AI Career Chat", "item": "https://www.jobcus.com/chat" }
+    ]
+  }
+  </script>
 {% endblock %}
 
 {# Left “sidebar” toggle icon in the header #}
