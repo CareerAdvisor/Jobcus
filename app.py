@@ -913,37 +913,33 @@ Allow: /
 """
     return Response(body, mimetype="text/plain")
 
-
 @app.route("/sitemap.xml")
 def sitemap_xml():
-    # canonical list – add/adjust as you ship pages
     pages = [
-        (url_for("index", _external=True), "weekly"),
-        (url_for("pricing", _external=True), "weekly"),
-        (url_for("dashboard", _external=True), "daily"),
-        ("https://www.jobcus.com/resume-analyzer", "daily"),
-        ("https://www.jobcus.com/resume-builder", "daily"),
-        ("https://www.jobcus.com/cover-letter", "daily"),
-        ("https://www.jobcus.com/employers", "weekly"),
-        ("https://www.jobcus.com/skill-gap", "weekly"),
-        ("https://www.jobcus.com/interview-coach", "weekly"),
-        ("https://www.jobcus.com/chat", "daily"),
+        (url_for("index", _external=True),           "weekly"),
+        (url_for("pricing", _external=True),         "weekly"),
+        (url_for("dashboard", _external=True),       "daily"),
+        ("https://www.jobcus.com/chat",              "daily"),
+        ("https://www.jobcus.com/resume-analyzer",   "daily"),
+        ("https://www.jobcus.com/resume-builder",    "daily"),
+        ("https://www.jobcus.com/cover-letter",      "daily"),
+        ("https://www.jobcus.com/interview-coach",   "weekly"),
+        ("https://www.jobcus.com/skill-gap",         "weekly"),
+        ("https://www.jobcus.com/job-insights",      "weekly"),
+        ("https://www.jobcus.com/employers",         "weekly"),
+        ("https://www.jobcus.com/privacy-policy",    "yearly"),
+        ("https://www.jobcus.com/terms-of-service",  "yearly"),
     ]
-    now = datetime.utcnow().strftime("%Y-%m-%d")
+    today = datetime.utcnow().strftime("%Y-%m-%d")
     xml = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
     ]
     for loc, freq in pages:
-        xml += [
-            "<url>",
-            f"<loc>{loc}</loc>",
-            f"<lastmod>{now}</lastmod>",
-            f"<changefreq>{freq}</changefreq>",
-            "</url>"
-        ]
+        xml += [ "<url>", f"<loc>{loc}</loc>", f"<lastmod>{today}</lastmod>", f"<changefreq>{freq}</changefreq>", "</url>" ]
     xml.append("</urlset>")
     return Response("\n".join(xml), mimetype="application/xml")
+
 
 @app.route("/chat")
 @login_required
