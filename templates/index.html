@@ -43,6 +43,62 @@
   </div>
 </section>
 
+<!-- SOCIAL PROOF -->
+<section class="section trust-strip">
+  <div class="container">
+    <div class="trust-row">
+      <div class="rating">
+        ⭐️⭐️⭐️⭐️⭐️ <span>4.9/5 average</span>
+      </div>
+      <div class="trust-sep"></div>
+      <div class="trust-logos" aria-label="Trusted by logos">
+        <img src="/static/images/logos/company-1.svg" alt="Company 1" loading="lazy">
+        <img src="/static/images/logos/company-2.svg" alt="Company 2" loading="lazy">
+        <img src="/static/images/logos/company-3.svg" alt="Company 3" loading="lazy">
+        <img src="/static/images/logos/company-4.svg" alt="Company 4" loading="lazy">
+      </div>
+    </div>
+
+    <ul class="benefits">
+      <li>⚡️ ATS-ready resumes in minutes</li>
+      <li>🎯 Role-specific interview practice</li>
+      <li>🧠 Skill-gap guidance + learning plan</li>
+      <li>📊 Real-time market insights</li>
+    </ul>
+  </div>
+</section>
+
+<!-- HOW IT WORKS + MINI SLIDER -->
+<section class="section how-it-works">
+  <div class="container">
+    <h2 class="section-title">How Jobcus works</h2>
+    <ol class="how-steps">
+      <li><strong>Ask in chat</strong> — Tell us your goal (e.g., “switch to Data Analyst”).</li>
+      <li><strong>Auto-route</strong> — We open the right tool (resume, cover letter, interview coach…).</li>
+      <li><strong>Iterate fast</strong> — Refine with AI suggestions and download polished results.</li>
+    </ol>
+
+    <div class="hiw-slider" aria-label="Jobcus feature preview">
+      <button class="hiw-prev" aria-label="Previous">‹</button>
+      <div class="hiw-track">
+        <div class="hiw-slide">
+          <img src="/static/images/slider/chat.png" alt="Chat routes you to the right tool">
+        </div>
+        <div class="hiw-slide">
+          <img src="/static/images/slider/resume.png" alt="ATS-ready Resume Builder">
+        </div>
+        <div class="hiw-slide">
+          <img src="/static/images/slider/cover-letter.png" alt="Tailored Cover Letter">
+        </div>
+        <div class="hiw-slide">
+          <img src="/static/images/slider/interview.png" alt="Interview Coach session">
+        </div>
+      </div>
+      <button class="hiw-next" aria-label="Next">›</button>
+    </div>
+  </div>
+</section>
+
 <!-- FEATURES (cards are links; lead centered) -->
 <section id="features" class="section">
   <div class="container">
@@ -74,6 +130,47 @@
         <div class="card"><h4>Employer Tools (Phased)</h4><p>Start with AI Job Description Generator. Grow into posting, matching, and talent insights over time.</p></div>
       </a>
     </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section testimonials">
+  <div class="container">
+    <h2 class="section-title center">Loved by job seekers worldwide</h2>
+
+    <div class="t-carousel" aria-label="User testimonials">
+      <div class="t-track">
+        <figure class="t-card">
+          <blockquote>“Jobcus helped me rebuild my resume and I got 3 interviews in a week.”</blockquote>
+          <figcaption>— Aisha O., Product Designer</figcaption>
+        </figure>
+        <figure class="t-card">
+          <blockquote>“The interview coach felt real. I walked in confident and got an offer.”</blockquote>
+          <figcaption>— Marco R., Data Analyst</figcaption>
+        </figure>
+        <figure class="t-card">
+          <blockquote>“Skill-gap insights + learning plan = clarity. Exactly what I needed.”</blockquote>
+          <figcaption>— Hannah S., Marketing Associate</figcaption>
+        </figure>
+      </div>
+
+      <div class="t-dots" role="tablist" aria-label="testimonial navigation"></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONVERSION STRIP -->
+<section class="section convert-strip">
+  <div class="container convert-flex">
+    <div>
+      <h3>Ready to accelerate your job search?</h3>
+      <p class="muted">Start free. No credit card required.</p>
+    </div>
+    <form class="convert-form" action="/account" method="get" onsubmit="return true;">
+      <label class="sr-only" for="leadEmail">Email</label>
+      <input id="leadEmail" name="email" type="email" placeholder="you@email.com" required>
+      <button class="btn" type="submit">Get started</button>
+    </form>
   </div>
 </section>
 
