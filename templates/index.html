@@ -77,22 +77,6 @@
   </div>
 </section>
 
-<!-- Ad Strip B -->
-<!-- Full-width responsive ad (leaderboard on desktop, square on mobile) -->
-<section class="ad-banner ad-banner--full">
-  <a class="ad-banner__frame" href="/#" aria-label="ATS-friendly resumes">
-    <picture>
-      <!-- Desktop / wide -->
-      <source media="(min-width: 701px)"
-              srcset="{{ url_for('static', filename='img/ads/leaderboard_ad3.jpg') }}">
-      <!-- Mobile / square fallback (also used if JS fallback triggers) -->
-      <img class="ad-img"
-           src="{{ url_for('static', filename='img/ads/square_ad3.jpg') }}"
-           alt="ATS-friendly resumes" loading="lazy">
-    </picture>
-  </a>
-</section>
-
 <!-- FAQ (accordion) -->
 <section id="faq" class="section faq-bg">
   <div class="container">
