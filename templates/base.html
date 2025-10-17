@@ -107,7 +107,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
   {% endif %}
 
-  <!-- Site-wide Structured Data -->
+  <!-- ===== Site-wide Structured Data (once) ===== -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -115,14 +115,10 @@
     "@id": "https://www.jobcus.com/#org",
     "name": "Jobcus",
     "url": "https://www.jobcus.com",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://www.jobcus.com/static/images/logo.png"
-    },
+    "logo": { "@type": "ImageObject", "url": "https://www.jobcus.com/static/images/logo.png" },
     "sameAs": ["https://twitter.com/jobcus"]
   }
   </script>
-  
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
