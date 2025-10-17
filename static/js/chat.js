@@ -10,14 +10,22 @@ window.escapeHtml = function (s = "") {
     .replace(/'/g, "&#39;");
 };
 
-// ——— Safe global for inline onclick="insertSuggestion(...)" ———
-window.insertSuggestion ||= function (text) {
+// One global helper
+window.insertSuggestion = function (text) {
   const el = document.getElementById('userInput');
   if (!el) return;
   el.value = text;
   el.focus();
   window.autoResize?.(el);
 };
+
+// Event delegation for any data-suggest button (no inline onclick needed)
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-suggest]');
+  if (b && b.dataset.suggest) {
+    window.insertSuggestion(b.dataset.suggest);
+  }
+});
 
 // ──────────────────────────────────────────────────────────────
 // Ensure cookies (SameSite/Lax) are sent on all fetches
@@ -36,13 +44,6 @@ window.insertSuggestion ||= function (text) {
 function removeWelcome() {
   const banner = document.getElementById("welcomeBanner");
   if (banner) banner.remove();
-}
-function insertSuggestion(text) {
-  const input = document.getElementById("userInput");
-  if (!input) return;
-  input.value = text;
-  input.focus();
-  window.autoResize?.(input);
 }
 function autoResize(textarea) {
   if (!textarea) return;
@@ -1027,6 +1028,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ✅ Model returned — stop the status bar now (success path)
     hideAIStatus();
+
+    answerRegion.innerHTML = "";   // ← add this here for the non-jobs path
 
     const copyId = `ai-${Date.now()}`;
     const wrap = document.createElement("div");
