@@ -144,6 +144,14 @@
   </aside>
   <div id="chatOverlay" class="chat-overlay" hidden></div>
 
+  <!-- Add this near the top of .chat-main, above the chatbox -->
+  <button id="chatMenuToggle"
+          class="chat-menu-toggle"
+          type="button"
+          aria-label="Open menu">
+    <img src="{{ url_for('static', filename='icons/menu.svg') }}" alt="" />
+  </button>
+
   <!-- RIGHT: chat content pane -->
   <section class="chat-main">
     <!-- IMPORTANT: keep both id AND class so chat.css selectors apply -->
