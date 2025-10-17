@@ -386,3 +386,66 @@
 
 .main { padding-inline: 1rem; }
 .card { margin-inline: auto; }
+
+/* === Header + nav containers must not clip the menu === */
+.site-header,
+.header-right,
+.desktop-nav,
+.desktop-nav .dropdown {
+  position: relative;
+  overflow: visible;   /* <-- prevents cutting off */
+  z-index: 10;
+}
+
+/* === Trigger button === */
+.desktop-nav .dropbtn {
+  background: transparent;
+  border: 0;
+  padding: 10px 8px;
+  font: inherit;
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* === The dropdown panel === */
+.desktop-nav .dropdown-content {
+  position: absolute;
+  top: calc(100% + 8px);   /* <-- forces it to open downward */
+  left: 0;
+  display: none;           /* shown on hover/focus */
+  min-width: 220px;
+  background: #fff;
+  border: 1px solid #e6ebf2;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(16,24,40,.15);
+  padding: 6px;
+  z-index: 1000;          /* above header */
+}
+
+/* show on hover or keyboard focus */
+.desktop-nav .dropdown:hover .dropdown-content,
+.desktop-nav .dropdown:focus-within .dropdown-content {
+  display: block;
+}
+
+/* items */
+.desktop-nav .dropdown-content a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #102a43;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.desktop-nav .dropdown-content a:hover,
+.desktop-nav .dropdown-content a:focus {
+  background: #f6f9ff;
+}
+
+/* If your header is sticky, make sure it doesn't create a clipping context */
+.site-header {
+  position: sticky;        /* or fixed; */
+  top: 0;
+  z-index: 2000;           /* sits above page content */
+  overflow: visible;       /* important */
+}
