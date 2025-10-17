@@ -393,8 +393,7 @@
 .desktop-nav,
 .desktop-nav .dropdown {
   position: relative;
-  overflow: visible;   /* <-- prevents cutting off */
-  z-index: 10;
+  
 }
 
 /* === Trigger button === */
@@ -460,6 +459,7 @@
   backdrop-filter: saturate(120%) blur(6px);
   border-bottom: 1px solid rgba(16,24,40,.06);
   transition: box-shadow .2s ease, background-color .2s ease, border-color .2s ease;
+  overflow: visible;   /* <-- prevents cutting off */
 }
 
 /* Shadow when scrolled (JS toggles .is-stuck) */
