@@ -1,35 +1,39 @@
 {% extends "base.html" %}
-{% block title %}Chat with Jobcus{% endblock %}
+
+{# --- Page SEO overrides (unified across title/OG/Twitter) --- #}
+{% block seo_title %}AI Career Chat – Jobcus{% endblock %}
+{% block seo_description %}Ask career questions in natural language. Start in chat, then jump to Resume Analyzer, Resume Builder, Cover Letters, Interview Coach, Skill-Gap, and Job Insights.{% endblock %}
+{% block seo_keywords %}AI career chat, career advisor, resume analyzer, resume builder, cover letter, interview coach, skill gap, job insights, Jobcus chat{% endblock %}
+{# Optional page-specific share image (base will fallback if omitted) #}
+{# {% block seo_image %}{{ url_for('static', filename='images/og/chat-og.jpg', _external=True) }}{% endblock %} #}
+
 {% block body_class %}chat-page{% endblock %}
 
 {% block extra_css %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
 
-  {# JSON-LD: SoftwareApplication for the chat experience #}
+  {# JSON-LD: SoftwareApplication for the Chat experience #}
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Jobcus AI Career Chat",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web",
     "url": "https://www.jobcus.com/chat",
     "image": "https://www.jobcus.com/static/images/og/jobcus-og.jpg",
-    "description": "Ask career questions in natural language. Jobcus routes you to Resume Analyzer/Builder, Cover Letters, Interview Coach, Skill-Gap, and Job Insights.",
+    "description": "Ask career questions in natural language. Start in chat, then jump to Resume Analyzer, Resume Builder, Cover Letters, Interview Coach, Skill-Gap, and Job Insights.",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "publisher": { "@id": "https://www.jobcus.com/#org" },
     "offers": {
       "@type": "Offer",
       "price": "0",
       "priceCurrency": "USD",
       "url": "https://www.jobcus.com/pricing"
     },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Jobcus",
-      "url": "https://www.jobcus.com",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://www.jobcus.com/static/icons/apple-touch-icon.png"
-      }
+    "potentialAction": {
+      "@type": "Action",
+      "name": "Start a career chat",
+      "target": "https://www.jobcus.com/chat"
     }
   }
   </script>
@@ -45,17 +49,6 @@
     ]
   }
   </script>
-{% endblock %}
-
-{# Left “sidebar” toggle icon in the header #}
-{% block header_icon %}
-  <img
-    id="chatMenuToggle"
-    src="{{ url_for('static', filename='icons/sidebar.svg') }}"
-    class="header-menu-icon"
-    alt="Open chat menu"
-    title="Menu"
-  />
 {% endblock %}
 
 {% set show_footer = false %}
