@@ -461,24 +461,3 @@
   transition: box-shadow .2s ease, background-color .2s ease, border-color .2s ease;
   overflow: visible;   /* <-- prevents cutting off */
 }
-
-/* Shadow when scrolled (JS toggles .is-stuck) */
-.site-header.is-stuck{ box-shadow: 0 8px 24px rgba(16,24,40,.08); }
-
-/* Ensure dropdown opens over content */
-.desktop-nav .dropdown{ position: relative; }
-.desktop-nav .dropdown-content{
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  z-index: 2200;
-}
-
-/* Prevent earlier rule from overriding header positioning */
-.header-right, .desktop-nav, .desktop-nav .dropdown {
-  position: static;            /* not relative — header handles the stacking */
-}
-
-/* The page content must start below the fixed header */
-.page-container{ padding-top: var(--header-offset, 72px); }
-
