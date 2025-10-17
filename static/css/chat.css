@@ -657,20 +657,3 @@ html { -webkit-text-size-adjust: 100%; }
   cursor: pointer;
 }
 .chat-menu-toggle img{ width:20px; height:20px; display:block; }
-
-.dropdown
-.dropdown-content
-position: fixed;
-position: absolute;
-transform:
-z-index:
-
-.site-header .dropdown { position: relative; }
-.site-header .dropdown .dropdown-content{
-  position: absolute;
-  right: 0;              /* keep it aligned under the button */
-  top: 100%;
-  margin-top: 8px;
-  transform: none;
-  z-index: 2000;         /* above chat panels */
-}
