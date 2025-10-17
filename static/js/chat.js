@@ -627,17 +627,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.head.appendChild(st2);
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-  // Inject minimal CSS for spinner if not present
-  if (!document.getElementById("aiSpinnerStyles")) {
-    const st = document.createElement("style");
-    ...
-  }
-  // Inject highlight style for active conversation in history
-  if (!document.getElementById("historyActiveStyles")) {
-    ...
-  }
-
   // Delegated click for suggestion chips
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-suggest]');
@@ -725,9 +714,9 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="welcome" id="welcomeBanner">
         <p class="welcome-title">👋 Welcome ${escapeHtml(fname)}! How can I help you today?</p>
         <div class="suggestion-chips">
-          <button type="button" onclick="insertSuggestion('How do I improve my resume?')" class="chip">Improve my resume</button>
-          <button type="button" onclick="insertSuggestion('Interview tips for a UX role')" class="chip">Interview tips</button>
-          <button type="button" onclick="insertSuggestion('Show me job market insights for London')" class="chip">Job insights</button>
+          <button type="button" class="chip" data-suggest="How do I improve my resume?">Improve my resume</button>
+          <button type="button" class="chip" data-suggest="Interview tips for a UX role">Interview tips</button>
+          <button type="button" class="chip" data-suggest="Show me job market insights for London">Job insights</button>
         </div>
       </div>`;
   }
