@@ -103,6 +103,12 @@
   data-plan="{{ (current_user.plan|lower) if current_user.is_authenticated else 'guest' }}"
   data-superadmin="{{ '1' if (current_user.is_authenticated and (current_user.role|lower == 'superadmin')) else '0' }}"
 >  
+
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KSP64JNV"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+  
   <div class="page-container">
 
     {% if not for_pdf %}
