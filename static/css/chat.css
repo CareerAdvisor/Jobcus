@@ -657,3 +657,10 @@ html { -webkit-text-size-adjust: 100%; }
   cursor: pointer;
 }
 .chat-menu-toggle img{ width:20px; height:20px; display:block; }
+
+.dropdown
+.dropdown-content
+position: fixed;
+position: absolute;
+transform:
+z-index:
