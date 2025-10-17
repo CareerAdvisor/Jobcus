@@ -626,7 +626,23 @@ document.addEventListener("DOMContentLoaded", () => {
     st2.textContent = `.history-item.active{background:#eef5ff}.history-item.active .history-item-title{color:#104879;font-weight:600}`;
     document.head.appendChild(st2);
   }
-  
+
+  document.addEventListener("DOMContentLoaded", () => {
+  // Inject minimal CSS for spinner if not present
+  if (!document.getElementById("aiSpinnerStyles")) {
+    const st = document.createElement("style");
+    ...
+  }
+  // Inject highlight style for active conversation in history
+  if (!document.getElementById("historyActiveStyles")) {
+    ...
+  }
+
+  // Delegated click for suggestion chips
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-suggest]');
+    if (b && b.dataset.suggest) window.insertSuggestion(b.dataset.suggest);
+  });
 
   // ACTION MENU styles (add alongside your other injected styles)
   if (!document.getElementById("historyActionStyles")) {
