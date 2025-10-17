@@ -696,14 +696,25 @@ function applyConsent(consent) {
   new MutationObserver(() => scan()).observe(document.documentElement, { childList: true, subtree: true });
 })();
 
-// Sticky header: add shadow when scrolled
+// Fixed header: compute body offset so content doesn't hide behind it
 (function(){
   const header = document.querySelector('.site-header');
-  if (!header) return;
+  const root   = document.documentElement;
+  function setOffset(){
+    if (!header) return;
+    const h = header.offsetHeight || 72;
+    root.style.setProperty('--header-offset', h + 'px');
+  }
+  window.addEventListener('load', setOffset);
+  window.addEventListener('resize', setOffset);
+  setOffset();
+
+  // Keep your shadow-on-scroll behavior
   const onScroll = () => {
-    if (window.scrollY > 8) header.classList.add('is-stuck');
-    else header.classList.remove('is-stuck');
+    if (window.scrollY > 8) header?.classList.add('is-stuck');
+    else header?.classList.remove('is-stuck');
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 })();
+
