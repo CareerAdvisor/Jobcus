@@ -10,20 +10,6 @@ try {
   }
 } catch { /* ignore */ }
 
-
-// Sticky header: add shadow when scrolled
-(function(){
-  const header = document.querySelector('.site-header');
-  if (!header) return;
-  const onScroll = () => {
-    if (window.scrollY > 8) header.classList.add('is-stuck');
-    else header.classList.remove('is-stuck');
-  };
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
-})();
-
-
 /* ─────────────────────────────────────────────────────────────
  * 0.05) Tiny global helpers needed by inline HTML on any page
  * ───────────────────────────────────────────────────────────── */
@@ -708,4 +694,16 @@ function applyConsent(consent) {
 
   document.addEventListener('DOMContentLoaded', () => scan(document));
   new MutationObserver(() => scan()).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
+// Sticky header: add shadow when scrolled
+(function(){
+  const header = document.querySelector('.site-header');
+  if (!header) return;
+  const onScroll = () => {
+    if (window.scrollY > 8) header.classList.add('is-stuck');
+    else header.classList.remove('is-stuck');
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 })();
