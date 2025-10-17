@@ -983,14 +983,18 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
       });
-
+      
       // Save conv id after first reply and refresh history for highlight
       if (data.conversation_id && data.conversation_id !== conversationId) {
         conversationId = data.conversation_id;
         localStorage.setItem("chat:conversationId", conversationId);
-        renderHistory(); // <-- update highlight to current
+        renderHistory(); // highlight current
       }
-
+      
+      // ✅ actually use the model's reply
+      finalReply = (data.reply || data.content || data.message || "").toString();
+      
+      // add nudges after we have a reply
       finalReply = addJobcusNudges(finalReply);
     } catch (err) {
       hideAIStatus();  // ✅ ensure status bar is removed on error
