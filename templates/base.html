@@ -8,13 +8,6 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <link rel="canonical" href="{{ request.url if request else '' }}">
 
-  <!-- ====== SEO (chat-first defaults; pages can override blocks) ====== -->
-  <title>{% block title %}Jobcus – AI Career Chat & Advisor{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}Jobcus is a conversation-first AI career advisor. Start in chat, then seamlessly jump into resume analysis & builder, cover letters, interview coaching, skill-gap analysis, and live job insights.{% endblock %}">
-  <meta name="keywords" content="AI career chat, career advisor, resume analyzer, resume builder, cover letter, interview coach, skill gap, job insights, ATS, Jobcus">
-  <meta name="author" content="Jobcus">
-  <meta name="robots" content="index,follow,max-image-preview:large">
-  
   <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -23,23 +16,71 @@
   })(window,document,'script','dataLayer','GTM-WDM9T6F7');</script>
   <!-- End Google Tag Manager -->
 
-  <!-- ====== Social / Open Graph ====== -->
+  {# ===== Unified SEO blocks (new) — optional to override per page ===== #}
+  {% block seo_title %}{% endblock %}
+  {% block seo_description %}{% endblock %}
+  {% block seo_keywords %}{% endblock %}
+  {% block seo_image %}{% endblock %}
+  
+  {# ===== Collect legacy values (existing pages) ===== #}
+  {% set LEGACY_TITLE = (self.title()|default('', true)|striptags|trim) %}
+  {% set LEGACY_DESC  = (self.meta_description()|default('', true)|striptags|trim) %}
+  {% set LEGACY_OG_T  = (self.og_title()|default('', true)|striptags|trim) %}
+  {% set LEGACY_OG_D  = (self.og_description()|default('', true)|striptags|trim) %}
+  {% set LEGACY_TW_T  = (self.tw_title()|default('', true)|striptags|trim) %}
+  {% set LEGACY_TW_D  = (self.tw_description()|default('', true)|striptags|trim) %}
+  
+  {# ===== Shared assets ===== #}
+  {% set OG_FALLBACK = url_for('static', filename='images/og/jobcus-og.jpg', _external=True) if url_for else '' %}
+  {% set PAGE_URL    = request.url if request else 'https://www.jobcus.com' %}
+  
+  {# ===== Choose canonical SEO values (new blocks > legacy > defaults) ===== #}
+  {% set SEO_TITLE = (
+    self.seo_title()|default('', true)
+    or LEGACY_OG_T or LEGACY_TW_T or LEGACY_TITLE
+    or 'Jobcus – AI Career Chat & Advisor'
+  )|striptags|trim %}
+  {% set SEO_DESC = (
+    self.seo_description()|default('', true)
+    or LEGACY_OG_D or LEGACY_TW_D or LEGACY_DESC
+    or 'Jobcus is a conversation-first AI career advisor. Start in chat, then seamlessly jump into resume analysis & builder, cover letters, interview coaching, skill-gap analysis, and live job insights.'
+  )|striptags|trim %}
+  {% set SEO_KEYS = (
+    self.seo_keywords()|default('', true)
+    or 'AI career chat, career advisor, resume analyzer, resume builder, cover letter, interview coach, skill gap, job insights, ATS, Jobcus'
+  )|striptags|trim %}
+  {% set SEO_IMG = (
+    self.seo_image()|default('', true)
+    or OG_FALLBACK
+  )|trim %}
+  
+  <!-- ===== Canonical ===== -->
+  <link rel="canonical" href="{{ PAGE_URL }}">
+  
+  <!-- ===== Primary SEO ===== -->
+  <title>{{ SEO_TITLE }}</title>
+  <meta name="description" content="{{ SEO_DESC }}">
+  <meta name="keywords" content="{{ SEO_KEYS }}">
+  <meta name="author" content="Jobcus">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  
+  <!-- ===== Open Graph ===== -->
   <meta property="og:site_name" content="Jobcus">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="{{ request.url if request else 'https://www.jobcus.com' }}">
-  <meta property="og:title" content="{% block og_title %}Jobcus – AI Career Chat & Advisor{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}Ask career questions in natural language. Jobcus routes you to Resume Analyzer/Builder, Cover Letters, Interview Coach, Skill-Gap, and Job Insights.{% endblock %}">
-  <meta property="og:image" content="{{ url_for('static', filename='images/og/jobcus-og.jpg', _external=True) if url_for else '' }}">
+  <meta property="og:url" content="{{ PAGE_URL }}">
+  <meta property="og:title" content="{{ SEO_TITLE }}">
+  <meta property="og:description" content="{{ SEO_DESC }}">
+  <meta property="og:image" content="{{ SEO_IMG }}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Jobcus – AI Career Chat & Advisor">
-
-  <!-- ====== Twitter Cards ====== -->
+  
+  <!-- ===== Twitter Cards ===== -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@jobcus">
-  <meta name="twitter:title" content="{% block tw_title %}Jobcus – AI Career Chat & Advisor{% endblock %}">
-  <meta name="twitter:description" content="{% block tw_description %}Chat-first career guidance: resumes, interviews, skills, and real-time job insights.{% endblock %}">
-  <meta name="twitter:image" content="{{ url_for('static', filename='images/og/jobcus-og.jpg', _external=True) if url_for else '' }}">
+  <meta name="twitter:title" content="{{ SEO_TITLE }}">
+  <meta name="twitter:description" content="{{ SEO_DESC }}">
+  <meta name="twitter:image" content="{{ SEO_IMG }}">
 
   <!-- ====== App Icons / Favicons ====== -->
   <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" />
@@ -66,13 +107,30 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
   {% endif %}
 
-  <!-- ====== Structured Data ====== -->
+  <!-- Site-wide Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "https://www.jobcus.com/#org",
+    "name": "Jobcus",
+    "url": "https://www.jobcus.com",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://www.jobcus.com/static/images/logo.png"
+    },
+    "sameAs": ["https://twitter.com/jobcus"]
+  }
+  </script>
+  
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": "https://www.jobcus.com/#website",
     "name": "Jobcus",
     "url": "https://www.jobcus.com",
+    "publisher": { "@id": "https://www.jobcus.com/#org" },
     "potentialAction": {
       "@type": "SearchAction",
       "target": "https://www.jobcus.com/search?q={query}",
@@ -80,16 +138,7 @@
     }
   }
   </script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Jobcus",
-    "url": "https://www.jobcus.com",
-    "logo": "https://www.jobcus.com{{ url_for('static', filename='images/logo.png') if url_for else '/static/images/logo.png' }}",
-    "sameAs": ["https://twitter.com/jobcus"]
-  }
-  </script>
+
 </head>
 
 {% set _plan = (current_user.plan | default('free', true)) %}
