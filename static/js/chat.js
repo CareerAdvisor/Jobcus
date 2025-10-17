@@ -1000,7 +1000,18 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
       });
+
+      // get the assistant text from the response (cover a few shapes)
+      finalReply = String(
+        data?.reply ??
+        data?.content ??
+        data?.text ??
+        ""
+      ).trim();
       
+      // optional fallback so we never render “nothing”
+      if (!finalReply) finalReply = "Here’s what I found.";
+
       // Save conv id after first reply and refresh history for highlight
       if (data.conversation_id && data.conversation_id !== conversationId) {
         conversationId = data.conversation_id;
