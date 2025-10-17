@@ -1,35 +1,33 @@
 {% extends "base.html" %}
-{% block title %}Cover Letter – Jobcus{% endblock %}
+
+{# --- Page SEO overrides (feed all channels consistently) --- #}
+{% block seo_title %}Cover Letter – Jobcus{% endblock %}
+{% block seo_description %}Generate a tailored, professional cover letter in minutes using your resume details and target role.{% endblock %}
+{% block seo_keywords %}cover letter generator, AI cover letter, tailored cover letter, resume to cover letter, Jobcus cover letter{% endblock %}
+{# Optional per-page image (otherwise base uses OG_FALLBACK) #}
+{# {% block seo_image %}{{ url_for('static', filename='images/og/cover-letter-og.jpg', _external=True) }}{% endblock %} #}
 
 {% set is_paid  = current_user.is_authenticated and (current_user.plan|lower in ['standard','premium']) %}
 {% set wm_text  = '' if is_paid else 'JOBCUS.COM' %}
 
-{# NEW: page-level JSON-LD goes to head via extra_css #}
+{# --- Page-level JSON-LD goes to <head> via extra_css --- #}
 {% block extra_css %}
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Jobcus Cover Letter",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web",
     "url": "https://www.jobcus.com/cover-letter",
     "image": "https://www.jobcus.com/static/images/og/jobcus-og.jpg",
     "description": "Generate a tailored, professional cover letter in minutes using your resume details and target role.",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "publisher": { "@id": "https://www.jobcus.com/#org" },
     "offers": {
       "@type": "Offer",
       "price": "0",
       "priceCurrency": "USD",
       "url": "https://www.jobcus.com/pricing"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Jobcus",
-      "url": "https://www.jobcus.com",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://www.jobcus.com/static/icons/apple-touch-icon.png"
-      }
     },
     "potentialAction": {
       "@type": "Action",
