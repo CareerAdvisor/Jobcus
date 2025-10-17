@@ -630,3 +630,17 @@ html { -webkit-text-size-adjust: 100%; }
   margin-right: 6px;
   vertical-align: middle;
 }
+
+/* Make the chat sidebar sit on top of the sticky header */
+.chat-sidebar {
+  position: fixed;           /* already is in your layout; ensure fixed */
+  top: 0; left: 0; bottom: 0;
+  z-index: 3001;             /* higher than .site-header (1100/2000) */
+}
+
+.chat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;             /* overlay sits just below the sidebar */
+}
+
