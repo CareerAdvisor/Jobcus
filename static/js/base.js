@@ -284,10 +284,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Features submenu
   document.querySelectorAll(".dropbtn").forEach((btn) => {
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const menu = btn.nextElementSibling;
-      menu?.classList.toggle("show");
+      if (!menu) return;
+      const willOpen = !menu.classList.contains("show");
+      // close any other open dropdowns
+      document.querySelectorAll(".dropdown-content.show").forEach(d => {
+        if (d !== menu) d.classList.remove("show");
+      });
+      menu.classList.toggle("show", willOpen);
+      btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
     });
   });
 
