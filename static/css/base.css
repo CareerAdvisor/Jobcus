@@ -440,6 +440,7 @@
 .desktop-nav .dropdown-content a:focus {
   background: #f6f9ff;
 }
+.dropdown .dropdown-content.show { display: block; }
 
 /* If your header is sticky, make sure it doesn't create a clipping context */
 .site-header {
