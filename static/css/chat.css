@@ -644,10 +644,16 @@ html { -webkit-text-size-adjust: 100%; }
   z-index: 3000;             /* overlay sits just below the sidebar */
 }
 
-<!-- Add this near the top of .chat-main, above the chatbox -->
-<button id="chatMenuToggle"
-        class="chat-menu-toggle"
-        type="button"
-        aria-label="Open menu">
-  <img src="{{ url_for('static', filename='icons/menu.svg') }}" alt="" />
-</button>
+.chat-menu-toggle{
+  position: sticky; /* or fixed if you want it floating */
+  top: 8px;
+  left: 8px;
+  z-index: 1200;
+  border: 0;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.08);
+  cursor: pointer;
+}
+.chat-menu-toggle img{ width:20px; height:20px; display:block; }
