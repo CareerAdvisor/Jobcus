@@ -12,38 +12,6 @@
   --cc-speed: .28s;
 }
 
-/* --- Sticky header --- */
-.site-header{
-  position: sticky;          /* sticks without layout jumps */
-  top: 0;
-  z-index: 1100;             /* above page content & dropdowns */
-  background: rgba(255,255,255,.92);
-  -webkit-backdrop-filter: saturate(120%) blur(6px);
-  backdrop-filter: saturate(120%) blur(6px);
-  border-bottom: 1px solid rgba(16,24,40,.06);
-  transition: box-shadow .2s ease, background-color .2s ease, border-color .2s ease;
-}
-
-/* Add a subtle shadow once you’ve scrolled a bit */
-.site-header.is-stuck{
-  box-shadow: 0 8px 24px rgba(16,24,40,.08);
-}
-
-/* Make sure dropdowns render on top of content under a sticky header */
-.desktop-nav .dropdown-content{
-  z-index: 1200;
-}
-
-/* If your dropdown is positioned from the button, ensure it opens downward */
-.desktop-nav .dropdown{
-  position: relative;
-}
-.desktop-nav .dropdown-content{
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-}
-
 /* Banner (slides up) */
 .cc-banner{
   position: fixed;
@@ -480,4 +448,36 @@
   top: 0;
   z-index: 2000;           /* sits above page content */
   overflow: visible;       /* important */
+}
+
+/* --- Sticky header --- */
+.site-header{
+  position: sticky;          /* sticks without layout jumps */
+  top: 0;
+  z-index: 1100;             /* above page content & dropdowns */
+  background: rgba(255,255,255,.92);
+  -webkit-backdrop-filter: saturate(120%) blur(6px);
+  backdrop-filter: saturate(120%) blur(6px);
+  border-bottom: 1px solid rgba(16,24,40,.06);
+  transition: box-shadow .2s ease, background-color .2s ease, border-color .2s ease;
+}
+
+/* Add a subtle shadow once you’ve scrolled a bit */
+.site-header.is-stuck{
+  box-shadow: 0 8px 24px rgba(16,24,40,.08);
+}
+
+/* Make sure dropdowns render on top of content under a sticky header */
+.desktop-nav .dropdown-content{
+  z-index: 1200;
+}
+
+/* If your dropdown is positioned from the button, ensure it opens downward */
+.desktop-nav .dropdown{
+  position: relative;
+}
+.desktop-nav .dropdown-content{
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
 }
