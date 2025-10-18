@@ -1034,9 +1034,10 @@ def job_insights():
 def employers():
     return render_template("employers.html")
 
-@app.route("/faq")
-def faq():
-    return render_template("faq.html")
+@app.get("/faq")
+def faq_legacy_redirect():
+    # Send users and crawlers to the FAQ section on the homepage
+    return redirect(url_for("index") + "#faq", code=301)
 
 @app.route("/privacy-policy")
 def privacy_policy():
