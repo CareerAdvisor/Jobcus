@@ -10,8 +10,8 @@
 
   <!-- ====== SEO (chat-first defaults; pages can override blocks) ====== -->
   <title>{% block title %}Jobcus – AI Career Chat & Advisor{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}Jobcus is a conversation-first AI career advisor. Start in chat, then seamlessly jump into resume analysis & builder, cover letters, interview coaching, skill-gap analysis, and live job insights.{% endblock %}">
-  <meta name="keywords" content="AI career chat, career advisor, resume analyzer, resume builder, cover letter, interview coach, skill gap, job insights, ATS, Jobcus">
+  <meta name="description" content="{% block meta_description %}Jobcus is an AI-powered career assistant designed to help job seekers build optimised resumes, analyse their skill gaps, prepare for interviews, and gain job market insights - all in one platform.{% endblock %}">
+  <meta name="keywords" content="AI career chat, career advisor, resume analyzer, resume builder, cover letter, interview coach, skill gap, job insights, ATS, Jobcus, AI">
   <meta name="author" content="Jobcus">
   <meta name="robots" content="index,follow,max-image-preview:large">
 
@@ -20,7 +20,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{ request.url if request else 'https://www.jobcus.com' }}">
   <meta property="og:title" content="{% block og_title %}Jobcus – AI Career Chat & Advisor{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}Ask career questions in natural language. Jobcus routes you to Resume Analyzer/Builder, Cover Letters, Interview Coach, Skill-Gap, and Job Insights.{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Jobcus is an AI-powered career assistant designed to help job seekers build optimised resumes, analyse their skill gaps, prepare for interviews, and gain job market insights - all in one platform.{% endblock %}">
   <meta property="og:image" content="{{ url_for('static', filename='images/og/jobcus-og.jpg', _external=True) if url_for else '' }}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
