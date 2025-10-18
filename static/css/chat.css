@@ -657,3 +657,36 @@ html { -webkit-text-size-adjust: 100%; }
   cursor: pointer;
 }
 .chat-menu-toggle img{ width:20px; height:20px; display:block; }
+
+/* Quick feature promos under the welcome note */
+.chat-page .chat-promos{
+  width:min(980px,92%);
+  margin:18px auto 8px;
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap:14px;
+}
+@media (max-width: 720px){
+  .chat-page .chat-promos{ grid-template-columns:1fr; }
+}
+.chat-page .promo-card{
+  display:block; text-decoration:none;
+  background:#fff; border:1px solid rgba(16,72,121,.15);
+  border-radius:16px; padding:16px;
+  box-shadow:0 8px 20px rgba(16,72,121,.06);
+  transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  color:var(--blue);
+}
+.chat-page .promo-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 24px rgba(16,72,121,.12);
+  filter:brightness(1.02);
+}
+.chat-page .promo-head{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.chat-page .promo-head svg{ width:28px; height:28px; fill:var(--blue); }
+.chat-page .promo-title{ font-weight:800; font-size:18px; color:var(--blue); }
+.chat-page .promo-copy{ margin:6px 0 12px; color:#0e1e36; line-height:1.45; }
+.chat-page .promo-cta{
+  display:inline-block; background:var(--gold); color:var(--blue);
+  font-weight:800; padding:8px 12px; border-radius:999px;
+}
