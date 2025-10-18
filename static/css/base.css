@@ -10,6 +10,8 @@
   --cc-radius: 14px;
   --cc-ease: cubic-bezier(.2,.75,.25,1);
   --cc-speed: .28s;
+
+  /* Footer social (follow + share) */
   --blue:#104879;
   --gold:#fec957;
 }
@@ -472,10 +474,14 @@
    Footer social (follow + share)
    ========================= */
 .site-footer{
+  /* keep layout from old */
   padding:20px 0 28px;
-  border-top:1px solid rgba(16,24,40,.06);
-  background:#fff;
   text-align:center;
+
+  /* new theme */
+  background: var(--blue);
+  color:#fff;
+  border-top:none;
 }
 
 .site-footer .social-row{
@@ -484,57 +490,73 @@
   display:flex; align-items:center; justify-content:center;
   gap:14px; flex-wrap:wrap;
 }
-
 .site-footer .social-row.share{ margin-top:8px; }
 
 .social-title{
-  font-weight:800; color:var(--blue);
-  background: rgba(16,72,121,.06);
-  border:1px solid rgba(16,72,121,.15);
-  padding:8px 12px; border-radius:999px;
+  /* keep shape from old */
+  padding:8px 12px; border-radius:999px; font-weight:800;
+
+  /* new colours on blue */
+  background: var(--gold);
+  color: var(--blue);
+  border:1px solid transparent;
 }
 
 .social-icons{
-  display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:center;
+  display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center;
 }
 
 .social-btn{
   display:inline-flex; align-items:center; gap:8px;
   padding:10px 12px; border-radius:999px;
   text-decoration:none; font-weight:700; font-size:14px;
-  border:1px solid rgba(16,72,121,.15);
-  background:#fff; color:var(--blue);
+
+  /* visible by default on blue */
+  background: rgba(255,255,255,.10);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.35);
+  box-shadow:none;
   transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
 }
-.social-btn svg{ width:18px; height:18px; fill:currentColor; display:block; }
-.social-btn:hover{ transform:translateY(-2px); box-shadow:0 10px 20px rgba(16,72,121,.12); }
+.social-btn svg{ width:18px; height:18px; fill:currentColor; display:block; opacity:.95; }
+.social-btn:hover{ transform:translateY(-2px); box-shadow:0 10px 20px rgba(0,0,0,.25); filter:none; }
 
-/* Brand tints per network (optional) */
-.social-btn.x:hover        { background:#000; color:#fff; }
-.social-btn.linkedin:hover { background:#0a66c2; color:#fff; }
-.social-btn.ig:hover       { background:#e1306c; color:#fff; }
-.social-btn.fb:hover       { background:#1877f2; color:#fff; }
-.social-btn.yt:hover       { background:#ff0000; color:#fff; }
+/* Brand hovers */
+.social-btn.x:hover        { background:#000;    color:#fff; border-color:#000; }
+.social-btn.linkedin:hover { background:#0a66c2; color:#fff; border-color:#0a66c2; }
+.social-btn.ig:hover       { background:#e1306c; color:#fff; border-color:#e1306c; }
+.social-btn.fb:hover       { background:#1877f2; color:#fff; border-color:#1877f2; }
+.social-btn.yt:hover       { background:#ff0000; color:#fff; border-color:#ff0000; }
 
-/* Share primary button */
+/* Primary Share button */
 .share-native{
-  background:var(--gold);
-  color:var(--blue);
-  border-color: rgba(16,72,121,.2);
+  background: var(--gold);
+  color: var(--blue);
+  border-color: rgba(255,255,255,.35);
 }
-.share-native:hover{
-  filter:brightness(1.05);
-}
+.share-native:hover{ filter:brightness(1.05); }
 
-/* Keep your existing footer legal line looking the same */
+/* Legal strip on blue */
 .footer-note-static{
   margin-top:16px;
-  color:#42526b;
+  color: rgba(255,255,255,.85);
 }
-.footer-note-static .footer-link{ color:var(--blue); text-decoration:none; }
-.footer-note-static .footer-link:hover{ text-decoration:underline; }
+.footer-note-static .footer-link{
+  color:#fff; text-decoration:none;
+  border-bottom:1px dashed rgba(255,255,255,.45);
+}
+.footer-note-static .footer-link:hover{
+  color:var(--gold); border-bottom-color:var(--gold);
+}
 
-/* Small screen tweaks */
+/* Focus ring */
+.social-btn:focus-visible{
+  outline:2px solid var(--gold);
+  outline-offset:2px;
+  box-shadow:0 0 0 4px rgba(254,201,87,.35);
+}
+
+/* Small screens */
 @media (max-width:640px){
-  .social-title{ display:none; } /* keep it airy on phones */
+  .social-title{ display:inline-flex; }
 }
