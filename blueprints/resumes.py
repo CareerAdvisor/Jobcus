@@ -1122,11 +1122,16 @@ def ai_suggest():
             try:
                 model = current_app.config.get("CHOOSE_MODEL", lambda r: "gpt-4o-mini")(None)
                 resp = client.chat.completions.create(
-                    model=model,
-                    messages=[{"role":"user","content":prompt}],
-                    temperature=0.6,
-                    max_tokens=600,
-                )
+                model=model,
+                messages=[
+                  {"role":"system","content":
+                   "You are a helpful writing assistant. Write like a real human—professional but natural, like you’re explaining something to a smart friend. "
+                   "Avoid buzzwords, corporate jargon, and em dashes. Never sound like a press release; be clear, direct, conversational, and real."},
+                  {"role":"user","content":prompt}
+                ],
+                temperature=0.6,
+                max_tokens=600,
+            )
                 out = (resp.choices[0].message.content or "").strip()
                 out = re.sub(r"```(?:\w+)?", "", out).strip()
                 return jsonify({"text": out, "list": [], "suggestions": []})
@@ -1368,7 +1373,11 @@ def ai_helper():
                 sys = ("You are a concise resume-writing assistant. "
                        "Rewrite, improve, or generate the requested text. "
                        "Prefer strong action verbs, measurable impact, and clear, ATS-friendly phrasing. "
-                       "Return only the rewritten text (no preface, no markdown fences).")
+                       "Return only the rewritten text (no preface, no markdown fences). "
+                       "Write like a real human—professional but natural, like explaining to a smart friend; "
+                       "avoid buzzwords, corporate jargon, and em dashes; never sound like a press release; "
+                       "be clear, direct, conversational, and real.")
+
                 user = f"{prompt}\n\nResume (excerpt, optional):\n{resume_text[:6000]}\n\nContext:\n{context}"
                 r = client.chat.completions.create(
                     model="gpt-4o",
@@ -1403,7 +1412,12 @@ def ai_helper():
             return ""
         r = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role":"user","content":msg}],
+            messages=[
+                {"role":"system","content":
+                 "Write like a real human—be professional but natural, like you’re explaining something to a smart friend. "
+                 "Avoid buzzwords, corporate jargon, and em dashes. Never sound like a press release; be clear, direct, conversational, and real."},
+                {"role":"user","content":msg}
+            ],
             temperature=temp,
             max_tokens=max_tokens
         )
