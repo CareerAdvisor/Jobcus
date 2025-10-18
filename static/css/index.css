@@ -386,3 +386,44 @@
 /* Disable the old "h4 turns blue on hover" rule here */
 .home-page #features .card-link:hover .card h4{ color: inherit; }
 
+/* ===== How it works: brand blue background + visible accents ===== */
+.home-page .how-it-works{
+  background: var(--blue);   /* #104879 */
+  color: #fff;
+}
+
+/* Gold headline on blue for strong contrast */
+.home-page .how-it-works .section-title{
+  color: var(--gold);        /* #fec957 */
+}
+
+/* Step cards: keep white tiles but tune border for a blue backdrop */
+.home-page .how-it-works .how-steps li{
+  background:#fff;
+  border: 1px solid rgba(255,255,255,.28); /* subtle against blue */
+}
+
+/* Counters: gold pill with blue number (very readable on blue bg) */
+.home-page .how-it-works .how-steps li::before{
+  background: var(--gold);
+  color: var(--blue);
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+}
+
+/* Slider frame: soften the border so it sits nicely on blue */
+.home-page .hiw-slider{
+  border: 1px solid rgba(255,255,255,.25);
+  background:#fff;
+}
+
+/* Slider arrows remain white, but give them a slightly warmer hover */
+.home-page .hiw-prev,
+.home-page .hiw-next{
+  background:#fff;
+  border:1px solid rgba(255,255,255,.55);
+  color: var(--blue);
+}
+.home-page .hiw-prev:hover,
+.home-page .hiw-next:hover{
+  background:#f6f9ff;
+}
