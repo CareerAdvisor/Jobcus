@@ -401,6 +401,7 @@
 .home-page .how-it-works .how-steps li{
   background:#fff;
   border: 1px solid rgba(255,255,255,.28); /* subtle against blue */
+  color: var(--blue);
 }
 
 /* Counters: gold pill with blue number (very readable on blue bg) */
@@ -426,4 +427,23 @@
 .home-page .hiw-prev:hover,
 .home-page .hiw-next:hover{
   background:#f6f9ff;
+}
+
+/* Explicitly set common child elements too (in case earlier styles override) */
+.home-page .how-it-works .how-steps li h4,
+.home-page .how-it-works .how-steps li strong,
+.home-page .how-it-works .how-steps li p,
+.home-page .how-it-works .how-steps li span{
+  color: var(--blue);
+}
+
+/* Links inside cards */
+.home-page .how-it-works .how-steps li a{
+  color: var(--blue);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(16,72,121,.35);
+}
+.home-page .how-it-works .how-steps li a:hover{
+  color: #0b3560; /* slightly darker blue */
+  border-bottom-color: currentColor;
 }
