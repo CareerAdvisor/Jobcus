@@ -479,7 +479,7 @@ html { -webkit-text-size-adjust: 100%; }
 
 /* Center the welcome block */
 #welcomeBanner{
-  min-height: 55vh;                 /* pushes it to the middle of the viewport */
+  min-height: 52vh;                 /* pushes it to the middle of the viewport */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -489,11 +489,11 @@ html { -webkit-text-size-adjust: 100%; }
 }
 
 #welcomeBanner .welcome-title{
-  margin: 0 0 14px;
   font-weight: 800;
   /* bigger but responsive */
-  font-size: clamp(1.6rem, 2.6vw + 0.6rem, 2.4rem);
   color: #104879;
+  font-size: clamp(1.4rem, 2.1vw + 0.5rem, 2.1rem);  /* ~4px smaller across sizes */
+  margin: 4px 0 10px;
 }
 
 /* center the chips row */
@@ -665,26 +665,26 @@ html { -webkit-text-size-adjust: 100%; }
   margin: 6px 0 10px;    /* pull it up a bit */
 }
 
-/* Bring promos closer to the welcome block */
+/* Promo grid spacing so it never hides behind the fixed composer */
 .chat-page .chat-promos{
-  width:min(980px,92%);
-  margin: 8px auto 12px; /* smaller top margin */
-  display:grid;
+  width: min(980px, 92%);
+  margin: 10px auto calc(var(--dock-h) + 20px);  /* extra bottom padding */
+  display: grid;
   grid-template-columns: repeat(2, minmax(0,1fr));
-  gap:14px;
+  gap: 14px;
 }
 @media (max-width: 720px){
-  .chat-page .chat-promos{ grid-template-columns:1fr; }
+  .chat-page .chat-promos{ grid-template-columns: 1fr; }
 }
 
-/* Promo card styling (if you haven't added already) */
+/* (If you haven't already styled the promo cards) */
 .chat-page .promo-card{
   display:block; text-decoration:none;
   background:#fff; border:1px solid rgba(16,72,121,.15);
   border-radius:16px; padding:16px;
   box-shadow:0 8px 20px rgba(16,72,121,.06);
   transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
-  color:var(--blue);
+  color:#104879;
 }
 .chat-page .promo-card:hover{
   transform:translateY(-2px);
@@ -692,10 +692,10 @@ html { -webkit-text-size-adjust: 100%; }
   filter:brightness(1.02);
 }
 .chat-page .promo-head{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-.chat-page .promo-head svg{ width:28px; height:28px; fill:var(--blue); }
-.chat-page .promo-title{ font-weight:800; font-size:18px; color:var(--blue); }
+.chat-page .promo-head svg{ width:28px; height:28px; fill:#104879; }
+.chat-page .promo-title{ font-weight:800; font-size:18px; color:#104879; }
 .chat-page .promo-copy{ margin:6px 0 12px; color:#0e1e36; line-height:1.45; }
 .chat-page .promo-cta{
-  display:inline-block; background:var(--gold); color:var(--blue);
+  display:inline-block; background:#fec957; color:#104879;
   font-weight:800; padding:8px 12px; border-radius:999px;
 }
