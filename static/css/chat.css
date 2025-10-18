@@ -713,3 +713,20 @@ html { -webkit-text-size-adjust: 100%; }
   font-size: clamp(24px, 4vw, 40px);
   margin: 6px 0 10px;
 }
+
+/* --- Tighter, smaller welcome header --- */
+.chat-page #welcomeBanner {
+  margin-top: 12px;               /* pull upward */
+}
+
+.chat-page #welcomeBanner .welcome-title {
+  font-size: clamp(18px, 3.5vw, 28px); /* reduce ~4 points smaller */
+  line-height: 1.2;
+  margin-bottom: 8px;
+  color: #104879;
+}
+
+.chat-page .suggestion-chips {
+  margin-top: 4px;
+  margin-bottom: 12px;            /* tighter spacing so promos fit nicely */
+}
