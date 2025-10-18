@@ -102,7 +102,10 @@
       </a>
 
       <a class="card-link" href="/employers">
-        <div class="card"><h4>Employer Tools (Phased)</h4><p>Start with AI Job Description Generator. Grow into posting, matching, and talent insights over time.</p></div>
+        <div class="card">
+          <h4>AI Job Description Generator</h4>
+          <p>Create clear, inclusive job descriptions in minutes — ready to copy or download.</p>
+        </div>
       </a>
     </div>
   </div>
@@ -143,7 +146,9 @@
     </div>
     <form class="convert-form" action="/account" method="get" onsubmit="return true;">
       <label class="sr-only" for="leadEmail">Email</label>
-      <input id="leadEmail" name="email" type="email" placeholder="you@email.com" required>
+      <input id="leadEmail" name="email" type="email"
+       placeholder="you@email.com" required
+       autocomplete="email" inputmode="email" />
       <button class="btn" type="submit">Get started</button>
     </form>
   </div>
