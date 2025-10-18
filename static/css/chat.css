@@ -699,3 +699,17 @@ html { -webkit-text-size-adjust: 100%; }
   display:inline-block; background:#fec957; color:#104879;
   font-weight:800; padding:8px 12px; border-radius:999px;
 }
+
+/* Height hint for the bottom composer (tweak to your actual dock height) */
+.chat-page { --dock-h: 88px; } /* 76–96px is typical */
+
+/* Give the scroll area padding so nothing hides behind the dock */
+.chat-page #chatbox{
+  padding-bottom: calc(var(--dock-h) + 24px);
+}
+
+/* Optional: slightly smaller welcome headline + tighter spacing */
+.chat-page #welcomeBanner .welcome-title{
+  font-size: clamp(24px, 4vw, 40px);
+  margin: 6px 0 10px;
+}
