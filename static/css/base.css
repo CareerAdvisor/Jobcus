@@ -539,10 +539,10 @@
 /* Legal strip on blue */
 .footer-note-static{
   margin-top:16px;
-  color: rgba(255,255,255,.85);
+  color: #42526b !important;
 }
 .footer-note-static .footer-link{
-  color:#fff; text-decoration:none;
+  color:#104879; text-decoration:none;
   border-bottom:1px dashed rgba(255,255,255,.45);
 }
 .footer-note-static .footer-link:hover{
@@ -559,4 +559,20 @@
 /* Small screens */
 @media (max-width:640px){
   .social-title{ display:inline-flex; }
+}
+
+/* Footer legal strip: revert to gray text + blue links */
+.site-footer .footer-note-static{
+  color: #42526b !important;            /* gray like before */
+}
+
+.site-footer .footer-note-static .footer-link{
+  color: var(--blue) !important;         /* brand blue links */
+  text-decoration: none;
+  border-bottom: 0;                      /* remove the dashed underline we added */
+}
+
+.site-footer .footer-note-static .footer-link:hover{
+  color: var(--blue) !important;         /* keep same color on hover */
+  text-decoration: underline;            /* classic underline on hover */
 }
