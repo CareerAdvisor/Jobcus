@@ -10,6 +10,8 @@
   --cc-radius: 14px;
   --cc-ease: cubic-bezier(.2,.75,.25,1);
   --cc-speed: .28s;
+  --blue:#104879;
+  --gold:#fec957;
 }
 
 /* Banner (slides up) */
@@ -465,3 +467,74 @@
 
 .mobile-nav { display: none; }
 .mobile-nav.show { display: block; }
+
+/* =========================
+   Footer social (follow + share)
+   ========================= */
+.site-footer{
+  padding:20px 0 28px;
+  border-top:1px solid rgba(16,24,40,.06);
+  background:#fff;
+  text-align:center;
+}
+
+.site-footer .social-row{
+  width:min(1150px,92%);
+  margin:0 auto 12px auto;
+  display:flex; align-items:center; justify-content:center;
+  gap:14px; flex-wrap:wrap;
+}
+
+.site-footer .social-row.share{ margin-top:8px; }
+
+.social-title{
+  font-weight:800; color:var(--blue);
+  background: rgba(16,72,121,.06);
+  border:1px solid rgba(16,72,121,.15);
+  padding:8px 12px; border-radius:999px;
+}
+
+.social-icons{
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:center;
+}
+
+.social-btn{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 12px; border-radius:999px;
+  text-decoration:none; font-weight:700; font-size:14px;
+  border:1px solid rgba(16,72,121,.15);
+  background:#fff; color:var(--blue);
+  transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+.social-btn svg{ width:18px; height:18px; fill:currentColor; display:block; }
+.social-btn:hover{ transform:translateY(-2px); box-shadow:0 10px 20px rgba(16,72,121,.12); }
+
+/* Brand tints per network (optional) */
+.social-btn.x:hover        { background:#000; color:#fff; }
+.social-btn.linkedin:hover { background:#0a66c2; color:#fff; }
+.social-btn.ig:hover       { background:#e1306c; color:#fff; }
+.social-btn.fb:hover       { background:#1877f2; color:#fff; }
+.social-btn.yt:hover       { background:#ff0000; color:#fff; }
+
+/* Share primary button */
+.share-native{
+  background:var(--gold);
+  color:var(--blue);
+  border-color: rgba(16,72,121,.2);
+}
+.share-native:hover{
+  filter:brightness(1.05);
+}
+
+/* Keep your existing footer legal line looking the same */
+.footer-note-static{
+  margin-top:16px;
+  color:#42526b;
+}
+.footer-note-static .footer-link{ color:var(--blue); text-decoration:none; }
+.footer-note-static .footer-link:hover{ text-decoration:underline; }
+
+/* Small screen tweaks */
+@media (max-width:640px){
+  .social-title{ display:none; } /* keep it airy on phones */
+}
