@@ -447,3 +447,59 @@
   color: #0b3560; /* slightly darker blue */
   border-bottom-color: currentColor;
 }
+
+/* === Conversion strip: responsive layout === */
+.convert-strip{ background: var(--blue); color:#fff; padding:32px 0; }
+
+.convert-flex{
+  display:flex; gap:18px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+}
+
+/* Form base */
+.convert-form{ display:flex; gap:10px; }
+.convert-form input{
+  padding:12px 14px;
+  border-radius:10px;
+  border:1px solid #e7efff;
+  min-width:260px;           /* desktop comfort */
+  background:#fff; color:#0e1e36;
+}
+.convert-form .btn{
+  background: var(--gold);
+  color: var(--blue);
+  border-radius:10px;
+  white-space:nowrap;
+}
+
+/* ===== Tablet and down ===== */
+@media (max-width: 960px){
+  .convert-flex{
+    flex-direction:column;             /* stack left/right columns */
+    align-items:stretch;               /* stretch to full width */
+    text-align:center;
+    gap:16px;
+  }
+  .convert-strip h3{ margin-bottom:6px; }
+  .convert-form{
+    width:100%;
+    display:grid;                      /* tidy alignment */
+    grid-template-columns: 1fr auto;   /* input grows, button hugs */
+    gap:10px;
+    justify-content:center;
+  }
+  .convert-form input{
+    min-width:0;                       /* allow shrinking on small screens */
+    width:100%;
+  }
+}
+
+/* ===== Small phones ===== */
+@media (max-width: 520px){
+  .convert-form{
+    grid-template-columns: 1fr;        /* stack input and button */
+  }
+  .convert-form .btn{
+    width:100%;                        /* full-width CTA */
+    justify-self:stretch;
+  }
+}
