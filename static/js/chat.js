@@ -731,6 +731,21 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>`;
   }
 
+  async function handleSend() {
+    const userText = input.value.trim();
+    if (!userText) return;
+  
+    // Hide welcome + promos immediately
+    document.getElementById("welcomeBanner")?.remove();
+    document.querySelector(".chat-promos")?.remove();
+  
+    // Existing logic below
+    addUserMessage(userText);
+    input.value = "";
+    autoResize(input);
+    await sendToAI(userText);
+  }
+
   function renderChat(messages){
     chatbox.innerHTML = "";
     if (!messages.length){
