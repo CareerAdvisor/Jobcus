@@ -720,6 +720,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderWelcome(){
     const shell = document.getElementById("chatShell");
     const fname = (shell?.dataset.firstName || "there");
+  
     chatbox.innerHTML = `
       <div class="welcome" id="welcomeBanner">
         <p class="welcome-title">👋 Welcome ${escapeHtml(fname)}! How can I help you today?</p>
@@ -728,7 +729,12 @@ document.addEventListener("DOMContentLoaded", () => {
           <button type="button" class="chip" data-suggest="Interview tips for a UX role">Interview tips</button>
           <button type="button" class="chip" data-suggest="Show me job market insights for London">Job insights</button>
         </div>
-      </div>`;
+      </div>
+    `;
+  
+    // Append feature promos only on the empty state
+    const tpl = document.getElementById("promosTemplate");
+    if (tpl) chatbox.appendChild(tpl.content.cloneNode(true));
   }
 
   async function handleSend() {
