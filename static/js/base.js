@@ -398,6 +398,61 @@ document.addEventListener("DOMContentLoaded", () => {
   window.closeChatMenu = closeChatMenu;
 });
 
+// ─────────────────────────────────────────────────────────────
+// Social share: Web Share API + desktop fallbacks
+// ─────────────────────────────────────────────────────────────
+(function(){
+  function getShareData(){
+    const url   = location.href;
+    const title = document.title || "Jobcus";
+    const text  = "Check this out on Jobcus:";
+    return { url, title, text };
+  }
+
+  // Native share button
+  const shareBtn = document.querySelector(".social-btn.share-native");
+  if (shareBtn) {
+    shareBtn.addEventListener("click", async () => {
+      const data = getShareData();
+      if (navigator.share) {
+        try { await navigator.share(data); } catch { /* user cancelled */ }
+      } else {
+        // No Web Share: open LinkedIn as reasonable default
+        const fallback = buildLink("linkedin", data);
+        window.open(fallback, "_blank", "noopener");
+      }
+    });
+  }
+
+  // Fill direct share links
+  document.querySelectorAll("[data-share]").forEach(a => {
+    const net = a.getAttribute("data-share");
+    const data = getShareData();
+    a.href = buildLink(net, data);
+  });
+
+  function buildLink(network, { url, title, text }){
+    const u = encodeURIComponent(url);
+    const t = encodeURIComponent(title);
+    const d = encodeURIComponent(text || title);
+    switch(network){
+      case "x":
+        return `https://twitter.com/intent/tweet?url=${u}&text=${t}`;
+      case "linkedin":
+        return `https://www.linkedin.com/sharing/share-offsite/?url=${u}`;
+      case "facebook":
+        return `https://www.facebook.com/sharer/sharer.php?u=${u}`;
+      case "whatsapp":
+        return `https://api.whatsapp.com/send?text=${d}%20${u}`;
+      case "email":
+        return `mailto:?subject=${t}&body=${d}%0A%0A${u}`;
+      default:
+        return url;
+    }
+  }
+})();
+
+
 /* ─────────────────────────────────────────────────────────────
  * 3) Cloud state sync (GET on load; POST on changes)
  *     - /api/state returns/accepts { data: {...} }
