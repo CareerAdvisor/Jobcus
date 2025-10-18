@@ -503,3 +503,25 @@
     justify-self:stretch;
   }
 }
+
+/* Fix mobile "Send" button clipping in hero chat */
+.home-page .chat-demo .input * { box-sizing: border-box; }
+
+.home-page .chat-demo .input button{
+  flex: 0 0 auto;          /* don't let flexbox shrink the button */
+  min-width: 88px;         /* enough to show "Send" in all locales */
+  white-space: nowrap;     /* keep label on one line */
+  display: flex;           /* vertical centering insurance */
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile ergonomics: avoid iOS zoom and keep padding tight */
+@media (max-width: 520px){
+  .home-page .chat-demo .input input{
+    font-size: 16px;       /* >=16px prevents iOS zoom on focus */
+  }
+  .home-page .chat-demo .input button{
+    padding: 0 14px;       /* fits narrow screens without truncation */
+  }
+}
