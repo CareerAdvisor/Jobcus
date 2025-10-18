@@ -1899,6 +1899,12 @@ CAREER_SYSTEM_PROMPT = (
     "politely steer the user back to career-relevant guidance."
 )
 
+STYLE_GUIDE = (
+    "Write like a real human—be professional but natural, like you’re explaining something to a smart friend. "
+    "Avoid buzzwords, corporate jargon, and em dashes. Never sound like a press release; "
+    "be clear, direct, conversational, and real."
+)
+
 def _first_name_fallback():
     # Use the name “ThankGod” only if that’s actually the logged-in user’s first name;
     # otherwise use the best available first name.
@@ -1915,7 +1921,10 @@ def _chat_completion(model: str, user_msg: str, history=None) -> str:
     """
     Minimal OpenAI wrapper. `history` can be a list of {role, content}.
     """
-    msgs = [{"role": "system", "content": CAREER_SYSTEM_PROMPT}]
+    msgs = [
+        {"role": "system", "content": CAREER_SYSTEM_PROMPT},
+        {"role": "system", "content": STYLE_GUIDE},  # ← add this line
+    ]
     if history:
         # keep a small sliding window
         for m in history[-6:]:
