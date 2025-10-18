@@ -684,6 +684,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatbox = document.getElementById("chatbox");
   const form    = document.getElementById("chat-form");
   const input   = document.getElementById("userInput");
+  
+  // ▼ paste here IF you want promos to persist (you said you don't)
+  (function () {
+    const promos  = document.querySelector(".chat-promos");
+    if (chatbox && promos) {
+      promos.classList.add("persist-in-chat");
+      chatbox.appendChild(promos);
+    }
+  })();
+
 
   // Bind scroll listener so scrolldown icon shows/hides properly
   chatbox?.addEventListener("scroll", () => maybeShowScrollIcon());
