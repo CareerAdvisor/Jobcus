@@ -350,3 +350,39 @@
 .convert-form input{ padding:10px 12px; border-radius:8px; border:1px solid #e7efff; min-width:260px }
 .convert-form .btn{ background:#ffc957; color:#104879; }
 .muted{ opacity:.85 }
+
+/* === Features section: alternate brand backgrounds (blue / gold) === */
+/* Base reset for this section */
+.home-page #features .card{
+  border: 0;               /* cleaner block look */
+  box-shadow: 0 8px 20px rgba(16,72,121,.08);
+}
+.home-page #features .card::before{ display:none; } /* hide the old gold top bar */
+
+/* ODD = BLUE card */
+.home-page #features .cards > a:nth-child(odd) .card{
+  background: var(--blue);          /* #104879 */
+  color: #fff;
+}
+.home-page #features .cards > a:nth-child(odd) .card h4{ color:#fff; }
+.home-page #features .cards > a:nth-child(odd) .card p{ color: rgba(255,255,255,.92); }
+
+/* EVEN = GOLD card */
+.home-page #features .cards > a:nth-child(even) .card{
+  background: var(--gold);          /* #fec957 */
+  color: var(--blue);               /* strong readable contrast on gold */
+}
+.home-page #features .cards > a:nth-child(even) .card h4{ color: var(--blue); }
+.home-page #features .cards > a:nth-child(even) .card p{ color: #0e1e36; } /* deep ink for body text */
+
+/* Hover/focus lift with readability intact */
+.home-page #features .card-link:hover .card,
+.home-page #features .card-link:focus-visible .card{
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(16,72,121,.14);
+  filter: brightness(1.02);
+}
+
+/* Disable the old "h4 turns blue on hover" rule here */
+.home-page #features .card-link:hover .card h4{ color: inherit; }
+
