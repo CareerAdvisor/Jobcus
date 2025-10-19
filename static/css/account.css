@@ -274,3 +274,31 @@ body.account-page .auth-card{
   filter: none;
   opacity: 1;
 }
+
+/* Focus ring */
+.social-btn:focus-visible{
+  outline:2px solid var(--gold);
+  outline-offset:2px;
+  box-shadow:0 0 0 4px rgba(254,201,87,.35);
+}
+
+/* Small screens */
+@media (max-width:640px){
+  .social-title{ display:inline-flex; }
+}
+
+/* Footer legal strip: revert to gray text + blue links */
+.site-footer .footer-note-static{
+  color: #42526b !important;            /* gray like before */
+}
+
+.site-footer .footer-note-static .footer-link{
+  color: var(--blue) !important;         /* brand blue links */
+  text-decoration: none;
+  border-bottom: 0;                      /* remove the dashed underline we added */
+}
+
+.site-footer .footer-note-static .footer-link:hover{
+  color: var(--blue) !important;         /* keep same color on hover */
+  text-decoration: underline;            /* classic underline on hover */
+}
