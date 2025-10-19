@@ -242,24 +242,35 @@ body.account-page .auth-card{
   all: revert;           /* resets overridden props to UA defaults */
 }
 
-/* or explicitly set them the way your footer expects (safe fallback) */
+/* Restore footer follow/share look on the account page only */
 .account-page .site-footer .socials a,
 .account-page .site-footer .socials .social-pill,
 .account-page .site-footer .socials .social-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
   border: 1px solid var(--footer-pill-border, #dbe7f6);
   background: var(--footer-pill-bg, #fff);
-  opacity: 1;
-  filter: none;
+  box-shadow: 0 8px 24px rgba(16,72,121,.12);
+  filter: none !important;
+  opacity: 1 !important;
 }
+
 .account-page .site-footer .socials img {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
+  display: block;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* kill any broad hover/focus styles from the auth CSS that might bleed */
+.account-page .site-footer .socials a:hover,
+.account-page .site-footer .socials a:focus {
+  transform: none;
   filter: none;
   opacity: 1;
 }
