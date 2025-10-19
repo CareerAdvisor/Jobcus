@@ -760,6 +760,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const userText = input.value.trim();
     if (!userText) return;
   
+    setChatActive(true);   // << new
+    nukePromos();          // << new
+  
     // Hide welcome + promos immediately
     document.getElementById("welcomeBanner")?.remove();
     document.querySelector(".chat-promos")?.remove();
@@ -773,12 +776,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderChat(messages){
     chatbox.innerHTML = "";
+  
     if (!messages.length){
+      setChatActive(false);       // empty thread → show welcome/promos
       renderWelcome();
       scrollToBottom();
       maybeShowScrollIcon();
       return;
     }
+  
+    setChatActive(true);          // active thread → hide welcome/promos
+    nukePromos();                 // in case a stray one exists outside chatbox
+
     messages.forEach(msg => {
       const div = document.createElement("div");
       div.className = `chat-entry ${msg.role === "assistant" ? "ai-answer" : "user"}`;
@@ -847,6 +856,7 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.removeItem("chat:conversationId");
       localStorage.removeItem('jobcus:chat:activeId'); // clear local active flag (fallback mode)
       conversationId = null;
+      setChatActive(false);   // << new
       renderChat([]);
       renderHistory();
     } finally {
@@ -897,11 +907,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Initial paint (do NOT wipe server-rendered welcome/promos if empty)
-  const curr = getCurrent(); // -> []
+  const curr = getCurrent();
   if (Array.isArray(curr) && curr.length > 0) {
-    // There’s a draft/history to show — render chat (this clears welcome/promos)
+    setChatActive(true);
     renderChat(curr);
   } else {
+    setChatActive(false);
     // Keep the server-rendered welcome + feature promos visible
     if (!document.getElementById('welcomeBanner')) {
       renderWelcome(); // only if the server didn't print it
