@@ -711,6 +711,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const getHistory = () => JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
   const setHistory = (arr) => localStorage.setItem(STORAGE.history, JSON.stringify(arr));
 
+
+  // clear the "current" buffer unless the URL explicitly asks to continue.
+  (function(){
+    const url = new URL(location.href);
+    const continueFlag = url.searchParams.get("continue"); // ?continue=1 to keep draft
+    if (!continueFlag) {
+      setCurrent([]);  // force empty state => welcome + promos
+    }
+  })();
+
   function firstUserTitle(messages){
     const firstUser = messages.find(m => m.role === "user");
     const raw = (firstUser?.content || "Conversation").trim();
@@ -732,7 +742,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
   
-    // Append feature promos only on the empty state
+    // Append feature promos under the welcome
     const tpl = document.getElementById("promosTemplate");
     if (tpl) chatbox.appendChild(tpl.content.cloneNode(true));
   }
