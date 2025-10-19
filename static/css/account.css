@@ -235,3 +235,31 @@ body.account-page .auth-card{
 /* tighten scope so we don't touch the footer */
 .account-page .auth-card .social-buttons .social-btn { /* your existing styles */ }
 .account-page .auth-card .social-buttons .social-btn img { /* your existing styles for img */ }
+
+/* restore footer socials to their base styles on the account page */
+.account-page .site-footer .socials a,
+.account-page .site-footer .socials .social-btn {
+  all: revert;           /* resets overridden props to UA defaults */
+}
+
+/* or explicitly set them the way your footer expects (safe fallback) */
+.account-page .site-footer .socials a,
+.account-page .site-footer .socials .social-pill,
+.account-page .site-footer .socials .social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--footer-pill-border, #dbe7f6);
+  background: var(--footer-pill-bg, #fff);
+  opacity: 1;
+  filter: none;
+}
+.account-page .site-footer .socials img {
+  width: 20px;
+  height: 20px;
+  filter: none;
+  opacity: 1;
+}
