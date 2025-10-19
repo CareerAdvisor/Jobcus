@@ -723,3 +723,8 @@ html { -webkit-text-size-adjust: 100%; }
   .chat-page .chat-promos{ grid-template-columns: 1fr; }
 }
 
+/* When a conversation is active, hide the welcome + promos */
+.chat-page.chat-active #welcomeBanner,
+.chat-page.chat-active .chat-promos{
+  display: none !important;
+}
