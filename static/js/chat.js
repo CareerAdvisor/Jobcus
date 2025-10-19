@@ -93,6 +93,16 @@ function scrollToBottom() {
   box.scrollTop = box.scrollHeight;
 }
 
+// === Chat state + cleanup helpers (global) ===
+function setChatActive(on) {
+  document.body.classList.toggle('chat-active', !!on);
+}
+function nukePromos() {
+  // remove any promo sections + welcome banner
+  document.querySelectorAll('.chat-promos').forEach(n => n.remove());
+  document.getElementById('welcomeBanner')?.remove();
+}
+
 // Minimal helpers your old code referenced
 function showUpgradeBanner(msg) {
   let b = document.getElementById("upgradeBanner");
@@ -701,6 +711,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const getHistory = () => JSON.parse(localStorage.getItem(STORAGE.history) || "[]");
   const setHistory = (arr) => localStorage.setItem(STORAGE.history, JSON.stringify(arr));
 
+  // Initial paint (do NOT wipe server-rendered welcome/promos if empty)
+  const curr = getCurrent();
+  if (Array.isArray(curr) && curr.length > 0) {
+    setChatActive(true);
+    renderChat(curr);
+  } else {
+    setChatActive(false);
+    // Keep the server-rendered welcome + feature promos visible
+    if (!document.getElementById('welcomeBanner')) {
+      renderWelcome(); // only if the server didn't print it
+    }
+  }
+
 
   // clear the "current" buffer unless the URL explicitly asks to continue.
   (function(){
@@ -927,11 +950,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---- send handler (self-contained and async) ----
   form?.addEventListener("submit", async (evt) => {
     evt.preventDefault();
-
+  
     const message = (input?.value || "").trim();
     if (!message) return;
-
-    removeWelcome?.();
+  
+    setChatActive(true);  // << add
+    nukePromos();         // << add
+    removeWelcome?.();    // you can keep this line; nukePromos removes it too
 
     const userMsg = document.createElement("div");
     userMsg.className = "chat-entry user";
