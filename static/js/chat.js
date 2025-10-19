@@ -19,6 +19,15 @@ window.insertSuggestion = function (text) {
   window.autoResize?.(el);
 };
 
+// ===== GLOBAL HELPERS (place near the top, before DOMContentLoaded) =====
+window.setChatActive = function (on) {
+  document.body.classList.toggle('chat-active', !!on);
+};
+window.nukePromos = function () {
+  document.querySelectorAll('.chat-promos').forEach(n => n.remove());
+  document.getElementById('welcomeBanner')?.remove();
+};
+
 // Event delegation for any data-suggest button (no inline onclick needed)
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-suggest]');
@@ -718,12 +727,8 @@ document.addEventListener("DOMContentLoaded", () => {
     renderChat(curr);
   } else {
     setChatActive(false);
-    // Keep the server-rendered welcome + feature promos visible
-    if (!document.getElementById('welcomeBanner')) {
-      renderWelcome(); // only if the server didn't print it
-    }
+    if (!document.getElementById('welcomeBanner')) renderWelcome();
   }
-
 
   // clear the "current" buffer unless the URL explicitly asks to continue.
   (function(){
