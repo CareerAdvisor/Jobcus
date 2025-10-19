@@ -740,8 +740,30 @@ document.addEventListener("DOMContentLoaded", () => {
           <button type="button" class="chip" data-suggest="Show me job market insights for London">Job insights</button>
         </div>
       </div>
-    `;
   
+      <!-- Feature promos (only show on empty state) -->
+      <section class="chat-promos" aria-label="Quick tools">
+        <a class="promo-card" href="/resume-analyzer">
+          <div class="promo-head">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V6h3.5L14 3.5zM8 9h8v1.6H8V9zm0 3h8v1.6H8V12zm0 3h5.5v1.6H8V15z"/></svg>
+            <span class="promo-title">Resume Analyzer</span>
+          </div>
+          <p class="promo-copy">Upload your resume to get an ATS score, keyword match, and quick, actionable fixes.</p>
+          <span class="promo-cta" aria-hidden="true">Open →</span>
+        </a>
+  
+        <a class="promo-card" href="/interview-coach">
+          <div class="promo-head">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V20H8.5v2H15v-2h-2v-2.08A7 7 0 0 0 19 11h-2z"/></svg>
+            <span class="promo-title">Interview Coach</span>
+          </div>
+          <p class="promo-copy">Practice role-specific questions and get feedback on clarity, tone, and confidence.</p>
+          <span class="promo-cta" aria-hidden="true">Start →</span>
+        </a>
+      </section>
+    `;
+  }
+
     // Append feature promos under the welcome
     const tpl = document.getElementById("promosTemplate");
     if (tpl) chatbox.appendChild(tpl.content.cloneNode(true));
