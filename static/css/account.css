@@ -231,3 +231,7 @@ body.account-page .auth-card{
   height: 16px;
   margin: 0;
 }
+
+/* tighten scope so we don't touch the footer */
+.account-page .auth-card .social-buttons .social-btn { /* your existing styles */ }
+.account-page .auth-card .social-buttons .social-btn img { /* your existing styles for img */ }
