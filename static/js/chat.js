@@ -715,10 +715,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // clear the "current" buffer unless the URL explicitly asks to continue.
   (function(){
     const url = new URL(location.href);
-    const continueFlag = url.searchParams.get("continue"); // ?continue=1 to keep draft
-    if (!continueFlag) {
-      setCurrent([]);  // force empty state => welcome + promos
-    }
+    const keep = url.searchParams.get("continue"); // use /chat?continue=1 to keep draft
+    if (!keep) setCurrent([]);                     // force welcome + promos on first load
   })();
 
   function firstUserTitle(messages){
@@ -741,7 +739,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </div>
   
-      <!-- Feature promos (only show on empty state) -->
+      <!-- Feature promos (empty state only) -->
       <section class="chat-promos" aria-label="Quick tools">
         <a class="promo-card" href="/resume-analyzer">
           <div class="promo-head">
@@ -755,7 +753,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <a class="promo-card" href="/interview-coach">
           <div class="promo-head">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V20H8.5v2H15v-2h-2v-2.08A7 7 0 0 0 19 11h-2z"/></svg>
-            <span class="promo-title">Interview Coach</span>
+          <span class="promo-title">Interview Coach</span>
           </div>
           <p class="promo-copy">Practice role-specific questions and get feedback on clarity, tone, and confidence.</p>
           <span class="promo-cta" aria-hidden="true">Start →</span>
