@@ -750,7 +750,6 @@ document.addEventListener("DOMContentLoaded", () => {
         </a>
       </section>
     `;
-  }
 
     // Append feature promos under the welcome
     const tpl = document.getElementById("promosTemplate");
