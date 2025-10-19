@@ -102,16 +102,6 @@ function scrollToBottom() {
   box.scrollTop = box.scrollHeight;
 }
 
-// === Chat state + cleanup helpers (global) ===
-function setChatActive(on) {
-  document.body.classList.toggle('chat-active', !!on);
-}
-function nukePromos() {
-  // remove any promo sections + welcome banner
-  document.querySelectorAll('.chat-promos').forEach(n => n.remove());
-  document.getElementById('welcomeBanner')?.remove();
-}
-
 // Minimal helpers your old code referenced
 function showUpgradeBanner(msg) {
   let b = document.getElementById("upgradeBanner");
@@ -941,19 +931,6 @@ document.addEventListener("DOMContentLoaded", () => {
     clearChat();
     window.closeChatMenu?.();
   });
-
-  // Initial paint (do NOT wipe server-rendered welcome/promos if empty)
-  const curr = getCurrent();
-  if (Array.isArray(curr) && curr.length > 0) {
-    setChatActive(true);
-    renderChat(curr);
-  } else {
-    setChatActive(false);
-    // Keep the server-rendered welcome + feature promos visible
-    if (!document.getElementById('welcomeBanner')) {
-      renderWelcome(); // only if the server didn't print it
-    }
-  }
   
   renderHistory();
   refreshCreditsPanel();
