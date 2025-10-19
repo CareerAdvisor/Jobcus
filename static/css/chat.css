@@ -665,10 +665,42 @@ html { -webkit-text-size-adjust: 100%; }
   margin: 6px 0 10px;    /* pull it up a bit */
 }
 
-/* Promo grid spacing so it never hides behind the fixed composer */
+/* One source of truth for dock height */
+.chat-page { --dock-h: 88px; }
+
+/* Scroll area has safe space under the fixed composer */
+.chat-page #chatbox{
+  padding-bottom: calc(var(--dock-h) + 24px) !important;
+}
+
+/* Optional: slightly smaller welcome headline + tighter spacing */
+.chat-page #welcomeBanner .welcome-title{
+  font-size: clamp(24px, 4vw, 40px);
+  margin: 6px 0 10px;
+}
+
+/* Pull welcome up and reduce size so promos fit */
+.chat-page #welcomeBanner{
+  min-height: 22vh;        /* was 52vh – this is what kept it too low */
+  padding: 12px 12px;
+  margin-top: 8px;
+}
+.chat-page #welcomeBanner .welcome-title{
+  font-size: clamp(20px, 3.2vw, 32px); /* ~4pt smaller across sizes */
+  line-height: 1.2;
+  margin: 4px 0 8px;
+  color: #104879;
+}
+
+.chat-page .suggestion-chips{
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+
+/* Promo grid: never under the dock, tidy spacing */
 .chat-page .chat-promos{
   width: min(980px, 92%);
-  margin: 10px auto calc(var(--dock-h) + 20px);  /* extra bottom padding */
+  margin: 8px auto calc(var(--dock-h) + 20px);
   display: grid;
   grid-template-columns: repeat(2, minmax(0,1fr));
   gap: 14px;
@@ -677,7 +709,6 @@ html { -webkit-text-size-adjust: 100%; }
   .chat-page .chat-promos{ grid-template-columns: 1fr; }
 }
 
-/* (If you haven't already styled the promo cards) */
 .chat-page .promo-card{
   display:block; text-decoration:none;
   background:#fff; border:1px solid rgba(16,72,121,.15);
@@ -698,35 +729,4 @@ html { -webkit-text-size-adjust: 100%; }
 .chat-page .promo-cta{
   display:inline-block; background:#fec957; color:#104879;
   font-weight:800; padding:8px 12px; border-radius:999px;
-}
-
-/* Height hint for the bottom composer (tweak to your actual dock height) */
-.chat-page { --dock-h: 88px; } /* 76–96px is typical */
-
-/* Give the scroll area padding so nothing hides behind the dock */
-.chat-page #chatbox{
-  padding-bottom: calc(var(--dock-h) + 24px);
-}
-
-/* Optional: slightly smaller welcome headline + tighter spacing */
-.chat-page #welcomeBanner .welcome-title{
-  font-size: clamp(24px, 4vw, 40px);
-  margin: 6px 0 10px;
-}
-
-/* --- Tighter, smaller welcome header --- */
-.chat-page #welcomeBanner {
-  margin-top: 12px;               /* pull upward */
-}
-
-.chat-page #welcomeBanner .welcome-title {
-  font-size: clamp(18px, 3.5vw, 28px); /* reduce ~4 points smaller */
-  line-height: 1.2;
-  margin-bottom: 8px;
-  color: #104879;
-}
-
-.chat-page .suggestion-chips {
-  margin-top: 4px;
-  margin-bottom: 12px;            /* tighter spacing so promos fit nicely */
 }
