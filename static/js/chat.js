@@ -803,19 +803,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderChat(messages){
-    chatbox.innerHTML = "";
+    const box = document.getElementById('chatbox');
+    if (!box) return;
   
-    if (!messages.length){
-      setChatActive(false);       // empty thread → show welcome/promos
-      renderWelcome();
+    box.innerHTML = "";
+  
+    // Empty thread → show welcome + promos
+    if (!Array.isArray(messages) || messages.length === 0){
+      setChatActive(false);
+  
+      // If server didn’t render it (or we cleared it), render it now
+      if (!document.getElementById('welcomeBanner')) {
+        renderWelcome();  // your renderWelcome() already includes the promos
+      }
+  
       scrollToBottom();
       maybeShowScrollIcon();
       return;
     }
   
-    setChatActive(true);          // active thread → hide welcome/promos
-    nukePromos();                 // in case a stray one exists outside chatbox
-
+    // Active thread → hide welcome/promos
+    setChatActive(true);
+    nukePromos();   // remove any leftover .chat-promos + #welcomeBanner
+  
+    // …then render your messages as you already do
     messages.forEach(msg => {
       const div = document.createElement("div");
       div.className = `chat-entry ${msg.role === "assistant" ? "ai-answer" : "user"}`;
@@ -825,19 +836,15 @@ document.addEventListener("DOMContentLoaded", () => {
           <div id="${id}" class="markdown"></div>
           <div class="response-footer">
             <span class="copy-wrapper">
-              <img src="/static/icons/copy.svg" class="copy-icon"
-                   title="Copy" onclick="copyToClipboard('${id}')">
+              <img src="/static/icons/copy.svg" class="copy-icon" title="Copy" onclick="copyToClipboard('${id}')">
               <span class="copy-text">Copy</span>
             </span>
           </div>
           <hr class="response-separator" />
         `;
         const target = div.querySelector(`#${id}`);
-        if (window.marked && typeof window.marked.parse === "function") {
-          target.innerHTML = window.marked.parse(msg.content);
-        } else {
-          target.textContent = msg.content;
-        }
+        if (window.marked?.parse) target.innerHTML = window.marked.parse(msg.content);
+        else target.textContent = msg.content;
       } else {
         div.innerHTML = `
           <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 .5rem;color:#104879;">
@@ -845,8 +852,9 @@ document.addEventListener("DOMContentLoaded", () => {
           </h2>
         `;
       }
-      chatbox.appendChild(div);
+      box.appendChild(div);
     });
+  
     scrollToBottom();
     maybeShowScrollIcon();
   }
