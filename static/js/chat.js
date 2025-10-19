@@ -907,8 +907,18 @@ document.addEventListener("DOMContentLoaded", () => {
     window.closeChatMenu?.();
   });
 
-  // Initial paint
-  renderChat(getCurrent());
+  // Initial paint (do NOT wipe server-rendered welcome/promos if empty)
+  const curr = getCurrent(); // -> []
+  if (Array.isArray(curr) && curr.length > 0) {
+    // There’s a draft/history to show — render chat (this clears welcome/promos)
+    renderChat(curr);
+  } else {
+    // Keep the server-rendered welcome + feature promos visible
+    if (!document.getElementById('welcomeBanner')) {
+      renderWelcome(); // only if the server didn't print it
+    }
+  }
+  
   renderHistory();
   refreshCreditsPanel();
   maybeShowScrollIcon();
