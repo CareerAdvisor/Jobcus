@@ -1,4 +1,4 @@
-// /static/js/cookie.js
+// /static/js/cookies.js
 (function(){
   "use strict";
 
