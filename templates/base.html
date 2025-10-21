@@ -251,14 +251,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   {% endif %}
 
   {% if not for_pdf %}
-    {% include "cookie.html" %}
+    {% include "cookies.html" %}
 
     <script>
       window.USER_AUTHENTICATED = {{ (current_user.is_authenticated)|tojson }};
       window.AUTH_ID = {{ (current_user.id if current_user.is_authenticated else None)|tojson }};
     </script>
 
-    <!-- Base JS (has AOS init, apiFetch, upgradePrompt, menus, cookie consent, etc.) -->
+    <!-- Base JS (has AOS init, apiFetch, upgradePrompt, menus, cookies consent, etc.) -->
     <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
 
     <!-- Self-hosted AOS (CSP-safe) -->
