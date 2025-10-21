@@ -59,57 +59,50 @@ function renderBarChart(canvasId, labels, data, labelText) {
   });
 }
 
+function qs(params = {}) {
+  const pairs = Object.entries(params).filter(([, v]) => v && String(v).trim() !== "");
+  return new URLSearchParams(Object.fromEntries(pairs)).toString();
+}
+
 // === 1. Salary Insights ===
-function fetchSalaryData() {
-  fetch("/api/salary")
+function fetchSalaryData(filters = {}) {
+  fetch("/api/salary?" + qs(filters))
     .then(res => res.json())
     .then(data => {
-      if (!data || !data.labels || !data.salaries) {
-        console.error("Invalid salary data format", data);
-        return;
-      }
+      if (!data || !data.labels || !data.salaries) return console.error("Invalid salary data format", data);
       renderBarChart("salary-chart", data.labels, data.salaries, "Average Salary (£)");
     })
     .catch(err => console.error("Salary Data Error:", err));
 }
 
 // === 2. Job Count ===
-function fetchJobCountData() {
-  fetch("/api/job-count")
+function fetchJobCountData(filters = {}) {
+  fetch("/api/job-count?" + qs(filters))
     .then(res => res.json())
     .then(data => {
-      if (!data || !data.labels || !data.counts) {
-        console.error("Invalid job count data format", data);
-        return;
-      }
+      if (!data || !data.labels || !data.counts) return console.error("Invalid job count data format", data);
       renderBarChart("jobcount-chart", data.labels, data.counts, "Open Positions");
     })
     .catch(err => console.error("Job Count Error:", err));
 }
 
 // === 3. Skill Trends ===
-function fetchSkillTrends() {
-  fetch("/api/skills")
+function fetchSkillTrends(filters = {}) {
+  fetch("/api/skills?" + qs(filters))
     .then(res => res.json())
     .then(data => {
-      if (!data || !data.labels || !data.frequency) {
-        console.error("Invalid skill data format", data);
-        return;
-      }
+      if (!data || !data.labels || !data.frequency) return console.error("Invalid skill data format", data);
       renderBarChart("skill-chart", data.labels, data.frequency, "Demand Level");
     })
     .catch(err => console.error("Skill Trends Error:", err));
 }
 
 // === 4. Location Insights ===
-function fetchLocationData() {
-  fetch("/api/locations")
+function fetchLocationData(filters = {}) {
+  fetch("/api/locations?" + qs(filters))
     .then(res => res.json())
     .then(data => {
-      if (!data || !data.labels || !data.counts) {
-        console.error("Invalid location data format", data);
-        return;
-      }
+      if (!data || !data.labels || !data.counts) return console.error("Invalid location data format", data);
       renderBarChart("location-chart", data.labels, data.counts, "Hiring Demand");
     })
     .catch(err => console.error("Location Data Error:", err));
@@ -117,8 +110,28 @@ function fetchLocationData() {
 
 // === DOM Ready ===
 document.addEventListener("DOMContentLoaded", () => {
-  fetchSalaryData();
-  fetchJobCountData();
-  fetchSkillTrends();
-  fetchLocationData();
+  const roleEl = document.getElementById("roleInput");
+  const locEl  = document.getElementById("locationInput");
+  const btn    = document.getElementById("applyFilters");
+
+  const runAll = () => {
+    const filters = {
+      role: roleEl?.value.trim(),
+      location: locEl?.value.trim(),
+    };
+    fetchSalaryData(filters);
+    fetchJobCountData(filters);
+    fetchSkillTrends(filters);
+    fetchLocationData(filters);
+  };
+
+  btn?.addEventListener("click", runAll);
+  // Enter key on either input
+  [roleEl, locEl].forEach(el => el?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); runAll(); }
+  }));
+
+  // Initial load (no filters)
+  runAll();
 });
+
