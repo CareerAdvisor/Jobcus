@@ -2205,13 +2205,34 @@ def get_jobs():
     except Exception:
         return jsonify(remotive=[], adzuna=[], jsearch=[])
 
-@app.route("/api/salary")
+# app.py
+
+from flask import request, jsonify
+
+@app.get("/api/salary")
 def salary_api():
-    role = request.args.get("role", "").strip() or None
-    location = request.args.get("location", "").strip() or None
-    # TODO: query your source with the filters (or fall back to defaults)
-    labels, salaries = get_salary_data(role=role, location=location)
-    return jsonify({"labels": labels, "salaries": salaries})
+    """
+    Returns labels + salaries arrays for a bar chart.
+    Accepts optional ?role=<str>&location=<str> to filter/shape data.
+    """
+    role = (request.args.get("role") or "").strip()
+    location = (request.args.get("location") or "").strip()
+
+    # TODO: replace this stub with your real logic / DB lookups
+    # Example: pick a small set based on role/location to keep UI responsive
+    # Always return consistent shapes to avoid frontend errors.
+    if role and location:
+        labels  = [f"{role} – {location}"]
+        salaries = [65000]
+    elif role:
+        labels  = [f"{role} – Entry", f"{role} – Mid", f"{role} – Senior"]
+        salaries = [45000, 65000, 85000]
+    else:
+        labels = ["Project Manager", "Data Analyst", "Software Engineer", "UX Designer", "Product Manager"]
+        salaries = [70000, 55000, 90000, 60000, 80000]
+
+    return jsonify({"labels": labels, "salaries": salaries}), 200
+
 
 @app.route("/api/job-count")
 @login_required
