@@ -274,10 +274,3 @@ body.account-page .auth-card{
   filter: none;
   opacity: 1;
 }
-/* OAuth buttons ONLY in the account card */
-.account-page .auth-card .auth-socials{display:flex;gap:16px;justify-content:center;margin-top:10px}
-.account-page .auth-card .auth-socials .auth-social-btn{
-  width:64px;height:64px;border-radius:16px;display:inline-flex;align-items:center;justify-content:center;
-  background:#f6f9ff;border:1px solid #e5ecf7;box-shadow:0 4px 18px rgba(16,72,121,.06)
-}
-.account-page .auth-card .auth-socials .auth-social-btn img{width:28px;height:28px;display:block;filter:none;opacity:1}
