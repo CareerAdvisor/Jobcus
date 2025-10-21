@@ -1,5 +1,51 @@
 // job-insights.js
 
+// job-insights.js
+
+function renderError(canvasId, message) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const parent = canvas.closest(".chart-box") || canvas.parentElement;
+  if (!parent) return;
+  const msg = document.createElement("div");
+  msg.className = "chart-error";
+  msg.textContent = message || "Sorry — couldn’t load this chart.";
+  msg.style.cssText = "padding:12px;border:1px solid #f2d6d6;background:#fff3f3;color:#a40000;border-radius:8px;margin-top:8px;";
+  parent.appendChild(msg);
+}
+
+function fetchJSON(url) {
+  return fetch(url).then(async (res) => {
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status} ${res.statusText} – ${text.slice(0,120)}`);
+    }
+    return res.json();
+  });
+}
+
+// === 1. Salary Insights ===
+function fetchSalaryData() {
+  const params = new URLSearchParams(window.location.search);
+  const role = params.get("role") || "";
+  const location = params.get("location") || "";
+  const qs = new URLSearchParams();
+  if (role) qs.set("role", role);
+  if (location) qs.set("location", location);
+
+  fetchJSON(`/api/salary?${qs.toString()}`)
+    .then(data => {
+      if (!data || !Array.isArray(data.labels) || !Array.isArray(data.salaries)) {
+        throw new Error("Invalid salary data shape");
+      }
+      renderBarChart("salary-chart", data.labels, data.salaries, "Average Salary (£)");
+    })
+    .catch(err => {
+      console.error("Salary Data Error:", err);
+      renderError("salary-chart", "Couldn’t load salary data right now.");
+    });
+}
+
 // === Utility to Render Bar Charts ===
 function renderBarChart(canvasId, labels, data, labelText) {
   const canvas = document.getElementById(canvasId);
