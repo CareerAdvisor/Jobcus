@@ -902,6 +902,7 @@ Allow: /
 Disallow: /account
 Disallow: /logout
 Disallow: /dashboard
+Disallow: /forgot-password
 Disallow: /api/
 # Note: Do NOT block static assets (CSS, JS, images), so we omit /static/
 
