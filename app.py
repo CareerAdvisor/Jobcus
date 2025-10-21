@@ -2205,18 +2205,13 @@ def get_jobs():
     except Exception:
         return jsonify(remotive=[], adzuna=[], jsearch=[])
 
+
 @app.get("/api/salary")
 def salary_api():
-    """
-    Returns labels + salaries arrays for a bar chart.
-    Accepts optional ?role=<str>&location=<str> to filter/shape data.
-    """
     role = (request.args.get("role") or "").strip()
     location = (request.args.get("location") or "").strip()
 
-    # TODO: replace this stub with your real logic / DB lookups
-    # Example: pick a small set based on role/location to keep UI responsive
-    # Always return consistent shapes to avoid frontend errors.
+    # simple, hard-coded demo data so the page works
     if role and location:
         labels  = [f"{role} – {location}"]
         salaries = [65000]
