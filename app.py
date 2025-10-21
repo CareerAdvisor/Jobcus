@@ -2206,9 +2206,12 @@ def get_jobs():
         return jsonify(remotive=[], adzuna=[], jsearch=[])
 
 @app.route("/api/salary")
-@api_login_required
-def get_salary_data():
-    return jsonify(labels=JOB_TITLES, salaries=fetch_salary_data())
+def salary_api():
+    role = request.args.get("role", "").strip() or None
+    location = request.args.get("location", "").strip() or None
+    # TODO: query your source with the filters (or fall back to defaults)
+    labels, salaries = get_salary_data(role=role, location=location)
+    return jsonify({"labels": labels, "salaries": salaries})
 
 @app.route("/api/job-count")
 @login_required
