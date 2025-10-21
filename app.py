@@ -2205,10 +2205,6 @@ def get_jobs():
     except Exception:
         return jsonify(remotive=[], adzuna=[], jsearch=[])
 
-# app.py
-
-from flask import request, jsonify
-
 @app.get("/api/salary")
 def salary_api():
     """
