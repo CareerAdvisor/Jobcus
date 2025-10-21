@@ -1,0 +1,9 @@
+.job-insights-page .insight-filters { margin: 10px 0 18px; }
+.job-insights-page .filters-row { display:flex; gap:10px; flex-wrap:wrap; }
+.job-insights-page .filter-input{
+  flex:1 1 220px; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px;
+}
+.job-insights-page .filter-btn{
+  padding:10px 14px; border-radius:10px; background:#104879; color:#fff; border:0; font-weight:700;
+}
+.job-insights-page .filters-hint{ margin-top:6px; color:#6b7280; font-size:12px; }
