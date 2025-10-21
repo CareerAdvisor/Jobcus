@@ -274,3 +274,20 @@ body.account-page .auth-card{
   filter: none;
   opacity: 1;
 }
+
+/* Force the base look for FOLLOW/SHARE in the footer on the account page */
+body.account-page .site-footer .social-row .social-icons .social-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:56px;height:56px;border-radius:16px;
+  background:#fff;border:1px solid #dbe7f6;
+  box-shadow:0 8px 24px rgba(16,72,121,.12);
+  opacity:1 !important; filter:none !important;
+}
+body.account-page .site-footer .social-row .social-icons .social-btn svg,
+body.account-page .site-footer .social-row .social-icons .social-btn img{
+  width:24px;height:24px;filter:none !important;opacity:1 !important;
+}
+/* Optional: keep the little hover lift if your base.css has it */
+body.account-page .site-footer .social-row .social-icons .social-btn:hover{
+  transform:translateY(-2px)
+}
