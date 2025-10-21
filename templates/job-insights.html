@@ -4,10 +4,7 @@
 {% block title %}Job Insights – Jobcus{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/job-insights.css') }}">
-{% endblock %}
-
-{% block content %}
+  {{ super() }}
   <!-- JSON-LD: SoftwareApplication for Job Insights -->
   <script type="application/ld+json">
   {
