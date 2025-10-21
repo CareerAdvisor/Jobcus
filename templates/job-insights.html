@@ -4,11 +4,8 @@
 {% block title %}Job Insights – Jobcus{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/job-insights.css') }}">
-{% endblock %}
-
-{% block extra_css %}
-  {# JSON-LD: SoftwareApplication for Job Insights #}
+  {{ super() }}
+  <!-- JSON-LD: SoftwareApplication for Job Insights -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -37,7 +34,7 @@
   }
   </script>
 
-  {# JSON-LD: Breadcrumbs #}
+  <!-- JSON-LD: Breadcrumbs -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
