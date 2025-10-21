@@ -1,7 +1,5 @@
 // job-insights.js
 
-// job-insights.js
-
 function renderError(canvasId, message) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
