@@ -195,10 +195,7 @@ ADZUNA_APP_KEY   = os.getenv("ADZUNA_APP_KEY")
 JSEARCH_API_KEY  = os.getenv("JSEARCH_API_KEY")
 JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
 
-# app.py
-from flask import request, jsonify
-
-# You already have these:
+# -------- Job Insights -------
 JOB_TITLES = [
     "Software Engineer", "Data Analyst",
     "Project Manager", "UX Designer", "Cybersecurity Analyst"
