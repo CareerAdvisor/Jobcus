@@ -1,10 +1,11 @@
-<!-- job-insights.html -->
+{# templates/job-insights.html #}
 {% extends "base.html" %}
 
 {% block title %}Job Insights – Jobcus{% endblock %}
 
 {% block extra_css %}
   {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/job-insights.css') }}">
   <!-- JSON-LD: SoftwareApplication for Job Insights -->
   <script type="application/ld+json">
   {
@@ -56,51 +57,43 @@
 
   <section class="insight-filters" aria-label="Filters">
     <div class="filters-row">
-      <input id="roleInput" class="filter-input" type="text" placeholder="Role (e.g., Data Analyst)">
-      <input id="locationInput" class="filter-input" type="text" placeholder="Location (e.g., London or Remote)">
+      <input id="roleInput" class="filter-input" type="text" placeholder="Role (e.g., Data Analyst)" autocomplete="on" inputmode="text">
+      <input id="locationInput" class="filter-input" type="text" placeholder="Location (e.g., London or Remote)" autocomplete="on" inputmode="text">
       <button id="applyFilters" class="filter-btn" type="button">Update insights</button>
     </div>
     <p class="filters-hint">Tip: leave fields blank to see general trends.</p>
+    <p class="filters-error" id="filtersError" hidden></p>
   </section>
 
   <section class="insight-section" id="salary-insight">
     <h2>💰 Average Salary by Role</h2>
     <p>Real-time salary insights across popular job titles in your field.</p>
-    <div class="chart-box">
-      <canvas id="salary-chart"></canvas>
-    </div>
+    <div class="chart-box"><canvas id="salary-chart" aria-label="Average salary bar chart"></canvas></div>
   </section>
 
   <section class="insight-section" id="job-count-insight">
     <h2>📈 Job Count per Title</h2>
     <p>See how many openings are available right now for in-demand roles.</p>
-    <div class="chart-box">
-      <canvas id="jobcount-chart"></canvas>
-    </div>
+    <div class="chart-box"><canvas id="jobcount-chart" aria-label="Job count bar chart"></canvas></div>
   </section>
 
   <section class="insight-section" id="skill-trends">
     <h2>🧠 In-Demand Skills</h2>
     <p>Find out which skills employers are actively hiring for across industries.</p>
-    <div class="chart-box">
-      <canvas id="skill-chart"></canvas>
-    </div>
+    <div class="chart-box"><canvas id="skill-chart" aria-label="Skill demand bar chart"></canvas></div>
   </section>
 
   <section class="insight-section" id="location-distribution">
     <h2>📍 Top Hiring Locations</h2>
     <p>Discover where job opportunities are concentrated geographically.</p>
-    <div class="chart-box">
-      <canvas id="location-chart"></canvas>
-    </div>
+    <div class="chart-box"><canvas id="location-chart" aria-label="Location demand bar chart"></canvas></div>
   </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<!-- Load UMD build so window.Chart exists -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-
-<!-- Your script that uses Chart must come AFTER the library -->
-<script src="{{ url_for('static', filename='js/job-insights.js') }}" defer></script>
+  <!-- Chart.js (UMD so window.Chart exists) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <!-- Page script -->
+  <script src="{{ url_for('static', filename='js/job-insights.js') }}" defer></script>
 {% endblock %}
