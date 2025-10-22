@@ -20,6 +20,7 @@ from weasyprint import HTML, CSS
 from gotrue.errors import AuthApiError
 from dotenv import load_dotenv
 from supabase_auth.errors import AuthApiError
+from typing import Tuple, List, Optional
 
 # Local modules
 from extensions import login_manager, init_supabase, init_openai
@@ -194,65 +195,77 @@ ADZUNA_APP_KEY   = os.getenv("ADZUNA_APP_KEY")
 JSEARCH_API_KEY  = os.getenv("JSEARCH_API_KEY")
 JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
 
-# -------- Job Insights -------
+# ================== Job Insights (page + APIs) ==================
+
+# ---- Optional auth requirement for API endpoints ----
+# If you have @api_login_required already, set DECORATOR = api_login_required
+try:
+    from your_auth_module import api_login_required as _NEED_LOGIN  # adjust if you have one
+    DECORATOR = _NEED_LOGIN
+except Exception:
+    DECORATOR = lambda f: f  # no-auth by default
+
+# ---- Constants you already have (extendable) ----
 JOB_TITLES = [
     "Software Engineer", "Data Analyst",
-    "Project Manager", "UX Designer", "Cybersecurity Analyst"
+    "Project Manager", "UX Designer", "Cybersecurity Analyst",
+    # keep list short for snapshot charts; users can filter with inputs
 ]
 KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
 
-DECORATOR = lambda f: f  # or your @api_login_required
+# ---- Helpers ----
+def _norm(s: Optional[str]) -> str:
+    return (s or "").strip().lower()
 
-# ---------- helpers you already have ----------
-def _norm(s): return (s or "").strip().lower()
-
+# Baseline salaries per role (GBP, UK-focused defaults). Add to/tune this table.
 BASE_SALARY_BY_ROLE = {
     "software engineer":     85000,
     "data analyst":          52000,
     "project manager":       68000,
     "ux designer":           60000,
     "cybersecurity analyst": 82000,
+    # specific civil-service roles, etc.
+    "prison officer":        31000,
 }
+
+# Guardrails (min, max) per role to keep results realistic
+ROLE_SALARY_BOUNDS = {
+    "prison officer": (26000, 42000),
+    # add more role-specific bands as you refine
+}
+
+# Location multipliers (coarse). Extend/adjust to your target markets.
 LOCATION_MULTIPLIER = {
     "london": 1.15, "new york": 1.25, "san francisco": 1.30,
     "manchester": 1.06, "birmingham": 1.05, "remote": 1.00
 }
-LEVELS = [("Entry", 0.82), ("Mid", 1.00), ("Senior", 1.27)]
+
+# Seniority levels for single-role charts
+LEVELS: List[Tuple[str, float]] = [("Entry", 0.82), ("Mid", 1.00), ("Senior", 1.27)]
 
 def _deterministic_bump(seed: str, span: float = 0.06) -> float:
+    """
+    Tiny deterministic +/- bump (default ±6%) so different combos vary
+    even with the same base table.
+    """
     h = abs(hash(seed)) % 1000
     return 1.0 + ((h / 1000.0) * 2 * span - span)
 
-# ---------- existing synthetic salary logic (keep) ----------
-def compute_salary(role: str | None, location: str | None):
-    role_n = _norm(role)
-    loc_n  = _norm(location)
+def enforce_role_bounds(role: Optional[str], value: int) -> int:
+    r = _norm(role)
+    lb, ub = ROLE_SALARY_BOUNDS.get(r, (None, None))
+    if lb is not None:
+        value = max(value, lb)
+    if ub is not None:
+        value = min(value, ub)
+    return value
 
-    base = BASE_SALARY_BY_ROLE.get(role_n, 60000)
-    loc_mult = LOCATION_MULTIPLIER.get(loc_n, 1.00)
-
-    if role_n and loc_n:
-        bump = _deterministic_bump(f"{role_n}:{loc_n}")
-        return [f"{role} – {location}"], [round(base * loc_mult * bump)]
-
-    if role_n:
-        labels   = [f"{role} – {lvl}" for (lvl, _) in LEVELS]
-        salaries = [round(base * m * _deterministic_bump(f"{role_n}:{lvl}")) for (lvl, m) in LEVELS]
-        return labels, salaries
-
-    labels   = JOB_TITLES
-    salaries = [round(BASE_SALARY_BY_ROLE.get(_norm(t), 60000) * _deterministic_bump(t)) for t in JOB_TITLES]
-    return labels, salaries
-
-# ---------- NEW: optional external fetch + small cache ----------
-import os, time, functools
-import httpx
-from flask import request, jsonify
-
+# -------- lightweight cache decorator (in-memory) --------
 _cache = {}
-def cache_for(seconds):
+def cache_for(seconds: int):
     def deco(fn):
         @functools.wraps(fn)
+            # pyright: reportGeneralTypeIssues=false
         def wrapped(*a, **kw):
             key = (fn.__name__, tuple(sorted(kw.items())))
             now = time.time()
@@ -266,11 +279,12 @@ def cache_for(seconds):
         return wrapped
     return deco
 
-@cache_for(3600)  # cache 1h to avoid rate limits
-def fetch_salary_external(role: str, location: str) -> int | None:
+# -------- Optional: external salary estimate (Adzuna UK example) --------
+@cache_for(3600)
+def fetch_salary_external(role: str, location: str) -> Optional[int]:
     """
-    Example using Adzuna (GB endpoint). Replace/adjust for your provider.
-    Returns an integer salary estimate (annual), or None if unavailable.
+    Fetch a robust estimate from an external feed (Adzuna example).
+    Set env vars: ADZUNA_APP_ID, ADZUNA_APP_KEY. Returns int GBP or None.
     """
     role = (role or "").strip()
     location = (location or "").strip()
@@ -282,60 +296,181 @@ def fetch_salary_external(role: str, location: str) -> int | None:
     if not app_key or not app_id:
         return None
 
-    base = f"https://api.adzuna.com/v1/api/jobs/gb/search/1"
+    base_url = "https://api.adzuna.com/v1/api/jobs/gb/search/1"
     params = {
         "app_id": app_id,
         "app_key": app_key,
         "what": role,
         "where": location,
-        "results_per_page": 10,  # ask for a few; we’ll average below
+        "results_per_page": 25,
         "content-type": "application/json",
     }
     try:
         with httpx.Client(timeout=8) as client:
-            r = client.get(base, params=params)
+            r = client.get(base_url, params=params)
             r.raise_for_status()
             data = r.json() or {}
 
-            # Adzuna returns results in "results"; each may have "salary_min"/"salary_max"
-            items = data.get("results") or []
-            vals = []
-            for it in items:
-                mn = it.get("salary_min")
-                mx = it.get("salary_max")
-                if isinstance(mn, (int, float)) and isinstance(mx, (int, float)) and mx > 0:
-                    vals.append((mn + mx) / 2.0)
-                elif isinstance(mx, (int, float)) and mx > 0:
-                    vals.append(mx)
-                elif isinstance(mn, (int, float)) and mn > 0:
-                    vals.append(mn)
+        items = data.get("results") or []
+        vals: List[float] = []
+        for it in items:
+            mn = it.get("salary_min")
+            mx = it.get("salary_max")
+            # Keep only sane positive numbers
+            if isinstance(mn, (int, float)) and isinstance(mx, (int, float)) and mn > 0 and mx > 0 and mx >= mn:
+                vals.append((mn + mx) / 2.0)
+            elif isinstance(mx, (int, float)) and mx > 0:
+                vals.append(float(mx))
+            elif isinstance(mn, (int, float)) and mn > 0:
+                vals.append(float(mn))
 
-            if vals:
-                # simple trimmed mean to damp outliers
-                vals.sort()
-                k = max(1, int(len(vals) * 0.1))
-                core = vals[k:-k] if len(vals) > 2*k else vals
-                return int(sum(core) / len(core))
+        if len(vals) < 5:
+            return None  # not enough clean data → fallback
+
+        vals.sort()
+        k = max(1, int(len(vals) * 0.15))  # 15% trimmed mean
+        core = vals[k:-k] if len(vals) > 2 * k else vals
+        est = int(sum(core) / len(core))
+        return enforce_role_bounds(role, est)
     except Exception:
-        pass
-    return None
+        return None
 
-# ---------- UPDATED /api/salary view ----------
+# -------- Salary logic (fallback & general) --------
+def compute_salary(role: Optional[str], location: Optional[str]):
+    role_n = _norm(role)
+    loc_n  = _norm(location)
+
+    base = BASE_SALARY_BY_ROLE.get(role_n, 60000)
+    loc_mult = LOCATION_MULTIPLIER.get(loc_n, 1.00)
+
+    # If both role & location provided, try external first
+    if role_n and loc_n:
+        ext = fetch_salary_external(role or "", location or "")
+        if ext:
+            return [f"{role} – {location}"], [ext]
+        est = round(base * loc_mult * _deterministic_bump(f"{role_n}:{loc_n}"))
+        return [f"{role} – {location}"], [enforce_role_bounds(role, est)]
+
+    # Only role → show by seniority
+    if role_n:
+        labels, salaries = [], []
+        for (lvl, m) in LEVELS:
+            est = round(base * m * _deterministic_bump(f"{role_n}:{lvl}"))
+            labels.append(f"{role} – {lvl}")
+            salaries.append(enforce_role_bounds(role, est))
+        return labels, salaries
+
+    # Snapshot (no filters): show the short list
+    labels   = JOB_TITLES
+    salaries = []
+    for t in JOB_TITLES:
+        est = round(BASE_SALARY_BY_ROLE.get(_norm(t), 60000) * _deterministic_bump(t))
+        salaries.append(enforce_role_bounds(t, est))
+    return labels, salaries
+
+# -------- Job counts --------
+def compute_job_counts(role: Optional[str], location: Optional[str]):
+    role_n = _norm(role)
+
+    base_counts = {
+        "software engineer": 3200,
+        "data analyst": 1800,
+        "project manager": 1400,
+        "ux designer": 900,
+        "cybersecurity analyst": 1100,
+    }
+
+    if role_n:
+        total = base_counts.get(role_n, 800)
+        entry = int(total * 0.35 * _deterministic_bump(f"{role_n}:entry", 0.08))
+        mid   = int(total * 0.45 * _deterministic_bump(f"{role_n}:mid", 0.08))
+        senior= int(total * 0.20 * _deterministic_bump(f"{role_n}:senior", 0.08))
+        return [f"{role} – Entry", f"{role} – Mid", f"{role} – Senior"], [entry, mid, senior]
+
+    labels = JOB_TITLES
+    counts = [int(({"software engineer": 3200, "data analyst": 1800, "project manager": 1400,
+                    "ux designer": 900, "cybersecurity analyst": 1100}
+                   ).get(_norm(t), 800) * _deterministic_bump(f"count:{t}", 0.08)) for t in JOB_TITLES]
+    return labels, counts
+
+# -------- Skills --------
+def compute_skills(role: Optional[str], location: Optional[str]):
+    role_n = _norm(role)
+    weights = {k: 50 for k in KEYWORDS}
+    if "software" in role_n or "engineer" in role_n or "developer" in role_n:
+        weights["Python"] = 85
+        weights["SQL"] = max(weights["SQL"], 70)
+        weights["Cloud Security"] = max(weights["Cloud Security"], 65)
+    elif "analyst" in role_n:
+        weights["SQL"] = 85
+        weights["Python"] = max(weights["Python"], 70)
+        weights["Project Management"] = max(weights["Project Management"], 55)
+    elif "project manager" in role_n:
+        weights["Project Management"] = 90
+        weights["UI/UX"] = max(weights["UI/UX"], 55)
+        weights["SQL"] = max(weights["SQL"], 50)
+    elif "ux" in role_n or "designer" in role_n:
+        weights["UI/UX"] = 90
+        weights["Project Management"] = max(weights["Project Management"], 60)
+    elif "cyber" in role_n or "security" in role_n:
+        weights["Cloud Security"] = 90
+        weights["Python"] = max(weights["Python"], 60)
+
+    labels = KEYWORDS
+    freq   = [int(weights[k] * _deterministic_bump(f"skill:{k}:{role_n}", 0.05)) for k in KEYWORDS]
+    return labels, freq
+
+# -------- Locations --------
+def compute_locations(role: Optional[str], location: Optional[str]):
+    base = [
+        ("London", 1800), ("Manchester", 520), ("Birmingham", 480),
+        ("New York", 2100), ("San Francisco", 1500), ("Remote", 900),
+    ]
+    labels = [name for name, _ in base]
+    counts = [int(c * _deterministic_bump(f"loc:{name}:{_norm(role)}", 0.10)) for name, c in base]
+    return labels, counts
+
+# ---------------- Routes ----------------
+@app.get("/job-insights")
+def job_insights():
+    # Just render the template. (Your template already pulls /api/* endpoints.)
+    return render_template("job-insights.html")
+
 @DECORATOR
 def _salary_view():
     role = request.args.get("role", "")
     location = request.args.get("location", "")
-
-    # 1) Try real estimate if we have both role+location and keys are set
-    external = fetch_salary_external(role, location)
-    if external:
-        return jsonify({"labels": [f"{role} – {location}"], "salaries": [external]}), 200
-
-    # 2) Fallback to your synthetic logic so the UI never breaks
     labels, salaries = compute_salary(role, location)
     return jsonify({"labels": labels, "salaries": salaries}), 200
 
-app.add_url_rule("/api/salary", view_func=_salary_view, methods=["GET"])
+@DECORATOR
+def _job_count_view():
+    role = request.args.get("role", "")
+    location = request.args.get("location", "")
+    labels, counts = compute_job_counts(role, location)
+    return jsonify({"labels": labels, "counts": counts}), 200
+
+@DECORATOR
+def _skills_view():
+    role = request.args.get("role", "")
+    location = request.args.get("location", "")
+    labels, frequency = compute_skills(role, location)
+    return jsonify({"labels": labels, "frequency": frequency}), 200
+
+@DECORATOR
+def _locations_view():
+    role = request.args.get("role", "")
+    location = request.args.get("location", "")
+    labels, counts = compute_locations(role, location)
+    return jsonify({"labels": labels, "counts": counts}), 200
+
+# Attach endpoints (avoid decorator stacking issues)
+app.add_url_rule("/api/salary",     view_func=_salary_view,     methods=["GET"])
+app.add_url_rule("/api/job-count",  view_func=_job_count_view,  methods=["GET"])
+app.add_url_rule("/api/skills",     view_func=_skills_view,     methods=["GET"])
+app.add_url_rule("/api/locations",  view_func=_locations_view,  methods=["GET"])
+# ================== /Job Insights ==================
+
     
 # --- Stripe Payment ---
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  # your sk_live_...
