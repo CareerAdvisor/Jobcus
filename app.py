@@ -195,12 +195,60 @@ ADZUNA_APP_KEY   = os.getenv("ADZUNA_APP_KEY")
 JSEARCH_API_KEY  = os.getenv("JSEARCH_API_KEY")
 JSEARCH_API_HOST = os.getenv("JSEARCH_API_HOST")
 
-JOB_TITLES = [
-    "Software Engineer", "Data Analyst",
-    "Project Manager", "UX Designer", "Cybersecurity Analyst"
-]
+# ---- simple config  ----
+JOB_TITLES = ["Project Manager", "Data Analyst", "Software Engineer", "UX Designer", "Product Manager"]
+
 KEYWORDS = ["Python", "SQL", "Project Management", "UI/UX", "Cloud Security"]
 
+BASE_SALARY_BY_ROLE = {
+    "project manager":    68000,
+    "data analyst":       52000,
+    "software engineer":  85000,
+    "ux designer":        60000,
+    "product manager":    80000,
+}
+
+LOCATION_MULTIPLIER = {
+    "london":     1.15,
+    "remote":     1.00,
+    "new york":   1.25,
+    "san francisco": 1.30,
+    "manchester": 1.05,
+    "birmingham": 1.05,
+}
+
+LEVELS = [("Entry", 0.82), ("Mid", 1.00), ("Senior", 1.27)]
+
+def _norm(s: str) -> str:
+    return (s or "").strip().lower()
+
+def compute_salary_data(role: str | None, location: str | None):
+    role_n = _norm(role)
+    loc_n  = _norm(location)
+
+    # choose a base for the role (fallback to a generic 60k)
+    base = BASE_SALARY_BY_ROLE.get(role_n, 60000)
+
+    # apply location multiplier if known
+    mult = LOCATION_MULTIPLIER.get(loc_n, 1.00)
+
+    # 1) role only → Entry/Mid/Senior for that role
+    if role_n and not loc_n:
+        labels   = [f"{role} – {lvl}" for (lvl, _) in LEVELS]
+        salaries = [round(base * lvl_mult) for (_, lvl_mult) in LEVELS]
+        return labels, salaries
+
+    # 2) role + location → single combined bar (or keep levels if you prefer)
+    if role_n and loc_n:
+        labels   = [f"{role} – {location}"]
+        salaries = [round(base * mult)]
+        return labels, salaries
+
+    # 3) no role → show a quick market snapshot of common titles
+    labels   = JOB_TITLES
+    salaries = [round(BASE_SALARY_BY_ROLE.get(_norm(t), 60000)) for t in JOB_TITLES]
+    return labels, salaries
+    
 # --- Stripe Payment ---
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  # your sk_live_...
 
@@ -2205,23 +2253,17 @@ def get_jobs():
     except Exception:
         return jsonify(remotive=[], adzuna=[], jsearch=[])
 
-
 @app.get("/api/salary")
+# @api_login_required   # ← enable if you want this endpoint behind login
 def salary_api():
-    role = (request.args.get("role") or "").strip()
-    location = (request.args.get("location") or "").strip()
+    """
+    Returns JSON: { labels: [str], salaries: [number] }
+    Accepts optional ?role=<str>&location=<str>
+    """
+    role = request.args.get("role", "").strip()
+    location = request.args.get("location", "").strip()
 
-    # simple, hard-coded demo data so the page works
-    if role and location:
-        labels  = [f"{role} – {location}"]
-        salaries = [65000]
-    elif role:
-        labels  = [f"{role} – Entry", f"{role} – Mid", f"{role} – Senior"]
-        salaries = [45000, 65000, 85000]
-    else:
-        labels = ["Project Manager", "Data Analyst", "Software Engineer", "UX Designer", "Product Manager"]
-        salaries = [70000, 55000, 90000, 60000, 80000]
-
+    labels, salaries = compute_salary_data(role, location)
     return jsonify({"labels": labels, "salaries": salaries}), 200
 
 
