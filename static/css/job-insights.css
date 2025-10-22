@@ -4,6 +4,10 @@
   flex:1 1 220px; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px;
 }
 .job-insights-page .filter-btn{
-  padding:10px 14px; border-radius:10px; background:#104879; color:#fff; border:0; font-weight:700;
+  padding:10px 14px; border-radius:10px; background:#104879; color:#fff; border:0; font-weight:700; cursor:pointer;
 }
 .job-insights-page .filters-hint{ margin-top:6px; color:#6b7280; font-size:12px; }
+.job-insights-page .filters-error{ margin-top:6px; color:#b42318; font-size:13px; }
+
+/* Make chart containers a sensible height */
+.job-insights-page .chart-box { position: relative; height: 320px; }
