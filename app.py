@@ -431,11 +431,6 @@ def compute_locations(role: Optional[str], location: Optional[str]):
     return labels, counts
 
 # ---------------- Routes ----------------
-@app.get("/job-insights")
-def job_insights():
-    # Just render the template. (Your template already pulls /api/* endpoints.)
-    return render_template("job-insights.html")
-
 @DECORATOR
 def _salary_view():
     role = request.args.get("role", "")
@@ -1298,8 +1293,8 @@ def interview_coach():
 def skill_gap():
     return render_template("skill-gap.html")
 
-@app.route("/job-insights")
-def job_insights():
+@app.route("/job-insights", methods=["GET"], endpoint="job_insights_page")
+def job_insights_page():
     return render_template("job-insights.html")
 
 @app.route("/employers")
