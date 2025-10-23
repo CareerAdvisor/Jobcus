@@ -77,6 +77,19 @@
     linear-gradient(180deg,#f7fbff,#ffffff);
 }
 
+/* Fix hero text touching screen edges on mobile */
+.home-page .hero .container {
+  padding-inline: clamp(16px, 5vw, 28px);
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .home-page .hero .lead,
+  .home-page .hero h1 {
+    padding-inline: 4px; /* gentle buffer */
+  }
+}
+
 /* ===== Ad strips (landscape on desktop, square on mobile) ===== */
 .home-page .ad-strip{
   padding:26px 0;
@@ -530,5 +543,12 @@
   }
   .home-page .chat-demo .input button{
     padding: 0 14px;       /* fits narrow screens without truncation */
+  }
+}
+
+@media (max-width: 600px) {
+  .home-page .hero .lead,
+  .home-page .hero h1 {
+    padding-inline: 4px; /* gentle buffer */
   }
 }
