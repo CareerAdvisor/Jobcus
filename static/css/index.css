@@ -1,6 +1,13 @@
 /* Scope to home page so we don't bleed styles elsewhere */
 .home-page main{max-width:100%;padding:0}
-.home-page .container{width:min(1150px,92%);margin:auto}
+
+/* keep your width but restore horizontal padding */
+.home-page .container{
+  width: min(1150px, 92%);
+  margin: 0 auto;
+  padding-inline: clamp(16px, 4vw, 24px); /* responsive 16–24px gutters */
+  box-sizing: border-box;
+}
 
 /* Brand tokens */
 :root{
