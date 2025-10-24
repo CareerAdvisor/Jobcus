@@ -2583,27 +2583,30 @@ def set_security_headers(resp):
         "default-src 'self'; "
         "img-src 'self' data: https:; "
         # keep https: so fonts.googleapis.com CSS still loads + allow Stripe's style usage
-        "style-src 'self' 'unsafe-inline' https: https://js.stripe.com; "
-        # allow Stripe + your CDNs
+        "style-src 'self' 'unsafe-inline' https: https://js.stripe.com https://fonts.googleapis.com; "
+        # allow Stripe, Google Tag Manager, CDNs, Cloudflare Turnstile, etc.
         "script-src 'self' 'unsafe-inline' "
             "https://js.stripe.com "
             "https://www.googletagmanager.com "
             "https://cdn.jsdelivr.net "
             "https://cdnjs.cloudflare.com "
-            "https://unpkg.com; "
-        # allow API calls broadly to https (covers Stripe endpoints too)
-        "connect-src 'self' https:; "
+            "https://unpkg.com "
+            "https://me.kis.v2.scr.kaspersky-labs.com "
+            "wss://me.kis.v2.scr.kaspersky-labs.com "
+            "https://challenges.cloudflare.com; "
+        # allow API calls broadly to https (covers Supabase & Stripe endpoints too)
+        "connect-src 'self' https: https://*.supabase.co https://*.supabase.in; "
         # fonts can come from your host or CDNs/data URIs
-        "font-src 'self' https: data:; "
-        # iframes/popups used by Stripe Checkout/Elements/Portal
-        "frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://hooks.stripe.com; "
+        "font-src 'self' https: data: https://fonts.gstatic.com; "
+        # iframes/popups used by Stripe Checkout/Elements/Portal and Turnstile
+        "frame-src 'self' https://js.stripe.com https://checkout.stripe.com "
+            "https://hooks.stripe.com https://challenges.cloudflare.com; "
         "frame-ancestors 'self'; "
         "base-uri 'self'; "
         "upgrade-insecure-requests"
     )
     resp.headers["Content-Security-Policy"] = csp
     return resp
-
 
 @app.route("/api/skill-gap", methods=["POST"])
 @login_required
