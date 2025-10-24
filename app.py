@@ -45,6 +45,10 @@ from werkzeug.utils import secure_filename
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
+from PIL import Image  # if you do OCR later, you'll need this anyway
+from pillow_heif import register_heif_opener
+
+register_heif_opener()
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 resumes_bp = None  # will set when found
@@ -620,7 +624,7 @@ def change_plan(user_id: str, new_plan: str):
             "plan": plan
         }).eq("id", user_id).execute()
 
-ALLOWED_EXTS = {"pdf","txt","rtf","doc","docx"}
+ALLOWED_EXTS = {"pdf", "txt", "rtf", "doc", "docx", "png", "jpg", "jpeg", "webp", "heic", "heif"}
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
 
 def _allowed(filename: str) -> bool:
@@ -637,18 +641,31 @@ def _extract_text(path: str, ext: str) -> str:
                 for page in reader.pages:
                     out.append(page.extract_text() or "")
             return "\n".join(out).strip()
+
         elif ext in ("doc", "docx"):
             import docx2txt
             return (docx2txt.process(path) or "").strip()
+
         elif ext == "rtf":
-            # very light RTF strip (not perfect but safe)
+            import re
             raw = open(path, "rb").read().decode(errors="ignore")
             return re.sub(r"{\\.*?}|\\[a-z]+\d* ?|[{}]", " ", raw).strip()
-        else:  # txt
+
+        elif ext in ("png", "jpg", "jpeg", "webp", "heic", "heif"):
+            try:
+                from PIL import Image
+                import pytesseract
+                img = Image.open(path)
+                return (pytesseract.image_to_string(img) or "").strip()
+            except Exception:
+                # If OCR fails for any reason, fall back to empty string
+                return ""
+
+        else:  # treat as plain text (e.g., .txt)
             return open(path, "rb").read().decode(errors="ignore").strip()
+
     except Exception:
         return ""
-
 
 # --- Employer JD helpers ------------------------------------------------------
 
@@ -675,7 +692,6 @@ def _static_skill_seed(title: str) -> list[str]:
     if "designer" in t:
         return ["Figma", "Prototyping", "User research", "Design systems", "Accessibility", "Heuristic evaluation", "Handoff to dev"]
     return ["Communication", "Time management", "Collaboration", "Problem-solving"]
-
 
 def is_superadmin(user=None):
     from flask_login import current_user
@@ -754,7 +770,6 @@ class User(UserMixin):
     @property
     def is_superadmin(self) -> bool:
         return self.role == "superadmin"
-
 
 @login_manager.user_loader
 def load_user(user_id: "Optional[str]"):
@@ -1653,7 +1668,6 @@ def _find_user_id_by_customer(supabase, customer_id: str):
     except Exception:
         current_app.logger.exception("find user by customer failed")
         return None
-
 
 def _update_user_plan_from_subscription(supabase, sub):
     """
@@ -3208,7 +3222,6 @@ def employer_job_post_download():
 
     # allow client fallback for unrecognized formats
     return jsonify(error="Unsupported format"), 400
-
 
 @app.post("/api/upload")
 @login_required
