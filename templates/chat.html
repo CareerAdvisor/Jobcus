@@ -183,7 +183,7 @@
           <p class="promo-copy">Upload your resume to get an ATS score, keyword match, and quick, actionable fixes.</p>
           <span class="promo-cta" aria-hidden="true">Open →</span>
         </a>
-    
+
         <a class="promo-card" href="/interview-coach">
           <div class="promo-head">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V20H8.5v2H15v-2h-2v-2.08A7 7 0 0 0 19 11h-2z"/></svg>
@@ -194,7 +194,7 @@
         </a>
       </section>
     </div>
-        
+
     <div id="chatNotice" class="chat-notice" hidden role="alert"></div>
 
     <!-- Bottom docked input -->
@@ -208,11 +208,15 @@
            data-caveat-closable="1"
            data-caveat-once="1">
         <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)" aria-label="Type your message"></textarea>
+
+        <!-- Attachment bar (chips) -->
+        <div id="attachmentBar" class="attach-bar" hidden></div>
+
         <div class="icon-group">
           <label for="file-upload" title="Attach a file">
             <img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach">
           </label>
-          <input id="file-upload" type="file" style="display:none" onchange="handleAttach()">
+          <input id="file-upload" type="file" multiple accept=".pdf,.doc,.docx,.txt,image/*" style="display:none" onchange="handleAttach(event)">
           <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Voice input" onclick="handleMic()">
           <img id="sendButton" src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" role="button" tabindex="0">
         </div>
