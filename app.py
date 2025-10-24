@@ -45,9 +45,8 @@ from werkzeug.utils import secure_filename
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
-from PIL import Image  # if you do OCR later, you'll need this anyway
+from PIL import Image
 from pillow_heif import register_heif_opener
-
 register_heif_opener()
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -624,8 +623,13 @@ def change_plan(user_id: str, new_plan: str):
             "plan": plan
         }).eq("id", user_id).execute()
 
-ALLOWED_EXTS = {"pdf", "txt", "rtf", "doc", "docx", "png", "jpg", "jpeg", "webp", "heic", "heif"}
-MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
+ALLOWED_EXTS = {
+    "pdf", "txt", "rtf", "doc", "docx",
+    "png", "jpg", "jpeg", "webp",
+    "heic", "heif"  # include only if you want to accept these
+}
+
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB  (keep this line exactly as is)
 
 def _allowed(filename: str) -> bool:
     return "." in filename and filename.rsplit(".",1)[1].lower() in ALLOWED_EXTS
