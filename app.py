@@ -21,6 +21,7 @@ from gotrue.errors import AuthApiError
 from dotenv import load_dotenv
 from supabase_auth.errors import AuthApiError
 from typing import Tuple, List, Optional
+from security import verify_turnstile
 
 # Local modules
 from extensions import login_manager, init_supabase, init_openai
@@ -150,6 +151,12 @@ def inject_supabase_public():
     return {
         "SUPABASE_URL": current_app.config.get("SUPABASE_URL"),
         "SUPABASE_ANON_KEY": current_app.config.get("SUPABASE_ANON_KEY"),
+    }
+
+@app.context_processor
+def inject_turnstile_sitekey():
+    return {
+        "TURNSTILE_SITE_KEY": os.getenv("TURNSTILE_SITE_KEY", "")
     }
 
 # Session cookie hardening
@@ -1802,6 +1809,9 @@ def confirm_page():
 # Account routes (signup/login)
 # ----------------------------
 
+# app.py
+from security import verify_turnstile
+
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "GET":
@@ -1813,6 +1823,12 @@ def account():
         except Exception:
             free_used = False
         return render_template("account.html", mode=mode, free_used=free_used)
+
+    # 🔒 Cloudflare Turnstile verification
+    ok, details = verify_turnstile(request)
+    if not ok:
+        current_app.logger.warning(f"Turnstile verification failed: {details}")
+        return jsonify(success=False, message="Security verification failed. Please try again."), 403
 
     # ---- Robust input parsing (JSON OR form) ----
     data = request.get_json(silent=True)
@@ -1830,15 +1846,13 @@ def account():
 
     # Basic validation
     if mode not in ("login", "signup"):
-        mode = "login"  # be forgiving; default to login
+        mode = "login"
 
     if not email or not password:
         return jsonify(success=False, message="Email and password are required."), 400
 
+    # ---------- SIGNUP ----------
     if mode == "signup":
-        # ---- keep your existing signup logic EXACTLY as you had it ----
-        # (create user via supabase.auth.sign_up, insert DB row, auto-promote admin, etc.)
-        # return the same JSON responses you already return
         try:
             resp = supabase.auth.sign_up({"email": email, "password": password})
             user = resp.user
@@ -1848,7 +1862,7 @@ def account():
             ud = user.model_dump() if hasattr(user, "model_dump") else user
             auth_id = ud["id"]
 
-            # Create DB user row (best-effort)
+            # Create DB row
             try:
                 supabase.table("users").insert({
                     "auth_id": auth_id, "email": email, "fullname": name
@@ -1856,21 +1870,20 @@ def account():
             except Exception:
                 pass
 
-            # Auto-promote if in ADMIN_EMAILS (unchanged)
+            # Auto-promote superadmin if email matches ADMIN_EMAILS
             admin_emails = {e.strip().lower() for e in (os.getenv("ADMIN_EMAILS") or "").split(",") if e.strip()}
             if email and email.lower() in admin_emails:
                 try:
-                    supabase.table("users").update({"role": "superadmin"}) \
-                        .eq("auth_id", auth_id).execute()
+                    supabase.table("users").update({"role": "superadmin"}).eq("auth_id", auth_id).execute()
                 except Exception:
                     current_app.logger.exception("auto-promote admin failed")
 
-            # If not confirmed yet, send to check email (unchanged)
+            # Require confirmation
             if not ud.get("email_confirmed_at"):
                 session["pending_email"] = email
                 return jsonify(success=True, redirect=url_for("check_email")), 200
 
-            # Success path (unchanged)
+            # Success path
             login_user(User(auth_id=auth_id, email=email, fullname=name))
             record_login_event(current_user)
             _, set_cookie = start_user_session(current_user)
@@ -1880,17 +1893,14 @@ def account():
         except AuthApiError as e:
             msg = str(e).lower()
             if "already registered" in msg:
-                return jsonify(
-                    success=False,
-                    code="user_exists",
-                    message="Account already exists. Please log in."
-                ), 409
+                return jsonify(success=False, code="user_exists", message="Account already exists. Please log in."), 409
             current_app.logger.warning(f"Signup error for {email}: {e}")
             return jsonify(success=False, message="Signup failed."), 400
         except Exception:
             current_app.logger.exception("Unexpected signup error")
             return jsonify(success=False, message="Signup failed."), 400
 
+    # ---------- LOGIN ----------
     # mode == "login"
     try:
         resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
@@ -1901,23 +1911,22 @@ def account():
         ud = user.model_dump() if hasattr(user, "model_dump") else user
         auth_id = ud["id"]
 
-        # Auto-promote admin (unchanged)
+        # Auto-promote admin
         admin_emails = {e.strip().lower() for e in (os.getenv("ADMIN_EMAILS") or "").split(",") if e.strip()}
         if email and email.lower() in admin_emails:
             try:
-                supabase.table("users").update({"role": "superadmin"}) \
-                    .eq("auth_id", auth_id).execute()
+                supabase.table("users").update({"role": "superadmin"}).eq("auth_id", auth_id).execute()
             except Exception:
                 current_app.logger.exception("auto-promote admin failed")
 
-        # Optional fullname fetch (unchanged)
+        # Optional fullname fetch
         try:
             r = supabase.table("users").select("fullname").eq("auth_id", auth_id).single().execute()
             fullname = (r.data or {}).get("fullname")
         except Exception:
             fullname = None
 
-        # Success path (unchanged)
+        # Success path
         login_user(User(auth_id=auth_id, email=email, fullname=fullname))
         record_login_event(current_user)
         _, set_cookie = start_user_session(current_user)
