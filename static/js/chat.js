@@ -104,9 +104,9 @@ async function handleAttach(evt){
   // If you enabled images on the server:
   const allowed = new Set([
     "pdf","txt","rtf","doc","docx",
-    "png","jpg","jpeg","webp",      // core images
-    // add if enabled server-side:
-    "heic","heif"
+    "png","jpg","jpeg","webp",
+    // include these only if HEIF is enabled server-side:
+    // "heic","heif"
   ]);
 
   for (const file of input.files) {
