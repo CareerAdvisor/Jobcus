@@ -98,7 +98,19 @@ async function handleAttach(evt){
   const input = evt?.target || document.getElementById("file-upload");
   if (!input || !input.files || !input.files.length) return;
 
+  // If you only allow docs:
+  // const allowed = new Set(["pdf","txt","rtf","doc","docx"]);
+
+  // If you enabled images on the server:
+  const allowed = new Set(["pdf","txt","rtf","doc","docx","png","jpg","jpeg","webp"]);
+
   for (const file of input.files) {
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    if (!allowed.has(ext)) {
+      alert(`Sorry, ${file.name} is not supported.\nAllowed: ${[...allowed].join(", ").toUpperCase()}.`);
+      continue;
+    }
+
     try {
       const fd = new FormData();
       fd.append("file", file);
@@ -106,10 +118,12 @@ async function handleAttach(evt){
       if (!res || !res.filename) throw new Error("Upload failed");
       ATTACH.push({ filename: res.filename, size: res.size || file.size || 0, text: res.text || "" });
     } catch (e) {
-      alert((e && e.message) ? e.message : "Sorry, that file couldn't be uploaded.");
+      const msg = (e && e.responseJSON && e.responseJSON.message) || e.message || "Upload failed.";
+      alert(msg);
     }
   }
-  input.value = ""; // allow re-selecting same file
+
+  input.value = "";
   renderAttachmentBar();
 }
 
