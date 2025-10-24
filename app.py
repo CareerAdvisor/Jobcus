@@ -662,7 +662,7 @@ def _extract_text(path: str, ext: str) -> str:
                 img = Image.open(path)
                 return (pytesseract.image_to_string(img) or "").strip()
             except Exception:
-                # If OCR fails for any reason, fall back to empty string
+                # If OCR fails for any reason, allow the upload but provide no extracted text
                 return ""
 
         else:  # treat as plain text (e.g., .txt)
