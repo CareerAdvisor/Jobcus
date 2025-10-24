@@ -216,7 +216,12 @@
           <label for="file-upload" title="Attach a file">
             <img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach">
           </label>
-          <input id="file-upload" type="file" multiple accept=".pdf,.doc,.docx,.txt,image/*" style="display:none" onchange="handleAttach(event)">
+          <input id="file-upload" 
+                 type="file"
+                 multiple
+                 accept=".pdf,.doc,.docx,.txt,.rtf,.png,.jpg,.jpeg,.webp"
+                 style="display:none"
+                 onchange="handleAttach(event)">
           <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Voice input" onclick="handleMic()">
           <img id="sendButton" src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" role="button" tabindex="0">
         </div>
