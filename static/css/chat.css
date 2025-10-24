@@ -728,3 +728,18 @@ html { -webkit-text-size-adjust: 100%; }
 .chat-page.chat-active .chat-promos{
   display: none !important;
 }
+
+.attach-bar{
+  display:flex; gap:8px; flex-wrap:wrap;
+  padding:8px 0 0; margin-top:6px; border-top:1px dashed #e5e7eb;
+}
+.attach-pill{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 10px; border:1px solid #dbe7f6; border-radius:999px;
+  background:#f8fbff; color:#0f355e; font-size:12px;
+}
+.attach-pill button{
+  border:0; background:transparent; cursor:pointer; color:#466;
+  font-weight:700; line-height:1;
+}
+
