@@ -63,8 +63,55 @@ function sharePage() {
   navigator.clipboard.writeText(window.location.href);
   alert("Link copied!");
 }
+
+// --- Attachments state and UI ---
+const ATTACH = []; // { filename, text, size }
+
+function renderAttachmentBar() {
+  const bar = document.getElementById("attachmentBar");
+  if (!bar) return;
+  bar.innerHTML = "";
+  if (!ATTACH.length) { bar.hidden = true; return; }
+  bar.hidden = false;
+  ATTACH.forEach((att, i) => {
+    const pill = document.createElement("span");
+    const kb = Math.max(1, Math.round((att.size || 0) / 1024));
+    pill.className = "attach-pill";
+    pill.innerHTML = `
+      <span title="${escapeHtml(att.filename)}">${escapeHtml(att.filename)}</span>
+      <span aria-hidden="true">·</span>
+      <span>${kb} KB</span>
+      <button type="button" aria-label="Remove" title="Remove" data-i="${i}">×</button>
+    `;
+    pill.querySelector("button").addEventListener("click", (e) => {
+      const idx = Number(e.currentTarget.dataset.i);
+      if (!Number.isNaN(idx)) ATTACH.splice(idx, 1);
+      renderAttachmentBar();
+    });
+    bar.appendChild(pill);
+  });
+}
+
+// Replace the stubbed handlers
 function handleMic()   { alert("Voice input coming soon!"); }
-function handleAttach(){ alert("File upload coming soon!"); }
+async function handleAttach(evt){
+  const input = evt?.target || document.getElementById("file-upload");
+  if (!input || !input.files || !input.files.length) return;
+
+  for (const file of input.files) {
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await apiFetch("/api/upload", { method: "POST", body: fd });
+      if (!res || !res.filename) throw new Error("Upload failed");
+      ATTACH.push({ filename: res.filename, size: res.size || file.size || 0, text: res.text || "" });
+    } catch (e) {
+      alert((e && e.message) ? e.message : "Sorry, that file couldn't be uploaded.");
+    }
+  }
+  input.value = ""; // allow re-selecting same file
+  renderAttachmentBar();
+}
 
 function copyToClipboard(id) {
   const el = document.getElementById(id);
@@ -1073,9 +1120,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await apiFetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
+        body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId, attachments: ATTACH.map(a => ({ filename: a.filename, text: a.text })) })
       });
-
+      
+      // Clear attachments after a successful send
+      ATTACH.length = 0;
+      renderAttachmentBar();
       // get the assistant text from the response (cover a few shapes)
       finalReply = String(
         data?.reply ??
