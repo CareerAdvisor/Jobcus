@@ -1,6 +1,5 @@
-// static/js/account.js
+// static/js/account.js  –– full version with Turnstile + original extras
 
-// ─── 1) Force cookies on every fetch (SameSite/Lax) ───
 ;(function(){
   const _fetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
@@ -9,7 +8,6 @@
   };
 })();
 
-// Local apiFetch fallback (prefer base.js's apiFetch if available)
 async function _localApiFetch(url, options = {}) {
   const res = await fetch(url, {
     credentials: 'same-origin',
@@ -27,7 +25,7 @@ async function _localApiFetch(url, options = {}) {
 }
 const callAPI = (window.apiFetch || _localApiFetch);
 
-// Expose pickPlan globally for inline onclick handlers
+// ─── Plan picker (kept if buttons exist) ───
 window.pickPlan = async function pickPlan(plan) {
   try {
     await callAPI('/api/plan', {
@@ -35,11 +33,10 @@ window.pickPlan = async function pickPlan(plan) {
       headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ plan })
     });
-    // simplest: reload to pick up updated plan/quota flags
     location.reload();
   } catch (err) {
     if (err?.payload?.error === 'plan_denied') {
-      alert(err.payload.message); // "Free trial already used..."
+      alert(err.payload.message);
     } else {
       alert('Something went wrong.');
       console.error(err);
@@ -48,7 +45,6 @@ window.pickPlan = async function pickPlan(plan) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  // ─── 2) Grab elements ───
   const form        = document.getElementById('accountForm');
   const modeInput   = document.getElementById('mode');
   const nameGroup   = document.getElementById('nameGroup');
@@ -58,109 +54,90 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleLink  = document.getElementById('toggleMode');
   const togglePrompt= document.getElementById('togglePrompt');
   const flash       = document.getElementById('flashMessages');
-
   const qs = new URLSearchParams(location.search);
 
-  // ─── 2a) Respect ?mode=login|signup from URL ───
+  // URL mode and optional email prefill
   const qsMode = (qs.get('mode') || '').toLowerCase();
-  if (modeInput && (qsMode === 'login' || qsMode === 'signup')) {
-    modeInput.value = qsMode;
-  }
+  if (modeInput && (qsMode === 'login' || qsMode === 'signup')) modeInput.value = qsMode;
 
-  // Optional: prefill email if provided via ?email=
   const qsEmail = qs.get('email');
   if (qsEmail) {
     const emailEl = document.getElementById('email');
     if (emailEl) emailEl.value = qsEmail;
   }
 
-  // Optional: show a friendly message after verification
   const verified = qs.get('verified');
   if (verified && flash) {
     flash.innerHTML = '<div class="flash-item success">Email verified! Please sign in.</div>';
   }
 
-  // — Show/Hide password toggle —
   const pwdInput = document.getElementById('password');
   const showPw   = document.getElementById('showPassword');
-  
   showPw?.addEventListener('change', () => {
-    if (!pwdInput) return;
-    pwdInput.type = showPw.checked ? 'text' : 'password';
+    if (pwdInput) pwdInput.type = showPw.checked ? 'text' : 'password';
   });
-  
-  // Optional “press-and-hold to peek” UI (for an eye button if you add one):
-  // const peekBtn = document.getElementById('peekPassword');
-  // peekBtn?.addEventListener('mousedown', () => { if (pwdInput) pwdInput.type = 'text'; });
-  // peekBtn?.addEventListener('mouseup',   () => { if (pwdInput) pwdInput.type = 'password'; });
-  // peekBtn?.addEventListener('mouseleave',() => { if (pwdInput) pwdInput.type = 'password'; });
 
-  // ─── 3) updateView() swaps login ↔ signup UI ───
   function updateView() {
     const mode = modeInput?.value || 'signup';
-
     if (mode === 'login') {
-      if (nameGroup) nameGroup.style.display = 'none';
-      if (formTitle) formTitle.innerHTML     = 'Sign In to<br>Jobcus';
-      if (subtitle)  subtitle.textContent    = 'Good to see you again! Welcome back.';
-      if (submitBtn) submitBtn.textContent   = 'Sign In';
-      if (togglePrompt) togglePrompt.textContent= "Don’t have an account?";
-      if (toggleLink)   toggleLink.textContent  = 'Sign Up';
+      nameGroup.style.display = 'none';
+      formTitle.innerHTML = 'Sign In to<br>Jobcus';
+      subtitle.textContent = 'Good to see you again! Welcome back.';
+      submitBtn.textContent = 'Sign In';
+      togglePrompt.textContent = "Don’t have an account?";
+      toggleLink.textContent = 'Sign Up';
     } else {
-      if (nameGroup) nameGroup.style.display = 'block';
-      if (formTitle) formTitle.innerHTML     = 'Sign Up to<br>Jobcus';
-      if (subtitle)  subtitle.textContent    = 'Create a free account to get started.';
-      if (submitBtn) submitBtn.textContent   = 'Sign Up';
-      if (togglePrompt) togglePrompt.textContent= 'Already have an account?';
-      if (toggleLink)   toggleLink.textContent  = 'Sign In';
+      nameGroup.style.display = 'block';
+      formTitle.innerHTML = 'Sign Up to<br>Jobcus';
+      subtitle.textContent = 'Create a free account to get started.';
+      submitBtn.textContent = 'Sign Up';
+      togglePrompt.textContent = 'Already have an account?';
+      toggleLink.textContent = 'Sign In';
     }
-
-    if (flash) {
-      // Keep “verified” message if present; otherwise clear residual flashes
-      if (!verified) flash.innerHTML = '';
-    }
+    if (!verified && flash) flash.innerHTML = '';
   }
 
-  // ─── 4) Toggle link click handler ───
   toggleLink?.addEventListener('click', e => {
     e.preventDefault();
-    if (!modeInput) return;
     modeInput.value = (modeInput.value === 'login' ? 'signup' : 'login');
-    // Update URL (no reload) so sharing/copying preserves the mode
     const url = new URL(location.href);
     url.searchParams.set('mode', modeInput.value);
     history.replaceState(null, '', url.toString());
     updateView();
   });
 
-  // ─── 5) Initialize on page load ───
   updateView();
 
-  // ─── 6) Form submit via fetch(JSON) ───
+  // ─── Submit with Turnstile token ───
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (flash && !verified) flash.textContent = '';
+
+    const tokenEl = form.querySelector('input[name="cf-turnstile-response"]');
+    const token = tokenEl ? tokenEl.value : '';
 
     const payload = {
       mode:     modeInput?.value,
       email:    document.getElementById('email')?.value.trim(),
       password: document.getElementById('password')?.value,
-      name:     document.getElementById('name')?.value.trim() || ''
+      name:     document.getElementById('name')?.value.trim() || '',
+      cf_turnstile_response: token,
     };
 
-    let data = {};
     try {
       const res = await fetch('/account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        credentials: 'same-origin',
+        body: JSON.stringify(payload),
       });
 
+      let data = {};
       try { data = await res.json(); } catch { data = {}; }
 
       if (!res.ok || data.success === false) {
         if (data.code === 'user_exists') {
-          if (modeInput) modeInput.value = 'login';
+          modeInput.value = 'login';
           updateView();
           const emailEl = document.getElementById('email');
           if (emailEl && payload.email) emailEl.value = payload.email;
@@ -168,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         if (data.code === 'email_not_confirmed' && data.redirect) {
-          window.location.assign(data.redirect); // e.g. /check-email
+          window.location.assign(data.redirect);
           return;
         }
         if (flash) flash.textContent = data.message || 'Request failed. Please try again.';
@@ -190,11 +167,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ─── 7) Disable Free if free_plan_used === true ───
+  // ─── Disable Free if already used ───
   const shell = document.getElementById('accountShell');
   const freeUsed = (shell?.dataset.freeUsed === '1');
   const freeBtn = document.getElementById('chooseFreeBtn');
-
   if (freeUsed && freeBtn) {
     freeBtn.setAttribute('disabled', 'disabled');
     freeBtn.setAttribute('title', 'Free trial already used');
