@@ -45,9 +45,15 @@ from werkzeug.utils import secure_filename
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
-from PIL import Image
-from pillow_heif import register_heif_opener
-register_heif_opener()
+from PIL import Image  # keep this (used by Image.open in OCR)
+
+# Optional HEIF/HEIC support (won't crash deploys if package isn't installed)
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+    HEIF_ENABLED = True
+except Exception:
+    HEIF_ENABLED = False
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 resumes_bp = None  # will set when found
@@ -626,10 +632,10 @@ def change_plan(user_id: str, new_plan: str):
 ALLOWED_EXTS = {
     "pdf", "txt", "rtf", "doc", "docx",
     "png", "jpg", "jpeg", "webp",
-    "heic", "heif"  # include only if you want to accept these
+    *({"heic", "heif"} if HEIF_ENABLED else set())
 }
 
-MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB  (keep this line exactly as is)
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # keep this as-is
 
 def _allowed(filename: str) -> bool:
     return "." in filename and filename.rsplit(".",1)[1].lower() in ALLOWED_EXTS
@@ -657,12 +663,10 @@ def _extract_text(path: str, ext: str) -> str:
 
         elif ext in ("png", "jpg", "jpeg", "webp", "heic", "heif"):
             try:
-                from PIL import Image
-                import pytesseract
                 img = Image.open(path)
+                import pytesseract
                 return (pytesseract.image_to_string(img) or "").strip()
             except Exception:
-                # If OCR fails for any reason, allow the upload but provide no extracted text
                 return ""
 
         else:  # treat as plain text (e.g., .txt)
