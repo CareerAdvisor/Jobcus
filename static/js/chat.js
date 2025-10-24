@@ -990,10 +990,33 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") window.closeChatMenu?.(); });
 
   document.getElementById("newChatBtn")?.addEventListener("click", () => {
+    // wipe any stale conversation id so the next send creates a new one
+    localStorage.removeItem("chat:conversationId");
+    conversationId = null;
+  
+    // clear any staged attachments/chips
+    if (Array.isArray(window.ATTACH)) {
+      window.ATTACH.length = 0;
+      window.renderAttachmentBar?.();
+    }
+    document.getElementById("file-upload")?.value = "";
+  
+    // your existing UI resets
     clearChat();
     window.closeChatMenu?.();
   });
+  
   document.getElementById("clearChatBtn")?.addEventListener("click", () => {
+    // same hygiene when clearing the whole conversation
+    localStorage.removeItem("chat:conversationId");
+    conversationId = null;
+  
+    if (Array.isArray(window.ATTACH)) {
+      window.ATTACH.length = 0;
+      window.renderAttachmentBar?.();
+    }
+    document.getElementById("file-upload")?.value = "";
+  
     clearChat();
     window.closeChatMenu?.();
   });
@@ -1135,41 +1158,75 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Normal AI chat
-      const data = await apiFetch("/api/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId, attachments: ATTACH.map(a => ({ filename: a.filename, text: a.text })) })
-      });
+      // Build payload with attachments (filename + extracted text)
+      const payload = {
+        message,
+        model: currentModel,
+        conversation_id: conversationId || null,
+        attachments: (window.ATTACH || []).map(a => ({
+          filename: a.filename,
+          text: a.text || ""
+        }))
+      };
       
-      // Clear attachments after a successful send
-      ATTACH.length = 0;
-      renderAttachmentBar();
-      // get the assistant text from the response (cover a few shapes)
-      finalReply = String(
-        data?.reply ??
-        data?.content ??
-        data?.text ??
-        ""
+      let data;
+      try {
+        data = await apiFetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        // Graceful fallback for stale conversation ids (FK 23503)
+        const msg  = String(err?.message || err?.statusText || "").toLowerCase();
+        const body = String(err?.body || "").toLowerCase();
+        const looksLikeFK = msg.includes("conversation") || body.includes("foreign key") || body.includes("23503");
+      
+        if (looksLikeFK) {
+          // Clear bad id and retry once as a brand new conversation
+          localStorage.removeItem("chat:conversationId");
+          conversationId = null;
+      
+          const retry = { ...payload, conversation_id: null };
+          data = await apiFetch("/api/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(retry)
+          });
+        } else {
+          throw err;
+        }
+      }
+      
+      // After a successful send, clear attachments and re-render the bar
+      if (Array.isArray(window.ATTACH)) {
+        window.ATTACH.length = 0;
+        window.renderAttachmentBar?.();
+      }
+      document.getElementById("file-upload")?.value = "";
+      
+      // Extract the assistant text
+      let finalReply = String(
+        data?.reply ?? data?.content ?? data?.text ?? ""
       ).trim();
-      
-      // optional fallback so we never render “nothing”
       if (!finalReply) finalReply = "Here’s what I found.";
-
-      // Save conv id after first reply and refresh history for highlight
+      
+      // Save conv id (first reply), then refresh history
       if (data.conversation_id && data.conversation_id !== conversationId) {
         conversationId = data.conversation_id;
         localStorage.setItem("chat:conversationId", conversationId);
-        renderHistory(); // highlight current
+        renderHistory?.();
       }
-      
-      // ✅ actually use the model's reply
-      finalReply = (data.reply || data.content || data.message || "").toString();
       
       // add nudges after we have a reply
       finalReply = addJobcusNudges(finalReply);
+      
     } catch (err) {
-      hideAIStatus();  // ✅ ensure status bar is removed on error
+      hideAIStatus();
+      showNotice("Something went wrong. Please try again."); // your banner/toast
+      disableComposer(false);
+      return;
+    }
 
       // NEW — show the banner and stay on page (no redirect)
       if (handleChatLimitError(err)) {
