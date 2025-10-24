@@ -2307,10 +2307,10 @@ def api_ask():
     except Exception:
         pass
 
-    # incoming payload
+    # payload
     conv_id = data.get("conversation_id")
     
-    # --- NEW: validate the conversation id belongs to current user and exists ---
+    # Validate conversation ownership/existence
     if conv_id:
         try:
             owns = (
@@ -2323,21 +2323,19 @@ def api_ask():
                 .data
             )
             if not owns:
-                # stale or not owned — force a new conversation to be created
                 conv_id = None
         except Exception:
-            # If Supabase check fails for any reason, be safe and create a new one
             conv_id = None
     
-    # 3) ensure conversation row (existing code)
+    # 3) Create conversation if needed
     if not conv_id:
-        title = (message[:60] + "…") if len(message) > 60 else message
+        title = (message[:60] + "…") if len(message) > 60 else (message or "Conversation")
         row = admin.table("conversations").insert(
-            {"auth_id": auth_id, "title": title or "Conversation"}
+            {"auth_id": auth_id, "title": title}
         ).execute()
         conv_id = row.data[0]["id"]
     
-    # 4) persist user message (unchanged)
+    # 4) Now safe to insert the user message
     admin.table("conversation_messages").insert({
         "conversation_id": conv_id, "role": "user", "content": message
     }).execute()
