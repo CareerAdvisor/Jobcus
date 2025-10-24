@@ -274,3 +274,6 @@ body.account-page .auth-card{
   filter: none;
   opacity: 1;
 }
+
+/* account.css */
+.cf-turnstile { margin: 10px 0 14px; }
