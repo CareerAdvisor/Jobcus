@@ -364,11 +364,13 @@ async function handleAttach(evt){
   const input = evt?.target || document.getElementById("file-upload");
   if (!input || !input.files || !input.files.length) return;
 
-  // If you only allow docs:
-  // const allowed = new Set(["pdf","txt","rtf","doc","docx"]);
-
   // If you enabled images on the server:
-  const allowed = new Set(["pdf","txt","rtf","doc","docx","png","jpg","jpeg","webp"]);
+  const allowed = new Set([
+    "pdf","txt","rtf","doc","docx",
+    "png","jpg","jpeg","webp",      // core images
+    // add if enabled server-side:
+    "heic","heif"
+  ]);
 
   for (const file of input.files) {
     const ext = (file.name.split(".").pop() || "").toLowerCase();
