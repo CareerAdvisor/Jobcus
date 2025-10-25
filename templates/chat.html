@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+
 {% block title %}Chat with Jobcus{% endblock %}
 {% block body_class %}chat-page{% endblock %}
 
-{# Left “sidebar” toggle icon in the header #}
+{# Header: left “sidebar” toggle icon #}
 {% block header_icon %}
   <img
     id="chatMenuToggle"
@@ -61,16 +62,13 @@
 {% set show_footer = false %}
 
 {# --- Plan/model helpers (robust defaults) --- #}
-{% set plan_code = (plan if plan is defined else ((current_user.plan if current_user.is_authenticated else '') or 'free')) %}
-{% set is_paid   = (is_paid if is_paid is defined else (plan_code != 'free')) %}
-{% set free_model    = (free_model if free_model is defined else 'gpt-4o-mini') %}
-{% set model_default = (model_default if model_default is defined else (is_paid and 'gpt-4o-mini' or free_model)) %}
-{% set model_options = (model_options if model_options is defined else ['gpt-4o','gpt-4o-mini']) %}
-{% set show_upgrade  = (show_upgrade if show_upgrade is defined else (plan_code == 'free')) %}
+{% set plan_code    = (plan if plan is defined else ((current_user.plan if current_user.is_authenticated else '') or 'free')) %}
+{% set is_paid      = (is_paid if is_paid is defined else (plan_code != 'free')) %}
+{% set free_model   = (free_model if free_model is defined else 'gpt-4o-mini') %}
+{% set model_default= (model_default if model_default is defined else (is_paid and 'gpt-4o-mini' or free_model)) %}
+{% set model_options= (model_options if model_options is defined else ['gpt-4o','gpt-4o-mini']) %}
+{% set show_upgrade = (show_upgrade if show_upgrade is defined else (plan_code == 'free')) %}
 {% set cloud_history = 1 if plan_code in ['standard','premium'] else 0 %}
-
-{# Ensure we have a flag for HEIF support coming from the backend #}
-{% set heif_enabled = heif_enabled if heif_enabled is defined else False %}
 
 {% block content %}
 <main id="chatShell"
@@ -156,11 +154,11 @@
       <div id="historyEmpty" class="history-empty" hidden>No saved conversations yet.</div>
     </section>
   </aside>
+
   <div id="chatOverlay" class="chat-overlay" hidden></div>
 
   <!-- RIGHT: chat content pane -->
   <section class="chat-main">
-    <!-- IMPORTANT: keep both id AND class so chat.css selectors apply -->
     <div class="chatbox" id="chatbox" aria-live="polite">
       <div id="welcomeBanner" class="welcome">
         {% set first_name = (current_user.fullname.split(' ')[0] if (current_user.is_authenticated and current_user.fullname) else (current_user.email.split('@')[0] if current_user.is_authenticated else '')) %}
@@ -176,6 +174,7 @@
           <button type="button" data-suggest="Show me job market insights for London" class="chip">Job insights</button>
         </div>
       </div>
+
       <!-- Feature promos live in HTML, not JS -->
       <section class="chat-promos" aria-label="Quick tools">
         <a class="promo-card" href="/resume-analyzer">
@@ -210,31 +209,25 @@
            data-caveat-inline="0"
            data-caveat-closable="1"
            data-caveat-once="1">
-        <textarea id="userInput" rows="1" placeholder="Ask your career question..." oninput="autoResize(this)" aria-label="Type your message"></textarea>
 
-        <!-- Attachment bar (chips) -->
+        <textarea id="userInput"
+                  rows="1"
+                  placeholder="Ask your career question..."
+                  oninput="autoResize(this)"
+                  aria-label="Type your message"></textarea>
+
+        <!-- Attachment bar (chips populated by JS) -->
         <div id="attachmentBar" class="attach-bar" hidden></div>
 
         <div class="icon-group">
           <label for="file-upload" title="Attach a file">
             <img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach">
           </label>
-
-          {#
-            Accept list mirrors server ALLOWED_EXTS and the HEIF toggle.
-            Also expose the list + max bytes via data- attributes so chat.js
-            can validate client-side without hardcoding.
-          #}
-          {% set accept_core = '.pdf,.txt,.rtf,.doc,.docx,.png,.jpg,.jpeg,.webp' %}
-          {% set accept_heif = ',.heic,.heif' if heif_enabled else '' %}
           <input id="file-upload"
                  type="file"
                  multiple
-                 accept="{{ accept_core ~ accept_heif }}"
-                 data-allowed-exts="{{ 'pdf,txt,rtf,doc,docx,png,jpg,jpeg,webp' ~ (',heic,heif' if heif_enabled else '') }}"
-                 data-max-bytes="5242880"
+                 accept=".pdf,.doc,.docx,.txt,.rtf,.png,.jpg,.jpeg,.webp{% if HEIF_ENABLED %},.heic,.heif{% endif %}"
                  style="display:none">
-
           <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Voice input" onclick="handleMic()">
           <img id="sendButton" src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" role="button" tabindex="0">
         </div>
@@ -242,8 +235,9 @@
     </form>
   </section>
 
-  {# Scroll-to-bottom icon — now present in DOM #}
-  <img id="scrollDown" class="scroll-down-icon"
+  {# Scroll-to-bottom icon — in DOM so JS can toggle it #}
+  <img id="scrollDown"
+       class="scroll-down-icon"
        src="{{ url_for('static', filename='icons/scrolldown.svg') }}"
        alt="Scroll Down"
        title="Jump to latest"
@@ -277,6 +271,11 @@
         box.addEventListener('scroll', () => window.maybeShowScrollIcon?.());
       }
       window.maybeShowScrollIcon?.();
+
+      // Let JS handle file uploads (no inline onchange)
+      document.getElementById('file-upload')?.addEventListener('change', (e) => {
+        window.handleAttach?.(e);
+      });
     });
   </script>
 {% endblock %}
