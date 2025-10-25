@@ -6,3 +6,5 @@ libjpeg-turbo-progs
 fonts-liberation
 fonts-noto-core
 libffi8
+tesseract-ocr
+poppler-utils   
