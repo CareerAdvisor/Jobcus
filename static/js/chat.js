@@ -787,6 +787,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const form    = document.getElementById("chat-form");
   const input   = document.getElementById("userInput");
 
+  // Wire scroll icon visibility
+  chatbox?.addEventListener('scroll', () => maybeShowScrollIcon());
+  maybeShowScrollIcon();
+  
+  // Wire file input → attachments
+  document.getElementById('file-upload')
+    ?.addEventListener('change', (e) => window.handleAttach?.(e));
+
   // Bind scroll listener so scrolldown icon shows/hides properly
   chatbox?.addEventListener("scroll", () => maybeShowScrollIcon());
 
