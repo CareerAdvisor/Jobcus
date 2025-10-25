@@ -249,7 +249,6 @@
   {# Self-hosted libs so CSP 'script-src self' passes #}
   <script src="{{ url_for('static', filename='vendor/marked/marked.min.js') }}"></script>
   <script src="{{ url_for('static', filename='vendor/dompurify/purify.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='vendor/tesseract/tesseract.min.js') }}"></script>
 
   {# Harden: sanitize whatever marked renders #}
   <script>
