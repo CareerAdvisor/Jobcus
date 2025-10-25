@@ -360,34 +360,35 @@ function renderAttachmentBar() {
 }
 
 // Replace the stub with a real uploader
-async function handleAttach(evt) {
+async function handleAttach(evt){
   const input = evt?.target || document.getElementById("file-upload");
   if (!input || !input.files || !input.files.length) return;
 
+  // If you only allow docs:
+  // const allowed = new Set(["pdf","txt","rtf","doc","docx"]);
+
+  // If you enabled images on the server:
+  const allowed = new Set(["pdf","txt","rtf","doc","docx","png","jpg","jpeg","webp"]);
+
   for (const file of input.files) {
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    if (!allowed.has(ext)) {
+      alert(`Sorry, ${file.name} is not supported.\nAllowed: ${[...allowed].join(", ").toUpperCase()}.`);
+      continue;
+    }
+
     try {
       const fd = new FormData();
       fd.append("file", file);
-
-      // Use apiFetch so cookies + CSRF are handled (don't set Content-Type manually!)
       const res = await apiFetch("/api/upload", { method: "POST", body: fd });
-      // Expecting: { filename, size, text }
       if (!res || !res.filename) throw new Error("Upload failed");
-
-      ATTACH.push({
-        filename: res.filename,
-        size: res.size || file.size || 0,
-        text: res.text || ""
-      });
+      ATTACH.push({ filename: res.filename, size: res.size || file.size || 0, text: res.text || "" });
     } catch (e) {
-      // Friendly error messages from the server:
-      // - {error:"bad_type"} -> unsupported file type
-      // - 413 -> too large (Max size is 5 MB)
-      alert((e && e.message) ? e.message : "Sorry, that file couldn't be uploaded.");
+      const msg = (e && e.responseJSON && e.responseJSON.message) || e.message || "Upload failed.";
+      alert(msg);
     }
   }
 
-  // Clear the input so selecting the same file again still triggers change
   input.value = "";
   renderAttachmentBar();
 }
