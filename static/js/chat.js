@@ -988,10 +988,31 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") window.closeChatMenu?.(); });
 
   document.getElementById("newChatBtn")?.addEventListener("click", () => {
+    // wipe any stale conversation id so the next send creates a new one
+    localStorage.removeItem("chat:conversationId");
+    conversationId = null;
+  
+    // clear any staged attachments/chips
+    if (Array.isArray(window.ATTACH)) {
+      window.ATTACH.length = 0;
+      window.renderAttachmentBar?.();
+    }
+    document.getElementById("file-upload")?.value = "";
     clearChat();
     window.closeChatMenu?.();
   });
+  
   document.getElementById("clearChatBtn")?.addEventListener("click", () => {
+    // same hygiene when clearing the whole conversation
+    localStorage.removeItem("chat:conversationId");
+    conversationId = null;
+  
+    if (Array.isArray(window.ATTACH)) {
+      window.ATTACH.length = 0;
+      window.renderAttachmentBar?.();
+    }
+    document.getElementById("file-upload")?.value = "";
+  
     clearChat();
     window.closeChatMenu?.();
   });
