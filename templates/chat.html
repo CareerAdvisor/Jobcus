@@ -263,19 +263,4 @@
   <!-- Main chat logic -->
   <script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
 
-  <!-- Small boot script to wire the scroll icon immediately -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const box = document.getElementById('chatbox');
-      if (box) {
-        box.addEventListener('scroll', () => window.maybeShowScrollIcon?.());
-      }
-      window.maybeShowScrollIcon?.();
-
-      // Let JS handle file uploads (no inline onchange)
-      document.getElementById('file-upload')?.addEventListener('change', (e) => {
-        window.handleAttach?.(e);
-      });
-    });
-  </script>
 {% endblock %}
