@@ -2867,6 +2867,24 @@ def salary_api_external():
     labels, salaries = compute_salary(role, location)
     return jsonify({"labels": labels, "salaries": salaries})
 
+@app.get("/diag/ocr")
+def diag_ocr():
+    try:
+        tess_path = shutil.which("tesseract")
+        tess_ver = str(pytesseract.get_tesseract_version())
+    except Exception as e:
+        tess_path, tess_ver = None, f"ERR: {e}"
+
+    poppler = {
+        "pdftoppm": shutil.which("pdftoppm"),
+        "pdftocairo": shutil.which("pdftocairo"),
+    }
+    return jsonify({
+        "tesseract_path": tess_path,
+        "tesseract_version": tess_ver,
+        "poppler_tools": poppler,
+        "heif_enabled": bool(HEIF_ENABLED),
+    })
 
 @app.route("/api/job-count")
 @login_required
