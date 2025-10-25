@@ -1139,7 +1139,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // replace the thinking bubble with the actual job list
-        answerRegion.innerHTML = "";          // ✅ not aiBlock.innerHTML
+        answerRegion.innerHTML = "";
         displayJobs(jobs, answerRegion);
         if (![...(jobs?.remotive||[]), ...(jobs?.adzuna||[]), ...(jobs?.jsearch||[])].length) {
           answerRegion.insertAdjacentHTML('beforeend',
@@ -1148,20 +1148,32 @@ document.addEventListener("DOMContentLoaded", () => {
         // Save assistant summary to local thread
         const updated = [...getCurrent(), { role: "assistant", content: `Here are jobs for “${(jobIntent.queries || [jobIntent.query]).join(' | ')}”.` }];
         setCurrent(updated);
-
+        
         await refreshCreditsPanel?.();
         window.syncState?.();
         hideAIStatus();
         scrollToBottom();
         maybeShowScrollIcon();
+        
+        // ✅ clear attachments after a successful jobs flow
+        window.chatAttachments = [];
+        renderAttachmentBar();
+        
         return;
-      }
 
       // Normal AI chat
       const data = await apiFetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
+        body: JSON.stringify({
+          message,
+          model: currentModel,
+          conversation_id: conversationId,
+          attachments: (window.chatAttachments || []).map(a => ({
+            filename: a.filename,
+            text: a.text
+          }))
+        })
       });
 
       // get the assistant text from the response (cover a few shapes)
