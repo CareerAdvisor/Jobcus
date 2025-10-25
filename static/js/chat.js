@@ -1230,8 +1230,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ✅ Model returned — stop the status bar now (success path)
     hideAIStatus();
-
-    answerRegion.innerHTML = "";   // ← add this here for the non-jobs path
+    
+    // ✅ clear attachments after a successful /api/ask flow
+    window.chatAttachments = [];
+    renderAttachmentBar();
+    
+    answerRegion.innerHTML = "";   // ← existing line
 
     const copyId = `ai-${Date.now()}`;
     const wrap = document.createElement("div");
