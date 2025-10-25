@@ -1164,6 +1164,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.chatAttachments = [];
         renderAttachmentBar();
         return;
+      }
 
       // Normal AI chat
       const data = await apiFetch("/api/ask", {
