@@ -331,70 +331,6 @@ function initModelControls() {
   return { getSelectedModel, setSelectedModel, isPaid, allowedModels };
 }
 
-// Keeps attachments for the next message only
-const ATTACH = []; // { filename, text, size }
-
-function renderAttachmentBar() {
-  const bar = document.getElementById("attachmentBar");
-  if (!bar) return;
-  bar.innerHTML = "";
-  if (!ATTACH.length) { bar.hidden = true; return; }
-  bar.hidden = false;
-  ATTACH.forEach((att, i) => {
-    const pill = document.createElement("span");
-    const kb = Math.max(1, Math.round((att.size || 0) / 1024));
-    pill.className = "attach-pill";
-    pill.innerHTML = `
-      <span title="${escapeHtml(att.filename)}">${escapeHtml(att.filename)}</span>
-      <span aria-hidden="true">·</span>
-      <span>${kb} KB</span>
-      <button type="button" aria-label="Remove" title="Remove" data-i="${i}">×</button>
-    `;
-    pill.querySelector("button").addEventListener("click", (e) => {
-      const idx = Number(e.currentTarget.dataset.i);
-      if (!Number.isNaN(idx)) ATTACH.splice(idx, 1);
-      renderAttachmentBar();
-    });
-    bar.appendChild(pill);
-  });
-}
-
-// Replace the stub with a real uploader
-async function handleAttach(evt){
-  const input = evt?.target || document.getElementById("file-upload");
-  if (!input || !input.files || !input.files.length) return;
-
-  // If you enabled images on the server:
-  const allowed = new Set([
-    "pdf","txt","rtf","doc","docx",
-    "png","jpg","jpeg","webp",      // core images
-    // add if enabled server-side:
-    "heic","heif"
-  ]);
-
-  for (const file of input.files) {
-    const ext = (file.name.split(".").pop() || "").toLowerCase();
-    if (!allowed.has(ext)) {
-      alert(`Sorry, ${file.name} is not supported.\nAllowed: ${[...allowed].join(", ").toUpperCase()}.`);
-      continue;
-    }
-
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await apiFetch("/api/upload", { method: "POST", body: fd });
-      if (!res || !res.filename) throw new Error("Upload failed");
-      ATTACH.push({ filename: res.filename, size: res.size || file.size || 0, text: res.text || "" });
-    } catch (e) {
-      const msg = (e && e.responseJSON && e.responseJSON.message) || e.message || "Upload failed.";
-      alert(msg);
-    }
-  }
-
-  input.value = "";
-  renderAttachmentBar();
-}
-
 // ──────────────────────────────────────────────────────────────
 /** Server call helper (POST to /api/ask and return JSON) */
 // ──────────────────────────────────────────────────────────────
@@ -406,39 +342,6 @@ async function sendMessageToAPI(payload) {
     body: JSON.stringify(payload)
   }); // expected: { reply, modelUsed }
 }
-
-// Put this in chat.js (after base.js is loaded), top-level scope:
-window.handleAttach = async function handleAttach(e) {
-  const input = e.target;
-  const files = Array.from(input.files || []);
-  if (!files.length) return;
-
-  // initialize attachment bucket if needed
-  window.ATTACH = window.ATTACH || [];
-
-  for (const f of files) {
-    // send each file to /api/upload
-    const fd = new FormData();
-    fd.append("file", f);
-
-    try {
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      if (!res.ok) {
-        console.warn("Upload failed:", f.name, await res.text());
-        continue;
-      }
-      const info = await res.json();
-      // store filename + extracted text
-      window.ATTACH.push({ filename: info.filename, text: info.text || "", size: info.size || f.size || 0 });
-    } catch (err) {
-      console.error("Upload error:", f.name, err);
-    }
-  }
-
-  // refresh chips and clear the input’s value so the same file can be selected again
-  window.renderAttachmentBar?.();
-  input.value = "";
-};
 
 // ──────────────────────────────────────────────────────────────
 // Detect if a message is about job search (natural language)
@@ -1021,23 +924,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") window.closeChatMenu?.(); });
 
   document.getElementById("newChatBtn")?.addEventListener("click", () => {
-    localStorage.removeItem("chat:conversationId");
-    conversationId = null;
-    clearChat?.();
+    clearChat();
     window.closeChatMenu?.();
   });
-  
   document.getElementById("clearChatBtn")?.addEventListener("click", () => {
-    // same hygiene when clearing the whole conversation
-    localStorage.removeItem("chat:conversationId");
-    conversationId = null;
-  
-    if (Array.isArray(window.ATTACH)) {
-      window.ATTACH.length = 0;
-      window.renderAttachmentBar?.();
-    }
-    document.getElementById("file-upload")?.value = "";
-  
     clearChat();
     window.closeChatMenu?.();
   });
@@ -1179,74 +1069,38 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Build payload with attachments (filename + extracted text)
-      const payload = {
-        message,
-        model: currentModel,
-        conversation_id: conversationId || null,
-        attachments: (window.ATTACH || []).map(a => ({
-          filename: a.filename,
-          text: a.text || ""
-        }))
-      };
-      
-      let data;
-      try {
-        data = await apiFetch("/api/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-      } catch (err) {
-        // Graceful fallback for stale conversation ids (FK 23503)
-        const msg  = String(err?.message || err?.statusText || "").toLowerCase();
-        const body = String(err?.body || "").toLowerCase();
-        const looksLikeFK = msg.includes("conversation") || body.includes("foreign key") || body.includes("23503");
-      
-        if (looksLikeFK) {
-          // Clear bad id and retry once as a brand new conversation
-          localStorage.removeItem("chat:conversationId");
-          conversationId = null;
-      
-          const retry = { ...payload, conversation_id: null };
-          data = await apiFetch("/api/ask", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(retry)
-          });
-        } else {
-          throw err;
-        }
-      }
-      
-      // After a successful send, clear attachments and re-render the bar
-      ATTACH.length = 0;
-      renderAttachmentBar();
-      document.getElementById("file-upload")?.value = "";
-      
-      // Extract the assistant text
-      let finalReply = String(
-        data?.reply ?? data?.content ?? data?.text ?? ""
+      // Normal AI chat
+      const data = await apiFetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, model: currentModel, conversation_id: conversationId })
+      });
+
+      // get the assistant text from the response (cover a few shapes)
+      finalReply = String(
+        data?.reply ??
+        data?.content ??
+        data?.text ??
+        ""
       ).trim();
-      if (!finalReply) finalReply = "Here’s what I found.";
-      finalReply = addJobcusNudges(finalReply);
       
-      // Save conv id (first reply), then refresh history
+      // optional fallback so we never render “nothing”
+      if (!finalReply) finalReply = "Here’s what I found.";
+
+      // Save conv id after first reply and refresh history for highlight
       if (data.conversation_id && data.conversation_id !== conversationId) {
         conversationId = data.conversation_id;
         localStorage.setItem("chat:conversationId", conversationId);
-        renderHistory?.();
+        renderHistory(); // highlight current
       }
+      
+      // ✅ actually use the model's reply
+      finalReply = (data.reply || data.content || data.message || "").toString();
       
       // add nudges after we have a reply
       finalReply = addJobcusNudges(finalReply);
-      
     } catch (err) {
-      hideAIStatus();
-      showNotice("Something went wrong. Please try again.");
-      disableComposer(false);
-      return;
-    }
+      hideAIStatus();  // ✅ ensure status bar is removed on error
 
       // NEW — show the banner and stay on page (no redirect)
       if (handleChatLimitError(err)) {
