@@ -134,7 +134,7 @@ async function handleAttach(evt){
       continue;
     }
 
-    data = await res.json().catch(()=>null);
+    const data = await res.json().catch(() => null);
     if (!res.ok || !data || data.error) {
       alert(`${f.name}: ${data?.message || "Unsupported file or server error."}`);
       continue;
@@ -223,10 +223,10 @@ function showUpgradeBanner(msg) {
   // Dismiss banner (no redirect) — chat remains paused (composer disabled)
   b.querySelector("#upgradeNotNowBtn")?.addEventListener("click", () => {
     b.remove();
-    try { sessionStorage.setItem("jobcus:chat:upgradeBannerDismissed", "1"); } catch {}
+    try { sessionStorage.setItem("jobcus:chat:upgradeBannerDismissed", "1"); } catch (e) {}
   });
 
-  try { b.scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
+  try { b.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
 }
 
 function disableComposer(disabled) {
@@ -494,7 +494,7 @@ async function shareConversation(convId, title) {
       // lightweight toast
       alert("Share link copied to clipboard!");
     }
-  } catch {}
+  } catch (e) {}
 }
 
 async function renameConversation(convId, currentTitle, isServer = true) {
@@ -622,7 +622,7 @@ async function renderHistory(){
           localStorage.setItem("chat:conversationId", rowId);
           renderChat(formatted);
           renderHistory();
-          try { closeChatMenu?.(); } catch {}
+          try { closeChatMenu?.(); } catch (e) {}
         } catch (e) { console.error("Failed to load messages", e); }
       });
     
@@ -683,7 +683,7 @@ async function renderHistory(){
       localStorage.setItem('jobcus:chat:activeId', h.id);
       renderChat(h.messages || []);
       renderHistory();
-      try { closeChatMenu?.(); } catch {}
+      try { closeChatMenu?.(); } catch (e) {}
     });
   
     const ellipsisBtn = wrap.querySelector(".history-ellipsis");
@@ -1158,7 +1158,6 @@ document.addEventListener("DOMContentLoaded", () => {
         // ✅ clear attachments after a successful jobs flow
         window.chatAttachments = [];
         renderAttachmentBar();
-        
         return;
 
       // Normal AI chat
@@ -1365,7 +1364,7 @@ document.addEventListener("DOMContentLoaded", () => {
       form.dispatchEvent(new Event("submit", { bubbles:true, cancelable:true }));
       history.replaceState({}, "", location.pathname + location.hash);
     }, 100);
-  } catch {}
+  } catch (e) {}
 })();
 
 // --- AI caveat injector (robust, CSP-safe) ---
