@@ -493,6 +493,188 @@ PLAN_TO_PRICE = {
     "premium":  os.getenv("STRIPE_PRICE_PREMIUM"),
     "employer_jd":  os.getenv("STRIPE_PRICE_EMPLOYER_JD"),
 }
+
+# --- Stripe Payment ---
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  # your sk_live_...
+
+# Map plan code -> Stripe Price ID (envs you already set)
+PLAN_TO_PRICE = {
+    "weekly":      os.getenv("STRIPE_PRICE_WEEKLY"),
+    "standard":    os.getenv("STRIPE_PRICE_STANDARD"),
+    "premium":     os.getenv("STRIPE_PRICE_PREMIUM"),
+    "employer_jd": os.getenv("STRIPE_PRICE_EMPLOYER_JD"),
+}
+
+# ✅ 1. Insert all your NEW Stripe + Email helper functions right HERE:
+
+# --- Transactional Email Sender (send_tx_email) ---
+
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+DEFAULT_FROM = os.getenv("TX_FROM_EMAIL", "Jobcus <no-reply@jobcus.com>")
+ADMIN_EMAILS = {e.strip().lower() for e in (os.getenv("ADMIN_EMAILS") or "").split(",") if e.strip()}
+
+def send_tx_email(to: str, subject: str, html: str, cc_admin: bool=False):
+    """
+    Very small helper using Resend. Replace with your provider if needed.
+    """
+    if not RESEND_API_KEY:
+        current_app.logger.warning("RESEND_API_KEY not set; skipping email to %s (%s)", to, subject)
+        return
+    payload = {
+        "from": DEFAULT_FROM,
+        "to": [to],
+        "subject": subject,
+        "html": html
+    }
+    if cc_admin and ADMIN_EMAILS:
+        payload["bcc"] = list(ADMIN_EMAILS)
+    try:
+        r = requests.post(
+            "https://api.resend.com/emails",
+            json=payload,
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}"}
+        )
+        if r.status_code >= 300:
+            current_app.logger.error("send_tx_email failed: %s %s", r.status_code, r.text)
+    except Exception:
+        current_app.logger.exception("send_tx_email error")
+
+# --- Create Stripe Billing Portal URL ---
+def create_billing_portal_url(customer_id, return_url):
+    """
+    Creates a Stripe Billing Portal session link for the given customer.
+    This link lets the user manage or cancel their subscription directly.
+    """
+    session = stripe.billing_portal.Session.create(
+        customer=customer_id,
+        return_url=return_url
+    )
+    return session.url
+
+# --- Subscription Details Helper ---
+def _sub_human_details(session_or_sub):
+    """
+    Normalize details for success email.
+    Accepts either a Checkout Session (expand=subscription) or a Subscription object.
+    Returns dict: plan_code, interval, amount, currency, renews_at_iso
+    """
+    try:
+        # If we got a Session, use its subscription object
+        if session_or_sub and getattr(session_or_sub, "object", None) == "checkout.session":
+            sub = session_or_sub.subscription
+            if not sub or isinstance(sub, str):
+                sub = stripe.Subscription.retrieve(sub) if sub else None
+        else:
+            sub = session_or_sub
+
+        price = None
+        if sub and sub.items and sub.items.data:
+            price = sub.items.data[0].price
+
+        interval = getattr(price.recurring, "interval", None) if price and price.recurring else None
+        amount   = (price.unit_amount or 0)/100 if price and price.unit_amount else None
+        currency = (price.currency or "gbp").upper() if price else "GBP"
+        renews_at_iso = time.strftime("%Y-%m-%d", time.gmtime(sub.current_period_end)) if sub and sub.current_period_end else None
+
+        # Try to surface your internal plan code
+        plan_code = None
+        if hasattr(session_or_sub, "metadata") and session_or_sub.metadata:
+            plan_code = session_or_sub.metadata.get("plan_code")
+        if not plan_code and sub and sub.items and sub.items.data:
+            # fallback: map from price id
+            plan_code = PRICE_TO_PLAN.get(price.id)
+
+        return {
+            "plan_code": plan_code or "standard",
+            "interval": interval or "month",
+            "amount": amount,
+            "currency": currency,
+            "renews_at_iso": renews_at_iso,
+        }
+    except Exception:
+        current_app.logger.exception("_sub_human_details failed")
+        return {"plan_code":"standard","interval":"month","amount":None,"currency":"GBP","renews_at_iso":None}
+
+# --- Send Success Email (calls your Jinja template) ---
+def send_success_email(
+    to_email,
+    plan_name,
+    amount,
+    interval,
+    currency="GBP",
+    next_renewal_date=None,
+    order_number=None,
+    order_date=None,
+    payment_brand=None,
+    payment_last4=None,
+    manage_url=None,
+    user_name=None
+):
+    """
+    Renders and sends a success email when a user subscribes to a plan.
+    """
+
+    # Render the HTML template using Jobcus branding
+    html = render_template(
+        "subscription_success.html",
+        user_name=user_name,
+        plan_name=plan_name,
+        amount=f"{amount:.2f}" if amount is not None else None,
+        interval_label={"week": "week", "month": "month", "year": "year"}.get(interval, interval),
+        currency_symbol="£" if currency.upper() == "GBP" else f"{currency.upper()} ",
+        next_renewal_date=next_renewal_date,
+        order_number=order_number,
+        order_date=order_date,
+        payment_brand=payment_brand,
+        payment_last4=payment_last4,
+        manage_url=manage_url or url_for("dashboard", _external=True),
+        tax_amount=None,
+        total_amount=None
+    )
+
+    # Send using your transactional email helper
+    subject = f"Your Jobcus {plan_name} plan is active"
+    send_tx_email(to_email, subject, html)
+
+
+# --- Send Failed Email (for invoice.payment_failed) ---
+def send_failed_email(
+    to_email,
+    amount_due,
+    currency="GBP",
+    reason=None,
+    update_url=None,
+    user_name=None
+):
+    """
+    Renders and sends a failed payment email to the user.
+    Also notifies the admin if ADMIN_EMAILS is configured.
+    """
+
+    # Render the Jobcus HTML email
+    html = render_template(
+        "subscription_failed.html",
+        user_name=user_name,
+        amount_due=f"{amount_due:.2f}" if amount_due is not None else None,
+        currency_symbol="£" if currency.upper() == "GBP" else f"{currency.upper()} ",
+        fail_reason=reason or "Your recent payment could not be processed.",
+        update_url=update_url or url_for("dashboard", _external=True)
+    )
+
+    # Send to the user
+    subject = "Action needed: Jobcus payment failed"
+    send_tx_email(to_email, subject, html)
+
+    # Notify admin (optional)
+    if ADMIN_EMAILS:
+        admin_to = next(iter(ADMIN_EMAILS))
+        admin_html = f"""
+        <p><strong>Payment failed for:</strong> {to_email or 'Unknown user'}</p>
+        <p><strong>Amount:</strong> £{amount_due:.2f} {currency}</p>
+        <p><strong>Reason:</strong> {reason or 'Not provided'}</p>
+        """
+        send_tx_email(admin_to, "ALERT: Jobcus subscription payment failed", admin_html)
+
     
 # ---- Model selection helpers ----
 def _dedupe(seq):
