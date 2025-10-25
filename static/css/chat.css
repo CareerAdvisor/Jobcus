@@ -743,3 +743,11 @@ html { -webkit-text-size-adjust: 100%; }
   font-weight:700; line-height:1;
 }
 
+/* put into static/css/chat.css */
+.attach-bar{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 0}
+.attach-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid #e5e9f2;border-radius:999px;background:#f8fafc;font-size:12px}
+.attach-chip .name{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attach-chip .meta{color:#64748b}
+.attach-chip .remove{border:none;background:transparent;cursor:pointer;font-size:14px;line-height:1}
+
+
