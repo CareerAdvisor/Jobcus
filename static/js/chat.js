@@ -1204,6 +1204,7 @@ document.addEventListener("DOMContentLoaded", () => {
         data?.reply ?? data?.content ?? data?.text ?? ""
       ).trim();
       if (!finalReply) finalReply = "Here’s what I found.";
+      finalReply = addJobcusNudges(finalReply);
       
       // Save conv id (first reply), then refresh history
       if (data.conversation_id && data.conversation_id !== conversationId) {
@@ -1217,7 +1218,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
     } catch (err) {
       hideAIStatus();
-      showNotice("Something went wrong. Please try again."); // your banner/toast
+      showNotice("Something went wrong. Please try again.");
       disableComposer(false);
       return;
     }
