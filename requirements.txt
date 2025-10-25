@@ -20,3 +20,4 @@ pytesseract>=0.3.10
 pdfplumber>=0.11
 pdf2image>=1.16
 pillow-heif>=0.16
+httpx
