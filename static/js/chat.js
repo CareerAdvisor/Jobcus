@@ -407,6 +407,39 @@ async function sendMessageToAPI(payload) {
   }); // expected: { reply, modelUsed }
 }
 
+// Put this in chat.js (after base.js is loaded), top-level scope:
+window.handleAttach = async function handleAttach(e) {
+  const input = e.target;
+  const files = Array.from(input.files || []);
+  if (!files.length) return;
+
+  // initialize attachment bucket if needed
+  window.ATTACH = window.ATTACH || [];
+
+  for (const f of files) {
+    // send each file to /api/upload
+    const fd = new FormData();
+    fd.append("file", f);
+
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (!res.ok) {
+        console.warn("Upload failed:", f.name, await res.text());
+        continue;
+      }
+      const info = await res.json();
+      // store filename + extracted text
+      window.ATTACH.push({ filename: info.filename, text: info.text || "", size: info.size || f.size || 0 });
+    } catch (err) {
+      console.error("Upload error:", f.name, err);
+    }
+  }
+
+  // refresh chips and clear the input’s value so the same file can be selected again
+  window.renderAttachmentBar?.();
+  input.value = "";
+};
+
 // ──────────────────────────────────────────────────────────────
 // Detect if a message is about job search (natural language)
 // ──────────────────────────────────────────────────────────────
@@ -988,17 +1021,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", (e)=>{ if (e.key === "Escape") window.closeChatMenu?.(); });
 
   document.getElementById("newChatBtn")?.addEventListener("click", () => {
-    // wipe any stale conversation id so the next send creates a new one
     localStorage.removeItem("chat:conversationId");
     conversationId = null;
-  
-    // clear any staged attachments/chips
-    if (Array.isArray(window.ATTACH)) {
-      window.ATTACH.length = 0;
-      window.renderAttachmentBar?.();
-    }
-    document.getElementById("file-upload")?.value = "";
-    clearChat();
+    clearChat?.();
     window.closeChatMenu?.();
   });
   
