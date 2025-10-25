@@ -1536,63 +1536,106 @@ def subscribe():
 @login_required
 def stripe_success():
     session_id = request.args.get("session_id")
-
-    # Fallback: if session_id is missing or it's the literal placeholder (encoded or not)
     placeholder_vals = {"{CHECKOUT_SESSION_ID}", "%7BCHECKOUT_SESSION_ID%7D"}
+
+    def _send_success_from(session_obj, metadata):
+        # Build details for the success email
+        sub = session_obj.subscription if getattr(session_obj, "subscription", None) else None
+        if isinstance(sub, str) and sub:
+            sub = stripe.Subscription.retrieve(sub, expand=["items.data.price"])
+        elif sub and getattr(sub, "object", None) == "subscription" and not getattr(sub.items.data[0], "price", None):
+            sub = stripe.Subscription.retrieve(sub.id, expand=["items.data.price"])
+
+        details = _sub_human_details(sub) if sub else {"interval":"month","amount":None,"currency":"GBP","renews_at_iso":None}
+        plan_code = (metadata or {}).get("plan_code", "") or details.get("plan_code", "")
+        plan_name = _plans().get(plan_code, {}).get("title", "Your plan")
+
+        # Try payment details (brand/last4) via invoice -> payment_intent -> charge
+        payment_brand, payment_last4 = None, None
+        try:
+            inv_id = getattr(session_obj, "invoice", None)
+            if inv_id:
+                inv = stripe.Invoice.retrieve(inv_id, expand=["payment_intent.latest_charge.payment_method_details"])
+                pid = inv.payment_intent
+                ch  = pid.latest_charge if pid and getattr(pid, "latest_charge", None) else None
+                pm  = ch.payment_method_details.card if ch and ch.payment_method_details and getattr(ch.payment_method_details, "card", None) else None
+                if pm:
+                    payment_brand = pm.get("brand") or None
+                    payment_last4 = pm.get("last4") or None
+        except Exception:
+            current_app.logger.info("Could not enrich success email with card details")
+
+        # Billing portal manage link
+        try:
+            manage_url = create_billing_portal_url(session_obj.customer, url_for("dashboard", _external=True))
+        except Exception:
+            manage_url = url_for("dashboard", _external=True)
+
+        # Lookup user email/name
+        user_email = current_user.email
+        user_name  = getattr(current_user, "fullname", None) or getattr(current_user, "first_name", None)
+
+        # Send the email
+        try:
+            send_success_email(
+                to_email=user_email,
+                plan_name=plan_name,
+                amount=details["amount"],
+                interval=details["interval"],
+                currency=details["currency"],
+                next_renewal_date=details["renews_at_iso"],
+                order_number=sub.id if sub else None,
+                order_date=time.strftime("%Y-%m-%d %H:%M", time.gmtime()) if sub else None,
+                payment_brand=payment_brand,
+                payment_last4=payment_last4,
+                manage_url=manage_url,
+                user_name=user_name
+            )
+        except Exception:
+            current_app.logger.exception("Failed to send success email")
+
+    # ===== Recovery path if session_id is missing/placeholder =====
     if (not session_id) or (session_id in placeholder_vals):
-        # Try to recover by looking up the user's latest paid Checkout Session
         supabase = current_app.config["SUPABASE"]
         try:
-            r = (
-                supabase.table("users")
-                .select("stripe_customer_id")
-                .eq("auth_id", current_user.id)
-                .single()
-                .execute()
-            )
+            r = (supabase.table("users")
+                 .select("stripe_customer_id")
+                 .eq("auth_id", current_user.id)
+                 .single()
+                 .execute())
             scid = (r.data or {}).get("stripe_customer_id")
         except Exception:
             scid = None
 
         if scid:
             try:
-                # Get the most recent session for this customer
                 sessions = stripe.checkout.Session.list(customer=scid, limit=1)
                 if sessions.data:
                     cs = sessions.data[0]
-                    # If paid, proceed as usual
                     if cs.payment_status == "paid":
                         metadata = cs.metadata or {}
                         customer_id = cs.customer
-                        subscription_id = (
-                            cs.subscription.id
-                            if getattr(cs, "subscription", None)
-                            else None
-                        )
-                        _activate_user_plan_by_metadata(
-                            supabase, metadata, customer_id, subscription_id
-                        )
+                        subscription_id = (cs.subscription.id if getattr(cs, "subscription", None) else None)
+                        _activate_user_plan_by_metadata(supabase, metadata, customer_id, subscription_id)
 
-                        # Handle ?next=... redirect if safe
+                        # success email
+                        try: _send_success_from(cs, metadata)
+                        except Exception: current_app.logger.exception("send_success (recovered session) failed")
+
                         raw_next = request.args.get("next")
                         if _is_safe_next(raw_next):
                             return redirect(raw_next)
 
                         plan_code = metadata.get("plan_code", "")
                         plan_name = _plans().get(plan_code, {}).get("title", "Your plan")
-                        return render_template(
-                            "subscribe-success.html",
-                            plan_human=plan_name,
-                            plan_json=plan_code,
-                        )
+                        return render_template("subscribe-success.html", plan_human=plan_name, plan_json=plan_code)
             except Exception:
                 current_app.logger.exception("Could not recover Checkout session")
 
-        # As a last resort, just show a generic success page; webhooks will have activated the plan.
         flash("Payment completed. If features aren’t unlocked yet, they’ll be within a minute.", "info")
         return redirect(url_for("pricing"))
 
-    # Normal path with a valid real session id
+    # ===== Normal path with a real session id =====
     cs = stripe.checkout.Session.retrieve(session_id, expand=["subscription"])
     if cs.payment_status != "paid":
         flash("Payment not completed yet. If this persists, contact support.", "error")
@@ -1605,7 +1648,10 @@ def stripe_success():
 
     _activate_user_plan_by_metadata(supabase, metadata, customer_id, subscription_id)
 
-    # redirect back if we got a safe next
+    # success email
+    try: _send_success_from(cs, metadata)
+    except Exception: current_app.logger.exception("send_success failed")
+
     raw_next = request.args.get("next")
     if _is_safe_next(raw_next):
         return redirect(raw_next)
@@ -1735,6 +1781,7 @@ def stripe_webhook():
     payload = request.get_data(as_text=True)
     sig_header = request.headers.get("Stripe-Signature")
 
+    # ----- Verify Stripe signature -----
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
     except ValueError:
@@ -1745,15 +1792,33 @@ def stripe_webhook():
     etype = event["type"]
     obj   = event["data"]["object"]
 
+    # ----- OPTIONAL: Idempotency (avoid double-processing the same event) -----
+    # If you want this, create a tiny table 'stripe_events' with columns: id (text, PK), type (text), created_at (timestamp default now()).
+    # Then uncomment the block below.
+    """
+    try:
+        eid = event.get("id")
+        if eid:
+            # If this event id already exists, we've processed it before.
+            seen = supabase.table("stripe_events").select("id").eq("id", eid).execute()
+            if seen.data:
+                return ("OK", 200)
+            # Mark as seen
+            supabase.table("stripe_events").insert({"id": eid, "type": etype}).execute()
+    except Exception:
+        current_app.logger.info("Idempotency check failed; continuing without it.")
+    """
+
+    # ----- Handle events -----
     if etype == "checkout.session.completed":
-        # initial activation via Checkout
+        # Initial activation via Checkout
         metadata = obj.get("metadata", {}) or {}
         customer_id = obj.get("customer")
         subscription_id = obj.get("subscription")
         _activate_user_plan_by_metadata(supabase, metadata, customer_id, subscription_id)
 
     elif etype in ("customer.subscription.created", "customer.subscription.updated"):
-        # continuous sync based on the subscription object
+        # Continuous sync based on the subscription object
         _update_user_plan_from_subscription(supabase, obj)
 
     elif etype == "customer.subscription.deleted":
@@ -1761,8 +1826,53 @@ def stripe_webhook():
         _deactivate_user_plan_by_customer(supabase, customer_id)
 
     elif etype == "invoice.payment_failed":
-        # Optional: update plan_status to past_due or notify user
-        pass
+        # Notify user to update payment; optionally flag account as past_due; notify admin
+        try:
+            invoice = obj
+            customer_id = invoice.get("customer")
+            amount_due  = (invoice.get("amount_due") or 0) / 100
+            currency    = (invoice.get("currency") or "gbp").upper()
+
+            # Best-effort reason
+            lpe = invoice.get("last_payment_error") or {}
+            reason = (lpe.get("message") or lpe.get("decline_code") or "Payment failed")
+
+            # Billing portal link for updating payment
+            try:
+                update_url = create_billing_portal_url(customer_id, url_for("dashboard", _external=True))
+            except Exception:
+                update_url = url_for("dashboard", _external=True)
+
+            # Find the user by Stripe customer id
+            auth_id   = _find_user_id_by_customer(supabase, customer_id)  # you already use this helper elsewhere
+            email     = None
+            user_name = None
+            if auth_id:
+                r = (
+                    supabase.table("users")
+                    .select("email, fullname")
+                    .eq("auth_id", auth_id)
+                    .single()
+                    .execute()
+                )
+                row = r.data or {}
+                email = row.get("email")
+                user_name = row.get("fullname")
+
+                # (Optional) mark plan_status as past_due for UX
+                try:
+                    supabase.table("users").update({"plan_status": "past_due"}).eq("auth_id", auth_id).execute()
+                except Exception:
+                    pass
+
+            # Fallback to invoice email if not in DB
+            email = email or invoice.get("customer_email")
+
+            if email:
+                send_failed_email(email, amount_due, currency, reason, update_url, user_name)
+
+        except Exception:
+            current_app.logger.exception("invoice.payment_failed handler failed")
 
     return ("OK", 200)
 
