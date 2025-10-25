@@ -1,4 +1,4 @@
-import os, stripe, hashlib, hmac, time, httpx, functools
+import os, stripe, hashlib, hmac, time, httpx, functools, mimetypes
 import traceback
 from io import BytesIO
 from collections import Counter
@@ -45,7 +45,7 @@ from werkzeug.utils import secure_filename
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
-from PIL import Image  # keep this (used by Image.open in OCR)
+from PIL import Image, ImageOps, ImageFilter
 
 # Optional HEIF/HEIC support (won't crash deploys if package isn't installed)
 try:
