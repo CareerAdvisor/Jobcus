@@ -15,4 +15,7 @@ gotrue
 stripe
 pypdf
 docx2txt
-
+pillow>=10.3
+pytesseract>=0.3.10
+pdfplumber>=0.11
+pdf2image>=1.16
