@@ -63,8 +63,96 @@ function sharePage() {
   navigator.clipboard.writeText(window.location.href);
   alert("Link copied!");
 }
-function handleMic()   { alert("Voice input coming soon!"); }
-function handleAttach(){ alert("File upload coming soon!"); }
+
+// ===== Attachments (frontend glue for /api/upload) =====
+window.chatAttachments = [];  // [{ filename, size, text }], single-message buffer
+
+function formatBytes(n){
+  if (!n && n !== 0) return "";
+  const u = ["B","KB","MB","GB"]; let i = 0, v = n;
+  while (v >= 1024 && i < u.length-1){ v/=1024; i++; }
+  return `${v.toFixed(v >= 10 || v % 1 === 0 ? 0 : 1)} ${u[i]}`;
+}
+
+function renderAttachmentBar(){
+  const bar = document.getElementById("attachmentBar");
+  if (!bar) return;
+  bar.innerHTML = "";
+  if (!window.chatAttachments.length){
+    bar.hidden = true;
+    return;
+  }
+  bar.hidden = false;
+  window.chatAttachments.forEach((att, idx) => {
+    const chip = document.createElement("span");
+    chip.className = "attach-chip";
+    chip.innerHTML = `
+      <span class="name" title="${escapeHtml(att.filename)}">${escapeHtml(att.filename)}</span>
+      <span class="meta">${formatBytes(att.size)}</span>
+      <button type="button" class="remove" aria-label="Remove attachment">×</button>
+    `;
+    chip.querySelector(".remove").addEventListener("click", () => {
+      window.chatAttachments.splice(idx, 1);
+      renderAttachmentBar();
+    });
+    bar.appendChild(chip);
+  });
+}
+
+async function handleAttach(evt){
+  const input = evt?.target || document.getElementById("file-upload");
+  const files = [...(input?.files || [])];
+  if (!files.length) return;
+
+  // optional: cap how many per message
+  const MAX_FILES = 5;
+  const remain = Math.max(0, MAX_FILES - window.chatAttachments.length);
+  if (!remain){
+    alert("You can attach up to 5 files per message.");
+    input.value = "";
+    return;
+  }
+
+  for (const f of files.slice(0, remain)) {
+    const fd = new FormData();
+    fd.append("file", f, f.name);
+
+    let res, data;
+    try {
+      res = await fetch("/api/upload", { method: "POST", body: fd, credentials: "same-origin" });
+    } catch (e) {
+      alert("Upload failed. Please try again.");
+      continue;
+    }
+
+    if (res.status === 401) {
+      alert("Please log in to upload files.");
+      break;
+    }
+    if (res.status === 413) {
+      alert(`${f.name}: file is too large (max 5 MB).`);
+      continue;
+    }
+
+    data = await res.json().catch(()=>null);
+    if (!res.ok || !data || data.error) {
+      alert(`${f.name}: ${data?.message || "Unsupported file or server error."}`);
+      continue;
+    }
+
+    // Keep only the fields /api/ask needs
+    window.chatAttachments.push({
+      filename: data.filename || f.name,
+      size: data.size ?? f.size ?? 0,
+      text: data.text || ""
+    });
+    renderAttachmentBar();
+  }
+
+  // clear the input so the same files can be selected again later
+  if (input) input.value = "";
+}
+window.handleAttach = handleAttach;
 
 function copyToClipboard(id) {
   const el = document.getElementById(id);
