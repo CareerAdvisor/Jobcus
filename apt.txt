@@ -7,5 +7,5 @@ fonts-liberation
 fonts-noto-core
 libffi8
 tesseract-ocr
-poppler-utils   
+poppler-utils
 libheif1
