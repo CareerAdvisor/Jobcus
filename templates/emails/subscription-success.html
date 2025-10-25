@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Successful – Jobcus{% endblock %}
+{% block meta_description %}Your Jobcus plan is active. View your subscription details below.{% endblock %}
+
+{% block extra_css %}
+<style>
+.email-wrap {
+  max-width: 640px;
+  margin: 2rem auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.06);
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+  color: #1f2937;
+}
+.email-wrap h1 {
+  font-size: 1.5rem;
+  margin-bottom: .5rem;
+}
+.email-wrap p { line-height: 1.6; }
+.email-btn {
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding: .75rem 1.25rem;
+  background: #111827;
+  color: #fff !important;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+}
+.table th, .table td {
+  padding: .6rem .5rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  font-size: .9rem;
+}
+.footer-note {
+  font-size: .8rem;
+  color: #6b7280;
+  margin-top: 1rem;
+  text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="email-wrap">
+  <h1>🎉 Your {{ plan_name }} plan is active</h1>
+  <p>Hi{% if user_name %} {{ user_name }}{% endif %}, thanks for subscribing to <strong>{{ plan_name }}</strong>!</p>
+
+  <table class="table">
+    <tr><th>Price</th><td>{{ currency_symbol }}{{ amount }} / {{ interval_label }}</td></tr>
+    {% if total_amount %}<tr><th>Total Charged</th><td>{{ currency_symbol }}{{ total_amount }}</td></tr>{% endif %}
+    {% if next_renewal_date %}<tr><th>Renews On</th><td>{{ next_renewal_date }}</td></tr>{% endif %}
+    {% if payment_brand %}<tr><th>Payment Method</th><td>{{ payment_brand }} •••• {{ payment_last4 }}</td></tr>{% endif %}
+    {% if order_number %}<tr><th>Order No.</th><td>{{ order_number }}</td></tr>{% endif %}
+  </table>
+
+  <p><a href="{{ manage_url }}" class="email-btn">Manage Subscription</a></p>
+
+  <p class="footer-note">
+    Need help? <a href="mailto:support@jobcus.com">support@jobcus.com</a><br>
+    &copy; 2025 Jobcus – Your AI Career Advisor
+  </p>
+</section>
+{% endblock %}
