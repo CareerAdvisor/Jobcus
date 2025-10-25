@@ -69,6 +69,9 @@
 {% set show_upgrade  = (show_upgrade if show_upgrade is defined else (plan_code == 'free')) %}
 {% set cloud_history = 1 if plan_code in ['standard','premium'] else 0 %}
 
+{# Ensure we have a flag for HEIF support coming from the backend #}
+{% set heif_enabled = heif_enabled if heif_enabled is defined else False %}
+
 {% block content %}
 <main id="chatShell"
       data-is-paid="{{ 1 if is_paid else 0 }}"
@@ -216,12 +219,22 @@
           <label for="file-upload" title="Attach a file">
             <img src="{{ url_for('static', filename='icons/attach.svg') }}" alt="Attach">
           </label>
-          <input id="file-upload" 
+
+          {#
+            Accept list mirrors server ALLOWED_EXTS and the HEIF toggle.
+            Also expose the list + max bytes via data- attributes so chat.js
+            can validate client-side without hardcoding.
+          #}
+          {% set accept_core = '.pdf,.txt,.rtf,.doc,.docx,.png,.jpg,.jpeg,.webp' %}
+          {% set accept_heif = ',.heic,.heif' if heif_enabled else '' %}
+          <input id="file-upload"
                  type="file"
                  multiple
-                 accept=".pdf,.doc,.docx,.txt,.rtf,.png,.jpg,.jpeg,.webp,.heic,.heif"
-                 style="display:none"
-                 onchange="handleAttach(event)">
+                 accept="{{ accept_core ~ accept_heif }}"
+                 data-allowed-exts="{{ 'pdf,txt,rtf,doc,docx,png,jpg,jpeg,webp' ~ (',heic,heif' if heif_enabled else '') }}"
+                 data-max-bytes="5242880"
+                 style="display:none">
+
           <img src="{{ url_for('static', filename='icons/mic.svg') }}" alt="Voice input" onclick="handleMic()">
           <img id="sendButton" src="{{ url_for('static', filename='icons/send.svg') }}" alt="Send" role="button" tabindex="0">
         </div>
