@@ -46,6 +46,7 @@ from werkzeug.utils import secure_filename
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
 from PIL import Image, ImageOps, ImageFilter
+import pytesseract
 
 # Optional HEIF/HEIC support (won't crash deploys if package isn't installed)
 try:
@@ -675,6 +676,21 @@ def send_failed_email(
         """
         send_tx_email(admin_to, "ALERT: Jobcus subscription payment failed", admin_html)
 
+# --- OCR helpers ---
+def _img_to_text_file(path: str) -> str:
+    """
+    Open image from disk, do light preprocessing, run Tesseract.
+    Works for PNG/JPG/WEBP/HEIC (if pillow-heif is registered).
+    """
+    try:
+        img = Image.open(path)
+        img = ImageOps.exif_transpose(img)   # respect camera rotation
+        img = img.convert("L")               # grayscale
+        img = ImageOps.autocontrast(img)
+        img = img.filter(ImageFilter.MedianFilter(size=3))  # light denoise
+        return (pytesseract.image_to_string(img) or "").strip()
+    except Exception:
+        return ""
     
 # ---- Model selection helpers ----
 def _dedupe(seq):
@@ -822,17 +838,44 @@ MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # keep this as-is
 def _allowed(filename: str) -> bool:
     return "." in filename and filename.rsplit(".",1)[1].lower() in ALLOWED_EXTS
 
+# ------ extract_text -------
 def _extract_text(path: str, ext: str) -> str:
     ext = ext.lower()
     try:
         if ext == "pdf":
-            from pypdf import PdfReader
-            out = []
-            with open(path, "rb") as f:
-                reader = PdfReader(f)
-                for page in reader.pages:
-                    out.append(page.extract_text() or "")
-            return "\n".join(out).strip()
+            # 1) Try normal (text) PDF extraction first
+            try:
+                from pypdf import PdfReader
+                out = []
+                with open(path, "rb") as f:
+                    reader = PdfReader(f)
+                    for page in reader.pages:
+                        out.append(page.extract_text() or "")
+                text = "\n".join(out).strip()
+            except Exception:
+                text = ""
+
+            # 2) If we got nothing (image-only PDF), OCR the pages as images
+            if not text.strip():
+                try:
+                    from pdf2image import convert_from_path
+                    pages = convert_from_path(path, dpi=300)  # needs poppler-utils
+                    bits = []
+                    for pg in pages:
+                        g = pg.convert("L")
+                        g = ImageOps.autocontrast(g)
+                        g = g.filter(ImageFilter.MedianFilter(size=3))
+                        bits.append(pytesseract.image_to_string(g) or "")
+                    text = "\n".join(bits).strip()
+                except Exception:
+                    # Optional: pdfplumber as a second try for embedded text
+                    try:
+                        import pdfplumber
+                        with pdfplumber.open(path) as pdf:
+                            text = "\n".join([(p.extract_text() or "") for p in pdf.pages]).strip()
+                    except Exception:
+                        pass
+            return text
 
         elif ext in ("doc", "docx"):
             import docx2txt
@@ -844,12 +887,7 @@ def _extract_text(path: str, ext: str) -> str:
             return re.sub(r"{\\.*?}|\\[a-z]+\d* ?|[{}]", " ", raw).strip()
 
         elif ext in ("png", "jpg", "jpeg", "webp", "heic", "heif"):
-            try:
-                img = Image.open(path)
-                import pytesseract
-                return (pytesseract.image_to_string(img) or "").strip()
-            except Exception:
-                return ""
+            return _img_to_text_file(path)
 
         else:  # treat as plain text (e.g., .txt)
             return open(path, "rb").read().decode(errors="ignore").strip()
