@@ -1,4 +1,4 @@
-import os, stripe, hashlib, hmac, time, httpx, functools, mimetypes
+import os, stripe, hashlib, hmac, time, httpx, functools, mimetypes, shutil
 import traceback
 from io import BytesIO
 from collections import Counter
@@ -46,7 +46,6 @@ from werkzeug.utils import secure_filename
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
 from PIL import Image, ImageOps, ImageFilter
-import pytesseract
 
 # Optional HEIF/HEIC support (won't crash deploys if package isn't installed)
 try:
@@ -55,6 +54,8 @@ try:
     HEIF_ENABLED = True
 except Exception:
     HEIF_ENABLED = False
+
+import pytesseract
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 resumes_bp = None  # will set when found
@@ -844,6 +845,7 @@ def _extract_text(path: str, ext: str) -> str:
     try:
         if ext == "pdf":
             # 1) Try normal (text) PDF extraction first
+            text = ""
             try:
                 from pypdf import PdfReader
                 out = []
@@ -855,7 +857,7 @@ def _extract_text(path: str, ext: str) -> str:
             except Exception:
                 text = ""
 
-            # 2) If we got nothing (image-only PDF), OCR the pages as images
+            # 2) If we got nothing (image-only PDF), OCR the pages
             if not text.strip():
                 try:
                     from pdf2image import convert_from_path
@@ -868,7 +870,7 @@ def _extract_text(path: str, ext: str) -> str:
                         bits.append(pytesseract.image_to_string(g) or "")
                     text = "\n".join(bits).strip()
                 except Exception:
-                    # Optional: pdfplumber as a second try for embedded text
+                    # Optional: pdfplumber pass for embedded text
                     try:
                         import pdfplumber
                         with pdfplumber.open(path) as pdf:
@@ -882,7 +884,6 @@ def _extract_text(path: str, ext: str) -> str:
             return (docx2txt.process(path) or "").strip()
 
         elif ext == "rtf":
-            import re
             raw = open(path, "rb").read().decode(errors="ignore")
             return re.sub(r"{\\.*?}|\\[a-z]+\d* ?|[{}]", " ", raw).strip()
 
