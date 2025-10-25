@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Failed – Jobcus{% endblock %}
+{% block meta_description %}Your recent Jobcus payment failed. Please update your payment method to maintain access.{% endblock %}
+
+{% block extra_css %}
+<style>
+.email-wrap {
+  max-width: 640px;
+  margin: 2rem auto;
+  background: #fff;
+  border: 1px solid #fee2e2;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.04);
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+  color: #1f2937;
+}
+.email-wrap h1 { font-size: 1.5rem; margin-bottom: .5rem; color: #b91c1c; }
+.email-wrap p { line-height: 1.6; }
+.email-btn {
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding: .75rem 1.25rem;
+  background: #b91c1c;
+  color: #fff !important;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+.footer-note {
+  font-size: .8rem;
+  color: #6b7280;
+  margin-top: 1rem;
+  text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="email-wrap">
+  <h1>⚠️ Payment Failed</h1>
+  <p>Hi{% if user_name %} {{ user_name }}{% endif %}, we couldn’t process your latest payment for your Jobcus subscription.</p>
+
+  <ul>
+    {% if amount_due %}<li><strong>Amount Due:</strong> {{ currency_symbol }}{{ amount_due }}</li>{% endif %}
+    {% if fail_reason %}<li><strong>Reason:</strong> {{ fail_reason }}</li>{% endif %}
+  </ul>
+
+  <p>Please update your payment method to keep access to your plan benefits:</p>
+  <ul>
+    <li>Higher AI Chat limits</li>
+    <li>Resume Analyzer & Rebuilder tools</li>
+    <li>Interview Coach & Job Insights</li>
+  </ul>
+
+  <p><a href="{{ update_url }}" class="email-btn">Update Payment</a></p>
+
+  <p class="footer-note">
+    Questions? <a href="mailto:support@jobcus.com">support@jobcus.com</a><br>
+    &copy; 2025 Jobcus – Your AI Career Advisor
+  </p>
+</section>
+{% endblock %}
