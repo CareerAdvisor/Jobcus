@@ -11,13 +11,14 @@ window.escapeHtml = function (s = "") {
 };
 
 // One global helper
-window.insertSuggestion = function (text) {
+// One global helper (named so we can export it later)
+function insertSuggestion(text) {
   const el = document.getElementById('userInput');
   if (!el) return;
   el.value = text;
   el.focus();
   window.autoResize?.(el);
-};
+}
 
 // ===== GLOBAL HELPERS (place near the top, before DOMContentLoaded) =====
 window.setChatActive = function (on) {
@@ -134,7 +135,7 @@ async function handleAttach(evt){
       continue;
     }
 
-    const data = await res.json().catch(() => null);
+    data = await res.json().catch(() => null);
     if (!res.ok || !data || data.error) {
       alert(`${f.name}: ${data?.message || "Unsupported file or server error."}`);
       continue;
@@ -328,6 +329,10 @@ function handleChatLimitError(err) {
     return true;
   }
   return false;
+}
+
+function handleMic() {
+  alert("Voice input coming soon!");
 }
 
 // Expose functions used by inline HTML handlers
