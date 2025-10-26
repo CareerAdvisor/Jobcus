@@ -11,130 +11,118 @@
 <section class="pricing-wrap">
   <!-- Hero -->
   <header class="pricing-head">
-    <h1>Simple pricing for job seekers</h1>
-    <p>Start free. Upgrade when you need the AI chat &amp; advanced tools.</p>
+    <h1>{{ _("Simple pricing for job seekers") }}</h1>
+    <p>{{ _("Start free. Upgrade when you need the AI chat & advanced tools.") }}</p>
   </header>
 
+  {% set plan_free = plans.get('free') %}
+  {% set plan_weekly = plans.get('weekly') %}
+  {% set plan_standard = plans.get('standard') %}
+  {% set plan_premium = plans.get('premium') %}
+  {% set plan_employer = plans.get('employer_jd') %}
+
   <div class="plans">
-    <!-- Free -->
+
     <article class="plan" data-plan="free">
       <header class="plan__head">
         <div class="plan__left">
-          <h3 class="plan__title">Free</h3>
+          <h3 class="plan__title">{{ plan_free.title }}</h3>
           <div class="price">
-            <span class="currency">£</span><span class="amount">0</span>
-            <span class="period">/mo</span>
+            <span class="currency">{{ plan_free.display_price.symbol }}</span>
+            <span class="amount">{{ plan_free.display_price.amount_html|safe }}</span>
+            <span class="period">{{ plan_free.display_price.period }}</span>
           </div>
         </div>
-        <p class="plan__tagline">Great for a quick check</p>
+        <p class="plan__tagline">{{ plan_free.tagline }}</p>
       </header>
 
       <ul class="plan__list">
-        <li><strong>2</strong> resume analyses / month (basic score + tips)</li>
-        <li><strong>1</strong> AI cover letters / month</li>
-        <li>AI Resume Builder (basic templates)</li>
-        <li>Skill-Gap snapshot (1 basic analysis)</li>
-        <li>Job Insights (basic charts)</li>
-        <li>Interview Coach (limited practice)</li>
-        <li>AI Chat trial: <strong>10 messages</strong> total</li>
-        <li>Local device history</li>
+        {% for item in plan_free.features %}
+          <li>{{ item|safe }}</li>
+        {% endfor %}
       </ul>
 
       <footer class="plan__foot">
-        <a class="btn btn-outline w-full" href="/subscribe?plan=free">Continue Free</a>
+        <a class="btn btn-outline w-full" href="/subscribe?plan=free">{{ _("Continue Free") }}</a>
       </footer>
     </article>
 
-    <!-- Weekly Pass -->
     <article class="plan" data-plan="weekly">
       <header class="plan__head">
         <div class="plan__left">
-          <h3 class="plan__title">Weekly Pass</h3>
+          <h3 class="plan__title">{{ plan_weekly.title }}</h3>
           <div class="price">
-            <span class="currency">£</span><span class="amount">7<span class="cents">.99</span></span>
-            <span class="period">/week</span>
+            <span class="currency">{{ plan_weekly.display_price.symbol }}</span>
+            <span class="amount">{{ plan_weekly.display_price.amount_html|safe }}</span>
+            <span class="period">{{ plan_weekly.display_price.period }}</span>
           </div>
         </div>
-        <p class="plan__tagline">For urgent applications</p>
+        <p class="plan__tagline">{{ plan_weekly.tagline }}</p>
       </header>
 
       <ul class="plan__list">
-        <li>AI Chat credits: <strong>100 messages</strong> / week</li>
-        <li><strong>10</strong> resume analyses / week</li>
-        <li><strong>5</strong> AI cover letters / week</li>
-        <li><strong>5</strong>“Rebuild with AI” for resumes / week</li>
-        <li>Skill-Gap (standard)</li>
-        <li>Job Insights (full access)</li>
-        <li>Interview Coach sessions</li>
-        <li>Email support</li>
+        {% for item in plan_weekly.features %}
+          <li>{{ item|safe }}</li>
+        {% endfor %}
       </ul>
 
       <footer class="plan__foot">
         <a class="btn btn-primary w-full"
            href="{{ url_for('subscribe') }}?plan=weekly&next={{ forwarded_next|urlencode }}">
-          Get Weekly Pass
+          {{ _("Get Weekly Pass") }}
         </a>
       </footer>
     </article>
 
-    <!-- Standard (Most popular) -->
     <article class="plan plan--popular" data-plan="standard">
-      <div class="plan__badge" aria-hidden="true">Most Popular</div>
+      <div class="plan__badge" aria-hidden="true">{{ _("Most Popular") }}</div>
       <header class="plan__head">
         <div class="plan__left">
-          <h3 class="plan__title">Standard</h3>
+          <h3 class="plan__title">{{ plan_standard.title }}</h3>
           <div class="price">
-            <span class="currency">£</span><span class="amount">23<span class="cents">.99</span></span>
-            <span class="period">/mo</span>
+            <span class="currency">{{ plan_standard.display_price.symbol }}</span>
+            <span class="amount">{{ plan_standard.display_price.amount_html|safe }}</span>
+            <span class="period">{{ plan_standard.display_price.period }}</span>
           </div>
         </div>
-        <p class="plan__tagline">Serious applications, smarter tools</p>
+        <p class="plan__tagline">{{ plan_standard.tagline }}</p>
       </header>
 
       <ul class="plan__list">
-        <li>AI Chat credits: <strong>600 messages</strong> / month</li>
-        <li><strong>50</strong> resume analyses / month (deep ATS + JD match)</li>
-        <li><strong>20</strong> AI cover letters / month</li>
-        <li>AI Optimize + Rebuild with AI</li>
-        <li>Interview Coach sessions</li>
-        <li>Skill-Gap (pro)</li>
-        <li>Job Insights (full access)</li>
-        <li>Download optimized PDF / DOCX / TXT</li>
-        <li>Save history across devices</li>
-        <li>Email support</li>
+        {% for item in plan_standard.features %}
+          <li>{{ item|safe }}</li>
+        {% endfor %}
       </ul>
 
       <footer class="plan__foot">
         <a class="btn btn-primary w-full"
            href="{{ url_for('subscribe') }}?plan=standard&next={{ forwarded_next|urlencode }}">
-          Get Standard
+          {{ _("Get Standard") }}
         </a>
       </footer>
     </article>
 
-    <!-- Premium -->
     <article class="plan" data-plan="premium">
       <header class="plan__head">
         <div class="plan__left">
-          <h3 class="plan__title">Premium</h3>
+          <h3 class="plan__title">{{ plan_premium.title }}</h3>
           <div class="price">
-            <span class="currency">£</span><span class="amount">229</span>
-            <span class="period">/yr</span>
+            <span class="currency">{{ plan_premium.display_price.symbol }}</span>
+            <span class="amount">{{ plan_premium.display_price.amount_html|safe }}</span>
+            <span class="period">{{ plan_premium.display_price.period }}</span>
           </div>
         </div>
-        <p class="plan__tagline">Best value for ongoing career growth</p>
+        <p class="plan__tagline">{{ plan_premium.tagline }}</p>
       </header>
 
       <ul class="plan__list">
-        <li>AI Chat credits: <strong>10,800 messages</strong> / year (~1,000 / mo)</li>
-        <li><strong>Unlimited*</strong> resume analyses (fair use)</li>
-        <li><strong>Unlimited</strong> AI cover letters (fair use)</li>
-        <li>All Standard features + multi-resume versions & template pack</li>
-        <li>Priority support & early access to new AI tools</li>
+        {% for item in plan_premium.features %}
+          <li>{{ item|safe }}</li>
+        {% endfor %}
       </ul>
 
       <footer class="plan__foot">
-        <a class="btn btn-primary w-full" href="/subscribe?plan=premium">Get Premium</a>
+        <a class="btn btn-primary w-full" href="/subscribe?plan=premium">{{ _("Get Premium") }}</a>
       </footer>
     </article>
   </div></br>
@@ -153,19 +141,20 @@
       <header class="plan__head">
         <div class="plan__left">
           <h3 class="plan__title">
-            JD Generator
-            <span class="pill pill-new" aria-hidden="true">Chat included</span>
+            {{ plan_employer.title }}
+            <span class="pill pill-new" aria-hidden="true">{{ _("Chat included") }}</span>
           </h3>
           <div class="price">
-            <span class="currency">£</span><span class="amount">25</span>
-            <span class="period">/mo</span>
+            <span class="currency">{{ plan_employer.display_price.symbol }}</span>
+            <span class="amount">{{ plan_employer.display_price.amount_html|safe }}</span>
+            <span class="period">{{ plan_employer.display_price.period }}</span>
           </div>
         </div>
-        <p class="plan__tagline">AI Job Description Generator + AI Chat</p>
+        <p class="plan__tagline">{{ _("AI Job Description Generator + AI Chat") }}</p>
       </header>
   
       <ul class="plan__list">
-        <li>AI-Powered Chat:
+        <li>{{ _("AI-Powered Chat:") }}
           {% if employer_jd_chat_credits %}
             <strong>{{ employer_jd_chat_credits }}</strong> messages / month
           {% else %}
@@ -182,12 +171,11 @@
       <footer class="plan__foot">
         <a class="btn btn-primary w-full"
            href="{{ url_for('subscribe') }}?plan=employer_jd&next={{ forwarded_next|urlencode }}">
-          Start JD Generator
+          {{ _("Start JD Generator") }}
         </a>
       </footer>
     </article>
   </div>
-  
   <p class="pricing-fine">
     *Fair use policy applies. Need enterprise or annual? <a href="/employers#contact">Contact sales</a>.
   </p>
