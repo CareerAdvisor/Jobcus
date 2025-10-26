@@ -2074,6 +2074,8 @@ def subscribe():
     next_url = raw_next if _is_safe_next(raw_next) else None
 
     plan_data = plans[plan_code]
+    if "display_price" not in plan_data:
+        plan_data["display_price"] = plan_price_display(plan_code, _current_currency())
 
     # --- FREE: do it locally (no Stripe) ---
     if request.method == "POST" and plan_code == "free":
@@ -2117,12 +2119,14 @@ def subscribe():
 
     # --- PAID: redirect to Stripe Checkout ---
     if request.method == "POST":
-        PLAN_TO_PRICE = {
-            "weekly":       os.getenv("STRIPE_PRICE_WEEKLY"),
-            "standard":     os.getenv("STRIPE_PRICE_STANDARD"),
-            "premium":      os.getenv("STRIPE_PRICE_PREMIUM"),
-            "employer_jd":  os.getenv("STRIPE_PRICE_EMPLOYER_JD"),  # NEW
-        }
+        currency = _current_currency()
+        price_map = current_app.config.get("PLAN_PRICE_IDS", {})
+        plan_prices = price_map.get(plan_code, {})
+        price_id = (
+            plan_prices.get(currency)
+            or plan_prices.get(DEFAULT_CURRENCY)
+            or plan_prices.get("GBP")
+        )
         price_id = PLAN_TO_PRICE.get(plan_code)
         if not price_id:
             flash("Billing not configured for this plan.", "error")
