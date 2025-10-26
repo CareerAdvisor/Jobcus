@@ -769,6 +769,7 @@ def _img_to_text_file(path: str) -> str:
     """
     Open image from disk, do light preprocessing, run Tesseract.
     Works for PNG/JPG/WEBP/HEIC (if pillow-heif is registered).
+    Falls back to OpenAI vision OCR if Tesseract is unavailable.
     """
     try:
         img = Image.open(path)
