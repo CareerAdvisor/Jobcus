@@ -205,11 +205,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </div>
 
           <!-- Hamburger (mobile) -->
-          <div class="hamburger" onclick="toggleMobileMenu()">
+          <button class="hamburger" type="button" aria-controls="mobileMenu" aria-expanded="false">
             <div></div><div></div><div></div>
-          </div>
+          </button>
         </div>
-
+      
         <!-- Mobile nav -->
         <nav class="mobile-nav" id="mobileMenu">
           <a href="/chat">{{ _("AI Career Chat") }}</a>
@@ -250,6 +250,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
           </div>
         </nav>
+        <div class="mobile-nav-overlay" id="mobileOverlay" role="presentation"></div>
       </header>
     {% endif %}
 
