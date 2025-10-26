@@ -56,6 +56,13 @@ try:
 except Exception:
     HEIF_ENABLED = False
 
+try:
+    from pytesseract import TesseractNotFoundError as _TesseractNotFoundError
+except Exception:  # pragma: no cover - pytesseract always exports this, but be safe
+    class _TesseractNotFoundError(RuntimeError):
+        """Fallback error so we can detect missing Tesseract binaries."""
+        pass
+
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 resumes_bp = None  # will set when found
 
@@ -677,6 +684,87 @@ def send_failed_email(
         send_tx_email(admin_to, "ALERT: Jobcus subscription payment failed", admin_html)
 
 # --- OCR helpers ---
+def _ocr_via_openai(path: str) -> str:
+    """Fallback OCR using the configured OpenAI client."""
+    client = current_app.config.get("OPENAI_CLIENT")
+    if client is None:
+        return ""
+
+    def _extract_text_from_choice(choice) -> str:
+        if not choice:
+            return ""
+
+        msg = getattr(choice, "message", None) or {}
+        content = getattr(msg, "content", "")
+
+        # Python OpenAI SDK may return either a plain string or a list of
+        # {"type": "text", "text": "..."} fragments. Normalise to str.
+        if isinstance(content, str):
+            return content.strip()
+
+        parts: list[str] = []
+        if isinstance(content, (list, tuple)):
+            for part in content:
+                if isinstance(part, str):
+                    parts.append(part)
+                    continue
+
+                part_type = None
+                text_value = None
+
+                if isinstance(part, dict):
+                    part_type = part.get("type")
+                    text_value = part.get("text")
+                else:
+                    part_type = getattr(part, "type", None)
+                    text_value = getattr(part, "text", None)
+
+                if part_type == "text" and text_value:
+                    parts.append(str(text_value))
+
+        return "\n".join(p for p in parts if p).strip()
+
+    try:
+        with Image.open(path) as raw:
+            fmt = (raw.format or "PNG").upper()
+        with open(path, "rb") as fh:
+            data = fh.read()
+        if not data:
+            return ""
+
+        mime = Image.MIME.get(fmt) or "image/png"
+        b64 = base64.b64encode(data).decode("utf-8")
+
+        model = os.getenv("OCR_MODEL", os.getenv("OPENAI_OCR_MODEL", "gpt-4o-mini"))
+        resp = client.chat.completions.create(
+            model=model,
+            temperature=0,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You transcribe text from images. Return plain text only.",
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Extract every piece of readable text from this image. Preserve natural line breaks and omit commentary.",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:{mime};base64,{b64}"},
+                        },
+                    ],
+                },
+            ],
+        )
+        choice = resp.choices[0] if resp and resp.choices else None
+        return _extract_text_from_choice(choice)
+    except Exception:
+        current_app.logger.warning("OpenAI OCR fallback failed", exc_info=True)
+        return ""
+
 def _img_to_text_file(path: str) -> str:
     """
     Open image from disk, do light preprocessing, run Tesseract.
@@ -688,9 +776,15 @@ def _img_to_text_file(path: str) -> str:
         img = img.convert("L")               # grayscale
         img = ImageOps.autocontrast(img)
         img = img.filter(ImageFilter.MedianFilter(size=3))  # light denoise
-        return (pytesseract.image_to_string(img) or "").strip()
+        text = (pytesseract.image_to_string(img) or "").strip()
+        if text:
+            return text
+    except _TesseractNotFoundError:
+        current_app.logger.info("Tesseract binary not found; using OpenAI OCR fallback")
     except Exception:
-        return ""
+        current_app.logger.warning("Tesseract OCR failed", exc_info=True)
+
+    return _ocr_via_openai(path)
     
 # ---- Model selection helpers ----
 def _dedupe(seq):
