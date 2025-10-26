@@ -75,19 +75,21 @@
 {# Fallback: ensure employer_jd renders even if server didn't set plan_data yet #}
 {% set q_plan = request.args.get('plan','') %}
 {% if (plan_data is not defined or not plan_data) and q_plan == 'employer_jd' %}
+  {% set fallback_price = plan_price_display('employer_jd') %}
   {% set plan_data = {
     'code': 'employer_jd',
-    'title': 'JD Generator',
-    'amount': '25',
-    'period': '/mo',
-    'tagline': 'AI Job Description Generator + AI Chat',
+    'title': _('JD Generator'),
+    'amount': fallback_price.amount_html,
+    'period': fallback_price.period,
+    'tagline': _('AI Job Description Generator + AI Chat'),
+    'display_price': fallback_price,
     'features': [
-      'AI-Powered Chat: ' ~ (employer_jd_chat_credits if employer_jd_chat_credits else 'included'),
-      'Unlimited* JD generations (fair use)',
-      'Brand tone presets',
-      'Export to DOCX/PDF',
-      'JD–skills taxonomy suggestions',
-      'Email support'
+      _('AI-Powered Chat:') ~ ' ' ~ (employer_jd_chat_credits if employer_jd_chat_credits else _('included')),
+      _('Unlimited* JD generations (fair use)') ,
+      _('Brand tone presets'),
+      _('Export to DOCX/PDF'),
+      _('JD–skills taxonomy suggestions'),
+      _('Email support')
     ]
   } %}
 {% endif %}
@@ -96,18 +98,19 @@
   <div class="confirm-card">
 
     <div class="confirm-banner">
-      <h1 class="confirm-title">Confirm your plan</h1>
+      <h1 class="confirm-title">{{ _("Confirm your plan") }}</h1>
 
       <div class="plan-line">
         <div class="plan-name">
           {{ plan_data.title }}
           {% if plan_data.code == 'employer_jd' %}
-            <span class="pill pill-new">Chat included</span>
+            <span class="pill pill-new">{{ _("Chat included") }}</span>
           {% endif %}
         </div>
         <div class="plan-price">
-          <span class="currency">£</span><span class="amount">{{ plan_data.amount|safe }}</span>
-          <span class="period">{{ plan_data.period }}</span>
+          <span class="currency">{{ plan_data.display_price.symbol }}</span>
+          <span class="amount">{{ plan_data.display_price.amount_html|safe }}</span>
+          <span class="period">{{ plan_data.display_price.period }}</span>
         </div>
       </div>
 
@@ -126,9 +129,9 @@
       <input type="hidden" name="plan" value="{{ plan_data.code }}">
       <input type="hidden" name="next" value="{{ request.args.get('next','') }}">  <!-- add this -->
       <button type="submit" class="btn btn-primary">
-        {% if plan_data.code == 'free' %}Activate Free Plan{% else %}Continue to secure checkout{% endif %}
+        {% if plan_data.code == 'free' %}{{ _("Activate Free Plan") }}{% else %}{{ _("Continue to secure checkout") }}{% endif %}
       </button>
-      <a class="btn btn-outline" href="{{ url_for('pricing') }}">Back to pricing</a>
+      <a class="btn btn-outline" href="{{ url_for('pricing') }}">{{ _("Back to pricing") }}</a>
     </form>
 
   </div>
