@@ -77,6 +77,15 @@ header {
   flex-direction: column;
   gap: 4px;
   cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.hamburger:focus-visible {
+  outline: 2px solid #104879;
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
 .hamburger div {
@@ -157,13 +166,6 @@ header {
 }
 #mobileMenu.show {
   display: flex; /* Show on click */
-  flex-direction: column;
-  position: absolute;
-  right: 10px;
-  top: 60px;
-  background-color: white;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  z-index: 1000;
 }
 
 /*=== Dropdown Menu Styling ===*/
