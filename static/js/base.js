@@ -396,11 +396,8 @@ window.toggleMobileMenu = function toggleMobileMenu(force) {
   setMobileMenu(shouldOpen);
 };
 
-hamburgerBtn?.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-    window.toggleMobileMenu();
-  }
+hamburgerBtn?.addEventListener("click", () => {
+  window.toggleMobileMenu();
 });
 
 mobileMenu?.addEventListener("click", (event) => {
