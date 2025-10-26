@@ -46,6 +46,7 @@ from werkzeug.utils import secure_filename
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
 from PIL import Image, ImageOps, ImageFilter
+import pytesseract
 
 # Optional HEIF/HEIC support (won't crash deploys if package isn't installed)
 try:
@@ -54,8 +55,6 @@ try:
     HEIF_ENABLED = True
 except Exception:
     HEIF_ENABLED = False
-
-import pytesseract
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 resumes_bp = None  # will set when found
@@ -841,23 +840,23 @@ def _allowed(filename: str) -> bool:
 
 # ------ extract_text -------
 def _extract_text(path: str, ext: str) -> str:
-    ext = ext.lower()
+    ext = (ext or "").lower()
     try:
         if ext == "pdf":
             # 1) Try normal (text) PDF extraction first
             text = ""
             try:
                 from pypdf import PdfReader
-                out = []
                 with open(path, "rb") as f:
                     reader = PdfReader(f)
+                    out = []
                     for page in reader.pages:
                         out.append(page.extract_text() or "")
-                text = "\n".join(out).strip()
+                    text = "\n".join(out).strip()
             except Exception:
-                text = ""
+                pass
 
-            # 2) If we got nothing (image-only PDF), OCR the pages
+            # 2) If empty (image-only PDF), OCR each page (needs poppler)
             if not text.strip():
                 try:
                     from pdf2image import convert_from_path
@@ -870,7 +869,7 @@ def _extract_text(path: str, ext: str) -> str:
                         bits.append(pytesseract.image_to_string(g) or "")
                     text = "\n".join(bits).strip()
                 except Exception:
-                    # Optional: pdfplumber pass for embedded text
+                    # Optional: pdfplumber as a second attempt
                     try:
                         import pdfplumber
                         with pdfplumber.open(path) as pdf:
@@ -2867,25 +2866,6 @@ def salary_api_external():
     labels, salaries = compute_salary(role, location)
     return jsonify({"labels": labels, "salaries": salaries})
 
-@app.get("/diag/ocr")
-def diag_ocr():
-    try:
-        tess_path = shutil.which("tesseract")
-        tess_ver = str(pytesseract.get_tesseract_version())
-    except Exception as e:
-        tess_path, tess_ver = None, f"ERR: {e}"
-
-    poppler = {
-        "pdftoppm": shutil.which("pdftoppm"),
-        "pdftocairo": shutil.which("pdftocairo"),
-    }
-    return jsonify({
-        "tesseract_path": tess_path,
-        "tesseract_version": tess_ver,
-        "poppler_tools": poppler,
-        "heif_enabled": bool(HEIF_ENABLED),
-    })
-
 @app.route("/api/job-count")
 @login_required
 def get_job_count_data():
@@ -3645,6 +3625,25 @@ def api_upload():
             os.unlink(tmp.name)
         except Exception:
             pass
+
+@app.get("/diag/ocr")
+def diag_ocr():
+    try:
+        tess_path = shutil.which("tesseract")
+        tess_ver = str(pytesseract.get_tesseract_version())
+    except Exception as e:
+        tess_path, tess_ver = None, f"ERR: {e}"
+
+    poppler = {
+        "pdftoppm": shutil.which("pdftoppm"),
+        "pdftocairo": shutil.which("pdftocairo"),
+    }
+    return jsonify({
+        "tesseract_path": tess_path,
+        "tesseract_version": tess_ver,
+        "poppler_tools": poppler,
+        "heif_enabled": bool(HEIF_ENABLED),
+    })
 
 # --- Entrypoint ---
 if __name__ == "__main__":
