@@ -136,6 +136,13 @@ load_dotenv()
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
+def _env_flag(name: str, default: bool) -> bool:
+    """Parse common truthy/falsey strings from the environment."""
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() not in {"0", "false", "no", "off"}
+
 DEFAULT_LOCALE   = os.getenv("JOBCUS_DEFAULT_LOCALE", "en").lower()
 DEFAULT_CURRENCY = os.getenv("JOBCUS_DEFAULT_CURRENCY", "GBP").upper()
 
@@ -437,9 +444,10 @@ def inject_turnstile_sitekey():
     }
 
 # Session cookie hardening
+_session_secure_default = not app.debug and not app.testing
 app.config.update(
   SESSION_COOKIE_SAMESITE="Lax",
-  SESSION_COOKIE_SECURE=True,
+  SESSION_COOKIE_SECURE=_env_flag("SESSION_COOKIE_SECURE", _session_secure_default),
   SESSION_PERMANENT=False,  # reduce churn
 )
 
@@ -1178,8 +1186,8 @@ def change_language(lang_code: str):
     if not redirect_target:
         redirect_target = url_for("pricing") if request else "/pricing"
 
-    resp = redirect(redirect_target)
-    secure_cookie = current_app.config.get("SESSION_COOKIE_SECURE", True)
+   resp = redirect(redirect_target)
+    secure_cookie = bool(current_app.config.get("SESSION_COOKIE_SECURE", True))
     resp.set_cookie("jobcus_lang", lang, max_age=60 * 60 * 24 * 365, samesite="Lax", secure=secure_cookie)
     return resp
 
@@ -1200,10 +1208,9 @@ def change_currency(currency_code: str):
         redirect_target = url_for("pricing") if request else "/pricing"
 
     resp = redirect(redirect_target)
-    secure_cookie = current_app.config.get("SESSION_COOKIE_SECURE", True)
+    secure_cookie = bool(current_app.config.get("SESSION_COOKIE_SECURE", True))
     resp.set_cookie("jobcus_currency", currency, max_age=60 * 60 * 24 * 365, samesite="Lax", secure=secure_cookie)
     return resp
-    
 
 def change_plan(user_id: str, new_plan: str):
     supabase = current_app.config["SUPABASE"]
