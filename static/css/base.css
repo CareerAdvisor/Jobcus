@@ -462,13 +462,20 @@
   font-weight: 600;
   color: #0f2946;
   cursor: pointer;
-  transition: box-shadow .2s ease, border-color .2s ease;
+  transition:
+    box-shadow .2s ease,
+    border-color .2s ease,
+    background-color .2s ease,
+    color .2s ease;
 }
 
 .locale-toggle:hover,
-.locale-toggle:focus {
+.locale-toggle:focus,
+.locale-toggle[aria-expanded="true"] {
   border-color: rgba(16, 42, 67, 0.25);
   box-shadow: 0 8px 20px rgba(16, 24, 40, 0.12);
+  background: #104879;
+  color: #fff;
 }
 
 .locale-toggle .locale-flag {
@@ -479,18 +486,33 @@
 .locale-toggle .locale-label {
   white-space: nowrap;
   font-weight: 600;
+  transition: color .2s ease;
 }
 
 .locale-toggle .locale-currency {
   font-size: 13px;
   color: #475569;
   text-transform: uppercase;
+  transition: color .2s ease;
 }
 
 .locale-toggle .locale-chevron {
   width: 14px;
   height: 14px;
   color: #64748b;
+  transition: color .2s ease;
+}
+
+.locale-toggle:hover .locale-label,
+.locale-toggle:focus .locale-label,
+.locale-toggle[aria-expanded="true"] .locale-label,
+.locale-toggle:hover .locale-currency,
+.locale-toggle:focus .locale-currency,
+.locale-toggle[aria-expanded="true"] .locale-currency,
+.locale-toggle:hover .locale-chevron,
+.locale-toggle:focus .locale-chevron,
+.locale-toggle[aria-expanded="true"] .locale-chevron {
+  color: #f8fbff;
 }
 
 .locale-menu {
