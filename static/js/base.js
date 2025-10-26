@@ -319,67 +319,97 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Close menus on outside click
   document.addEventListener("click", (e) => {
-    // a) Mobile menu
-    const mobileMenu = document.getElementById("mobileMenu");
-    const hamburger = document.querySelector(".hamburger");
+  // a) Mobile menu
+  const mobileMenu = document.getElementById("mobileMenu");
+  const hamburger = document.querySelector(".hamburger");
+  if (
+    mobileMenu?.classList.contains("show") &&
+    !mobileMenu.contains(e.target) &&
+    !hamburger?.contains(e.target)
+  ) {
+    setMobileMenu(false);
+  }
+
+  // b) Feature dropdowns
+  document.querySelectorAll(".dropdown-content").forEach((drop) => {
+    const btn = drop.previousElementSibling;
     if (
-      mobileMenu?.classList.contains("show") &&
-      !mobileMenu.contains(e.target) &&
-      !hamburger?.contains(e.target)
+      drop.classList.contains("show") &&
+      !drop.contains(e.target) &&
+      !btn?.contains(e.target)
     ) {
-      mobileMenu.classList.remove("show");
-    }
-
-    // b) Feature dropdowns
-    document.querySelectorAll(".dropdown-content").forEach((drop) => {
-      const btn = drop.previousElementSibling;
-      if (
-        drop.classList.contains("show") &&
-        !drop.contains(e.target) &&
-        !btn?.contains(e.target)
-      ) {
-        drop.classList.remove("show");
-      }
-    });
-
-    // c) User dropdown
-    if (
-      userDrop?.classList.contains("show") &&
-      !userDrop.contains(e.target) &&
-      !userBtn?.contains(e.target)
-    ) {
-      toggleUserMenu(false);
-    }
-
-    // d) Locale menu
-    if (
-      localeMenu?.classList.contains("open") &&
-      !localeMenu.contains(e.target) &&
-      !localeToggle?.contains(e.target)
-    ) {
-      toggleLocaleMenu(false);
-    }
-    
-  });
-
-  // Close menus on Escape
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      document.getElementById("mobileMenu")?.classList.remove("show");
-      document.querySelectorAll(".dropdown-content.show")
-        .forEach((el) => el.classList.remove("show"));
-      toggleUserMenu(false);
-      toggleLocaleMenu(false);
-      // Also close chat sidebar on Escape
-      window.closeChatMenu?.();
+      drop.classList.remove("show");
     }
   });
 
-  // Expose mobile menu toggle for header button
-  window.toggleMobileMenu = function toggleMobileMenu() {
-    document.getElementById("mobileMenu")?.classList.toggle("show");
-  };
+  // c) User dropdown
+  if (
+    userDrop?.classList.contains("show") &&
+    !userDrop.contains(e.target) &&
+    !userBtn?.contains(e.target)
+  ) {
+    toggleUserMenu(false);
+  }
 
+  // d) Locale menu
+  if (
+    localeMenu?.classList.contains("open") &&
+    !localeMenu.contains(e.target) &&
+    !localeToggle?.contains(e.target)
+  ) {
+    toggleLocaleMenu(false);
+  }
+});
+
+// Close menus on Escape
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    setMobileMenu(false);
+    document.querySelectorAll(".dropdown-content.show")
+      .forEach((el) => el.classList.remove("show"));
+    toggleUserMenu(false);
+    toggleLocaleMenu(false);
+    // Also close chat sidebar on Escape
+    window.closeChatMenu?.();
+  }
+});
+
+const mobileMenu    = document.getElementById("mobileMenu");
+const mobileOverlay = document.getElementById("mobileOverlay");
+const hamburgerBtn  = document.querySelector(".hamburger");
+
+function setMobileMenu(open) {
+  const isOpen = !!open;
+  if (mobileMenu) mobileMenu.classList.toggle("show", isOpen);
+  if (mobileOverlay) mobileOverlay.classList.toggle("show", isOpen);
+  document.body.classList.toggle("mobile-nav-open", isOpen);
+  document.documentElement.classList.toggle("mobile-nav-open", isOpen);
+  if (hamburgerBtn) hamburgerBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+}
+
+// Expose mobile menu toggle for header button
+window.toggleMobileMenu = function toggleMobileMenu(force) {
+  if (!mobileMenu) return;
+  const shouldOpen = typeof force === "boolean"
+    ? force
+    : !mobileMenu.classList.contains("show");
+  setMobileMenu(shouldOpen);
+};
+
+hamburgerBtn?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    window.toggleMobileMenu();
+  }
+});
+
+mobileMenu?.addEventListener("click", (event) => {
+  if (event.target.closest("a")) {
+    setTimeout(() => setMobileMenu(false), 150);
+  }
+});
+
+mobileOverlay?.addEventListener("click", () => setMobileMenu(false));
 
   // ── Chat sidebar (A11Y-friendly open/close) ─────────────────
   const chatMenuToggle = document.getElementById("chatMenuToggle");
