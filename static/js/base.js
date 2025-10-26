@@ -267,8 +267,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // User menu
   const userBtn = document.getElementById("userMenuBtn");
   const userDrop = document.getElementById("userDropdown");
-  const localeToggle = document.getElementById("localeToggle");
-  const localeMenu = document.getElementById("localeMenu");
+  const localeToggle = document.getElementById("localeToggle") || document.getElementById("langToggle");
+  const localeMenu   = document.getElementById("localeMenu")   || document.getElementById("langMenu");
 
   function toggleUserMenu(forceOpen) {
     if (!userBtn || !userDrop) return;
