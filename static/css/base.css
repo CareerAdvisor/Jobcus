@@ -649,7 +649,7 @@
 .mobile-nav {
   display: none;
   position: fixed;
-  top: var(--header-height);
+  top: var(--header-offset, 72px);
   left: max(16px, env(safe-area-inset-left, 16px));
   right: max(16px, env(safe-area-inset-right, 16px));
   bottom: max(16px, env(safe-area-inset-bottom, 16px));
