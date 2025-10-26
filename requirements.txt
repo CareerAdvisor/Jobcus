@@ -1,4 +1,5 @@
 Flask
+Flask-Babel>=4.0.0
 flask-cors
 gunicorn
 openai
