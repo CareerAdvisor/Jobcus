@@ -331,8 +331,166 @@ function handleChatLimitError(err) {
   return false;
 }
 
+let micRecognition = null;
+let micListening = false;
+let micFinalTranscript = "";
+let micStatusHideTimer = null;
+
+function showMicStatus(message, tone = "info") {
+  const inputContainer = document.getElementById("inputContainer");
+  if (!inputContainer) return;
+
+  let bar = document.getElementById("micStatusBar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "micStatusBar";
+    bar.setAttribute("role", "status");
+    bar.style.cssText = [
+      "margin-top:8px",
+      "padding:10px 12px",
+      "border-radius:10px",
+      "font-size:14px",
+      "display:flex",
+      "align-items:center",
+      "gap:8px",
+      "background:#f6f9ff",
+      "border:1px solid #d8e7ff",
+      "color:#104879"
+    ].join(";");
+    inputContainer.insertAdjacentElement("afterend", bar);
+  }
+
+  if (tone === "error") {
+    bar.style.background = "#fff5f5";
+    bar.style.border = "1px solid #ffdede";
+    bar.style.color = "#b42318";
+  } else {
+    bar.style.background = "#f6f9ff";
+    bar.style.border = "1px solid #d8e7ff";
+    bar.style.color = "#104879";
+  }
+
+  bar.textContent = message;
+  bar.style.display = "flex";
+
+  if (micStatusHideTimer) clearTimeout(micStatusHideTimer);
+  micStatusHideTimer = null;
+}
+
+function hideMicStatus(delay = 0) {
+  if (micStatusHideTimer) {
+    clearTimeout(micStatusHideTimer);
+    micStatusHideTimer = null;
+  }
+
+  const run = () => {
+    const bar = document.getElementById("micStatusBar");
+    if (bar) bar.style.display = "none";
+    micStatusHideTimer = null;
+  };
+
+  if (delay > 0) micStatusHideTimer = setTimeout(run, delay);
+  else run();
+}
+
+function initMicRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return null;
+
+  if (!micRecognition) {
+    micRecognition = new SpeechRecognition();
+    micRecognition.continuous = false;
+    micRecognition.interimResults = true;
+    micRecognition.maxAlternatives = 1;
+    micRecognition.lang = document.documentElement.lang || "en-US";
+
+    micRecognition.onstart = () => {
+      micListening = true;
+      micFinalTranscript = "";
+      showMicStatus("Listening… click the mic again to stop.");
+      document.body.classList.add("mic-listening");
+    };
+
+    micRecognition.onresult = (event) => {
+      let interimTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const transcript = result[0]?.transcript || "";
+        if (result.isFinal) micFinalTranscript += transcript;
+        else interimTranscript = transcript;
+      }
+
+      const combined = `${micFinalTranscript} ${interimTranscript}`.trim();
+      if (combined) {
+        const input = document.getElementById("userInput");
+        if (input) {
+          input.value = combined;
+          input.focus();
+          window.autoResize?.(input);
+        }
+      }
+    };
+
+    micRecognition.onerror = (event) => {
+      micListening = false;
+      document.body.classList.remove("mic-listening");
+      if (event.error === "not-allowed") {
+        showMicStatus("Microphone access was denied. Check your browser permissions.", "error");
+      } else if (event.error === "no-speech") {
+        showMicStatus("No speech detected. Try again.", "error");
+        hideMicStatus(2500);
+      } else {
+        showMicStatus(`Speech recognition error: ${event.error || "unknown"}.`, "error");
+        hideMicStatus(3000);
+      }
+    };
+
+    micRecognition.onend = () => {
+      document.body.classList.remove("mic-listening");
+      if (micFinalTranscript.trim()) {
+        showMicStatus("Captured voice input. You can edit before sending.");
+        hideMicStatus(2500);
+      } else if (!micStatusHideTimer) {
+        hideMicStatus();
+      }
+      micListening = false;
+    };
+  }
+
+  return micRecognition;
+}
+
 function handleMic() {
-  alert("Voice input coming soon!");
+  const rec = initMicRecognition();
+  if (!rec) {
+    alert("Voice input isn't supported in this browser.");
+    return;
+  }
+
+  if (micListening) {
+    try {
+      rec.stop();
+    } catch (e) {
+      // ignore stop errors when recognition already ended
+    }
+    return;
+  }
+
+  hideMicStatus();
+  try {
+    rec.start();
+  } catch (err) {
+    if (err?.name === "InvalidStateError") {
+      // Already started; force-stop then restart
+      try { rec.stop(); } catch (e) {}
+      setTimeout(() => {
+        try { rec.start(); } catch (e) {}
+      }, 200);
+    } else {
+      showMicStatus("Unable to start voice input.", "error");
+      hideMicStatus(2500);
+    }
+  }
 }
 
 // Expose functions used by inline HTML handlers
