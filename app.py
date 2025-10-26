@@ -337,7 +337,6 @@ def _current_currency() -> str:
     return _coerce_currency(fallback)
 
 
-@babel.localeselector
 def select_locale() -> str:
     stored = session.get("language") if hasattr(session, "get") else None
     if stored and stored in SUPPORTED_LANGUAGES:
@@ -352,6 +351,9 @@ def select_locale() -> str:
     lang = best or DEFAULT_LOCALE
     session["language"] = _coerce_language(lang)
     return session["language"]
+
+
+babel.init_app(app, locale_selector=select_locale)
 
 
 @app.before_request
