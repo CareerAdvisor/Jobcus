@@ -174,11 +174,11 @@ SUPPORTED_CURRENCIES: dict[str, dict[str, str]] = {
 DEFAULT_CURRENCY_RATES = {
     "GBP": 1,
     "USD": 1.26,
-    "EUR": 1.17,
+    "EUR": 1.14,
     "CAD": 1.73,
     "AUD": 1.92,
     "INR": 104.7,
-    "ZAR": 24.3,
+    "ZAR": 22.98,
     "CNY": 9.14,
     "NGN": 1730.0,
 }
