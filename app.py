@@ -168,6 +168,7 @@ SUPPORTED_CURRENCIES: dict[str, dict[str, str]] = {
     "INR": {"label": "Indian Rupee", "symbol": "₹", "flag": "🇮🇳"},
     "ZAR": {"label": "South African Rand", "symbol": "R", "flag": "🇿🇦"},
     "CNY": {"label": "Chinese Yuan", "symbol": "¥", "flag": "🇨🇳"},
+    "NGN": {"label": "Nigerian Naira", "symbol": "₦", "flag": "🇳🇬"},
 }
 
 DEFAULT_CURRENCY_RATES = {
@@ -179,6 +180,7 @@ DEFAULT_CURRENCY_RATES = {
     "INR": 104.7,
     "ZAR": 24.3,
     "CNY": 9.14,
+    "NGN": 1730.0,
 }
 
 app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
@@ -221,6 +223,7 @@ def _load_plan_price_ids() -> dict[str, dict[str, str | None]]:
             "EUR": os.getenv("STRIPE_PRICE_WEEKLY_EUR"),
             "ZAR": os.getenv("STRIPE_PRICE_WEEKLY_ZAR"),
             "CNY": os.getenv("STRIPE_PRICE_WEEKLY_CNY"),
+            "NGN": os.getenv("STRIPE_PRICE_WEEKLY_NGN"),
         },
         "standard": {
             "GBP": os.getenv("STRIPE_PRICE_STANDARD"),
@@ -228,6 +231,7 @@ def _load_plan_price_ids() -> dict[str, dict[str, str | None]]:
             "EUR": os.getenv("STRIPE_PRICE_STANDARD_EUR"),
             "ZAR": os.getenv("STRIPE_PRICE_STANDARD_ZAR"),
             "CNY": os.getenv("STRIPE_PRICE_STANDARD_CNY"),
+            "NGN": os.getenv("STRIPE_PRICE_STANDARD_NGN"),
         },
         "premium": {
             "GBP": os.getenv("STRIPE_PRICE_PREMIUM"),
@@ -235,11 +239,15 @@ def _load_plan_price_ids() -> dict[str, dict[str, str | None]]:
             "EUR": os.getenv("STRIPE_PRICE_PREMIUM_EUR"),
             "ZAR": os.getenv("STRIPE_PRICE_PREMIUM_ZAR"),
             "CNY": os.getenv("STRIPE_PRICE_PREMIUM_CNY"),
+            "NGN": os.getenv("STRIPE_PRICE_PREMIUM_NGN"),
         },
         "employer_jd": {
             "GBP": os.getenv("STRIPE_PRICE_EMPLOYER_JD"),
             "USD": os.getenv("STRIPE_PRICE_EMPLOYER_JD_USD"),
             "EUR": os.getenv("STRIPE_PRICE_EMPLOYER_JD_EUR"),
+            "ZAR": os.getenv("STRIPE_PRICE_PREMIUM_ZAR"),
+            "CNY": os.getenv("STRIPE_PRICE_PREMIUM_CNY"),
+            "NGN": os.getenv("STRIPE_PRICE_PREMIUM_NGN"),
         },
     }
 
