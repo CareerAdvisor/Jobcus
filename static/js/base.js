@@ -267,6 +267,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // User menu
   const userBtn = document.getElementById("userMenuBtn");
   const userDrop = document.getElementById("userDropdown");
+  const localeToggle = document.getElementById("localeToggle");
+  const localeMenu = document.getElementById("localeMenu");
 
   function toggleUserMenu(forceOpen) {
     if (!userBtn || !userDrop) return;
@@ -277,9 +279,24 @@ document.addEventListener("DOMContentLoaded", () => {
     userBtn.setAttribute("aria-expanded", open ? "true" : "false");
   }
 
+  function toggleLocaleMenu(forceOpen) {
+    if (!localeToggle || !localeMenu) return;
+    const open = (typeof forceOpen === "boolean")
+      ? forceOpen
+      : !localeMenu.classList.contains("open");
+    localeMenu.classList.toggle("open", open);
+    localeToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
   userBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     toggleUserMenu();
+  });
+
+  localeToggle?.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleLocaleMenu();
   });
 
   // Features submenu
@@ -333,6 +350,16 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
       toggleUserMenu(false);
     }
+
+    // d) Locale menu
+    if (
+      localeMenu?.classList.contains("open") &&
+      !localeMenu.contains(e.target) &&
+      !localeToggle?.contains(e.target)
+    ) {
+      toggleLocaleMenu(false);
+    }
+    
   });
 
   // Close menus on Escape
@@ -342,6 +369,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(".dropdown-content.show")
         .forEach((el) => el.classList.remove("show"));
       toggleUserMenu(false);
+      toggleLocaleMenu(false);
       // Also close chat sidebar on Escape
       window.closeChatMenu?.();
     }
