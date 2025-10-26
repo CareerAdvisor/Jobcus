@@ -527,6 +527,10 @@
   padding: 14px 16px;
   display: none;
   z-index: 1200;
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .locale-menu.open { display: block; }
