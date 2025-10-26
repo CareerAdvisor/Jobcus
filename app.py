@@ -1167,6 +1167,23 @@ def _is_safe_next(url: str) -> bool:
     except Exception:
         return False
 
+def _determine_locale_redirect() -> str:
+    target = request.args.get("next") if request else None
+    if not _is_safe_next(target):
+        referer = request.referrer or ""
+        ref_path = urlparse(referer).path if referer else ""
+        target = ref_path if _is_safe_next(ref_path) else None
+
+    if not target:
+        target = url_for("pricing") if request else "/pricing"
+
+    return target
+
+
+def _locale_secure_cookie() -> bool:
+    return bool(current_app.config.get("SESSION_COOKIE_SECURE", True))
+
+
 @app.get("/locale/language/<lang_code>", endpoint="set_language")
 def change_language(lang_code: str):
     lang = _coerce_language(lang_code)
@@ -1177,18 +1194,16 @@ def change_language(lang_code: str):
         if default_currency:
             session["currency"] = _coerce_currency(default_currency)
 
-    redirect_target = request.args.get("next")
-    if not _is_safe_next(redirect_target):
-        referer = request.referrer or ""
-        ref_path = urlparse(referer).path if referer else ""
-        redirect_target = ref_path if _is_safe_next(ref_path) else None
+    redirect_target = _determine_locale_redirect()
 
-    if not redirect_target:
-        redirect_target = url_for("pricing") if request else "/pricing"
-
-   resp = redirect(redirect_target)
-    secure_cookie = bool(current_app.config.get("SESSION_COOKIE_SECURE", True))
-    resp.set_cookie("jobcus_lang", lang, max_age=60 * 60 * 24 * 365, samesite="Lax", secure=secure_cookie)
+    resp = redirect(redirect_target)
+    resp.set_cookie(
+        "jobcus_lang",
+        lang,
+        max_age=60 * 60 * 24 * 365,
+        samesite="Lax",
+        secure=_locale_secure_cookie(),
+    )
     return resp
 
 
@@ -1198,18 +1213,16 @@ def change_currency(currency_code: str):
     session["currency"] = currency
     session["currency_manual"] = True
 
-    redirect_target = request.args.get("next")
-    if not _is_safe_next(redirect_target):
-        referer = request.referrer or ""
-        ref_path = urlparse(referer).path if referer else ""
-        redirect_target = ref_path if _is_safe_next(ref_path) else None
-
-    if not redirect_target:
-        redirect_target = url_for("pricing") if request else "/pricing"
+    redirect_target = _determine_locale_redirect()
 
     resp = redirect(redirect_target)
-    secure_cookie = bool(current_app.config.get("SESSION_COOKIE_SECURE", True))
-    resp.set_cookie("jobcus_currency", currency, max_age=60 * 60 * 24 * 365, samesite="Lax", secure=secure_cookie)
+    resp.set_cookie(
+        "jobcus_currency",
+        currency,
+        max_age=60 * 60 * 24 * 365,
+        samesite="Lax",
+        secure=_locale_secure_cookie(),
+    )
     return resp
 
 def change_plan(user_id: str, new_plan: str):
