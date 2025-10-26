@@ -1,6 +1,7 @@
 tesseract-ocr
-tesseract-utils
-libheifl
+tesseract-ocr-eng
+poppler-utils
+libheif
 libcairo2
 libpango-1.0-0
 libpangoft2-1.0-0
@@ -8,5 +9,4 @@ libgdk-pixbuf2.0-0
 libjpeg-turbo-progs
 fonts-liberation
 fonts-noto-core
-libffi8
-poppler-utils
+tesseract-utils
