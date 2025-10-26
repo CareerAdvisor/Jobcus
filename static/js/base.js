@@ -1,6 +1,14 @@
 // /static/js/base.js
 "use strict";
 
+// Guard against inline handlers firing before this bundle finishes loading.
+// We replace this no-op later in the file once the DOM hooks are ready.
+if (typeof window.toggleMobileMenu !== "function") {
+  window.toggleMobileMenu = function noopToggleMobileMenu() {
+    console.warn("toggleMobileMenu invoked before initialization");
+  };
+}
+
 /* ─────────────────────────────────────────────────────────────
  * 0) Safe init for AOS (if present)
  * ───────────────────────────────────────────────────────────── */
