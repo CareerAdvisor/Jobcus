@@ -667,12 +667,12 @@
   scrollbar-width: thin;
   touch-action: pan-y;
   z-index: 4000;
-  max-height: calc(100vh - var(--header-height) - 32px);
+  max-height: calc(100vh - var(--header-offset, 72px) - 32px);
 }
 
 @supports (height: 100dvh) {
   .mobile-nav {
-    max-height: calc(100dvh - var(--header-height) - 32px);
+    max-height: calc(100vh - var(--header-offset, 72px) - 32px);
   }
 }
 
