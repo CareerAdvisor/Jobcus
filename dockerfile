@@ -1,25 +1,37 @@
-# Use a small but full-featured Python base image
+# Use a slim Python base
 FROM python:3.11-slim
 
-# System packages (tesseract + poppler + HEIF)
+# System packages needed by your app:
+# - OCR: tesseract-ocr (+ English data), poppler-utils
+# - HEIF/HEIC support
+# - WeasyPrint deps (cairo/pango/pixbuf/fonts)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
+    tesseract-ocr-eng \
     poppler-utils \
     libheif1 \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    fonts-liberation \
+    fonts-noto-core \
+    libjpeg-turbo-progs \
+    libffi8 \
  && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
+# Workdir
 WORKDIR /app
 
-# Copy and install dependencies first (better for caching)
+# Python deps first (cache-friendly)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your app
+# App code
 COPY . .
 
-# Expose the port Render will use (10000 by default)
-EXPOSE 10000
+# Render provides $PORT; default to 10000 locally
+ENV PORT=10000
 
-# Start the Flask app via Gunicorn
-CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:10000", "app:app"]
+# Start the app
+CMD ["sh","-c","gunicorn -w 2 -b 0.0.0.0:${PORT:-10000} app:app"]
