@@ -637,7 +637,7 @@
 .site-header{
   position: fixed !important;
   top: 0; left: 0; right: 0;
-  z-index: 2000;
+  z-index: 2500;
   background: rgba(255,255,255,.92);
   -webkit-backdrop-filter: saturate(120%) blur(6px);
   backdrop-filter: saturate(120%) blur(6px);
@@ -666,7 +666,7 @@
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   touch-action: pan-y;
-  z-index: 1200;
+  z-index: 4000;
   max-height: calc(100vh - var(--header-height) - 32px);
 }
 
@@ -681,7 +681,7 @@
   flex: 0 0 env(safe-area-inset-bottom, 0px);
 }
 
-.mobile-nav.show { display: flex; }
+.mobile-nav.show { display: flex !important; }
 
 .mobile-nav-overlay {
   position: fixed;
@@ -691,7 +691,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity .2s ease;
-  z-index: 1100;
+  z-index: 3500;
 }
 
 .mobile-nav-overlay.show {
