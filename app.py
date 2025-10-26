@@ -8,19 +8,20 @@ from auth_utils import api_login_required, is_staff, is_superadmin, require_supe
 
 from flask import (
     Blueprint, Flask, request, jsonify, render_template, redirect, session,
-    flash, url_for, send_file, current_app, Response, make_response, g
+    flash, url_for, send_file, current_app, Response, make_response, g, abort
 )
 from flask_cors import CORS
 from flask_login import (
     login_user, logout_user, current_user,
     login_required, user_logged_in, LoginManager, UserMixin
 )
-from markupsafe import escape
+from markupsafe import escape, Markup
 from weasyprint import HTML, CSS
 from gotrue.errors import AuthApiError
 from dotenv import load_dotenv
 from supabase_auth.errors import AuthApiError
 from typing import Tuple, List, Optional
+from decimal import Decimal, ROUND_HALF_UP
 from security import verify_turnstile
 
 # Local modules
@@ -45,6 +46,7 @@ from werkzeug.utils import secure_filename
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
+from flask_babel import Babel, _, get_locale
 from PIL import Image, ImageOps, ImageFilter
 import pytesseract
 
@@ -134,10 +136,258 @@ load_dotenv()
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
+DEFAULT_LOCALE   = os.getenv("JOBCUS_DEFAULT_LOCALE", "en").lower()
+DEFAULT_CURRENCY = os.getenv("JOBCUS_DEFAULT_CURRENCY", "GBP").upper()
+
+SUPPORTED_LANGUAGES: dict[str, dict[str, str]] = {
+    "en": {"name": "English", "flag": "🇬🇧"},
+    "af": {"name": "Afrikaans", "flag": "🇿🇦"},
+    "nl": {"name": "Nederlands", "flag": "🇳🇱"},
+    "fr": {"name": "Français", "flag": "🇫🇷"},
+    "zh": {"name": "中文 (简体)", "flag": "🇨🇳"},
+    "pt": {"name": "Português", "flag": "🇵🇹"},
+    "es": {"name": "Español", "flag": "🇪🇸"},
+}
+
+LANGUAGE_DEFAULT_CURRENCY = {
+    "en": "GBP",
+    "af": "ZAR",
+    "nl": "EUR",
+    "fr": "EUR",
+    "zh": "CNY",
+    "pt": "EUR",
+    "es": "EUR",
+}
+
+SUPPORTED_CURRENCIES: dict[str, dict[str, str]] = {
+    "GBP": {"label": "British Pound", "symbol": "£", "flag": "🇬🇧"},
+    "USD": {"label": "US Dollar", "symbol": "$", "flag": "🇺🇸"},
+    "EUR": {"label": "Euro", "symbol": "€", "flag": "🇪🇺"},
+    "CAD": {"label": "Canadian Dollar", "symbol": "CA$", "flag": "🇨🇦"},
+    "AUD": {"label": "Australian Dollar", "symbol": "A$", "flag": "🇦🇺"},
+    "INR": {"label": "Indian Rupee", "symbol": "₹", "flag": "🇮🇳"},
+    "ZAR": {"label": "South African Rand", "symbol": "R", "flag": "🇿🇦"},
+    "CNY": {"label": "Chinese Yuan", "symbol": "¥", "flag": "🇨🇳"},
+}
+
+DEFAULT_CURRENCY_RATES = {
+    "GBP": 1,
+    "USD": 1.26,
+    "EUR": 1.17,
+    "CAD": 1.73,
+    "AUD": 1.92,
+    "INR": 104.7,
+    "ZAR": 24.3,
+    "CNY": 9.14,
+}
+
+app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
+app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
+
+babel = Babel(app)
+app.jinja_env.globals.update(_=_)
+
 # Public Supabase values from env
 app.config["SUPABASE_URL"]       = os.getenv("SUPABASE_URL", "").rstrip("/")
 app.config["SUPABASE_ANON_KEY"]  = os.getenv("SUPABASE_ANON_KEY", "")
 app.config["BASE_URL"]           = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
+
+def _load_currency_rates() -> dict[str, float]:
+    raw = os.getenv("JOBCUS_CURRENCY_RATES", "").strip()
+    if raw:
+        try:
+            parsed = json.loads(raw)
+            out = {}
+            for code, rate in parsed.items():
+                code_u = str(code).upper()
+                try:
+                    out[code_u] = float(rate)
+                except (TypeError, ValueError):
+                    continue
+            if out:
+                if "GBP" not in out:
+                    out["GBP"] = 1.0
+                return out
+        except Exception:
+            logging.warning("Invalid JOBCUS_CURRENCY_RATES env; falling back to defaults.")
+    return DEFAULT_CURRENCY_RATES.copy()
+
+
+def _load_plan_price_ids() -> dict[str, dict[str, str | None]]:
+    return {
+        "weekly": {
+            "GBP": os.getenv("STRIPE_PRICE_WEEKLY"),
+            "USD": os.getenv("STRIPE_PRICE_WEEKLY_USD"),
+            "EUR": os.getenv("STRIPE_PRICE_WEEKLY_EUR"),
+            "ZAR": os.getenv("STRIPE_PRICE_WEEKLY_ZAR"),
+            "CNY": os.getenv("STRIPE_PRICE_WEEKLY_CNY"),
+        },
+        "standard": {
+            "GBP": os.getenv("STRIPE_PRICE_STANDARD"),
+            "USD": os.getenv("STRIPE_PRICE_STANDARD_USD"),
+            "EUR": os.getenv("STRIPE_PRICE_STANDARD_EUR"),
+            "ZAR": os.getenv("STRIPE_PRICE_STANDARD_ZAR"),
+            "CNY": os.getenv("STRIPE_PRICE_STANDARD_CNY"),
+        },
+        "premium": {
+            "GBP": os.getenv("STRIPE_PRICE_PREMIUM"),
+            "USD": os.getenv("STRIPE_PRICE_PREMIUM_USD"),
+            "EUR": os.getenv("STRIPE_PRICE_PREMIUM_EUR"),
+            "ZAR": os.getenv("STRIPE_PRICE_PREMIUM_ZAR"),
+            "CNY": os.getenv("STRIPE_PRICE_PREMIUM_CNY"),
+        },
+        "employer_jd": {
+            "GBP": os.getenv("STRIPE_PRICE_EMPLOYER_JD"),
+            "USD": os.getenv("STRIPE_PRICE_EMPLOYER_JD_USD"),
+            "EUR": os.getenv("STRIPE_PRICE_EMPLOYER_JD_EUR"),
+        },
+    }
+
+
+PLAN_BASE_PRICES: dict[str, Decimal] = {
+    "free": Decimal("0"),
+    "weekly": Decimal("7.99"),
+    "standard": Decimal("23.99"),
+    "premium": Decimal("229"),
+    "employer_jd": Decimal("25"),
+}
+
+PLAN_PERIODS: dict[str, str] = {
+    "free": "/mo",
+    "weekly": "/week",
+    "standard": "/mo",
+    "premium": "/yr",
+    "employer_jd": "/mo",
+}
+
+app.config["CURRENCY_RATES"] = _load_currency_rates()
+app.config["PLAN_PRICE_IDS"] = _load_plan_price_ids()
+
+
+def _coerce_language(code: str | None) -> str:
+    if not code:
+        return DEFAULT_LOCALE
+    lang = str(code).lower()
+    return lang if lang in SUPPORTED_LANGUAGES else DEFAULT_LOCALE
+
+
+def _coerce_currency(code: str | None) -> str:
+    if not code:
+        return DEFAULT_CURRENCY
+    cur = str(code).upper()
+    return cur if cur in SUPPORTED_CURRENCIES else DEFAULT_CURRENCY
+
+
+def _format_amount_html(amount: Decimal) -> str:
+    quant = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    as_str = f"{quant:.2f}"
+    whole, frac = as_str.split(".")
+    whole_fmt = format(int(whole), ",")
+    if frac == "00":
+        return whole_fmt
+    return f"{whole_fmt}<span class='cents'>.{frac}</span>"
+
+
+def convert_currency(amount: Decimal | float | str, target_currency: str | None = None) -> Decimal:
+    currency = _coerce_currency(target_currency)
+    rates = app.config.get("CURRENCY_RATES") or DEFAULT_CURRENCY_RATES
+    base_rate = Decimal(str(rates.get("GBP", 1)))
+    target_rate = Decimal(str(rates.get(currency, rates.get(DEFAULT_CURRENCY, 1))))
+    value = Decimal(str(amount))
+    return (value * target_rate / base_rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def plan_price_display(plan_code: str, currency: str | None = None) -> dict[str, object]:
+    code = (plan_code or "").lower()
+    base_amount = PLAN_BASE_PRICES.get(code)
+    if base_amount is None:
+        return {
+            "symbol": SUPPORTED_CURRENCIES[DEFAULT_CURRENCY]["symbol"],
+            "amount_html": Markup("0"),
+            "amount_value": 0.0,
+            "period": PLAN_PERIODS.get(code, "/mo"),
+            "currency": DEFAULT_CURRENCY,
+        }
+
+    currency_code = _coerce_currency(currency)
+    converted = convert_currency(base_amount, currency_code)
+    currency_meta = SUPPORTED_CURRENCIES.get(currency_code, SUPPORTED_CURRENCIES[DEFAULT_CURRENCY])
+
+    return {
+        "symbol": currency_meta["symbol"],
+        "amount_html": Markup(_format_amount_html(converted)),
+        "amount_value": float(converted),
+        "period": PLAN_PERIODS.get(code, "/mo"),
+        "currency": currency_code,
+    }
+
+
+def build_plan_price_matrix(currency: str | None = None) -> dict[str, dict[str, object]]:
+    cur = _coerce_currency(currency)
+    return {code: plan_price_display(code, cur) for code in PLAN_BASE_PRICES.keys()}
+
+
+def _current_currency() -> str:
+    stored = session.get("currency") if hasattr(session, "get") else None
+    if stored and stored in SUPPORTED_CURRENCIES:
+        return stored
+    locale = get_locale()
+    lang = str(locale) if locale else DEFAULT_LOCALE
+    fallback = LANGUAGE_DEFAULT_CURRENCY.get(lang, DEFAULT_CURRENCY)
+    return _coerce_currency(fallback)
+
+
+@babel.localeselector
+def select_locale() -> str:
+    stored = session.get("language") if hasattr(session, "get") else None
+    if stored and stored in SUPPORTED_LANGUAGES:
+        return stored
+
+    cookie_lang = request.cookies.get("jobcus_lang") if request else None
+    if cookie_lang and cookie_lang in SUPPORTED_LANGUAGES:
+        session["language"] = cookie_lang
+        return cookie_lang
+
+    best = request.accept_languages.best_match(list(SUPPORTED_LANGUAGES.keys())) if request else None
+    lang = best or DEFAULT_LOCALE
+    session["language"] = _coerce_language(lang)
+    return session["language"]
+
+
+@app.before_request
+def ensure_locale_preferences():
+    lang = _coerce_language(session.get("language"))
+    if session.get("language") != lang:
+        session["language"] = lang
+
+    manual_currency = bool(session.get("currency_manual", False))
+    stored_currency = session.get("currency") if not manual_currency else session.get("currency")
+    if not stored_currency:
+        default_currency = LANGUAGE_DEFAULT_CURRENCY.get(lang, DEFAULT_CURRENCY)
+        session["currency"] = _coerce_currency(default_currency)
+    elif stored_currency not in SUPPORTED_CURRENCIES:
+        session["currency"] = _coerce_currency(stored_currency)
+
+    if "currency_manual" not in session:
+        session["currency_manual"] = False
+
+
+@app.context_processor
+def inject_locale_meta():
+    lang = session.get("language", DEFAULT_LOCALE)
+    lang = _coerce_language(lang)
+    currency = _current_currency()
+    return {
+        "available_languages": SUPPORTED_LANGUAGES,
+        "current_language": lang,
+        "available_currencies": SUPPORTED_CURRENCIES,
+        "current_currency": currency,
+        "plan_prices": build_plan_price_matrix(currency),
+        "current_currency_meta": SUPPORTED_CURRENCIES.get(currency, SUPPORTED_CURRENCIES[DEFAULT_CURRENCY]),
+    }
+
+
+app.jinja_env.globals.update(plan_price_display=plan_price_display)
 
 # Validate required admin creds
 _supabase_url   = app.config["SUPABASE_URL"]
@@ -898,6 +1148,52 @@ def _is_safe_next(url: str) -> bool:
         return (not u.scheme) and (not u.netloc) and url.startswith("/")
     except Exception:
         return False
+
+@app.get("/locale/language/<lang_code>", endpoint="set_language")
+def change_language(lang_code: str):
+    lang = _coerce_language(lang_code)
+    session["language"] = lang
+
+    if not session.get("currency_manual"):
+        default_currency = LANGUAGE_DEFAULT_CURRENCY.get(lang)
+        if default_currency:
+            session["currency"] = _coerce_currency(default_currency)
+
+    redirect_target = request.args.get("next")
+    if not _is_safe_next(redirect_target):
+        referer = request.referrer or ""
+        ref_path = urlparse(referer).path if referer else ""
+        redirect_target = ref_path if _is_safe_next(ref_path) else None
+
+    if not redirect_target:
+        redirect_target = url_for("pricing") if request else "/pricing"
+
+    resp = redirect(redirect_target)
+    secure_cookie = current_app.config.get("SESSION_COOKIE_SECURE", True)
+    resp.set_cookie("jobcus_lang", lang, max_age=60 * 60 * 24 * 365, samesite="Lax", secure=secure_cookie)
+    return resp
+
+
+@app.get("/locale/currency/<currency_code>", endpoint="set_currency")
+def change_currency(currency_code: str):
+    currency = _coerce_currency(currency_code)
+    session["currency"] = currency
+    session["currency_manual"] = True
+
+    redirect_target = request.args.get("next")
+    if not _is_safe_next(redirect_target):
+        referer = request.referrer or ""
+        ref_path = urlparse(referer).path if referer else ""
+        redirect_target = ref_path if _is_safe_next(ref_path) else None
+
+    if not redirect_target:
+        redirect_target = url_for("pricing") if request else "/pricing"
+
+    resp = redirect(redirect_target)
+    secure_cookie = current_app.config.get("SESSION_COOKIE_SECURE", True)
+    resp.set_cookie("jobcus_currency", currency, max_age=60 * 60 * 24 * 365, samesite="Lax", secure=secure_cookie)
+    return resp
+    
 
 def change_plan(user_id: str, new_plan: str):
     supabase = current_app.config["SUPABASE"]
@@ -1666,81 +1962,101 @@ def cookies():
 @app.route("/pricing")
 def pricing():
     free_used = bool(getattr(current_user, "free_plan_used", False)) if getattr(current_user, "is_authenticated", False) else False
-    return render_template("pricing.html", free_used=free_used)
+    plans = _plans()
+    return render_template("pricing.html", free_used=free_used, plans=plans)
 
 def _plans():
+    currency = _current_currency()
+    prices = build_plan_price_matrix(currency)
     return {
         "free": {
-            "code":"free", "title":"Free", "amount":"0", "period":"/mo",
-            "tagline":"Great for a quick check",
-            "features":[
-                "<strong>2</strong> resume analyses / month (basic score + tips)",
-                "<strong>1</strong> AI cover letter / month",
-                "AI Resume Builder (basic templates; <strong>1</strong> download / month)",
-                "Skill-Gap snapshot (1 basic analysis / month)",
-                "Job Insights (basic charts)",
-                "Interview Coach (limited practice; <strong>1</strong> / month)",
-                "AI Chat trial: <strong>10 messages</strong> total",
-                "Local device history",
+            "code": "free",
+            "title": _("Free"),
+            "amount": prices["free"]["amount_html"],
+            "period": PLAN_PERIODS["free"],
+            "tagline": _("Great for a quick check"),
+            "display_price": prices["free"],
+            "features": [
+                _("<strong>2</strong> resume analyses / month (basic score + tips)"),
+                _("<strong>1</strong> AI cover letter / month"),
+                _("AI Resume Builder (basic templates; <strong>1</strong> download / month)"),
+                _("Skill-Gap snapshot (1 basic analysis / month)"),
+                _("Job Insights (basic charts)"),
+                _("Interview Coach (limited practice; <strong>1</strong> / month)"),
+                _("AI Chat trial: <strong>10 messages</strong> total"),
+                _("Local device history"),
             ],
         },
         "weekly": {
-            "code":"weekly", "title":"Weekly Pass", "amount":"7<span class='cents'>.99</span>", "period":"/week",
-            "tagline":"For urgent applications",
-            "features":[
-                "AI Chat credits: <strong>100 messages</strong> / week",
-                "<strong>10</strong> resume analyses / week",
-                "<strong>5</strong> AI cover letters / week",
-                "Resume Builder: <strong>5 downloads</strong> / week",
-                "“Rebuild with AI” for resumes",
-                "Skill-Gap (standard)",
-                "Job Insights (full access)",
-                "Interview Coach sessions",
-                "Email support",
+            "code": "weekly",
+            "title": _("Weekly Pass"),
+            "amount": prices["weekly"]["amount_html"],
+            "period": PLAN_PERIODS["weekly"],
+            "tagline": _("For urgent applications"),
+            "display_price": prices["weekly"],
+            "features": [
+                _("AI Chat credits: <strong>100 messages</strong> / week"),
+                _("<strong>10</strong> resume analyses / week"),
+                _("<strong>5</strong> AI cover letters / week"),
+                _("Resume Builder: <strong>5 downloads</strong> / week"),
+                _("“Rebuild with AI” for resumes"),
+                _("Skill-Gap (standard)"),
+                _("Job Insights (full access)"),
+                _("Interview Coach sessions"),
+                _("Email support"),
             ],
         },
         "standard": {
-            "code":"standard", "title":"Standard", "amount":"23<span class='cents'>.99</span>", "period":"/mo",
-            "tagline":"Serious applications, smarter tools",
-            "features":[
-                "AI Chat credits: <strong>600 messages</strong> / month",
-                "<strong>50</strong> resume analyses / month (deep ATS + JD match)",
-                "<strong>20</strong> AI cover letters / month",
-                "Resume Builder: <strong>20 downloads</strong> / month",
-                "AI Optimize + Rebuild with AI",
-                "Interview Coach sessions",
-                "Skill-Gap (pro)",
-                "Job Insights (full access)",
-                "Download optimized PDF / DOCX / TXT",
-                "Save history across devices",
-                "Email support",
+            "code": "standard",
+            "title": _("Standard"),
+            "amount": prices["standard"]["amount_html"],
+            "period": PLAN_PERIODS["standard"],
+            "tagline": _("Serious applications, smarter tools"),
+            "display_price": prices["standard"],
+            "features": [
+                _("AI Chat credits: <strong>600 messages</strong> / month"),
+                _("<strong>50</strong> resume analyses / month (deep ATS + JD match)"),
+                _("<strong>20</strong> AI cover letters / month"),
+                _("Resume Builder: <strong>20 downloads</strong> / month"),
+                _("AI Optimize + Rebuild with AI"),
+                _("Interview Coach sessions"),
+                _("Skill-Gap (pro)"),
+                _("Job Insights (full access)"),
+                _("Download optimized PDF / DOCX / TXT"),
+                _("Save history across devices"),
+                _("Email support"),
             ],
         },
         "premium": {
-            "code":"premium", "title":"Premium", "amount":"229", "period":"/yr",
-            "tagline":"Best value for ongoing career growth",
-            "features":[
-                "AI Chat credits: <strong>10,800 messages</strong> / year (~1,000 / mo)",
-                "<strong>Unlimited*</strong> resume analyses (fair use)",
-                "<strong>Unlimited</strong> AI cover letters (fair use)",
-                "Resume Builder: <strong>unlimited</strong> downloads (fair use)",
-                "All Standard features + multi-resume versions & template pack",
-                "Priority support & early access to new AI tools",
+            "code": "premium",
+            "title": _("Premium"),
+            "amount": prices["premium"]["amount_html"],
+            "period": PLAN_PERIODS["premium"],
+            "tagline": _("Best value for ongoing career growth"),
+            "display_price": prices["premium"],
+            "features": [
+                _("AI Chat credits: <strong>10,800 messages</strong> / year (~1,000 / mo)"),
+                _("<strong>Unlimited*</strong> resume analyses (fair use)"),
+                _("<strong>Unlimited</strong> AI cover letters (fair use)"),
+                _("Resume Builder: <strong>unlimited</strong> downloads (fair use)"),
+                _("All Standard features + multi-resume versions & template pack"),
+                _("Priority support & early access to new AI tools"),
             ],
         },
         # NEW — Employer (B2B) starter plan
         "employer_jd": {
-            "code":"employer_jd",
-            "title":"JD Generator",
-            "amount":"25",          # show "£25"
-            "period":"/mo",
-            "tagline":"AI Job Description Generator",
-            "features":[
-                "Unlimited* JD generations (fair use)",
-                "Brand tone presets",
-                "Export to DOCX/PDF",
-                "JD–skills taxonomy suggestions",
-                "Email support",
+            "code": "employer_jd",
+            "title": _("JD Generator"),
+            "amount": prices["employer_jd"]["amount_html"],
+            "period": PLAN_PERIODS["employer_jd"],
+            "tagline": _("AI Job Description Generator"),
+            "display_price": prices["employer_jd"],
+            "features": [
+                _("Unlimited* JD generations (fair use)"),
+                _("Brand tone presets"),
+                _("Export to DOCX/PDF"),
+                _("JD–skills taxonomy suggestions"),
+                _("Email support"),
             ],
         },
     }
