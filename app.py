@@ -154,6 +154,7 @@ SUPPORTED_LANGUAGES: dict[str, dict[str, str]] = {
     "zh": {"name": "中文 (简体)", "flag": "🇨🇳"},
     "pt": {"name": "Português", "flag": "🇵🇹"},
     "es": {"name": "Español", "flag": "🇪🇸"},
+    "ar": {"name": "العربية", "flag": "🇦🇪"},
 }
 
 LANGUAGE_DEFAULT_CURRENCY = {
@@ -164,6 +165,8 @@ LANGUAGE_DEFAULT_CURRENCY = {
     "zh": "CNY",
     "pt": "EUR",
     "es": "EUR",
+    "ar": "AED",
+    
 }
 
 SUPPORTED_CURRENCIES: dict[str, dict[str, str]] = {
@@ -176,6 +179,7 @@ SUPPORTED_CURRENCIES: dict[str, dict[str, str]] = {
     "ZAR": {"label": "South African Rand", "symbol": "R", "flag": "🇿🇦"},
     "CNY": {"label": "Chinese Yuan", "symbol": "¥", "flag": "🇨🇳"},
     "NGN": {"label": "Nigerian Naira", "symbol": "₦", "flag": "🇳🇬"},
+    "AED": {"label": "UAE Dirham", "symbol": "د.إ", "flag": "🇦🇪"},
 }
 
 DEFAULT_CURRENCY_RATES = {
@@ -188,6 +192,7 @@ DEFAULT_CURRENCY_RATES = {
     "ZAR": 22.98,
     "CNY": 9.14,
     "NGN": 1730.0,
+    "AED": 4.64,
 }
 
 app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
@@ -231,6 +236,7 @@ def _load_plan_price_ids() -> dict[str, dict[str, str | None]]:
             "ZAR": os.getenv("STRIPE_PRICE_WEEKLY_ZAR"),
             "CNY": os.getenv("STRIPE_PRICE_WEEKLY_CNY"),
             "NGN": os.getenv("STRIPE_PRICE_WEEKLY_NGN"),
+            "AED": os.getenv("STRIPE_PRICE_WEEKLY_AED"),
         },
         "standard": {
             "GBP": os.getenv("STRIPE_PRICE_STANDARD"),
@@ -239,6 +245,7 @@ def _load_plan_price_ids() -> dict[str, dict[str, str | None]]:
             "ZAR": os.getenv("STRIPE_PRICE_STANDARD_ZAR"),
             "CNY": os.getenv("STRIPE_PRICE_STANDARD_CNY"),
             "NGN": os.getenv("STRIPE_PRICE_STANDARD_NGN"),
+            "AED": os.getenv("STRIPE_PRICE_STANDARD_AED"),
         },
         "premium": {
             "GBP": os.getenv("STRIPE_PRICE_PREMIUM"),
@@ -247,6 +254,7 @@ def _load_plan_price_ids() -> dict[str, dict[str, str | None]]:
             "ZAR": os.getenv("STRIPE_PRICE_PREMIUM_ZAR"),
             "CNY": os.getenv("STRIPE_PRICE_PREMIUM_CNY"),
             "NGN": os.getenv("STRIPE_PRICE_PREMIUM_NGN"),
+            "AED": os.getenv("STRIPE_PRICE_PREMIUM_AED"),
         },
         "employer_jd": {
             "GBP": os.getenv("STRIPE_PRICE_EMPLOYER_JD"),
@@ -255,6 +263,7 @@ def _load_plan_price_ids() -> dict[str, dict[str, str | None]]:
             "ZAR": os.getenv("STRIPE_PRICE_PREMIUM_ZAR"),
             "CNY": os.getenv("STRIPE_PRICE_PREMIUM_CNY"),
             "NGN": os.getenv("STRIPE_PRICE_PREMIUM_NGN"),
+            "AED": os.getenv("STRIPE_PRICE_EMPLOYER_JD_AED"),
         },
     }
 
