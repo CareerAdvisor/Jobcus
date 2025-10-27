@@ -316,6 +316,19 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     <!-- Base JS (has AOS init, apiFetch, upgradePrompt, menus, cookies consent, etc.) -->
     <script src="{{ url_for('static', filename='js/base.js') }}" defer></script>
+  
+  <!-- DEV safety: ensure no leftover scroll/overlay locks during mobile emulation -->
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Neutralize any leaked scroll-lock classes
+    document.body.classList.remove('mobile-nav-open', 'has-upgrade-banner');
+    document.documentElement.classList.remove('mobile-nav-open');
+  
+    // Make sure the mobile overlay isn’t intercepting events
+    const overlay = document.querySelector('.mobile-nav-overlay');
+    overlay && overlay.classList.remove('show');
+  });
+  </script>
 
     <!-- Self-hosted AOS (CSP-safe) -->
     <script src="{{ url_for('static', filename='vendor/aos/aos.js') }}"></script>
