@@ -859,3 +859,42 @@ body.mobile-nav-open, html.mobile-nav-open { overflow: hidden !important; }
   color: var(--blue) !important;         /* keep same color on hover */
   text-decoration: underline;            /* classic underline on hover */
 }
+
+/* ==== Compact mobile menu (dropdown-style) ==== */
+:root { --header-height: 60px; } /* matches your header height */
+
+@media (max-width: 767px){
+  #mobileMenu {
+    position: absolute !important;
+    top: var(--header-height, 60px) !important; /* sit under header */
+    right: 12px !important;
+    left: auto !important;
+    bottom: auto !important;
+
+    width: max(220px, 48vw) !important;
+    max-height: min(70vh, 420px) !important;    /* ensure it fully fits */
+    overflow: auto !important;
+
+    padding: 8px !important;
+    border-radius: 12px !important;
+    border: 1px solid #dbe5f3 !important;
+    box-shadow: 0 12px 24px rgba(15,41,70,.16) !important;
+    z-index: 4000 !important;
+  }
+
+  /* Make items slimmer */
+  #mobileMenu a,
+  #mobileMenu .dropbtn {
+    padding: 10px 12px !important;
+    font-size: 15px !important;
+    line-height: 1.25 !important;
+    font-weight: 600;
+  }
+
+  #mobileMenu .dropdown-content {
+    padding: 6px 8px !important;
+  }
+}
+
+/* optional: remove dimmed backdrop to keep it light */
+.mobile-nav-overlay { display: none !important; }
