@@ -526,12 +526,14 @@
   box-shadow: 0 18px 36px rgba(15, 41, 70, 0.18);
   padding: 14px 16px;
   display: none;
-  z-index: 1200;
+  z-index: 2200;         /* above sticky header */
   max-height: min(70vh, 420px);
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+.user-dropdown { z-index: 2200; }       /* above sticky header */
 
 .locale-menu.open { display: block; }
 
@@ -649,7 +651,7 @@
 .mobile-nav {
   display: none;
   position: fixed;
-  top: var(--header-height);
+  top: var(--header-height, var(--header-offset, 72px)); /* match JS var */
   left: max(16px, env(safe-area-inset-left, 16px));
   right: max(16px, env(safe-area-inset-right, 16px));
   bottom: max(16px, env(safe-area-inset-bottom, 16px));
@@ -666,13 +668,13 @@
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   touch-action: pan-y;
-  z-index: 1200;
+  z-index: 4000; /* above .site-header (2000) and overlay */
   max-height: calc(100vh - var(--header-height) - 32px);
 }
 
 @supports (height: 100dvh) {
   .mobile-nav {
-    max-height: calc(100dvh - var(--header-height) - 32px);
+    max-height: calc(100dvh - var(--header-height, var(--header-offset, 72px)) - 32px);
   }
 }
 
@@ -691,7 +693,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity .2s ease;
-  z-index: 1100;
+  z-index: 3900; /* just below the panel, above header */
 }
 
 .mobile-nav-overlay.show {
@@ -713,6 +715,43 @@ html.mobile-nav-open {
     padding: 18px;
   }
 }
+
+/* Only apply hover dropdown on screens wider than 768px */
+@media (min-width: 768px) {
+  .hamburger {
+    display: none; /* Optional: hide hamburger if showing dropdown on hover */
+  }
+
+  .site-header:hover #mobileMenu {
+    display: none !important; } /* disable legacy hover behavior */
+  }
+
+  #mobileMenu {
+    display: none; /* hidden by default */
+  }
+}
+
+/* Hard override legacy absolute menu rules coming from style.css */
+#mobileMenu {
+  position: fixed !important;
+  top: var(--header-height, var(--header-offset, 72px)) !important;
+  left: max(16px, env(safe-area-inset-left, 16px)) !important;
+  right: max(16px, env(safe-area-inset-right, 16px)) !important;
+  bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
+  min-width: 0 !important;
+  border-radius: 20px !important;
+  border: 1px solid #dbe5f3 !important;
+  box-shadow: 0 18px 36px rgba(15, 41, 70, 0.18) !important;
+  z-index: 4000 !important;
+}
+
+/* Safety: never show mobile panel on desktop */
+@media (min-width: 768px) {
+#mobileMenu { display: none !important; }
+}
+
+/* Body lock while menu open (already in JS) — ensure it wins */
+body.mobile-nav-open, html.mobile-nav-open { overflow: hidden !important; }
 
 /* =========================
    Footer social (follow + share)
