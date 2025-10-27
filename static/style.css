@@ -3952,3 +3952,26 @@ body.has-upgrade-banner {
 .preview-wrap[data-watermark].wm-active::after{
   display: grid;                /* show only once content is ready */
 }
+
+/* A) Neutralize legacy mobile nav layout on all screens */
+#mobileMenu {
+  position: fixed !important;
+  top: var(--header-height, var(--header-offset, 72px)) !important;
+  right: auto !important;
+  left: max(16px, env(safe-area-inset-left, 16px)) !important;
+  bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
+  min-width: 0 !important;
+  border-radius: 20px !important;
+  border: 1px solid #dbe5f3 !important;
+  box-shadow: 0 18px 36px rgba(15, 41, 70, 0.18) !important;
+  z-index: 4000 !important;
+}
+
+/* B) Kill desktop :hover opener from this file if present earlier */
+@media (min-width: 768px){
+  .site-header:hover #mobileMenu{ display: none !important; }
+}
+
+/* C) Ensure the locale & user menus aren’t hidden by header stacking context */
+.locale-menu { z-index: 2200 !important; }
+.user-dropdown { z-index: 2200 !important; }
