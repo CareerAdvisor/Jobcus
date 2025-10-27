@@ -320,7 +320,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       menu.classList.toggle("show", willOpen);
       btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
-    });
   });
 
   // Close menus on outside click
