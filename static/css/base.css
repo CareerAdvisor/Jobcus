@@ -702,11 +702,6 @@
   pointer-events: auto;
 }
 
-body.mobile-nav-open,
-html.mobile-nav-open {
-  overflow: hidden;
-}
-
 @media (max-width: 600px) {
   .mobile-nav {
     left: max(12px, env(safe-area-inset-left, 12px));
@@ -923,3 +918,12 @@ body.mobile-nav-open, html.mobile-nav-open { overflow: hidden !important; }
     touch-action: auto !important;
   }
 }
+
+  /* neutralize any accidental locks */
+  body.has-upgrade-banner,
+  body.mobile-nav-open,
+  html.mobile-nav-open {
+    overflow-y: auto !important;
+  }
+}
+
