@@ -2032,13 +2032,13 @@ def _plans():
             "tagline": _("Great for a quick check"),
             "display_price": prices["free"],
             "features": [
+                _("AI Chat trial: <strong>15 Responses</strong> total"),
                 _("<strong>2</strong> resume analyses / month (basic score + tips)"),
                 _("<strong>1</strong> AI cover letter / month"),
                 _("AI Resume Builder (basic templates; <strong>1</strong> download / month)"),
                 _("Skill-Gap snapshot (1 basic analysis / month)"),
                 _("Job Insights (basic charts)"),
                 _("Interview Coach (limited practice; <strong>1</strong> / month)"),
-                _("AI Chat trial: <strong>10 messages</strong> total"),
                 _("Local device history"),
             ],
         },
@@ -2050,7 +2050,7 @@ def _plans():
             "tagline": _("For urgent applications"),
             "display_price": prices["weekly"],
             "features": [
-                _("AI Chat credits: <strong>100 messages</strong> / week"),
+                _("AI Chat credits: <strong>100 responses</strong> / week"),
                 _("<strong>10</strong> resume analyses / week"),
                 _("<strong>5</strong> AI cover letters / week"),
                 _("Resume Builder: <strong>5 downloads</strong> / week"),
@@ -2069,7 +2069,7 @@ def _plans():
             "tagline": _("Serious applications, smarter tools"),
             "display_price": prices["standard"],
             "features": [
-                _("AI Chat credits: <strong>600 messages</strong> / month"),
+                _("AI Chat credits: <strong>unlimited</strong> / month"),
                 _("<strong>50</strong> resume analyses / month (deep ATS + JD match)"),
                 _("<strong>20</strong> AI cover letters / month"),
                 _("Resume Builder: <strong>20 downloads</strong> / month"),
@@ -2090,7 +2090,7 @@ def _plans():
             "tagline": _("Best value for ongoing career growth"),
             "display_price": prices["premium"],
             "features": [
-                _("AI Chat credits: <strong>10,800 messages</strong> / year (~1,000 / mo)"),
+                _("AI Chat credits: <strong>unlimited</strong> / year (~1,000 / mo)"),
                 _("<strong>Unlimited*</strong> resume analyses (fair use)"),
                 _("<strong>Unlimited</strong> AI cover letters (fair use)"),
                 _("Resume Builder: <strong>unlimited</strong> downloads (fair use)"),
