@@ -136,12 +136,20 @@ load_dotenv()
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
+# Public Supabase values from env
+app.config["SUPABASE_URL"]       = os.getenv("SUPABASE_URL", "").rstrip("/")
+app.config["SUPABASE_ANON_KEY"]  = os.getenv("SUPABASE_ANON_KEY", "")
+app.config["BASE_URL"]           = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
+
 def _env_flag(name: str, default: bool) -> bool:
     """Parse common truthy/falsey strings from the environment."""
     raw = os.getenv(name)
     if raw is None:
         return default
     return raw.strip().lower() not in {"0", "false", "no", "off"}
+
+babel = Babel()
+app.jinja_env.globals.update(_=_)
 
 DEFAULT_LOCALE   = os.getenv("JOBCUS_DEFAULT_LOCALE", "en").lower()
 DEFAULT_CURRENCY = os.getenv("JOBCUS_DEFAULT_CURRENCY", "GBP").upper()
@@ -194,17 +202,6 @@ DEFAULT_CURRENCY_RATES = {
     "NGN": 1730.0,
     "AED": 4.64,
 }
-
-app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
-app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
-
-babel = Babel()
-app.jinja_env.globals.update(_=_)
-
-# Public Supabase values from env
-app.config["SUPABASE_URL"]       = os.getenv("SUPABASE_URL", "").rstrip("/")
-app.config["SUPABASE_ANON_KEY"]  = os.getenv("SUPABASE_ANON_KEY", "")
-app.config["BASE_URL"]           = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
 
 def _load_currency_rates() -> dict[str, float]:
     raw = os.getenv("JOBCUS_CURRENCY_RATES", "").strip()
@@ -376,8 +373,11 @@ def select_locale() -> str:
     session["language"] = _coerce_language(lang)
     return session["language"]
 
-
+# IMPORTANT: call this AFTER app is created, before first request handling
 babel.init_app(app, locale_selector=select_locale)
+
+app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
+app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
 
 # --- your existing locale selector ---
 def select_locale():
@@ -4125,6 +4125,10 @@ def i18n_debug():
         "cookie_lang": request.cookies.get("jobcus_lang"),
         "selected_locale": str(get_locale()),
     }
+
+@app.route("/_locale")
+def _locale():
+    return str(get_locale())
 
 
 # --- Entrypoint ---
