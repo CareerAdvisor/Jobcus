@@ -4106,6 +4106,15 @@ def diag_ocr():
         "heif_enabled": bool(HEIF_ENABLED),
     })
 
+@app.get("/_i18n/debug")
+def i18n_debug():
+    return {
+        "session_language": session.get("language"),
+        "cookie_lang": request.cookies.get("jobcus_lang"),
+        "selected_locale": str(get_locale()),
+    }
+
+
 # --- Entrypoint ---
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
