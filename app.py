@@ -148,46 +148,43 @@ def _env_flag(name: str, default: bool) -> bool:
         return default
     return raw.strip().lower() not in {"0", "false", "no", "off"}
 
+# =========================
+# i18n + Currency + Pricing
+# =========================
 babel = Babel()
 app.jinja_env.globals.update(_=_)
 
+# --- Defaults / supported sets ---
 DEFAULT_LOCALE   = os.getenv("JOBCUS_DEFAULT_LOCALE", "en").lower()
 DEFAULT_CURRENCY = os.getenv("JOBCUS_DEFAULT_CURRENCY", "GBP").upper()
 
 SUPPORTED_LANGUAGES: dict[str, dict[str, str]] = {
-    "en": {"name": "English", "flag": "🇬🇧"},
+    "en": {"name": "English",   "flag": "🇬🇧"},
     "af": {"name": "Afrikaans", "flag": "🇿🇦"},
-    "nl": {"name": "Nederlands", "flag": "🇳🇱"},
-    "fr": {"name": "Français", "flag": "🇫🇷"},
+    "nl": {"name": "Nederlands","flag": "🇳🇱"},
+    "fr": {"name": "Français",  "flag": "🇫🇷"},
     "zh": {"name": "中文 (简体)", "flag": "🇨🇳"},
     "pt": {"name": "Português", "flag": "🇵🇹"},
-    "es": {"name": "Español", "flag": "🇪🇸"},
-    "ar": {"name": "العربية", "flag": "🇦🇪"},
+    "es": {"name": "Español",   "flag": "🇪🇸"},
+    "ar": {"name": "العربية",   "flag": "🇦🇪"},
 }
 
 LANGUAGE_DEFAULT_CURRENCY = {
-    "en": "GBP",
-    "af": "ZAR",
-    "nl": "EUR",
-    "fr": "EUR",
-    "zh": "CNY",
-    "pt": "EUR",
-    "es": "EUR",
-    "ar": "AED",
-    
+    "en": "GBP", "af": "ZAR", "nl": "EUR", "fr": "EUR",
+    "zh": "CNY", "pt": "EUR", "es": "EUR", "ar": "AED",
 }
 
 SUPPORTED_CURRENCIES: dict[str, dict[str, str]] = {
-    "GBP": {"label": "British Pound", "symbol": "£", "flag": "🇬🇧"},
-    "USD": {"label": "US Dollar", "symbol": "$", "flag": "🇺🇸"},
-    "EUR": {"label": "Euro", "symbol": "€", "flag": "🇪🇺"},
-    "CAD": {"label": "Canadian Dollar", "symbol": "CA$", "flag": "🇨🇦"},
-    "AUD": {"label": "Australian Dollar", "symbol": "A$", "flag": "🇦🇺"},
-    "INR": {"label": "Indian Rupee", "symbol": "₹", "flag": "🇮🇳"},
-    "ZAR": {"label": "South African Rand", "symbol": "R", "flag": "🇿🇦"},
-    "CNY": {"label": "Chinese Yuan", "symbol": "¥", "flag": "🇨🇳"},
-    "NGN": {"label": "Nigerian Naira", "symbol": "₦", "flag": "🇳🇬"},
-    "AED": {"label": "UAE Dirham", "symbol": "د.إ", "flag": "🇦🇪"},
+    "GBP": {"label": "British Pound",      "symbol": "£",   "flag": "🇬🇧"},
+    "USD": {"label": "US Dollar",          "symbol": "$",   "flag": "🇺🇸"},
+    "EUR": {"label": "Euro",               "symbol": "€",   "flag": "🇪🇺"},
+    "CAD": {"label": "Canadian Dollar",    "symbol": "CA$", "flag": "🇨🇦"},
+    "AUD": {"label": "Australian Dollar",  "symbol": "A$",  "flag": "🇦🇺"},
+    "INR": {"label": "Indian Rupee",       "symbol": "₹",   "flag": "🇮🇳"},
+    "ZAR": {"label": "South African Rand", "symbol": "R",   "flag": "🇿🇦"},
+    "CNY": {"label": "Chinese Yuan",       "symbol": "¥",   "flag": "🇨🇳"},
+    "NGN": {"label": "Nigerian Naira",     "symbol": "₦",   "flag": "🇳🇬"},
+    "AED": {"label": "UAE Dirham",         "symbol": "د.إ", "flag": "🇦🇪"},
 }
 
 DEFAULT_CURRENCY_RATES = {
@@ -208,7 +205,7 @@ def _load_currency_rates() -> dict[str, float]:
     if raw:
         try:
             parsed = json.loads(raw)
-            out = {}
+            out: dict[str, float] = {}
             for code, rate in parsed.items():
                 code_u = str(code).upper()
                 try:
@@ -216,13 +213,11 @@ def _load_currency_rates() -> dict[str, float]:
                 except (TypeError, ValueError):
                     continue
             if out:
-                if "GBP" not in out:
-                    out["GBP"] = 1.0
+                out.setdefault("GBP", 1.0)
                 return out
         except Exception:
             logging.warning("Invalid JOBCUS_CURRENCY_RATES env; falling back to defaults.")
     return DEFAULT_CURRENCY_RATES.copy()
-
 
 def _load_plan_price_ids() -> dict[str, dict[str, str | None]]:
     return {
@@ -264,15 +259,13 @@ def _load_plan_price_ids() -> dict[str, dict[str, str | None]]:
         },
     }
 
-
 PLAN_BASE_PRICES: dict[str, Decimal] = {
-    "free": Decimal("0"),
-    "weekly": Decimal("7"),
-    "standard": Decimal("19"),
-    "premium": Decimal("192"),
+    "free":        Decimal("0"),
+    "weekly":      Decimal("7"),
+    "standard":    Decimal("19"),
+    "premium":     Decimal("192"),
     "employer_jd": Decimal("23"),
 }
-
 PLAN_PERIODS: dict[str, str] = {
     "free": "/mo",
     "weekly": "/week",
@@ -282,22 +275,20 @@ PLAN_PERIODS: dict[str, str] = {
 }
 
 app.config["CURRENCY_RATES"] = _load_currency_rates()
-app.config["PLAN_PRICE_IDS"] = _load_plan_price_ids()
+app.config["PLAN_PRICE_IDS"]  = _load_plan_price_ids()
 
-
+# --- Helpers ---
 def _coerce_language(code: str | None) -> str:
     if not code:
         return DEFAULT_LOCALE
     lang = str(code).lower()
     return lang if lang in SUPPORTED_LANGUAGES else DEFAULT_LOCALE
 
-
 def _coerce_currency(code: str | None) -> str:
     if not code:
         return DEFAULT_CURRENCY
     cur = str(code).upper()
     return cur if cur in SUPPORTED_CURRENCIES else DEFAULT_CURRENCY
-
 
 def _format_amount_html(amount: Decimal) -> str:
     quant = amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -308,15 +299,13 @@ def _format_amount_html(amount: Decimal) -> str:
         return whole_fmt
     return f"{whole_fmt}<span class='cents'>.{frac}</span>"
 
-
 def convert_currency(amount: Decimal | float | str, target_currency: str | None = None) -> Decimal:
     currency = _coerce_currency(target_currency)
     rates = app.config.get("CURRENCY_RATES") or DEFAULT_CURRENCY_RATES
-    base_rate = Decimal(str(rates.get("GBP", 1)))
+    base_rate   = Decimal(str(rates.get("GBP", 1)))
     target_rate = Decimal(str(rates.get(currency, rates.get(DEFAULT_CURRENCY, 1))))
     value = Decimal(str(amount))
     return (value * target_rate / base_rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
 
 def plan_price_display(plan_code: str, currency: str | None = None) -> dict[str, object]:
     code = (plan_code or "").lower()
@@ -329,11 +318,9 @@ def plan_price_display(plan_code: str, currency: str | None = None) -> dict[str,
             "period": PLAN_PERIODS.get(code, "/mo"),
             "currency": DEFAULT_CURRENCY,
         }
-
     currency_code = _coerce_currency(currency)
-    converted = convert_currency(base_amount, currency_code)
+    converted     = convert_currency(base_amount, currency_code)
     currency_meta = SUPPORTED_CURRENCIES.get(currency_code, SUPPORTED_CURRENCIES[DEFAULT_CURRENCY])
-
     return {
         "symbol": currency_meta["symbol"],
         "amount_html": Markup(_format_amount_html(converted)),
@@ -342,82 +329,69 @@ def plan_price_display(plan_code: str, currency: str | None = None) -> dict[str,
         "currency": currency_code,
     }
 
-
 def build_plan_price_matrix(currency: str | None = None) -> dict[str, dict[str, object]]:
     cur = _coerce_currency(currency)
     return {code: plan_price_display(code, cur) for code in PLAN_BASE_PRICES.keys()}
 
-
 def _current_currency() -> str:
-    stored = session.get("currency") if hasattr(session, "get") else None
+    # if user manually picked one, honour it
+    stored = session.get("currency")
     if stored and stored in SUPPORTED_CURRENCIES:
         return stored
-    locale = get_locale()
-    lang = str(locale) if locale else DEFAULT_LOCALE
+    # else infer from active language
+    lang = str(get_locale() or DEFAULT_LOCALE)
     fallback = LANGUAGE_DEFAULT_CURRENCY.get(lang, DEFAULT_CURRENCY)
     return _coerce_currency(fallback)
 
-
+# --- Single source of truth: locale selector using session["lang"] ---
 def select_locale() -> str:
-    stored = session.get("language") if hasattr(session, "get") else None
-    if stored and stored in SUPPORTED_LANGUAGES:
-        return stored
-
-    cookie_lang = request.cookies.get("jobcus_lang") if request else None
-    if cookie_lang and cookie_lang in SUPPORTED_LANGUAGES:
-        session["language"] = cookie_lang
-        return cookie_lang
-
-    best = request.accept_languages.best_match(list(SUPPORTED_LANGUAGES.keys())) if request else None
-    lang = best or DEFAULT_LOCALE
-    session["language"] = _coerce_language(lang)
-    return session["language"]
-
-# IMPORTANT: call this AFTER app is created, before first request handling
-babel.init_app(app, locale_selector=select_locale)
-
-app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
-app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
-
-# --- your existing locale selector ---
-def select_locale():
     # 1) explicit session choice
     lang = session.get("lang")
-    if lang and lang in SUPPORTED_LANGUAGES:
+    if lang in SUPPORTED_LANGUAGES:
         return lang
 
     # 2) ?lang=xx fallback
     arg = request.args.get("lang")
-    if arg and arg in SUPPORTED_LANGUAGES:
+    if arg in SUPPORTED_LANGUAGES:
         session["lang"] = arg
         return arg
 
-    # 3) browser header
-    return request.accept_languages.best_match(list(SUPPORTED_LANGUAGES.keys())) or DEFAULT_LOCALE
+    # 3) cookie from previous visit
+    cookie_lang = request.cookies.get("jobcus_lang")
+    if cookie_lang in SUPPORTED_LANGUAGES:
+        session["lang"] = cookie_lang
+        return cookie_lang
 
+    # 4) browser header
+    best = request.accept_languages.best_match(list(SUPPORTED_LANGUAGES))
+    return best or DEFAULT_LOCALE
 
+# Bind Babel AFTER select_locale is defined
+babel.init_app(app, locale_selector=select_locale)
+app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
+app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
+
+# Keep session in a consistent shape & auto-choose currency from lang
 @app.before_request
 def ensure_locale_preferences():
-    lang = _coerce_language(session.get("language"))
-    if session.get("language") != lang:
-        session["language"] = lang
+    lang = _coerce_language(session.get("lang"))
+    if session.get("lang") != lang:
+        session["lang"] = lang
 
     manual_currency = bool(session.get("currency_manual", False))
-    stored_currency = session.get("currency") if not manual_currency else session.get("currency")
-    if not stored_currency:
-        default_currency = LANGUAGE_DEFAULT_CURRENCY.get(lang, DEFAULT_CURRENCY)
-        session["currency"] = _coerce_currency(default_currency)
-    elif stored_currency not in SUPPORTED_CURRENCIES:
-        session["currency"] = _coerce_currency(stored_currency)
+    if not manual_currency:
+        if not session.get("currency"):
+            session["currency"] = _coerce_currency(LANGUAGE_DEFAULT_CURRENCY.get(lang, DEFAULT_CURRENCY))
+        elif session["currency"] not in SUPPORTED_CURRENCIES:
+            session["currency"] = _coerce_currency(session["currency"])
 
     if "currency_manual" not in session:
         session["currency_manual"] = False
 
-
+# Inject handy values into Jinja
 @app.context_processor
 def inject_locale_meta():
-    lang = session.get("language", DEFAULT_LOCALE)
-    lang = _coerce_language(lang)
+    lang = _coerce_language(session.get("lang", DEFAULT_LOCALE))
     currency = _current_currency()
     return {
         "available_languages": SUPPORTED_LANGUAGES,
@@ -428,7 +402,7 @@ def inject_locale_meta():
         "current_currency_meta": SUPPORTED_CURRENCIES.get(currency, SUPPORTED_CURRENCIES[DEFAULT_CURRENCY]),
     }
 
-
+# Expose price helper to templates explicitly
 app.jinja_env.globals.update(plan_price_display=plan_price_display)
 
 # Validate required admin creds
@@ -4129,6 +4103,15 @@ def i18n_debug():
 @app.route("/_locale")
 def _locale():
     return str(get_locale())
+
+@app.route("/lang/<code>")
+def change_lang(code):
+    resp = redirect(request.referrer or url_for("index"))
+    if code in SUPPORTED_LANGUAGES:
+        session["lang"] = code
+        resp.set_cookie("jobcus_lang", code, max_age=60*60*24*365, samesite="Lax", secure=True)
+    return resp
+
 
 
 # --- Entrypoint ---
