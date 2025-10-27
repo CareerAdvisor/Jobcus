@@ -30,7 +30,7 @@ def _normalize_feature(feature: str) -> str:
 PLAN_QUOTAS = {
     "free": {
         # your existing keys
-        "chat_messages":   Quota("total", 10),
+        "chat_messages":   Quota("total", 15),
         "resume_analyzer": Quota("month", 2),
         "cover_letter":    Quota("month", 1),
         "skill_gap":       Quota("month", 1),
@@ -66,7 +66,7 @@ PLAN_QUOTAS = {
     },
 
     "standard": {
-        "chat_messages":   Quota("month", 600),
+        "chat_messages":   Quota("month", None),
         "resume_analyzer": Quota("month", 50),
         "cover_letter":    Quota("month", 20),
         "skill_gap":       Quota("month", None),
@@ -83,7 +83,7 @@ PLAN_QUOTAS = {
     },
 
     "premium": {
-        "chat_messages":   Quota("year", 10800),
+        "chat_messages":   Quota("year", None),
         "resume_analyzer": Quota("month", None),
         "cover_letter":    Quota("month", None),
         "skill_gap":       Quota("month", None),
