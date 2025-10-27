@@ -1110,7 +1110,7 @@ def allowed_models_for_plan(plan: str) -> list[str]:
     WEEKLY_DEFAULT    = (os.getenv("WEEKLY_MODEL_DEFAULT",
                            os.getenv("PAID_MODEL_DEFAULT", "gpt-4o-mini")) or "gpt-4o").strip()
     STANDARD_DEFAULT  = (os.getenv("STANDARD_MODEL_DEFAULT", "gpt-4o-mini") or "gpt-4o").strip()
-    PREMIUM_DEFAULT   = (os.getenv("PREMIUM_MODEL_DEFAULT", "gpt-4o") or "gpt-4o").strip()
+    PREMIUM_DEFAULT   = (os.getenv("PREMIUM_MODEL_DEFAULT", "gpt-4o") or "gpt-5").strip()
 
     # NEW: Employer JD default (choose your desired default)
     EMPLOYER_JD_DEFAULT = (os.getenv("EMPLOYER_MODEL_DEFAULT",
