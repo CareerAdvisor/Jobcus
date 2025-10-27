@@ -146,13 +146,6 @@ header {
     border-radius: 4px;
   }
 
-  /* Hide mobile nav & hamburger on desktop */
-  .hamburger,
-  .mobile-nav {
-    display: none !important;
-  }
-}
-
 /*=== Dropdown Menu Styling ===*/
 .dropdown {
   position: relative;
