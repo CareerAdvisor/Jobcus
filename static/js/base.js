@@ -320,6 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       menu.classList.toggle("show", willOpen);
       btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    });
   });
 
   // Close menus on outside click
@@ -365,7 +366,6 @@ document.addEventListener("DOMContentLoaded", () => {
       toggleLocaleMenu(false);
     }
   });
-});
 
 // Close menus on Escape
 document.addEventListener("keydown", (e) => {
