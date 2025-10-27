@@ -685,21 +685,22 @@
 
 .mobile-nav.show { display: flex; }
 
+/* Mobile menu overlay — hidden by default, clickable when .show is added */
 .mobile-nav-overlay {
   position: fixed;
   inset: 0;
   background: rgba(15, 41, 70, 0.35);
   backdrop-filter: blur(2px);
   opacity: 0;
-  pointer-events: none !important;
+  pointer-events: none;         /* default: no clicks */
   transition: opacity .2s ease;
-  z-index: 3900; /* just below the panel, above header */
-  display: none !important;
+  z-index: 3900;                /* just below the panel */
+  display: block;               /* IMPORTANT: must exist in DOM */
 }
 
 .mobile-nav-overlay.show {
   opacity: 1;
-  pointer-events: auto;
+  pointer-events: auto;         /* your line — enables click-to-close */
 }
 
 @media (max-width: 600px) {
@@ -927,3 +928,7 @@ body.mobile-nav-open, html.mobile-nav-open { overflow: hidden !important; }
   }
 }
 
+/* DEV ONLY – neutralize overlay while using DevTools device emulation */
+@media (max-width: 767px){
+  .mobile-nav-overlay { pointer-events: none !important; }
+}
