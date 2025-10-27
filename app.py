@@ -1123,7 +1123,7 @@ def allowed_models_for_plan(plan: str) -> list[str]:
     STANDARD_ALLOW  = [s.strip() for s in (os.getenv("STANDARD_MODEL_ALLOW",
                            os.getenv("PAID_MODEL_ALLOW", "")) or "").split(",") if s.strip()]
     PREMIUM_ALLOW   = [s.strip() for s in (os.getenv("PREMIUM_MODEL_ALLOW",
-                           "gpt-4o-mini, gpt-40, gpt-5, gpt-5-thinking") or "").split(",") if s.strip()]
+                           "gpt-4o-mini, gpt-4o, gpt-5-mini, gpt-5") or "").split(",") if s.strip()]
 
     # NEW: Employer JD allow-list
     EMPLOYER_JD_ALLOW = [s.strip() for s in (
