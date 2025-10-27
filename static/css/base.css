@@ -690,19 +690,15 @@
 }
 
 .mobile-nav-overlay {
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background: rgba(15, 41, 70, 0.35);
   backdrop-filter: blur(2px);
-  opacity: 0;
-  pointer-events: none;
+  opacity: 0; pointer-events: none;
   transition: opacity .2s ease;
-  z-index: 3500;
+  z-index: 3500;             /* below the menu, above content */
 }
-
 .mobile-nav-overlay.show {
-  opacity: 1;
-  pointer-events: auto;
+  opacity: 1; pointer-events: auto;
 }
 
 body.mobile-nav-open,
