@@ -691,9 +691,10 @@
   background: rgba(15, 41, 70, 0.35);
   backdrop-filter: blur(2px);
   opacity: 0;
-  pointer-events: none;
+  pointer-events: none !important;
   transition: opacity .2s ease;
   z-index: 3900; /* just below the panel, above header */
+  display: none !important;
 }
 
 .mobile-nav-overlay.show {
@@ -895,6 +896,3 @@ body.mobile-nav-open, html.mobile-nav-open { overflow: hidden !important; }
     padding: 6px 8px !important;
   }
 }
-
-/* optional: remove dimmed backdrop to keep it light */
-.mobile-nav-overlay { display: none !important; }
