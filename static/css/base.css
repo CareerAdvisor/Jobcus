@@ -649,56 +649,54 @@
 .mobile-nav {
   display: none;
   position: fixed;
-
-  /* position it under the fixed header and anchor to the right */
   top: var(--header-offset, 72px);
+  left: max(16px, env(safe-area-inset-left, 16px));
   right: max(16px, env(safe-area-inset-right, 16px));
-  left: auto;                                  /* <-- not full width */
-  width: min(420px, calc(100% - 24px));        /* card width */
-
-  bottom: auto;                                /* no full-height sheet */
+  bottom: max(16px, env(safe-area-inset-bottom, 16px));
   background: #fff;
   border: 1px solid #dbe5f3;
   border-radius: 20px;
   box-shadow: 0 18px 36px rgba(15, 41, 70, 0.18);
-  padding: 18px 18px 24px;
+  padding: 20px 20px 32px;
   flex-direction: column;
   gap: 14px;
-
-  /* scrolling inside the card */
-  max-height: calc(100vh - var(--header-offset, 72px) - 32px);
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   touch-action: pan-y;
-
-  z-index: 4000;                                /* above header */
+  z-index: 4000;
+  max-height: calc(100vh - var(--header-offset, 72px) - 32px);
 }
+
 @supports (height: 100dvh) {
   .mobile-nav {
-    max-height: calc(100dvh - var(--header-offset, 72px) - 32px);
+    max-height: calc(100vh - var(--header-offset, 72px) - 32px);
   }
 }
-.mobile-nav.show { display: flex !important; }
 
 .mobile-nav::after {
   content: "";
   flex: 0 0 env(safe-area-inset-bottom, 0px);
 }
 
+.mobile-nav.show { display: flex !important; }
+
 .mobile-nav-overlay {
-  position: fixed; inset: 0;
+  position: fixed;
+  inset: 0;
   background: rgba(15, 41, 70, 0.35);
   backdrop-filter: blur(2px);
-  opacity: 0; pointer-events: none;
+  opacity: 0;
+  pointer-events: none;
   transition: opacity .2s ease;
-  z-index: 3500;             /* below the menu, above content */
+  z-index: 3500;
 }
+
 .mobile-nav-overlay.show {
-  opacity: 1; pointer-events: auto;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 body.mobile-nav-open,
@@ -821,22 +819,4 @@ html.mobile-nav-open {
 .site-footer .footer-note-static .footer-link:hover{
   color: var(--blue) !important;         /* keep same color on hover */
   text-decoration: underline;            /* classic underline on hover */
-}
-
-/* Hard overrides so mobile card wins on phones */
-#mobileMenu {
-  position: fixed !important;
-  top: calc(var(--header-offset, 72px) + 8px) !important;
-  right: max(12px, env(safe-area-inset-right, 12px)) !important;
-  left: auto !important;
-  width: min(420px, calc(100% - 24px)) !important;
-  max-height: calc(100dvh - var(--header-offset, 72px) - 32px) !important;
-  display: none;
-  z-index: 4000 !important;
-  overflow-y: auto !important;
-}
-#mobileMenu.show { display: flex !important; }
-
-#mobileOverlay {
-  z-index: 3500 !important;
 }
