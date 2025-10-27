@@ -66,7 +66,7 @@
 {% set is_paid      = (is_paid if is_paid is defined else (plan_code != 'free')) %}
 {% set free_model   = (free_model if free_model is defined else 'gpt-4o-mini') %}
 {% set model_default= (model_default if model_default is defined else (is_paid and 'gpt-4o-mini' or free_model)) %}
-{% set model_options= (model_options if model_options is defined else ['gpt-4o','gpt-4o-mini']) %}
+{% set model_options= (model_options if model_options is defined else ['gpt-4o','gpt-4o-mini', 'gpt-5']) %}
 {% set show_upgrade = (show_upgrade if show_upgrade is defined else (plan_code == 'free')) %}
 {% set cloud_history = 1 if plan_code in ['standard','premium'] else 0 %}
 
