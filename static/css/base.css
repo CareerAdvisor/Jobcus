@@ -649,39 +649,45 @@
 .mobile-nav {
   display: none;
   position: fixed;
+
+  /* position it under the fixed header and anchor to the right */
   top: var(--header-offset, 72px);
-  left: max(16px, env(safe-area-inset-left, 16px));
   right: max(16px, env(safe-area-inset-right, 16px));
-  bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  left: auto;                                  /* <-- not full width */
+  width: min(420px, calc(100% - 24px));        /* card width */
+
+  bottom: auto;                                /* no full-height sheet */
   background: #fff;
   border: 1px solid #dbe5f3;
   border-radius: 20px;
   box-shadow: 0 18px 36px rgba(15, 41, 70, 0.18);
-  padding: 20px 20px 32px;
+  padding: 18px 18px 24px;
   flex-direction: column;
   gap: 14px;
+
+  /* scrolling inside the card */
+  max-height: calc(100vh - var(--header-offset, 72px) - 32px);
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   touch-action: pan-y;
-  z-index: 4000;
-  max-height: calc(100vh - var(--header-offset, 72px) - 32px);
-}
 
+  z-index: 4000;                                /* above header */
+}
 @supports (height: 100dvh) {
   .mobile-nav {
-    max-height: calc(100vh - var(--header-offset, 72px) - 32px);
+    max-height: calc(100dvh - var(--header-offset, 72px) - 32px);
   }
 }
+.mobile-nav.show { display: flex !important; }
 
 .mobile-nav::after {
   content: "";
   flex: 0 0 env(safe-area-inset-bottom, 0px);
 }
-
-.mobile-nav.show { display: flex !important; }
 
 .mobile-nav-overlay {
   position: fixed;
