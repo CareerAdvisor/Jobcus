@@ -822,7 +822,9 @@ function applyConsent(consent) {
   function setOffset(){
     if (!header) return;
     const h = header.offsetHeight || 72;
+    // Keep both vars in sync so CSS can safely read either.
     root.style.setProperty('--header-offset', h + 'px');
+    root.style.setProperty('--header-height', h + 'px'); // <-- ensures CSS var exists
   }
   window.addEventListener('load', setOffset);
   window.addEventListener('resize', setOffset);
