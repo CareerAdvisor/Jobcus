@@ -326,7 +326,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   
     // Make sure the mobile overlay isn’t intercepting events
     const overlay = document.querySelector('.mobile-nav-overlay');
-    overlay && overlay.classList.remove('show');
+    if (overlay) overlay.classList.remove('show');
   });
   </script>
 
