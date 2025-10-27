@@ -193,7 +193,7 @@ DEFAULT_CURRENCY_RATES = {
 app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
 app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
 
-babel = Babel(app)
+babel = Babel()
 app.jinja_env.globals.update(_=_)
 
 # Public Supabase values from env
