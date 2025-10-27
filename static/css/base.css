@@ -865,10 +865,6 @@ body.mobile-nav-open, html.mobile-nav-open { overflow: hidden !important; }
 :root { --header-height: 60px; } /* matches your header height */
 
 @media (max-width: 767px){
-  html, body, * { cursor: auto !important; }
-}
-
-@media (max-width: 767px){
   #mobileMenu {
     position: absolute !important;
     top: var(--header-height, 60px) !important; /* sit under header */
@@ -898,5 +894,33 @@ body.mobile-nav-open, html.mobile-nav-open { overflow: hidden !important; }
 
   #mobileMenu .dropdown-content {
     padding: 6px 8px !important;
+  }
+}
+
+/* --- Allow wheel/trackpad scrolling in mobile viewport emulation --- */
+@media (max-width: 767px){
+  html, body {
+    height: auto !important;
+    overflow-y: auto !important;   /* was often hidden for mobile drawers */
+    overscroll-behavior-y: contain;
+  }
+
+  /* If you lock body when mobile menu opens, don't hard-lock in dev emulation */
+  body.mobile-nav-open {
+    position: static !important;   /* avoid fixed-locking the page */
+    overflow: auto !important;
+  }
+
+  /* If any wrapper is the scroll container, make sure it can scroll with wheel */
+  #app, #root, .page, .main, .content, .container {
+    max-height: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y !important;  /* enables both touch & wheel scrolling */
+  }
+
+  /* Safety valve: if something globally set touch-action:none, undo it */
+  body * {
+    touch-action: auto !important;
   }
 }
