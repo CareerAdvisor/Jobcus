@@ -270,10 +270,10 @@ def _load_plan_price_ids() -> dict[str, dict[str, str | None]]:
 
 PLAN_BASE_PRICES: dict[str, Decimal] = {
     "free": Decimal("0"),
-    "weekly": Decimal("7.99"),
-    "standard": Decimal("23.99"),
-    "premium": Decimal("229"),
-    "employer_jd": Decimal("25"),
+    "weekly": Decimal("7"),
+    "standard": Decimal("19"),
+    "premium": Decimal("192"),
+    "employer_jd": Decimal("23"),
 }
 
 PLAN_PERIODS: dict[str, str] = {
@@ -2037,9 +2037,9 @@ def _plans():
                 _("<strong>1</strong> AI cover letter / month"),
                 _("AI Resume Builder (basic templates; <strong>1</strong> download / month)"),
                 _("Skill-Gap snapshot (1 basic analysis / month)"),
-                _("Job Insights (basic charts)"),
+                _("Job Insights"),
                 _("Interview Coach (limited practice; <strong>1</strong> / month)"),
-                _("Local device history"),
+                _("Chat History saved"),
             ],
         },
         "weekly": {
@@ -2050,13 +2050,14 @@ def _plans():
             "tagline": _("For urgent applications"),
             "display_price": prices["weekly"],
             "features": [
+                 _("Only GPT-4o-mini model), 
                 _("AI Chat credits: <strong>100 responses</strong> / week"),
                 _("<strong>10</strong> resume analyses / week"),
                 _("<strong>5</strong> AI cover letters / week"),
                 _("Resume Builder: <strong>5 downloads</strong> / week"),
                 _("“Rebuild with AI” for resumes"),
                 _("Skill-Gap (standard)"),
-                _("Job Insights (full access)"),
+                _("Job Insights"),
                 _("Interview Coach sessions"),
                 _("Email support"),
             ],
@@ -2069,6 +2070,7 @@ def _plans():
             "tagline": _("Serious applications, smarter tools"),
             "display_price": prices["standard"],
             "features": [
+                _("GPT-4o-mini and GPT-4o models), 
                 _("AI Chat credits: <strong>unlimited</strong> / month"),
                 _("<strong>50</strong> resume analyses / month (deep ATS + JD match)"),
                 _("<strong>20</strong> AI cover letters / month"),
@@ -2090,6 +2092,7 @@ def _plans():
             "tagline": _("Best value for ongoing career growth"),
             "display_price": prices["premium"],
             "features": [
+                _("GPT-4o-mini and GPT-4o models),
                 _("AI Chat credits: <strong>unlimited</strong> / year (~1,000 / mo)"),
                 _("<strong>Unlimited*</strong> resume analyses (fair use)"),
                 _("<strong>Unlimited</strong> AI cover letters (fair use)"),
@@ -2393,7 +2396,7 @@ PRICE_TO_PLAN = {
     os.getenv("STRIPE_PRICE_STANDARD"):     "standard",
     os.getenv("STRIPE_PRICE_PREMIUM"):      "premium",
 
-    # NEW — Employer JD Generator (£25/mo)
+    # NEW — Employer JD Generator (£23/mo)
     os.getenv("STRIPE_PRICE_EMPLOYER_JD"):  "employer_jd",
 }
 
