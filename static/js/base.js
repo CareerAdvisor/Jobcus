@@ -264,6 +264,12 @@ window.apiFetch = async function apiFetch(url, options = {}) {
  *     + Chat sidebar open/close (a11y-safe: focus + inert)
  * ───────────────────────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", () => {
+  // --- kill any leftover mobile overlay/classes on load ---
+  const overlay = document.querySelector(".mobile-nav-overlay");
+  if (overlay) overlay.classList.remove("show");
+  document.body.classList.remove("mobile-nav-open");
+  // --------------------------------------------------------
+
   // User menu
   const userBtn = document.getElementById("userMenuBtn");
   const userDrop = document.getElementById("userDropdown");
@@ -319,46 +325,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Close menus on outside click
   document.addEventListener("click", (e) => {
-  // a) Mobile menu
-  const mobileMenu = document.getElementById("mobileMenu");
-  const hamburger = document.querySelector(".hamburger");
-  if (
-    mobileMenu?.classList.contains("show") &&
-    !mobileMenu.contains(e.target) &&
-    !hamburger?.contains(e.target)
-  ) {
-    setMobileMenu(false);
-  }
-
-  // b) Feature dropdowns
-  document.querySelectorAll(".dropdown-content").forEach((drop) => {
-    const btn = drop.previousElementSibling;
+    // a) Mobile menu
+    const mobileMenu = document.getElementById("mobileMenu");
+    const hamburger = document.querySelector(".hamburger");
     if (
-      drop.classList.contains("show") &&
-      !drop.contains(e.target) &&
-      !btn?.contains(e.target)
+      mobileMenu?.classList.contains("show") &&
+      !mobileMenu.contains(e.target) &&
+      !hamburger?.contains(e.target)
     ) {
-      drop.classList.remove("show");
+      setMobileMenu(false);
+    }
+
+    // b) Feature dropdowns
+    document.querySelectorAll(".dropdown-content").forEach((drop) => {
+      const btn = drop.previousElementSibling;
+      if (
+        drop.classList.contains("show") &&
+        !drop.contains(e.target) &&
+        !btn?.contains(e.target)
+      ) {
+        drop.classList.remove("show");
+      }
+    });
+
+    // c) User dropdown
+    if (
+      userDrop?.classList.contains("show") &&
+      !userDrop.contains(e.target) &&
+      !userBtn?.contains(e.target)
+    ) {
+      toggleUserMenu(false);
+    }
+
+    // d) Locale menu
+    if (
+      localeMenu?.classList.contains("open") &&
+      !localeMenu.contains(e.target) &&
+      !localeToggle?.contains(e.target)
+    ) {
+      toggleLocaleMenu(false);
     }
   });
-
-  // c) User dropdown
-  if (
-    userDrop?.classList.contains("show") &&
-    !userDrop.contains(e.target) &&
-    !userBtn?.contains(e.target)
-  ) {
-    toggleUserMenu(false);
-  }
-
-  // d) Locale menu
-  if (
-    localeMenu?.classList.contains("open") &&
-    !localeMenu.contains(e.target) &&
-    !localeToggle?.contains(e.target)
-  ) {
-    toggleLocaleMenu(false);
-  }
 });
 
 // Close menus on Escape
