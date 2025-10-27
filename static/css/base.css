@@ -822,3 +822,21 @@ html.mobile-nav-open {
   color: var(--blue) !important;         /* keep same color on hover */
   text-decoration: underline;            /* classic underline on hover */
 }
+
+/* Hard overrides so mobile card wins on phones */
+#mobileMenu {
+  position: fixed !important;
+  top: calc(var(--header-offset, 72px) + 8px) !important;
+  right: max(12px, env(safe-area-inset-right, 12px)) !important;
+  left: auto !important;
+  width: min(420px, calc(100% - 24px)) !important;
+  max-height: calc(100dvh - var(--header-offset, 72px) - 32px) !important;
+  display: none;
+  z-index: 4000 !important;
+  overflow-y: auto !important;
+}
+#mobileMenu.show { display: flex !important; }
+
+#mobileOverlay {
+  z-index: 3500 !important;
+}
