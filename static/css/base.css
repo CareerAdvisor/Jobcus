@@ -865,6 +865,10 @@ body.mobile-nav-open, html.mobile-nav-open { overflow: hidden !important; }
 :root { --header-height: 60px; } /* matches your header height */
 
 @media (max-width: 767px){
+  html, body, * { cursor: auto !important; }
+}
+
+@media (max-width: 767px){
   #mobileMenu {
     position: absolute !important;
     top: var(--header-height, 60px) !important; /* sit under header */
