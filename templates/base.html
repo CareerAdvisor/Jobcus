@@ -129,7 +129,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <a href="/job-insights">{{ _("Job Insights") }}</a>
               </div>
             </div>
-            <a href="/pricing">{{ _("Pricing") }}</a>
             <a href="/employers">{{ _("Employers") }}</a>
           </nav>
 
@@ -195,7 +194,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               {% if current_user.is_authenticated %}
                 <div class="ud-email">{{ _email }}</div>
                 <hr class="ud-sep">
-                <a class="ud-item" href="{{ url_for('pricing') }}">⬆️ {{ _("Upgrade plan") }}</a>
                 <a class="ud-item" href="{{ url_for('dashboard') }}">👤 {{ _name }}</a>
                 <a class="ud-item" href="{{ url_for('logout') }}">📦 {{ _("Log out") }}</a>
               {% else %}
@@ -224,7 +222,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <a href="/job-insights">{{ _("Job Insights") }}</a>
             </div>
           </div>
-          <a href="/pricing">{{ _("Pricing") }}</a>
           <a href="/employers">{{ _("Employers") }}</a>
           <div class="mobile-locale">
             <div class="mobile-locale-title">{{ _("Language & currency") }}</div>
