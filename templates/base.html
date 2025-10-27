@@ -195,11 +195,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               {% if current_user.is_authenticated %}
                 <div class="ud-email">{{ _email }}</div>
                 <hr class="ud-sep">
-                <a class="ud-item" href="{{ url_for('pricing') }}">⬆️ Upgrade plan</a>
+                <a class="ud-item" href="{{ url_for('pricing') }}">⬆️ {{ _("Upgrade plan") }}</a>
                 <a class="ud-item" href="{{ url_for('dashboard') }}">👤 {{ _name }}</a>
-                <a class="ud-item" href="{{ url_for('logout') }}">📦 Log out</a>
+                <a class="ud-item" href="{{ url_for('logout') }}">📦 {{ _("Log out") }}</a>
               {% else %}
-                <a class="ud-item" href="{{ url_for('account') }}">🔑 Sign up / Log in</a>
+                <a class="ud-item" href="{{ url_for('account') }}">🔑 {{ _("Sign up / Log in") }}</a>
               {% endif %}
             </div>
           </div>
