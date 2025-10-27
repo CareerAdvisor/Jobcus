@@ -94,52 +94,41 @@ header {
   background-color: #333;
 }
 
-/* Mobile Menu */
 .mobile-nav {
-  display: none;
+  display: none; 
   flex-direction: column;
-  background: #fff;
+  background: #ffffff;
   border: 1px solid #ccc;
   position: absolute;
   top: 60px;
   right: 10px;
   z-index: 1000;
-  min-width: 200px;
+  min-width: 180px;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .mobile-nav.show {
-  display: flex !important;
+  display: flex;
 }
 
 .mobile-nav a {
   padding: 12px 16px;
-  border-bottom: 1px solid #eee;
+  display: block;
+  text-decoration: none;
   color: #104879;
   font-weight: 600;
-  text-decoration: none;
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .mobile-nav a:hover {
   background-color: #f0f6ff;
+  color: #062c55;
 }
 
-/* Language/Currency dropdown on mobile */
-#langMenu {
-  display: none;
-  flex-direction: column;
-  background: #ffffff;
-  border: 1px solid #ccc;
-  position: absolute;
-  right: 0;
-  top: 100%;
-  z-index: 1001;
-  border-radius: 6px;
-}
-
-#langMenu.show {
-  display: flex;
+.mobile-nav .dropbtn:hover {
+  color: #ffffff !important;
 }
 
 /* On screens ≥ 768px, switch */

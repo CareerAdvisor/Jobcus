@@ -637,7 +637,7 @@
 .site-header{
   position: fixed !important;
   top: 0; left: 0; right: 0;
-  z-index: 2500;
+  z-index: 2000;
   background: rgba(255,255,255,.92);
   -webkit-backdrop-filter: saturate(120%) blur(6px);
   backdrop-filter: saturate(120%) blur(6px);
@@ -649,7 +649,7 @@
 .mobile-nav {
   display: none;
   position: fixed;
-  top: var(--header-offset, 72px);
+  top: var(--header-height);
   left: max(16px, env(safe-area-inset-left, 16px));
   right: max(16px, env(safe-area-inset-right, 16px));
   bottom: max(16px, env(safe-area-inset-bottom, 16px));
@@ -666,13 +666,13 @@
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   touch-action: pan-y;
-  z-index: 4000;
-  max-height: calc(100vh - var(--header-offset, 72px) - 32px);
+  z-index: 1200;
+  max-height: calc(100vh - var(--header-height) - 32px);
 }
 
 @supports (height: 100dvh) {
   .mobile-nav {
-    max-height: calc(100vh - var(--header-offset, 72px) - 32px);
+    max-height: calc(100dvh - var(--header-height) - 32px);
   }
 }
 
@@ -681,7 +681,7 @@
   flex: 0 0 env(safe-area-inset-bottom, 0px);
 }
 
-.mobile-nav.show { display: flex !important; }
+.mobile-nav.show { display: flex; }
 
 .mobile-nav-overlay {
   position: fixed;
@@ -691,7 +691,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity .2s ease;
-  z-index: 3500;
+  z-index: 1100;
 }
 
 .mobile-nav-overlay.show {
