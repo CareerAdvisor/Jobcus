@@ -370,6 +370,22 @@ def select_locale() -> str:
 
 babel.init_app(app, locale_selector=select_locale)
 
+# --- your existing locale selector ---
+def select_locale():
+    # 1) explicit session choice
+    lang = session.get("lang")
+    if lang and lang in SUPPORTED_LANGUAGES:
+        return lang
+
+    # 2) ?lang=xx fallback
+    arg = request.args.get("lang")
+    if arg and arg in SUPPORTED_LANGUAGES:
+        session["lang"] = arg
+        return arg
+
+    # 3) browser header
+    return request.accept_languages.best_match(list(SUPPORTED_LANGUAGES.keys())) or DEFAULT_LOCALE
+
 
 @app.before_request
 def ensure_locale_preferences():
