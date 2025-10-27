@@ -1106,16 +1106,16 @@ def allowed_models_for_plan(plan: str) -> list[str]:
     plan = (plan or "free").lower()
 
     # ---- Defaults (safe fallbacks if envs are missing) ----
-    FREE_DEFAULT      = (os.getenv("FREE_MODEL", "gpt-4o-mini") or "gpt-4o-mini").strip()
+    FREE_DEFAULT      = (os.getenv("FREE_MODEL", "gpt-4o-mini") or "gpt-4o").strip()
     WEEKLY_DEFAULT    = (os.getenv("WEEKLY_MODEL_DEFAULT",
-                           os.getenv("PAID_MODEL_DEFAULT", "gpt-4o-mini")) or "gpt-4o-mini").strip()
-    STANDARD_DEFAULT  = (os.getenv("STANDARD_MODEL_DEFAULT", "gpt-4o-mini") or "gpt-4o-mini").strip()
-    PREMIUM_DEFAULT   = (os.getenv("PREMIUM_MODEL_DEFAULT", "gpt-4o") or "gpt-4o").strip()
+                           os.getenv("PAID_MODEL_DEFAULT", "gpt-5-mini")) or "gpt-5").strip()
+    STANDARD_DEFAULT  = (os.getenv("STANDARD_MODEL_DEFAULT", "gpt-4o-mini") or "gpt-4o").strip()
+    PREMIUM_DEFAULT   = (os.getenv("PREMIUM_MODEL_DEFAULT", "gpt-5-mini") or "gpt-5").strip()
 
     # NEW: Employer JD default (choose your desired default)
     EMPLOYER_JD_DEFAULT = (os.getenv("EMPLOYER_MODEL_DEFAULT",
                               os.getenv("EMPLOYER_JD_MODEL_DEFAULT",
-                              os.getenv("STANDARD_MODEL_DEFAULT", "gpt-4o-mini"))) or "gpt-4o-mini").strip()
+                              os.getenv("STANDARD_MODEL_DEFAULT", "gpt-4o-mini"))) or "gpt-4o").strip()
 
     # ---- Allow-lists (comma-separated) ----
     WEEKLY_ALLOW    = [s.strip() for s in (os.getenv("WEEKLY_MODEL_ALLOW",
@@ -1123,7 +1123,7 @@ def allowed_models_for_plan(plan: str) -> list[str]:
     STANDARD_ALLOW  = [s.strip() for s in (os.getenv("STANDARD_MODEL_ALLOW",
                            os.getenv("PAID_MODEL_ALLOW", "")) or "").split(",") if s.strip()]
     PREMIUM_ALLOW   = [s.strip() for s in (os.getenv("PREMIUM_MODEL_ALLOW",
-                           "gpt-4o,gpt-5-thinking") or "").split(",") if s.strip()]
+                           "gpt-5,gpt-5-thinking") or "").split(",") if s.strip()]
 
     # NEW: Employer JD allow-list
     EMPLOYER_JD_ALLOW = [s.strip() for s in (
