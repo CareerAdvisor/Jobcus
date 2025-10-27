@@ -2050,7 +2050,7 @@ def _plans():
             "tagline": _("For urgent applications"),
             "display_price": prices["weekly"],
             "features": [
-                 _("Only GPT-4o-mini model), 
+                 _("Only GPT-4o-mini model"), 
                 _("AI Chat credits: <strong>100 responses</strong> / week"),
                 _("<strong>10</strong> resume analyses / week"),
                 _("<strong>5</strong> AI cover letters / week"),
@@ -2070,7 +2070,7 @@ def _plans():
             "tagline": _("Serious applications, smarter tools"),
             "display_price": prices["standard"],
             "features": [
-                _("GPT-4o-mini and GPT-4o models), 
+                _("GPT-4o-mini and GPT-4o models"), 
                 _("AI Chat credits: <strong>unlimited</strong> / month"),
                 _("<strong>50</strong> resume analyses / month (deep ATS + JD match)"),
                 _("<strong>20</strong> AI cover letters / month"),
@@ -2092,7 +2092,7 @@ def _plans():
             "tagline": _("Best value for ongoing career growth"),
             "display_price": prices["premium"],
             "features": [
-                _("GPT-4o-mini and GPT-4o models),
+                _("GPT-4o-mini and GPT-4o models"),
                 _("AI Chat credits: <strong>unlimited</strong> / year (~1,000 / mo)"),
                 _("<strong>Unlimited*</strong> resume analyses (fair use)"),
                 _("<strong>Unlimited</strong> AI cover letters (fair use)"),
