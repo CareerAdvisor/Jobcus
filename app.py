@@ -48,10 +48,10 @@ import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
 from flask_babel import Babel, _, get_locale
 try:
-    from babel.messages import pofile as _babel_pofile, mofile as _babel_mofile
+    from babel.messages import mofile as _babel_mofile, pofile as _babel_pofile
 except Exception:
-    _babel_pofile = None
     _babel_mofile = None
+    _babel_pofile = None
 from PIL import Image, ImageOps, ImageFilter
 
 # Optional HEIF/HEIC support (won't crash deploys if package isn't installed)
