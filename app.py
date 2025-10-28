@@ -420,6 +420,16 @@ def _norm_lang(code: str | None) -> str:
     base = c.split("-")[0]
     return base if base in SUPPORTED_LANGUAGES else DEFAULT_LOCALE
 
+def _apply_lang(lang_code: str):
+    lang = _norm_lang(lang_code)
+    session["lang"] = lang
+    resp = make_response(
+        redirect(request.args.get("next") or request.referrer or url_for("index"))
+    )
+    resp.set_cookie("jobcus_lang", lang,
+                    max_age=31536000, samesite="Lax", secure=True, path="/")
+    return resp
+
 # --- Define select_locale AFTER the constants
 def select_locale():
     lang = session.get("lang")
@@ -4161,17 +4171,6 @@ def diag_ocr():
         "heif_enabled": bool(HEIF_ENABLED),
     })
 
-def _apply_lang(lang_code: str):
-    # normalize and persist
-    lang = _norm_lang(lang_code)
-    session["lang"] = lang
-    resp = make_response(
-        redirect(request.args.get("next") or request.referrer or url_for("index"))
-    )
-    resp.set_cookie("jobcus_lang", lang,
-                    max_age=31536000, samesite="Lax", secure=True, path="/")
-    return resp
-    
 @app.route("/debug/i18n")
 def debug_i18n():
     return jsonify({
@@ -4190,14 +4189,9 @@ def _locale():
 
 @app.route("/lang/<code>")
 def change_lang(code):
-    lang = _norm_lang(code)
-    session["lang"] = lang
-    resp = make_response(redirect(request.referrer or url_for("index")))
-    resp.set_cookie("jobcus_lang", lang, max_age=31536000, samesite="Lax", secure=True, path="/")
-    return resp
+    return _apply_lang(code)
 
-# ✅ alias that matches the template's url_for('set_language', lang_code=...)
-@app.route("/locale/language/<lang_code>")
+@app.route("/locale/language/<lang_code>", endpoint="set_language")
 def set_language(lang_code):
     return _apply_lang(lang_code)
 
