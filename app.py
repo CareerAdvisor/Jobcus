@@ -157,8 +157,6 @@ app.config["DEBUG"] = DEBUG_MODE
 # i18n + Currency + Pricing
 # =========================
 
-app.jinja_env.globals.update(_=_)
-
 # --- Defaults / supported sets ---
 DEFAULT_LOCALE   = os.getenv("JOBCUS_DEFAULT_LOCALE", "en").lower()
 DEFAULT_CURRENCY = os.getenv("JOBCUS_DEFAULT_CURRENCY", "GBP").upper()
@@ -374,6 +372,9 @@ babel.init_app(app, locale_selector=select_locale)
 
 # Bind Babel AFTER select_locale is defined
 babel.init_app(app, locale_selector=select_locale)
+
+app.jinja_env.globals.update(_=_)
+app.jinja_env.globals.update(get_locale=get_locale)
 
 @app.before_request
 def _fix_lang():
