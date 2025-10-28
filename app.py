@@ -46,7 +46,7 @@ from werkzeug.utils import secure_filename
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
-from flask_babel import Babel, _, get_locale
+from flask_babel import Babel, _, get_locale, gettext
 from PIL import Image, ImageOps, ImageFilter
 import pytesseract
 
@@ -341,24 +341,24 @@ def _current_currency() -> str:
     return _coerce_currency(fallback)
 
 # --- Single source of truth: locale selector (session["lang"]) ---
-def select_locale() -> str:
-    # 1) session
-    lang = session.get("lang")
+def select_locale():
+    # 1) explicit session choice
+    lang = _norm_lang(session.get("lang"))
     if lang in SUPPORTED_LANGUAGES:
         return lang
     # 2) ?lang=xx
-    arg = request.args.get("lang")
+    arg = _norm_lang(request.args.get("lang"))
     if arg in SUPPORTED_LANGUAGES:
         session["lang"] = arg
         return arg
     # 3) cookie
-    cookie_lang = request.cookies.get("jobcus_lang")
-    if cookie_lang in SUPPORTED_LANGUAGES:
-        session["lang"] = cookie_lang
-        return cookie_lang
+    cook = _norm_lang(request.cookies.get("jobcus_lang"))
+    if cook in SUPPORTED_LANGUAGES:
+        session["lang"] = cook
+        return cook
     # 4) browser header
-    best = request.accept_languages.best_match(list(SUPPORTED_LANGUAGES))
-    return best or DEFAULT_LOCALE
+    best = request.accept_languages.best_match(list(SUPPORTED_LANGUAGES.keys()))
+    return _norm_lang(best)
 
 # Bind Babel AFTER select_locale is defined
 babel.init_app(app, locale_selector=select_locale)
@@ -4088,12 +4088,12 @@ def diag_ocr():
         "heif_enabled": bool(HEIF_ENABLED),
     })
 
-@app.get("/_i18n/debug")
+@app.route("/i18n-debug")
 def i18n_debug():
     return {
-        "session_language": session.get("language"),
-        "cookie_lang": request.cookies.get("jobcus_lang"),
-        "selected_locale": str(get_locale()),
+        "session_lang": session.get("lang"),
+        "babel_get_locale": str(get_locale()),
+        "sample": gettext("Hello, world!")
     }
 
 @app.route("/_locale")
@@ -4102,12 +4102,12 @@ def _locale():
 
 @app.route("/lang/<code>")
 def change_lang(code):
-    if code in SUPPORTED_LANGUAGES:
-        session["lang"] = code
-        resp = make_response(redirect(request.referrer or url_for("index")))
-        resp.set_cookie("jobcus_lang", code, max_age=60*60*24*365, samesite="Lax", secure=True)
-        return resp
-    return redirect(request.referrer or url_for("index"))
+    lang = _norm_lang(code)
+    session["lang"] = lang
+    resp = make_response(redirect(request.referrer or url_for("index")))
+    # persist for future visits
+    resp.set_cookie("jobcus_lang", lang, max_age=60*60*24*365, samesite="Lax", secure=True, path="/")
+    return resp
 
 # --- Entrypoint ---
 if __name__ == "__main__":
