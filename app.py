@@ -441,25 +441,18 @@ def _fix_lang():
 # Keep session tidy & (optionally) auto-choose currency from lang
 @app.before_request
 def ensure_locale_preferences():
-    # 1) normalize lang (choose ONE normalizer: _norm_lang OR _coerce_language)
-    session["lang"] = _norm_lang(session.get("lang"))
-
-    # 2) currency logic — default manual control True (as you wanted)
+    # currency handling
     manual_currency = bool(session.get("currency_manual", True))
-
     if not manual_currency:
-        # auto-pick from language only when user hasn't manually chosen
         if not session.get("currency"):
-            lang = session["lang"] or DEFAULT_LOCALE
+            active_lang = session.get("lang", DEFAULT_LOCALE)
             session["currency"] = _coerce_currency(
-                LANGUAGE_DEFAULT_CURRENCY.get(lang, DEFAULT_CURRENCY)
+                LANGUAGE_DEFAULT_CURRENCY.get(active_lang, DEFAULT_CURRENCY)
             )
         elif session["currency"] not in SUPPORTED_CURRENCIES:
             session["currency"] = DEFAULT_CURRENCY
 
-    # 3) ensure the flag exists (True by default per your choice)
-    if "currency_manual" not in session:
-        session["currency_manual"] = True
+    session.setdefault("currency_manual", True)
 
 # Inject handy values into Jinja
 @app.context_processor
@@ -1259,11 +1252,10 @@ def _locale_secure_cookie() -> bool:
     return bool(current_app.config.get("SESSION_COOKIE_SECURE", True))
 
 
-@app.get("/locale/language/<lang_code>", endpoint="set_language")
+@app.get("/locale/lang/<lang_code>", endpoint="set_lang")
 def change_language(lang_code: str):
     lang = _coerce_language(lang_code)
--   session["language"] = lang
-+   session["lang"] = lang   # ← must be "lang", not "language"
+    session["lang"] = lang   # ← must be "lang", not "lang"
 
     if not session.get("currency_manual"):
         default_currency = LANGUAGE_DEFAULT_CURRENCY.get(lang)
@@ -4187,15 +4179,10 @@ def _locale():
 
 @app.route("/lang/<code>")
 def change_lang(code):
-    lang = (code or "").lower()
-    if lang not in SUPPORTED_LANGUAGES:
-        lang = DEFAULT_LOCALE
+    lang = _norm_lang(code)
     session["lang"] = lang
     resp = make_response(redirect(request.referrer or url_for("index")))
-    resp.set_cookie(
-        "jobcus_lang", lang,
-        max_age=31536000, samesite="Lax", secure=True, path="/"
-    )
+    resp.set_cookie("jobcus_lang", lang, max_age=31536000, samesite="Lax", secure=True, path="/")
     return resp
 
 # --- Entrypoint ---
