@@ -141,17 +141,22 @@ app.config["SUPABASE_URL"]      = os.getenv("SUPABASE_URL", "").rstrip("/")
 app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY", "")
 app.config["BASE_URL"]          = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
 
+# ---- ENV helpers (place _env_flag here) ----
 def _env_flag(name: str, default: bool) -> bool:
     raw = os.getenv(name)
     if raw is None:
         return default
     return raw.strip().lower() not in {"0", "false", "no", "off"}
 
+# (Optional) use it to derive booleans from env:
+DEBUG_MODE = _env_flag("FLASK_DEBUG", False)
+ENABLE_I18N = _env_flag("ENABLE_I18N", True)
+app.config["DEBUG"] = DEBUG_MODE
+
 # =========================
 # i18n + Currency + Pricing
 # =========================
 babel = Babel()
-app.jinja_env.globals.update(_=_)
 
 # --- Defaults / supported sets ---
 DEFAULT_LOCALE   = os.getenv("JOBCUS_DEFAULT_LOCALE", "en").lower()
@@ -343,29 +348,38 @@ def _current_currency() -> str:
 # --- Single source of truth: locale selector (session["lang"]) ---
 def _norm_lang(code: str | None) -> str:
     if not code: return DEFAULT_LOCALE
-    c = str(code).lower().strip().replace("_","-")
-    if c in SUPPORTED_LANGUAGES:
-        return c
+    c = str(code).lower().strip().replace("_", "-")
+    if c in SUPPORTED_LANGUAGES: return c
     base = c.split("-")[0]
     return base if base in SUPPORTED_LANGUAGES else DEFAULT_LOCALE
 
+# --- Define select_locale AFTER the constants
 def select_locale():
-    lang = _norm_lang(session.get("lang"))
-    if lang in SUPPORTED_LANGUAGES:
+    lang = session.get("lang")
+    if lang in SUPPORTED_LANGUAGES: 
         return lang
-    arg = _norm_lang(request.args.get("lang"))
+
+    arg = request.args.get("lang")
     if arg in SUPPORTED_LANGUAGES:
         session["lang"] = arg
         return arg
-    cook = _norm_lang(request.cookies.get("jobcus_lang"))
-    if cook in SUPPORTED_LANGUAGES:
-        session["lang"] = cook
-        return cook
-    best = request.accept_languages.best_match(list(SUPPORTED_LANGUAGES.keys()))
-    return _norm_lang(best)
+
+    cookie_lang = request.cookies.get("jobcus_lang")
+    if cookie_lang in SUPPORTED_LANGUAGES:
+        session["lang"] = cookie_lang
+        return cookie_lang
+
+    return request.accept_languages.best_match(list(SUPPORTED_LANGUAGES)) or DEFAULT_LOCALE
+
+app.jinja_env.globals.update(_=_)
 
 # Bind Babel AFTER select_locale is defined
 babel.init_app(app, locale_selector=select_locale)
+
+@app.before_request
+def _fix_lang():
+    session["lang"] = _norm_lang(session.get("lang"))
+
 app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
 app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
 
