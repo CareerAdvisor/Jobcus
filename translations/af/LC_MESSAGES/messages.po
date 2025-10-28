@@ -1,0 +1,2 @@
+msgid "Free"
+msgstr "Gratis"
