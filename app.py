@@ -262,7 +262,7 @@ app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
 app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", str(_translations_path))
 
 babel = Babel()
-babel.init_app(app, locale_selector=select_locale)
+app.jinja_env.globals.update(_=_)
 
 # Public env values
 app.config["SUPABASE_URL"]      = os.getenv("SUPABASE_URL", "").rstrip("/")
@@ -433,12 +433,6 @@ def select_locale():
     # header fallback
     return request.accept_languages.best_match(list(SUPPORTED_LANGUAGES)) or DEFAULT_LOCALE
 
-# Bind Babel AFTER select_locale is defined
-babel.init_app(app, locale_selector=select_locale)
-
-app.jinja_env.globals.update(_=_)
-app.jinja_env.globals.update(get_locale=get_locale)
-
 @app.before_request
 def _fix_lang():
     session["lang"] = _norm_lang(session.get("lang"))
@@ -550,6 +544,9 @@ if missing:
 
 supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 app.config["SUPABASE_ADMIN"] = supabase_admin
+
+# --- Flask-Babel init (after locale selector definition) ---
+babel.init_app(app, locale_selector=select_locale)
 
 # --- Flask-Login init ---
 login_manager = LoginManager()
