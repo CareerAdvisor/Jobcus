@@ -46,12 +46,12 @@ from werkzeug.utils import secure_filename
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
-from flask_babel import Babel, gettext as _, get_locale
+from flask_babel import Babel, _, get_locale
 try:
-    from babel.messages import mofile as _babel_mofile, pofile as _babel_pofile
-except Exception:  # pragma: no cover - Babel is an optional build dependency in some envs
-    _babel_mofile = None
+    from babel.messages import pofile as _babel_pofile, mofile as _babel_mofile
+except Exception:
     _babel_pofile = None
+    _babel_mofile = None
 from PIL import Image, ImageOps, ImageFilter
 
 # Optional HEIF/HEIC support (won't crash deploys if package isn't installed)
@@ -426,8 +426,7 @@ def _apply_lang(lang_code: str):
     resp = make_response(
         redirect(request.args.get("next") or request.referrer or url_for("index"))
     )
-    resp.set_cookie("jobcus_lang", lang,
-                    max_age=31536000, samesite="Lax", secure=True, path="/")
+    resp.set_cookie("jobcus_lang", lang, max_age=31536000, samesite="Lax", secure=True, path="/")
     return resp
 
 # --- Define select_locale AFTER the constants
@@ -544,9 +543,6 @@ missing = [k for k in ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY") if not os.ge
 if missing:
     # Fail fast with a clear message (don’t print secrets)
     raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
-
-supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-app.config["SUPABASE_ADMIN"] = supabase_admin
 
 # --- Flask-Babel init (after locale selector definition) ---
 babel.init_app(app, locale_selector=select_locale)
