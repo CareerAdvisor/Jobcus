@@ -150,9 +150,6 @@ def _env_flag(name: str, default: bool) -> bool:
 # =========================
 # i18n + Currency + Pricing
 # =========================
-babel = Babel()
-app.jinja_env.globals.update(_=_)
-
 # --- Defaults / supported sets ---
 DEFAULT_LOCALE   = os.getenv("JOBCUS_DEFAULT_LOCALE", "en").lower()
 DEFAULT_CURRENCY = os.getenv("JOBCUS_DEFAULT_CURRENCY", "GBP").upper()
@@ -341,48 +338,61 @@ def _current_currency() -> str:
     return _coerce_currency(fallback)
 
 # --- Single source of truth: locale selector (session["lang"]) ---
+def _norm_lang(code: str | None) -> str:
+    if not code: return DEFAULT_LOCALE
+    c = str(code).lower().strip().replace("_","-")
+    if c in SUPPORTED_LANGUAGES:
+        return c
+    base = c.split("-")[0]
+    return base if base in SUPPORTED_LANGUAGES else DEFAULT_LOCALE
+
 def select_locale():
-    # 1) explicit session choice
     lang = _norm_lang(session.get("lang"))
     if lang in SUPPORTED_LANGUAGES:
         return lang
-    # 2) ?lang=xx
     arg = _norm_lang(request.args.get("lang"))
     if arg in SUPPORTED_LANGUAGES:
         session["lang"] = arg
         return arg
-    # 3) cookie
     cook = _norm_lang(request.cookies.get("jobcus_lang"))
     if cook in SUPPORTED_LANGUAGES:
         session["lang"] = cook
         return cook
-    # 4) browser header
     best = request.accept_languages.best_match(list(SUPPORTED_LANGUAGES.keys()))
     return _norm_lang(best)
+
+babel = Babel()
 
 # Bind Babel AFTER select_locale is defined
 babel.init_app(app, locale_selector=select_locale)
 app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
 app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
 
+# Keep `_` available in Jinja
+app.jinja_env.globals.update(_=_)
+
 # Keep session tidy & (optionally) auto-choose currency from lang
 @app.before_request
 def ensure_locale_preferences():
-    # normalize lang
-    lang = _coerce_language(session.get("lang"))
-    if session.get("lang") != lang:
-        session["lang"] = lang
+    # 1) normalize lang (choose ONE normalizer: _norm_lang OR _coerce_language)
+    session["lang"] = _norm_lang(session.get("lang"))
 
-    # your preference: default manual control is True
+    # 2) currency logic — default manual control True (as you wanted)
     manual_currency = bool(session.get("currency_manual", True))
+
     if not manual_currency:
+        # auto-pick from language only when user hasn't manually chosen
         if not session.get("currency"):
-            session["currency"] = _coerce_currency(LANGUAGE_DEFAULT_CURRENCY.get(lang, DEFAULT_CURRENCY))
+            lang = session["lang"] or DEFAULT_LOCALE
+            session["currency"] = _coerce_currency(
+                LANGUAGE_DEFAULT_CURRENCY.get(lang, DEFAULT_CURRENCY)
+            )
         elif session["currency"] not in SUPPORTED_CURRENCIES:
             session["currency"] = DEFAULT_CURRENCY
 
+    # 3) ensure the flag exists (True by default per your choice)
     if "currency_manual" not in session:
-        session["currency_manual"] = True  # default you requested
+        session["currency_manual"] = True
 
 # Inject handy values into Jinja
 @app.context_processor
