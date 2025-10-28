@@ -1262,7 +1262,8 @@ def _locale_secure_cookie() -> bool:
 @app.get("/locale/language/<lang_code>", endpoint="set_language")
 def change_language(lang_code: str):
     lang = _coerce_language(lang_code)
-    session["language"] = lang
+-   session["language"] = lang
++   session["lang"] = lang   # ← must be "lang", not "language"
 
     if not session.get("currency_manual"):
         default_currency = LANGUAGE_DEFAULT_CURRENCY.get(lang)
