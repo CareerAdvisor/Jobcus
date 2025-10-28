@@ -46,7 +46,7 @@ from werkzeug.utils import secure_filename
 # --- Load resumes blueprint robustly ---
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
-from flask_babel import Babel, _, get_locale, gettext
+from flask_babel import Babel, gettext as _, get_locale
 from PIL import Image, ImageOps, ImageFilter
 import pytesseract
 
@@ -156,7 +156,6 @@ app.config["DEBUG"] = DEBUG_MODE
 # =========================
 # i18n + Currency + Pricing
 # =========================
-babel = Babel()
 
 # --- Defaults / supported sets ---
 DEFAULT_LOCALE   = os.getenv("JOBCUS_DEFAULT_LOCALE", "en").lower()
@@ -368,9 +367,9 @@ def select_locale():
     if cookie_lang in SUPPORTED_LANGUAGES:
         session["lang"] = cookie_lang
         return cookie_lang
-
     return request.accept_languages.best_match(list(SUPPORTED_LANGUAGES)) or DEFAULT_LOCALE
 
+babel = Babel()
 app.jinja_env.globals.update(_=_)
 
 # Bind Babel AFTER select_locale is defined
