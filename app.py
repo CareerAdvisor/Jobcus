@@ -157,6 +157,8 @@ app.config["DEBUG"] = DEBUG_MODE
 # i18n + Currency + Pricing
 # =========================
 
+app.jinja_env.globals.update(_=_)
+
 # --- Defaults / supported sets ---
 DEFAULT_LOCALE   = os.getenv("JOBCUS_DEFAULT_LOCALE", "en").lower()
 DEFAULT_CURRENCY = os.getenv("JOBCUS_DEFAULT_CURRENCY", "GBP").upper()
@@ -346,31 +348,29 @@ def _current_currency() -> str:
 
 # --- Single source of truth: locale selector (session["lang"]) ---
 def _norm_lang(code: str | None) -> str:
-    if not code: return DEFAULT_LOCALE
+    if not code:
+        return DEFAULT_LOCALE
     c = str(code).lower().strip().replace("_", "-")
-    if c in SUPPORTED_LANGUAGES: return c
+    if c in SUPPORTED_LANGUAGES:
+        return c
     base = c.split("-")[0]
     return base if base in SUPPORTED_LANGUAGES else DEFAULT_LOCALE
 
 # --- Define select_locale AFTER the constants
 def select_locale():
     lang = session.get("lang")
-    if lang in SUPPORTED_LANGUAGES: 
+    if lang in SUPPORTED_LANGUAGES:
         return lang
-
-    arg = request.args.get("lang")
-    if arg in SUPPORTED_LANGUAGES:
-        session["lang"] = arg
-        return arg
-
+    # cookie fallback
     cookie_lang = request.cookies.get("jobcus_lang")
     if cookie_lang in SUPPORTED_LANGUAGES:
         session["lang"] = cookie_lang
         return cookie_lang
+    # header fallback
     return request.accept_languages.best_match(list(SUPPORTED_LANGUAGES)) or DEFAULT_LOCALE
 
 babel = Babel()
-app.jinja_env.globals.update(_=_)
+babel.init_app(app, locale_selector=select_locale)
 
 # Bind Babel AFTER select_locale is defined
 babel.init_app(app, locale_selector=select_locale)
@@ -4121,7 +4121,6 @@ def debug_i18n():
 def debug_hello():
     return _("Hello, world!")
 
-
 @app.route("/_locale")
 def _locale():
     return str(get_locale())
@@ -4133,7 +4132,10 @@ def change_lang(code):
         lang = DEFAULT_LOCALE
     session["lang"] = lang
     resp = make_response(redirect(request.referrer or url_for("index")))
-    resp.set_cookie("jobcus_lang", lang, max_age=31536000, samesite="Lax", secure=True, path="/")
+    resp.set_cookie(
+        "jobcus_lang", lang,
+        max_age=31536000, samesite="Lax", secure=True, path="/"
+    )
     return resp
 
 # --- Entrypoint ---
