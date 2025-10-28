@@ -134,15 +134,14 @@ if resumes_bp is None:
 load_dotenv()
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
-app.secret_key = os.getenv("SECRET_KEY", "supersecret")
+app.secret_key = os.environ.get("SECRET_KEY", "dev")  # must be set for sessions/cookies
 
-# Public Supabase values from env
-app.config["SUPABASE_URL"]       = os.getenv("SUPABASE_URL", "").rstrip("/")
-app.config["SUPABASE_ANON_KEY"]  = os.getenv("SUPABASE_ANON_KEY", "")
-app.config["BASE_URL"]           = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
+# Public env values
+app.config["SUPABASE_URL"]      = os.getenv("SUPABASE_URL", "").rstrip("/")
+app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY", "")
+app.config["BASE_URL"]          = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
 
 def _env_flag(name: str, default: bool) -> bool:
-    """Parse common truthy/falsey strings from the environment."""
     raw = os.getenv(name)
     if raw is None:
         return default
@@ -334,34 +333,29 @@ def build_plan_price_matrix(currency: str | None = None) -> dict[str, dict[str, 
     return {code: plan_price_display(code, cur) for code in PLAN_BASE_PRICES.keys()}
 
 def _current_currency() -> str:
-    # if user manually picked one, honour it
     stored = session.get("currency")
     if stored and stored in SUPPORTED_CURRENCIES:
         return stored
-    # else infer from active language
     lang = str(get_locale() or DEFAULT_LOCALE)
     fallback = LANGUAGE_DEFAULT_CURRENCY.get(lang, DEFAULT_CURRENCY)
     return _coerce_currency(fallback)
 
-# --- Single source of truth: locale selector using session["lang"] ---
+# --- Single source of truth: locale selector (session["lang"]) ---
 def select_locale() -> str:
-    # 1) explicit session choice
+    # 1) session
     lang = session.get("lang")
     if lang in SUPPORTED_LANGUAGES:
         return lang
-
-    # 2) ?lang=xx fallback
+    # 2) ?lang=xx
     arg = request.args.get("lang")
     if arg in SUPPORTED_LANGUAGES:
         session["lang"] = arg
         return arg
-
-    # 3) cookie from previous visit
+    # 3) cookie
     cookie_lang = request.cookies.get("jobcus_lang")
     if cookie_lang in SUPPORTED_LANGUAGES:
         session["lang"] = cookie_lang
         return cookie_lang
-
     # 4) browser header
     best = request.accept_languages.best_match(list(SUPPORTED_LANGUAGES))
     return best or DEFAULT_LOCALE
@@ -371,22 +365,24 @@ babel.init_app(app, locale_selector=select_locale)
 app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
 app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
 
-# Keep session in a consistent shape & auto-choose currency from lang
+# Keep session tidy & (optionally) auto-choose currency from lang
 @app.before_request
 def ensure_locale_preferences():
+    # normalize lang
     lang = _coerce_language(session.get("lang"))
     if session.get("lang") != lang:
         session["lang"] = lang
 
-    manual_currency = bool(session.get("currency_manual", False))
+    # your preference: default manual control is True
+    manual_currency = bool(session.get("currency_manual", True))
     if not manual_currency:
         if not session.get("currency"):
             session["currency"] = _coerce_currency(LANGUAGE_DEFAULT_CURRENCY.get(lang, DEFAULT_CURRENCY))
         elif session["currency"] not in SUPPORTED_CURRENCIES:
-            session["currency"] = _coerce_currency(session["currency"])
+            session["currency"] = DEFAULT_CURRENCY
 
     if "currency_manual" not in session:
-        session["currency_manual"] = False
+        session["currency_manual"] = True  # default you requested
 
 # Inject handy values into Jinja
 @app.context_processor
@@ -4106,13 +4102,12 @@ def _locale():
 
 @app.route("/lang/<code>")
 def change_lang(code):
-    resp = redirect(request.referrer or url_for("index"))
     if code in SUPPORTED_LANGUAGES:
         session["lang"] = code
+        resp = make_response(redirect(request.referrer or url_for("index")))
         resp.set_cookie("jobcus_lang", code, max_age=60*60*24*365, samesite="Lax", secure=True)
-    return resp
-
-
+        return resp
+    return redirect(request.referrer or url_for("index"))
 
 # --- Entrypoint ---
 if __name__ == "__main__":
