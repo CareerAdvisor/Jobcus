@@ -146,7 +146,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <div class="locale-section-title">{{ _("Language") }}</div>
                 {% for code, meta in available_languages.items() %}
                   <a class="locale-option {% if code == current_language %}active{% endif %}"
-                     href="{{ url_for('set_language', lang_code=code, next=request.full_path if request else '') }}"
+                     href="{{ url_for('set_lang', lang_code=code, next=request.full_path if request else '') }}"
                      role="menuitem">
                     <span class="flag">{{ meta.flag }}</span>
                     <span class="label">{{ meta.name }}</span>
@@ -229,7 +229,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <div class="mobile-locale-sub">{{ _("Language") }}</div>
               {% for code, meta in available_languages.items() %}
                 <a class="mobile-locale-option {% if code == current_language %}active{% endif %}"
-                   href="{{ url_for('set_language', lang_code=code, next=request.full_path if request else '') }}">
+                   href="{{ url_for('set_lang', lang_code=code, next=request.full_path if request else '') }}">
                   <span class="flag">{{ meta.flag }}</span>
                   <span class="label">{{ meta.name }}</span>
                 </a>
