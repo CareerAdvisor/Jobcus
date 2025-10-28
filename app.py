@@ -4110,11 +4110,12 @@ def _locale():
 
 @app.route("/lang/<code>")
 def change_lang(code):
-    lang = _norm_lang(code)
+    lang = (code or "").lower()
+    if lang not in SUPPORTED_LANGUAGES:
+        lang = DEFAULT_LOCALE
     session["lang"] = lang
     resp = make_response(redirect(request.referrer or url_for("index")))
-    # persist for future visits
-    resp.set_cookie("jobcus_lang", lang, max_age=60*60*24*365, samesite="Lax", secure=True, path="/")
+    resp.set_cookie("jobcus_lang", lang, max_age=31536000, samesite="Lax", secure=True, path="/")
     return resp
 
 # --- Entrypoint ---
