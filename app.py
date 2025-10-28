@@ -75,6 +75,8 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 resumes_bp = None  # will set when found
 
 _here = pathlib.Path(__file__).resolve().parent
+_translations_path = (_here / "translations").resolve()
+
 
 def _ensure_translations_compiled():
     """Compile .po files into .mo files if Babel is available.
@@ -92,7 +94,7 @@ def _ensure_translations_compiled():
     if not _babel_pofile or not _babel_mofile:  # Babel not installed, nothing to do
         return
 
-    translations_dir = _here / "translations"
+    translations_dir = _translations_path
     if not translations_dir.is_dir():
         return
 
@@ -194,11 +196,6 @@ load_dotenv()
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.environ.get("SECRET_KEY", "dev")  # must be set for sessions/cookies
 
-# Public env values
-app.config["SUPABASE_URL"]      = os.getenv("SUPABASE_URL", "").rstrip("/")
-app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY", "")
-app.config["BASE_URL"]          = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
-
 # ---- ENV helpers (place _env_flag here) ----
 def _env_flag(name: str, default: bool) -> bool:
     raw = os.getenv(name)
@@ -260,6 +257,17 @@ DEFAULT_CURRENCY_RATES = {
     "NGN": 1730.0,
     "AED": 4.64,
 }
+
+app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
+app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", str(_translations_path))
+
+babel = Babel()
+babel.init_app(app, locale_selector=select_locale)
+
+# Public env values
+app.config["SUPABASE_URL"]      = os.getenv("SUPABASE_URL", "").rstrip("/")
+app.config["SUPABASE_ANON_KEY"] = os.getenv("SUPABASE_ANON_KEY", "")
+app.config["BASE_URL"]          = os.getenv("PUBLIC_BASE_URL", "https://www.jobcus.com").rstrip("/")
 
 def _load_currency_rates() -> dict[str, float]:
     raw = os.getenv("JOBCUS_CURRENCY_RATES", "").strip()
@@ -425,9 +433,6 @@ def select_locale():
     # header fallback
     return request.accept_languages.best_match(list(SUPPORTED_LANGUAGES)) or DEFAULT_LOCALE
 
-babel = Babel()
-babel.init_app(app, locale_selector=select_locale)
-
 # Bind Babel AFTER select_locale is defined
 babel.init_app(app, locale_selector=select_locale)
 
@@ -438,8 +443,6 @@ app.jinja_env.globals.update(get_locale=get_locale)
 def _fix_lang():
     session["lang"] = _norm_lang(session.get("lang"))
 
-app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
-app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
 
 # Keep session tidy & (optionally) auto-choose currency from lang
 @app.before_request
