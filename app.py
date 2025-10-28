@@ -47,8 +47,12 @@ from werkzeug.utils import secure_filename
 import importlib, importlib.util, pathlib, sys, logging
 from openai import OpenAI
 from flask_babel import Babel, gettext as _, get_locale
+try:
+    from babel.messages import mofile as _babel_mofile, pofile as _babel_pofile
+except Exception:  # pragma: no cover - Babel is an optional build dependency in some envs
+    _babel_mofile = None
+    _babel_pofile = None
 from PIL import Image, ImageOps, ImageFilter
-import pytesseract
 
 # Optional HEIF/HEIC support (won't crash deploys if package isn't installed)
 try:
@@ -57,6 +61,8 @@ try:
     HEIF_ENABLED = True
 except Exception:
     HEIF_ENABLED = False
+
+import pytesseract
 
 try:
     from pytesseract import TesseractNotFoundError as _TesseractNotFoundError
@@ -69,6 +75,58 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 resumes_bp = None  # will set when found
 
 _here = pathlib.Path(__file__).resolve().parent
+
+def _ensure_translations_compiled():
+    """Compile .po files into .mo files if Babel is available.
+
+    Render's build command occasionally executes ``pybabel compile`` from a
+    directory that doesn't contain the ``translations`` folder, which raises a
+    ``FileNotFoundError`` and leaves the site without compiled catalogs.  That
+    causes all strings to fall back to English even after deployment succeeds.
+
+    To make the runtime resilient we compile any stale catalog on import using
+    Babel's Python API.  The compiled ``.mo`` files are written next to their
+    source ``.po`` files so the normal Flask-Babel loader can pick them up.
+    """
+
+    if not _babel_pofile or not _babel_mofile:  # Babel not installed, nothing to do
+        return
+
+    translations_dir = _here / "translations"
+    if not translations_dir.is_dir():
+        return
+
+    logger = logging.getLogger(__name__)
+    rebuilt_any = False
+
+    for po_path in translations_dir.glob("*/LC_MESSAGES/*.po"):
+        mo_path = po_path.with_suffix(".mo")
+        try:
+            needs_compile = (not mo_path.exists() or
+                             po_path.stat().st_mtime > mo_path.stat().st_mtime)
+        except OSError:
+            needs_compile = True
+
+        if not needs_compile:
+            continue
+
+        try:
+            locale = po_path.parent.parent.name
+            with po_path.open("r", encoding="utf-8") as po_file:
+                catalog = _babel_pofile.read_po(po_file, locale=locale)
+            mo_path.parent.mkdir(parents=True, exist_ok=True)
+            with mo_path.open("wb") as mo_file:
+                _babel_mofile.write_mo(mo_file, catalog)
+            rebuilt_any = True
+        except Exception as exc:  # pragma: no cover - defensive logging only
+            logger.warning("Failed to compile translation %s: %s", po_path, exc)
+
+    if rebuilt_any:
+        logger.info("Compiled updated translation catalogs at runtime")
+
+
+_ensure_translations_compiled()
+
 
 def _import_from_spec(module_name: str, file_path: pathlib.Path):
     spec = importlib.util.spec_from_file_location(module_name, str(file_path))
