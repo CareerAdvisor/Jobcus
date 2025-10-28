@@ -258,8 +258,8 @@ DEFAULT_CURRENCY_RATES = {
     "AED": 4.64,
 }
 
-app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
-app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", str(_translations_path))
+app.config.setdefault("BABEL_DEFAULT_LOCALE", "en")
+app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", str(_translations_path))  # points to ./translations
 
 babel = Babel()
 app.jinja_env.globals.update(_=_)
