@@ -4109,13 +4109,18 @@ def diag_ocr():
         "heif_enabled": bool(HEIF_ENABLED),
     })
 
-@app.route("/i18n-debug")
-def i18n_debug():
-    return {
-        "session_lang": session.get("lang"),
-        "babel_get_locale": str(get_locale()),
-        "sample": gettext("Hello, world!")
-    }
+@app.route("/debug/i18n")
+def debug_i18n():
+    return jsonify({
+        "session.lang": session.get("lang"),
+        "cookie.jobcus_lang": request.cookies.get("jobcus_lang"),
+        "babel.get_locale": str(get_locale()),
+    })
+
+@app.route("/debug/hello")
+def debug_hello():
+    return _("Hello, world!")
+
 
 @app.route("/_locale")
 def _locale():
