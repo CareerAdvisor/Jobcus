@@ -320,3 +320,39 @@ html, body { overflow-x: hidden; background: var(--bg); }
   box-shadow:0 0 0 2px rgba(16,72,121,.15);
 }
 .rw-verb-chip.active{ transform: translateY(1px); }
+
+/* ==== Score card: center it, match panel width, prevent overflow ==== */
+#resume-score-card,
+.score-card {
+  width: 100%;
+  margin: 0 auto;         /* center inside .dash-stack */
+}
+
+/* allow grid children to shrink instead of forcing overflow */
+.score-card * { min-width: 0; }
+
+/* make the ring and grid responsive */
+.score-card__body{
+  /* left col is capped by viewport; right col gets remaining space */
+  grid-template-columns: min(240px, 34vw) 1fr;
+  gap: 18px;
+}
+
+/* ring scales with the column size */
+.ring{
+  width: min(240px, 34vw);
+  height: auto;
+  aspect-ratio: 1 / 1;    /* keep circle a square as it scales */
+}
+.ring svg{ width: 100%; height: 100%; }
+
+/* metrics collapse sooner so bars don't push the grid wider */
+@media (max-width: 680px){
+  .score-card__body{ grid-template-columns: 1fr; }   /* stack ring above metrics */
+  .metrics{ grid-template-columns: 1fr; }
+  .ring{ width: clamp(180px, 70vw, 240px); margin-inline: auto; }
+}
+
+/* just in case: no horizontal scroll on small screens */
+html, body { overflow-x: hidden; }
+
