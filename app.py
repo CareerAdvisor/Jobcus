@@ -150,6 +150,9 @@ def _env_flag(name: str, default: bool) -> bool:
 # =========================
 # i18n + Currency + Pricing
 # =========================
+babel = Babel()
+app.jinja_env.globals.update(_=_)
+
 # --- Defaults / supported sets ---
 DEFAULT_LOCALE   = os.getenv("JOBCUS_DEFAULT_LOCALE", "en").lower()
 DEFAULT_CURRENCY = os.getenv("JOBCUS_DEFAULT_CURRENCY", "GBP").upper()
@@ -361,15 +364,10 @@ def select_locale():
     best = request.accept_languages.best_match(list(SUPPORTED_LANGUAGES.keys()))
     return _norm_lang(best)
 
-babel = Babel()
-
 # Bind Babel AFTER select_locale is defined
 babel.init_app(app, locale_selector=select_locale)
 app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
 app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
-
-# Keep `_` available in Jinja
-app.jinja_env.globals.update(_=_)
 
 # Keep session tidy & (optionally) auto-choose currency from lang
 @app.before_request
