@@ -76,6 +76,7 @@ resumes_bp = None  # will set when found
 
 _here = pathlib.Path(__file__).resolve().parent
 _translations_path = (_here / "translations").resolve()
+app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", str(_translations_path))
 
 
 def _ensure_translations_compiled():
@@ -259,7 +260,6 @@ DEFAULT_CURRENCY_RATES = {
 }
 
 app.config.setdefault("BABEL_DEFAULT_LOCALE", "en")
-app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", str(_translations_path))  # points to ./translations
 
 babel = Babel()
 app.jinja_env.globals.update(_=_)
@@ -434,12 +434,10 @@ def select_locale():
     lang = session.get("lang")
     if lang in SUPPORTED_LANGUAGES:
         return lang
-    # cookie fallback
     cookie_lang = request.cookies.get("jobcus_lang")
     if cookie_lang in SUPPORTED_LANGUAGES:
         session["lang"] = cookie_lang
         return cookie_lang
-    # header fallback
     return request.accept_languages.best_match(list(SUPPORTED_LANGUAGES)) or DEFAULT_LOCALE
 
 @app.before_request
@@ -4169,11 +4167,19 @@ def diag_ocr():
 
 @app.route("/debug/i18n")
 def debug_i18n():
-    return jsonify({
-        "session.lang": session.get("lang"),
-        "cookie.jobcus_lang": request.cookies.get("jobcus_lang"),
-        "babel.get_locale": str(get_locale()),
-    })
+    lang_in_session = session.get("lang")
+    cookie_lang = request.cookies.get("jobcus_lang")
+    babel_dirs = current_app.config.get("BABEL_TRANSLATION_DIRECTORIES")
+    default_locale = current_app.config.get("BABEL_DEFAULT_LOCALE")
+    return {
+        "selected_locale_from_babel": str(get_locale()),
+        "session.lang": lang_in_session,
+        "cookie.jobcus_lang": cookie_lang,
+        "BABEL_TRANSLATION_DIRECTORIES": babel_dirs,
+        "BABEL_DEFAULT_LOCALE": default_locale,
+        "ENABLE_I18N": current_app.config.get("ENABLE_I18N"),
+        "cwd": os.getcwd(),
+    }
 
 @app.route("/debug/hello")
 def debug_hello():
@@ -4187,8 +4193,8 @@ def _locale():
 def change_lang(code):
     return _apply_lang(code)
 
-@app.route("/locale/language/<lang_code>", endpoint="set_language")
-def set_language(lang_code):
+@app.route("/locale/lang/<lang_code>")
+def set_lang(lang_code):
     return _apply_lang(lang_code)
 
 # (optional) form-post variant
