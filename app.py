@@ -4150,25 +4150,6 @@ def api_upload():
         except Exception:
             pass
 
-@app.get("/diag/ocr")
-def diag_ocr():
-    try:
-        tess_path = shutil.which("tesseract")
-        tess_ver = str(pytesseract.get_tesseract_version())
-    except Exception as e:
-        tess_path, tess_ver = None, f"ERR: {e}"
-
-    poppler = {
-        "pdftoppm": shutil.which("pdftoppm"),
-        "pdftocairo": shutil.which("pdftocairo"),
-    }
-    return jsonify({
-        "tesseract_path": tess_path,
-        "tesseract_version": tess_ver,
-        "poppler_tools": poppler,
-        "heif_enabled": bool(HEIF_ENABLED),
-    })
-
 @app.route("/debug/i18n")
 def debug_i18n():
     return {
@@ -4187,23 +4168,20 @@ def debug_hello():
 def _locale():
     return str(get_locale())
 
-@app.route("/lang/<code>")
-def change_lang(code):
-    return _apply_lang(code)
-
-@app.route("/locale/lang/<lang_code>")
+# Canonical route (the one templates should call)
+@app.route("/locale/lang/<lang_code>", endpoint="set_lang")
 def set_lang(lang_code):
-    lang = _norm_lang(lang_code)
-    session["lang"] = lang
-    resp = make_response(
-        redirect(request.args.get("next") or request.referrer or url_for("index"))
-    )
-    resp.set_cookie("jobcus_lang", lang, max_age=31536000, samesite="Lax", secure=True, path="/")
-    return resp
+    return _apply_lang(lang_code)
 
+# Optional short alias (different endpoint name so no conflict)
+@app.route("/lang/<code>", endpoint="change_lang")
+def change_lang(code):
+    return set_lang(code)
+
+# Optional legacy path (again, different endpoint name)
 @app.route("/legacy/set-lang/<lang_code>", endpoint="set_lang_legacy")
 def set_lang_legacy(lang_code):
-    return set_lang(lang_code)  # reuse the canonical logic
+    return set_lang(lang_code)
 
 # --- Entrypoint ---
 if __name__ == "__main__":
