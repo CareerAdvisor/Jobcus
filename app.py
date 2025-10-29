@@ -1263,7 +1263,7 @@ def _locale_secure_cookie() -> bool:
 @app.get("/locale/lang/<lang_code>", endpoint="set_lang")
 def change_language(lang_code: str):
     lang = _coerce_language(lang_code)
-    session["lang"] = lang   # ← must be "lang", not "lang"
+    session["lang"] = lang
 
     if not session.get("currency_manual"):
         default_currency = LANGUAGE_DEFAULT_CURRENCY.get(lang)
@@ -1271,15 +1271,8 @@ def change_language(lang_code: str):
             session["currency"] = _coerce_currency(default_currency)
 
     redirect_target = _determine_locale_redirect()
-
     resp = redirect(redirect_target)
-    resp.set_cookie(
-        "jobcus_lang",
-        lang,
-        max_age=60 * 60 * 24 * 365,
-        samesite="Lax",
-        secure=_locale_secure_cookie(),
-    )
+    resp.set_cookie("jobcus_lang", lang, max_age=60*60*24*365, samesite="Lax", secure=_locale_secure_cookie())
     return resp
 
 
@@ -4167,21 +4160,6 @@ def debug_hello():
 @app.route("/_locale")
 def _locale():
     return str(get_locale())
-
-# Canonical route (the one templates should call)
-@app.route("/locale/lang/<lang_code>", endpoint="set_lang")
-def set_lang(lang_code):
-    return _apply_lang(lang_code)
-
-# Optional short alias (different endpoint name so no conflict)
-@app.route("/lang/<code>", endpoint="change_lang")
-def change_lang(code):
-    return set_lang(code)
-
-# Optional legacy path (again, different endpoint name)
-@app.route("/legacy/set-lang/<lang_code>", endpoint="set_lang_legacy")
-def set_lang_legacy(lang_code):
-    return set_lang(lang_code)
 
 # --- Entrypoint ---
 if __name__ == "__main__":
