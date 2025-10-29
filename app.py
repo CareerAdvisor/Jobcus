@@ -549,9 +549,6 @@ if missing:
     # Fail fast with a clear message (don’t print secrets)
     raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")
 
-# --- Flask-Babel init (after locale selector definition) ---
-babel.init_app(app, locale_selector=select_locale)
-
 # --- Flask-Login init ---
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -4196,12 +4193,17 @@ def change_lang(code):
 
 @app.route("/locale/lang/<lang_code>")
 def set_lang(lang_code):
-    return _apply_lang(lang_code)
+    lang = _norm_lang(lang_code)
+    session["lang"] = lang
+    resp = make_response(
+        redirect(request.args.get("next") or request.referrer or url_for("index"))
+    )
+    resp.set_cookie("jobcus_lang", lang, max_age=31536000, samesite="Lax", secure=True, path="/")
+    return resp
 
-# (optional) form-post variant
-@app.route("/locale/language", methods=["POST"])
-def set_language_post():
-    return _apply_lang(request.form.get("lang") or request.form.get("language") or "en")
+@app.route("/legacy/set-lang/<lang_code>", endpoint="set_lang_legacy")
+def set_lang_legacy(lang_code):
+    return set_lang(lang_code)  # reuse the canonical logic
 
 # --- Entrypoint ---
 if __name__ == "__main__":
