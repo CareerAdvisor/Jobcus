@@ -76,8 +76,6 @@ resumes_bp = None  # will set when found
 
 _here = pathlib.Path(__file__).resolve().parent
 _translations_path = (_here / "translations").resolve()
-app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", str(_translations_path))
-
 
 def _ensure_translations_compiled():
     """Compile .po files into .mo files if Babel is available.
@@ -194,28 +192,35 @@ if resumes_bp is None:
 # --- Environment & app setup ---
 load_dotenv()
 
+# Resolve paths early
+_here = pathlib.Path(__file__).resolve().parent
+_translations_path = (_here / "translations").resolve()
+
+# --- create the Flask app FIRST ---
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.secret_key = os.environ.get("SECRET_KEY", "dev")  # must be set for sessions/cookies
 
-# ---- ENV helpers (place _env_flag here) ----
+# ---- ENV helpers ----
 def _env_flag(name: str, default: bool) -> bool:
     raw = os.getenv(name)
     if raw is None:
         return default
     return raw.strip().lower() not in {"0", "false", "no", "off"}
 
-# (Optional) use it to derive booleans from env:
-DEBUG_MODE = _env_flag("FLASK_DEBUG", False)
-ENABLE_I18N = _env_flag("ENABLE_I18N", True)
+# (optional) any other base config
+DEBUG_MODE = os.getenv("FLASK_DEBUG", "0").strip() in {"1", "true", "yes"}
 app.config["DEBUG"] = DEBUG_MODE
 
 # =========================
 # i18n + Currency + Pricing
 # =========================
 
-# --- Defaults / supported sets ---
+# --- Babel-related config on the app ---
 DEFAULT_LOCALE   = os.getenv("JOBCUS_DEFAULT_LOCALE", "en").lower()
 DEFAULT_CURRENCY = os.getenv("JOBCUS_DEFAULT_CURRENCY", "GBP").upper()
+
+app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
+app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", str(_translations_path))
 
 SUPPORTED_LANGUAGES: dict[str, dict[str, str]] = {
     "en": {"name": "English",   "flag": "🇬🇧"},
@@ -259,9 +264,7 @@ DEFAULT_CURRENCY_RATES = {
     "AED": 4.64,
 }
 
-app.config.setdefault("BABEL_DEFAULT_LOCALE", "en")
-
-babel = Babel()
+# Make _() available in templates
 app.jinja_env.globals.update(_=_)
 
 # Public env values
@@ -429,7 +432,7 @@ def _apply_lang(lang_code: str):
     resp.set_cookie("jobcus_lang", lang, max_age=31536000, samesite="Lax", secure=True, path="/")
     return resp
 
-# --- Define select_locale AFTER the constants
+# --- Define select_locale AFTER the constants ---
 def select_locale():
     lang = session.get("lang")
     if lang in SUPPORTED_LANGUAGES:
@@ -438,17 +441,20 @@ def select_locale():
     if cookie_lang in SUPPORTED_LANGUAGES:
         session["lang"] = cookie_lang
         return cookie_lang
+    # Accept-Language fallback
     return request.accept_languages.best_match(list(SUPPORTED_LANGUAGES)) or DEFAULT_LOCALE
+
+# --- init Babel AFTER defining select_locale ---
+babel = Babel()
+babel.init_app(app, locale_selector=select_locale)
 
 @app.before_request
 def _fix_lang():
     session["lang"] = _norm_lang(session.get("lang"))
 
-
 # Keep session tidy & (optionally) auto-choose currency from lang
 @app.before_request
 def ensure_locale_preferences():
-    # currency handling
     manual_currency = bool(session.get("currency_manual", True))
     if not manual_currency:
         if not session.get("currency"):
@@ -458,7 +464,6 @@ def ensure_locale_preferences():
             )
         elif session["currency"] not in SUPPORTED_CURRENCIES:
             session["currency"] = DEFAULT_CURRENCY
-
     session.setdefault("currency_manual", True)
 
 # Inject handy values into Jinja
@@ -472,7 +477,9 @@ def inject_locale_meta():
         "available_currencies": SUPPORTED_CURRENCIES,
         "current_currency": currency,
         "plan_prices": build_plan_price_matrix(currency),
-        "current_currency_meta": SUPPORTED_CURRENCIES.get(currency, SUPPORTED_CURRENCIES[DEFAULT_CURRENCY]),
+        "current_currency_meta": SUPPORTED_CURRENCIES.get(
+            currency, SUPPORTED_CURRENCIES[DEFAULT_CURRENCY]
+        ),
     }
 
 # Expose price helper to templates explicitly
@@ -4167,18 +4174,12 @@ def diag_ocr():
 
 @app.route("/debug/i18n")
 def debug_i18n():
-    lang_in_session = session.get("lang")
-    cookie_lang = request.cookies.get("jobcus_lang")
-    babel_dirs = current_app.config.get("BABEL_TRANSLATION_DIRECTORIES")
-    default_locale = current_app.config.get("BABEL_DEFAULT_LOCALE")
     return {
         "selected_locale_from_babel": str(get_locale()),
-        "session.lang": lang_in_session,
-        "cookie.jobcus_lang": cookie_lang,
-        "BABEL_TRANSLATION_DIRECTORIES": babel_dirs,
-        "BABEL_DEFAULT_LOCALE": default_locale,
-        "ENABLE_I18N": current_app.config.get("ENABLE_I18N"),
-        "cwd": os.getcwd(),
+        "session.lang": session.get("lang"),
+        "cookie.jobcus_lang": request.cookies.get("jobcus_lang"),
+        "BABEL_TRANSLATION_DIRECTORIES": current_app.config.get("BABEL_TRANSLATION_DIRECTORIES"),
+        "BABEL_DEFAULT_LOCALE": current_app.config.get("BABEL_DEFAULT_LOCALE"),
     }
 
 @app.route("/debug/hello")
