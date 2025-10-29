@@ -1,0 +1,648 @@
+msgid ""
+msgstr ""
+"Project-Id-Version:  Jobcus\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-10-26 19:47+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: nl\n"
+"Language-Team: nl <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: app.py:2007
+msgid "Free"
+msgstr "Gratis"
+
+#: app.py:2010
+msgid "Great for a quick check"
+msgstr "Ideaal voor een snelle controle"
+
+#: app.py:2013
+msgid "<strong>2</strong> resume analyses / month (basic score + tips)"
+msgstr ""
+
+#: app.py:2014
+msgid "<strong>1</strong> AI cover letter / month"
+msgstr ""
+
+#: app.py:2015
+msgid "AI Resume Builder (basic templates; <strong>1</strong> download / month)"
+msgstr ""
+
+#: app.py:2016
+msgid "Skill-Gap snapshot (1 basic analysis / month)"
+msgstr ""
+
+#: app.py:2017
+#, fuzzy
+msgid "Job Insights (basic charts)"
+msgstr "Arbeidsmarktinzichten"
+
+#: app.py:2018
+msgid "Interview Coach (limited practice; <strong>1</strong> / month)"
+msgstr ""
+
+#: app.py:2019
+msgid "AI Chat trial: <strong>10 messages</strong> total"
+msgstr ""
+
+#: app.py:2020
+msgid "Local device history"
+msgstr ""
+
+#: app.py:2025
+msgid "Weekly Pass"
+msgstr "Weekpas"
+
+#: app.py:2028
+msgid "For urgent applications"
+msgstr "Voor dringende sollicitaties"
+
+#: app.py:2031
+msgid "AI Chat credits: <strong>100 messages</strong> / week"
+msgstr ""
+
+#: app.py:2032
+msgid "<strong>10</strong> resume analyses / week"
+msgstr ""
+
+#: app.py:2033
+msgid "<strong>5</strong> AI cover letters / week"
+msgstr ""
+
+#: app.py:2034
+msgid "Resume Builder: <strong>5 downloads</strong> / week"
+msgstr ""
+
+#: app.py:2035
+msgid "“Rebuild with AI” for resumes"
+msgstr ""
+
+#: app.py:2036
+#, fuzzy
+msgid "Skill-Gap (standard)"
+msgstr "Vaardigheidsanalyse"
+
+#: app.py:2037 app.py:2057
+#, fuzzy
+msgid "Job Insights (full access)"
+msgstr "Arbeidsmarktinzichten"
+
+#: app.py:2038 app.py:2055
+#, fuzzy
+msgid "Interview Coach sessions"
+msgstr "Sollicitatiecoach"
+
+#: app.py:2039 app.py:2060 app.py:2091 templates/subscribe.html:92
+msgid "Email support"
+msgstr ""
+
+#: app.py:2044
+msgid "Standard"
+msgstr "Standaard"
+
+#: app.py:2047
+msgid "Serious applications, smarter tools"
+msgstr "Serieuze sollicitaties, slimmere tools"
+
+#: app.py:2050
+msgid "AI Chat credits: <strong>600 messages</strong> / month"
+msgstr ""
+
+#: app.py:2051
+msgid "<strong>50</strong> resume analyses / month (deep ATS + JD match)"
+msgstr ""
+
+#: app.py:2052
+msgid "<strong>20</strong> AI cover letters / month"
+msgstr ""
+
+#: app.py:2053
+msgid "Resume Builder: <strong>20 downloads</strong> / month"
+msgstr ""
+
+#: app.py:2054
+msgid "AI Optimize + Rebuild with AI"
+msgstr ""
+
+#: app.py:2056
+msgid "Skill-Gap (pro)"
+msgstr ""
+
+#: app.py:2058
+msgid "Download optimized PDF / DOCX / TXT"
+msgstr ""
+
+#: app.py:2059
+msgid "Save history across devices"
+msgstr ""
+
+#: app.py:2065
+msgid "Premium"
+msgstr "Premium"
+
+#: app.py:2068
+msgid "Best value for ongoing career growth"
+msgstr "Beste waarde voor blijvende loopbaangroei"
+
+#: app.py:2071
+msgid "AI Chat credits: <strong>10,800 messages</strong> / year (~1,000 / mo)"
+msgstr ""
+
+#: app.py:2072
+msgid "<strong>Unlimited*</strong> resume analyses (fair use)"
+msgstr ""
+
+#: app.py:2073
+msgid "<strong>Unlimited</strong> AI cover letters (fair use)"
+msgstr ""
+
+#: app.py:2074
+msgid "Resume Builder: <strong>unlimited</strong> downloads (fair use)"
+msgstr ""
+
+#: app.py:2075
+msgid "All Standard features + multi-resume versions & template pack"
+msgstr ""
+
+#: app.py:2076
+msgid "Priority support & early access to new AI tools"
+msgstr ""
+
+#: app.py:2081 templates/subscribe.html:81
+msgid "JD Generator"
+msgstr "Vacaturegenerator"
+
+#: app.py:2084 templates/index.html:104
+msgid "AI Job Description Generator"
+msgstr "AI-vacaturegenerator"
+
+#: app.py:2087 templates/subscribe.html:88
+msgid "Unlimited* JD generations (fair use)"
+msgstr ""
+
+#: app.py:2088 templates/subscribe.html:89
+msgid "Brand tone presets"
+msgstr ""
+
+#: app.py:2089 templates/subscribe.html:90
+msgid "Export to DOCX/PDF"
+msgstr ""
+
+#: app.py:2090 templates/subscribe.html:91
+msgid "JD–skills taxonomy suggestions"
+msgstr ""
+
+#: templates/base.html:120 templates/base.html:215 templates/index.html:28
+msgid "AI Career Chat"
+msgstr "AI loopbaanchat"
+
+#: templates/base.html:121 templates/base.html:216 templates/index.html:83
+msgid "Resume Analyzer"
+msgstr "CV-analyse"
+
+#: templates/base.html:123 templates/base.html:218
+msgid "Features"
+msgstr "Functies"
+
+#: templates/base.html:125 templates/base.html:220 templates/index.html:87
+msgid "Resume Builder"
+msgstr "CV-builder"
+
+#: templates/base.html:126 templates/base.html:221
+msgid "Cover Letter"
+msgstr "Sollicitatiebrief"
+
+#: templates/base.html:127 templates/base.html:222
+msgid "Interview Coach"
+msgstr "Sollicitatiecoach"
+
+#: templates/base.html:128 templates/base.html:223
+msgid "Skill Gap Analysis"
+msgstr "Vaardigheidsanalyse"
+
+#: templates/base.html:129 templates/base.html:224
+msgid "Job Insights"
+msgstr "Arbeidsmarktinzichten"
+
+#: templates/base.html:132 templates/base.html:227
+msgid "Pricing"
+msgstr "Prijzen"
+
+#: templates/base.html:133 templates/base.html:228
+msgid "Employers"
+msgstr "Werkgevers"
+
+#: templates/base.html:144
+msgid "Upgrade plan"
+msgstr "Plan upgraden"
+
+#: templates/base.html:146
+msgid "Log out"
+msgstr "Afmelden"
+
+#: templates/base.html:148
+msgid "Sign up / Log in"
+msgstr "Registreren / Inloggen"
+
+#: templates/base.html:147 templates/base.html:232
+msgid "Language"
+msgstr "Taal"
+
+#: templates/base.html:158 templates/base.html:242
+msgid "Currency"
+msgstr "Valuta"
+
+#: templates/base.html:230
+msgid "Language & currency"
+msgstr "Taal en valuta"
+
+#: templates/index.html:3
+msgid "Jobcus - AI Career Chat"
+msgstr "Jobcus - AI loopbaanchat"
+
+#: templates/index.html:15
+msgid "AI Career Chat • Built for Job Seekers"
+msgstr "AI-loopbaanchat • Gemaakt voor werkzoekenden"
+
+#: templates/index.html:16
+msgid "Your personal AI career advisor - in one simple chat"
+msgstr "Je persoonlijke loopbaanadviseur met AI in één eenvoudige chat"
+
+#: templates/index.html:18
+msgid ""
+"Ask career questions in natural language. Jobcus routes you to Resume "
+"Analyzer/Builder, Cover Letters, Interview Coach (Jeni), Skill-Gap, and "
+"live Job Insights."
+msgstr "Stel je loopbaanvragen in natuurlijke taal. Jobcus leidt je naar de CV-analyse/-bouwer, sollicitatiebrieven, de interviewcoach (Jeni), vaardigheidsanalyse en actuele arbeidsmarktinzichten."
+
+#: templates/index.html:21
+msgid "Try the AI Career Chat"
+msgstr "Probeer de AI-loopbaanchat"
+
+#: templates/index.html:22
+msgid "View pricing"
+msgstr "Bekijk prijzen"
+
+#: templates/index.html:29
+msgid "Can you analyse my resume for a UX Designer role?"
+msgstr "Kun je mijn cv analyseren voor een functie als UX-designer?"
+
+#: templates/index.html:30
+msgid ""
+"Sure - I’ll scan for ATS keywords, structure and gaps. Do you have the "
+"job link?"
+msgstr "Zeker – ik scan op ATS-trefwoorden, structuur en hiaten. Heb je de vacaturelink?"
+
+#: templates/index.html:31
+msgid "Here’s the JD. Also, what skills am I missing for Senior UX?"
+msgstr "Hier is de functieomschrijving. Welke vaardigheden mis ik nog voor Senior UX?"
+
+#: templates/index.html:32
+msgid ""
+"You’re strong on research. Add “Design Systems”, “A/B testing”, and "
+"“Figma Auto Layout”. I can generate a cover letter too."
+msgstr "Je bent sterk in onderzoek. Voeg “Design systems”, “A/B-testen” en “Figma Auto Layout” toe. Ik kan ook een sollicitatiebrief genereren."
+
+#: templates/index.html:36
+msgid "Ask your career question…"
+msgstr "Stel je loopbaanvraag…"
+
+#: templates/index.html:36
+msgid "chat input"
+msgstr "chatinvoer"
+
+#: templates/index.html:37
+msgid "Send"
+msgstr "Verzenden"
+
+#: templates/index.html:47
+msgid "How Jobcus works"
+msgstr "Hoe Jobcus werkt"
+
+#: templates/index.html:49
+msgid ""
+"<strong>Ask in chat</strong> - Tell us your goal (e.g., “switch to Data "
+"Analyst”)."
+msgstr "<strong>Vraag het in de chat</strong> – Vertel ons je doel (bijv. “overstappen naar data-analist”)."
+
+#: templates/index.html:50
+msgid ""
+"<strong>Auto-route</strong> - We provide you with the right tool (resume,"
+" cover letter, interview coach…)."
+msgstr "<strong>Automatische doorverwijzing</strong> – Wij bieden je het juiste hulpmiddel (cv, brief, interviewcoach…)."
+
+#: templates/index.html:51
+msgid ""
+"<strong>Iterate fast</strong> - Refine with AI suggestions and download "
+"polished results."
+msgstr "<strong>Itereer snel</strong> – Verfijn met AI-suggesties en download het eindresultaat."
+
+#: templates/index.html:78
+msgid "Everything flows from the chat"
+msgstr "Alles begint bij de chat"
+
+#: templates/index.html:79
+msgid "Ask one question. Jobcus routes you to the right tool."
+msgstr "Stel één vraag. Jobcus brengt je bij het juiste hulpmiddel."
+
+#: templates/index.html:83
+msgid ""
+"Upload your resume to get an ATS score, keyword match, and actionable "
+"fixes in seconds."
+msgstr "Upload je cv voor een ATS-score, trefwoordmatch en concrete verbeteringen in seconden."
+
+#: templates/index.html:87
+msgid ""
+"Build a polished, ATS-friendly resume with AI suggestions and "
+"modern/minimal templates."
+msgstr "Bouw een strak, ATS-vriendelijk cv met AI-suggesties en moderne/minimalistische sjablonen."
+
+#: templates/index.html:91
+msgid "Cover Letter Generator"
+msgstr "Generator voor sollicitatiebrieven"
+
+#: templates/index.html:91
+msgid ""
+"Turn your resume + job link into a polished, tailored letter in seconds. "
+"Choose tone and refine with AI."
+msgstr "Maak van je cv en de vacaturelink in seconden een gepersonaliseerde brief. Kies de toon en verfijn met AI."
+
+#: templates/index.html:95
+msgid "Interview Coach (Jeni)"
+msgstr "Interviewcoach (Jeni)"
+
+#: templates/index.html:95
+msgid ""
+"Practice role-specific questions and receive feedback on clarity, tone, "
+"and confidence - anytime."
+msgstr "Oefen functiespecifieke vragen en ontvang feedback op duidelijkheid, toon en zelfvertrouwen – wanneer je maar wilt."
+
+#: templates/index.html:99
+msgid "Skill-Gap Analyzer"
+msgstr "Vaardigheidsgapanalyse"
+
+#: templates/index.html:99
+msgid ""
+"Compare your skills to target roles and get a step-by-step upskilling "
+"plan with course suggestions."
+msgstr "Vergelijk je vaardigheden met je doelrollen en krijg een stappenplan voor ontwikkeling met cursusaanbevelingen."
+
+#: templates/index.html:105
+msgid ""
+"Create clear, inclusive job descriptions in minutes and ready to copy or "
+"download."
+msgstr "Maak binnen minuten duidelijke, inclusieve vacatureteksten die klaar zijn om te kopiëren of te downloaden."
+
+#: templates/index.html:115
+msgid "Loved by job seekers worldwide"
+msgstr "Geliefd bij werkzoekenden wereldwijd"
+
+#: templates/index.html:120
+msgid "“Jobcus helped me rebuild my resume and I got 3 interviews in a week.”"
+msgstr "“Jobcus hielp me mijn cv opnieuw op te bouwen en ik kreeg drie gesprekken in één week.”"
+
+#: templates/index.html:121
+msgid "- Aisha O., Product Designer"
+msgstr "– Aisha O., Productontwerper"
+
+#: templates/index.html:124
+msgid "“The interview coach felt real. I walked in confident and got an offer.”"
+msgstr "“De interviewcoach voelde echt aan. Ik ging vol vertrouwen naar binnen en kreeg een aanbod.”"
+
+#: templates/index.html:125
+msgid "- Marco R., Data Analyst"
+msgstr "– Marco R., Data-analist"
+
+#: templates/index.html:128
+msgid "“Skill-gap insights + learning plan = clarity. Exactly what I needed.”"
+msgstr "“Inzicht in vaardigheidslacunes + leerplan = duidelijkheid. Precies wat ik nodig had.”"
+
+#: templates/index.html:129
+msgid "- Hannah S., Marketing Associate"
+msgstr "– Hannah S., Marketingmedewerker"
+
+#: templates/index.html:142
+msgid "Ready to accelerate your job search?"
+msgstr "Klaar om je zoektocht te versnellen?"
+
+#: templates/index.html:143
+msgid "Start free. No credit card required."
+msgstr "Begin gratis. Geen creditcard nodig."
+
+#: templates/index.html:148
+msgid "you@email.com"
+msgstr "jij@email.com"
+
+#: templates/index.html:150
+msgid "Get started"
+msgstr "Aan de slag"
+
+#: templates/index.html:158
+msgid "FAQs"
+msgstr "Veelgestelde vragen"
+
+#: templates/index.html:161
+msgid "Expand All"
+msgstr "Alles uitklappen"
+
+#: templates/index.html:162
+msgid "Collapse All"
+msgstr "Alles inklappen"
+
+#: templates/index.html:167
+msgid "What is Jobcus?"
+msgstr "Wat is Jobcus?"
+
+#: templates/index.html:167
+msgid ""
+"Jobcus is an AI-powered career assistant designed to help job seekers "
+"build optimised resumes, analyse their skill gaps, prepare for "
+"interviews, and gain job market insights - all in one platform."
+msgstr "Jobcus is een AI-loopbaanassistent die werkzoekenden helpt om geoptimaliseerde cv's te maken, hun vaardigheidsgap te analyseren, zich voor te bereiden op interviews en arbeidsmarktinzichten te krijgen – allemaal in één platform."
+
+#: templates/index.html:168
+msgid "How does the Resume Builder work?"
+msgstr "Hoe werkt de CV-builder?"
+
+#: templates/index.html:168
+msgid ""
+"Simply fill in your career details and our AI formats it into a "
+"professionally structured resume. You can then download your resume in "
+"PDF, Word, or TXT formats."
+msgstr "Vul je loopbaangegevens in en onze AI zet ze om in een professioneel cv. Daarna kun je het downloaden als PDF, Word of TXT."
+
+#: templates/index.html:169
+msgid "What is Resume Optimisation?"
+msgstr "Wat is cv-optimalisatie?"
+
+#: templates/index.html:169
+msgid ""
+"Our AI scans your resume and offers an optimised version tailored for ATS"
+" (Applicant Tracking Systems) to improve your chances of getting hired."
+msgstr "Onze AI scant je cv en biedt een geoptimaliseerde versie voor ATS (Applicant Tracking Systems) om je kans op een baan te vergroten."
+
+#: templates/index.html:170
+msgid "What is the Resume Analyzer?"
+msgstr "Wat is de CV-analyse?"
+
+#: templates/index.html:170
+msgid ""
+"The analyzer scores your resume based on keywords, relevance, and "
+"formatting. It also highlights areas you can improve for better results."
+msgstr "De analyse geeft je cv een score op basis van trefwoorden, relevantie en opmaak en toont waar je kunt verbeteren."
+
+#: templates/index.html:171
+msgid "What kind of insights can I get from Job Insights?"
+msgstr "Welke inzichten krijg ik met Job Insights?"
+
+#: templates/index.html:171
+msgid ""
+"You can discover average salaries, job trends, in-demand skills, and "
+"opportunities by region - helping you make informed career choices."
+msgstr "Ontdek gemiddelde salarissen, trends, gevraagde vaardigheden en kansen per regio, zodat je gefundeerde keuzes maakt."
+
+#: templates/index.html:172
+msgid "What is the Interview Coach?"
+msgstr "Wat is de interviewcoach?"
+
+#: templates/index.html:172
+msgid ""
+"Our AI Interview Coach helps you rehearse job interview questions, "
+"suggests best answers, and provides feedback to boost your confidence."
+msgstr "Onze AI-interviewcoach helpt je oefenvragen, stelt de beste antwoorden voor en geeft feedback om je vertrouwen te vergroten."
+
+#: templates/index.html:173
+msgid "How is Jobcus different from other career tools?"
+msgstr "Hoe verschilt Jobcus van andere carrièretools?"
+
+#: templates/index.html:173
+msgid ""
+"Jobcus combines AI resume writing, real-time job market data, "
+"personalised interview coaching, and skill gap analysis - all in one "
+"simple platform."
+msgstr "Jobcus combineert cv-schrijven met AI, realtime arbeidsmarktdata, persoonlijke interviewcoaching en vaardigheidsgapanalyse – in één gebruiksvriendelijk platform."
+
+#: templates/index.html:174
+msgid "Is Jobcus free to use?"
+msgstr "Is Jobcus gratis te gebruiken?"
+
+#: templates/index.html:174
+msgid ""
+"Jobcus offers both free and premium features. You can build and analyse "
+"resumes for free, while advanced features may require a subscription."
+msgstr "Jobcus biedt gratis en premiumfuncties. Je kunt gratis cv's maken en analyseren, terwijl geavanceerde functies een abonnement kunnen vereisen."
+
+#: templates/index.html:175
+msgid "Can I upload my existing resume?"
+msgstr "Kan ik mijn huidige cv uploaden?"
+
+#: templates/index.html:175
+msgid ""
+"Yes! You can upload a PDF version of your resume, and our AI will analyse"
+" and suggest improvements instantly."
+msgstr "Ja! Je kunt een pdf van je cv uploaden en onze AI analyseert het direct en stelt verbeteringen voor."
+
+#: templates/index.html:176
+msgid "I found a bug or have feedback. What should I do?"
+msgstr "Ik heb een bug gevonden of feedback. Wat nu?"
+
+#: templates/index.html:176
+msgid ""
+"We’d love to hear from you! Use our contact form or reach out via "
+"support@jobcus.com. Your feedback helps us improve."
+msgstr "We horen graag van je! Gebruik het contactformulier of mail support@jobcus.com. Je feedback helpt ons verbeteren."
+
+#: templates/index.html:191
+msgid "Create your account"
+msgstr "Maak je account aan"
+
+#: templates/pricing.html:14
+msgid "Simple pricing for job seekers"
+msgstr "Eenvoudige prijzen voor werkzoekenden"
+
+#: templates/pricing.html:15
+msgid "Start free. Upgrade when you need the AI chat & advanced tools."
+msgstr ""
+"Begin gratis. Upgrade wanneer je de AI-chat en geavanceerde tools nodig "
+"hebt."
+
+#: templates/pricing.html:45
+msgid "Continue Free"
+msgstr "Ga gratis verder"
+
+#: templates/pricing.html:71
+msgid "Get Weekly Pass"
+msgstr "Krijg Weekpas"
+
+#: templates/pricing.html:77
+msgid "Most Popular"
+msgstr "Meest populair"
+
+#: templates/pricing.html:99
+msgid "Get Standard"
+msgstr "Kies Standaard"
+
+#: templates/pricing.html:124
+msgid "Get Premium"
+msgstr "Kies Premium"
+
+#: templates/pricing.html:133
+msgid "Pricing for employers & recruiters"
+msgstr "Prijzen voor werkgevers en recruiters"
+
+#: templates/pricing.html:134
+msgid ""
+"Start with the AI Job Description Generator - now with built-in employer "
+"chat for drafting, revisions, and hiring workflows."
+msgstr ""
+"Begin met de AI-vacaturegenerator – nu met ingebouwde werkgeverschat voor"
+" concepten, revisies en wervingsworkflows."
+
+#: templates/pricing.html:144 templates/subscribe.html:107
+msgid "Chat included"
+msgstr "Chat inbegrepen"
+
+#: templates/pricing.html:152 templates/subscribe.html:84
+msgid "AI Job Description Generator + AI Chat"
+msgstr "AI-vacaturegenerator + AI-chat"
+
+#: templates/pricing.html:156 templates/subscribe.html:87
+msgid "AI-Powered Chat:"
+msgstr "AI-aangedreven chat:"
+
+#: templates/pricing.html:160 templates/subscribe.html:87
+msgid "included"
+msgstr "inbegrepen"
+
+#: templates/pricing.html:171
+msgid "Start JD Generator"
+msgstr "Start vacaturegenerator"
+
+#: templates/pricing.html:178
+msgid ""
+"*Fair use policy applies. Need enterprise or annual? <a "
+"href=\"/employers#contact\">Contact sales</a>."
+msgstr ""
+"*Fair-usebeleid van toepassing. Heb je een enterprise- of jaarabonnement "
+"nodig? <a href=\"/employers#contact\">Neem contact op met sales</a>."
+
+#: templates/subscribe.html:101
+msgid "Confirm your plan"
+msgstr "Bevestig je abonnement"
+
+#: templates/subscribe.html:132
+msgid "Activate Free Plan"
+msgstr "Activeer gratis plan"
+
+#: templates/subscribe.html:132
+msgid "Continue to secure checkout"
+msgstr "Ga door naar beveiligde checkout"
+
+#: templates/subscribe.html:134
+msgid "Back to pricing"
+msgstr "Terug naar prijzen"

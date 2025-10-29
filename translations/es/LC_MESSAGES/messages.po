@@ -1,0 +1,649 @@
+msgid ""
+msgstr ""
+"Project-Id-Version:  Jobcus\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-10-26 19:47+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: es\n"
+"Language-Team: es <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: app.py:2007
+msgid "Free"
+msgstr "Gratis"
+
+#: app.py:2010
+msgid "Great for a quick check"
+msgstr "Ideal para una revisión rápida"
+
+#: app.py:2013
+msgid "<strong>2</strong> resume analyses / month (basic score + tips)"
+msgstr ""
+
+#: app.py:2014
+msgid "<strong>1</strong> AI cover letter / month"
+msgstr ""
+
+#: app.py:2015
+msgid "AI Resume Builder (basic templates; <strong>1</strong> download / month)"
+msgstr ""
+
+#: app.py:2016
+msgid "Skill-Gap snapshot (1 basic analysis / month)"
+msgstr ""
+
+#: app.py:2017
+#, fuzzy
+msgid "Job Insights (basic charts)"
+msgstr "Información laboral"
+
+#: app.py:2018
+msgid "Interview Coach (limited practice; <strong>1</strong> / month)"
+msgstr ""
+
+#: app.py:2019
+msgid "AI Chat trial: <strong>10 messages</strong> total"
+msgstr ""
+
+#: app.py:2020
+msgid "Local device history"
+msgstr ""
+
+#: app.py:2025
+msgid "Weekly Pass"
+msgstr "Pase semanal"
+
+#: app.py:2028
+msgid "For urgent applications"
+msgstr "Para candidaturas urgentes"
+
+#: app.py:2031
+msgid "AI Chat credits: <strong>100 messages</strong> / week"
+msgstr ""
+
+#: app.py:2032
+msgid "<strong>10</strong> resume analyses / week"
+msgstr ""
+
+#: app.py:2033
+msgid "<strong>5</strong> AI cover letters / week"
+msgstr ""
+
+#: app.py:2034
+msgid "Resume Builder: <strong>5 downloads</strong> / week"
+msgstr ""
+
+#: app.py:2035
+msgid "“Rebuild with AI” for resumes"
+msgstr ""
+
+#: app.py:2036
+#, fuzzy
+msgid "Skill-Gap (standard)"
+msgstr "Análisis de brechas de habilidades"
+
+#: app.py:2037 app.py:2057
+#, fuzzy
+msgid "Job Insights (full access)"
+msgstr "Información laboral"
+
+#: app.py:2038 app.py:2055
+#, fuzzy
+msgid "Interview Coach sessions"
+msgstr "Entrenador de entrevistas"
+
+#: app.py:2039 app.py:2060 app.py:2091 templates/subscribe.html:92
+msgid "Email support"
+msgstr ""
+
+#: app.py:2044
+msgid "Standard"
+msgstr "Estándar"
+
+#: app.py:2047
+msgid "Serious applications, smarter tools"
+msgstr "Candidaturas serias, herramientas más inteligentes"
+
+#: app.py:2050
+msgid "AI Chat credits: <strong>600 messages</strong> / month"
+msgstr ""
+
+#: app.py:2051
+msgid "<strong>50</strong> resume analyses / month (deep ATS + JD match)"
+msgstr ""
+
+#: app.py:2052
+msgid "<strong>20</strong> AI cover letters / month"
+msgstr ""
+
+#: app.py:2053
+msgid "Resume Builder: <strong>20 downloads</strong> / month"
+msgstr ""
+
+#: app.py:2054
+msgid "AI Optimize + Rebuild with AI"
+msgstr ""
+
+#: app.py:2056
+msgid "Skill-Gap (pro)"
+msgstr ""
+
+#: app.py:2058
+msgid "Download optimized PDF / DOCX / TXT"
+msgstr ""
+
+#: app.py:2059
+msgid "Save history across devices"
+msgstr ""
+
+#: app.py:2065
+msgid "Premium"
+msgstr "Premium"
+
+#: app.py:2068
+msgid "Best value for ongoing career growth"
+msgstr "La mejor opción para un crecimiento profesional continuo"
+
+#: app.py:2071
+msgid "AI Chat credits: <strong>10,800 messages</strong> / year (~1,000 / mo)"
+msgstr ""
+
+#: app.py:2072
+msgid "<strong>Unlimited*</strong> resume analyses (fair use)"
+msgstr ""
+
+#: app.py:2073
+msgid "<strong>Unlimited</strong> AI cover letters (fair use)"
+msgstr ""
+
+#: app.py:2074
+msgid "Resume Builder: <strong>unlimited</strong> downloads (fair use)"
+msgstr ""
+
+#: app.py:2075
+msgid "All Standard features + multi-resume versions & template pack"
+msgstr ""
+
+#: app.py:2076
+msgid "Priority support & early access to new AI tools"
+msgstr ""
+
+#: app.py:2081 templates/subscribe.html:81
+msgid "JD Generator"
+msgstr "Generador de descripciones"
+
+#: app.py:2084 templates/index.html:104
+msgid "AI Job Description Generator"
+msgstr "Generador de descripciones de puestos con IA"
+
+#: app.py:2087 templates/subscribe.html:88
+msgid "Unlimited* JD generations (fair use)"
+msgstr ""
+
+#: app.py:2088 templates/subscribe.html:89
+msgid "Brand tone presets"
+msgstr ""
+
+#: app.py:2089 templates/subscribe.html:90
+msgid "Export to DOCX/PDF"
+msgstr ""
+
+#: app.py:2090 templates/subscribe.html:91
+msgid "JD–skills taxonomy suggestions"
+msgstr ""
+
+#: templates/base.html:120 templates/base.html:215 templates/index.html:28
+msgid "AI Career Chat"
+msgstr "Chat profesional con IA"
+
+#: templates/base.html:121 templates/base.html:216 templates/index.html:83
+msgid "Resume Analyzer"
+msgstr "Analizador de CV"
+
+#: templates/base.html:123 templates/base.html:218
+msgid "Features"
+msgstr "Funciones"
+
+#: templates/base.html:125 templates/base.html:220 templates/index.html:87
+msgid "Resume Builder"
+msgstr "Generador de CV"
+
+#: templates/base.html:126 templates/base.html:221
+msgid "Cover Letter"
+msgstr "Carta de presentación"
+
+#: templates/base.html:127 templates/base.html:222
+msgid "Interview Coach"
+msgstr "Entrenador de entrevistas"
+
+#: templates/base.html:128 templates/base.html:223
+msgid "Skill Gap Analysis"
+msgstr "Análisis de brechas de habilidades"
+
+#: templates/base.html:129 templates/base.html:224
+msgid "Job Insights"
+msgstr "Información laboral"
+
+#: templates/base.html:132 templates/base.html:227
+msgid "Pricing"
+msgstr "Precios"
+
+#: templates/base.html:133 templates/base.html:228
+msgid "Employers"
+msgstr "Empleadores"
+
+#: templates/base.html:144
+msgid "Upgrade plan"
+msgstr "Actualizar plan"
+
+#: templates/base.html:146
+msgid "Log out"
+msgstr "Cerrar sesión"
+
+#: templates/base.html:148
+msgid "Sign up / Log in"
+msgstr "Registrarse / Iniciar sesión"
+
+#: templates/base.html:147 templates/base.html:232
+msgid "Language"
+msgstr "Idioma"
+
+#: templates/base.html:158 templates/base.html:242
+msgid "Currency"
+msgstr "Moneda"
+
+#: templates/base.html:230
+msgid "Language & currency"
+msgstr "Idioma y moneda"
+
+#: templates/index.html:3
+msgid "Jobcus - AI Career Chat"
+msgstr "Jobcus - Chat profesional con IA"
+
+#: templates/index.html:15
+msgid "AI Career Chat • Built for Job Seekers"
+msgstr "Chat profesional con IA • Diseñado para quienes buscan empleo"
+
+#: templates/index.html:16
+msgid "Your personal AI career advisor - in one simple chat"
+msgstr "Tu asesor de carrera con IA en un chat sencillo"
+
+#: templates/index.html:18
+msgid ""
+"Ask career questions in natural language. Jobcus routes you to Resume "
+"Analyzer/Builder, Cover Letters, Interview Coach (Jeni), Skill-Gap, and "
+"live Job Insights."
+msgstr "Haz preguntas sobre tu carrera en lenguaje natural. Jobcus te dirige al Analizador/Generador de CV, Cartas de presentación, Entrenador de entrevistas (Jeni), análisis de brechas de habilidades y oportunidades laborales en tiempo real."
+
+#: templates/index.html:21
+msgid "Try the AI Career Chat"
+msgstr "Probar el chat profesional con IA"
+
+#: templates/index.html:22
+msgid "View pricing"
+msgstr "Ver precios"
+
+#: templates/index.html:29
+msgid "Can you analyse my resume for a UX Designer role?"
+msgstr "¿Puedes analizar mi currículum para un puesto de Diseñador UX?"
+
+#: templates/index.html:30
+msgid ""
+"Sure - I’ll scan for ATS keywords, structure and gaps. Do you have the "
+"job link?"
+msgstr "Claro, revisaré palabras clave ATS, estructura y brechas. ¿Tienes el enlace de la vacante?"
+
+#: templates/index.html:31
+msgid "Here’s the JD. Also, what skills am I missing for Senior UX?"
+msgstr "Aquí está la descripción. Además, ¿qué habilidades me faltan para un puesto de UX senior?"
+
+#: templates/index.html:32
+msgid ""
+"You’re strong on research. Add “Design Systems”, “A/B testing”, and "
+"“Figma Auto Layout”. I can generate a cover letter too."
+msgstr "Destacas en investigación. Añade “Sistemas de diseño”, “Pruebas A/B” y “Auto Layout de Figma”. También puedo generar una carta de presentación."
+
+#: templates/index.html:36
+msgid "Ask your career question…"
+msgstr "Haz tu pregunta de carrera…"
+
+#: templates/index.html:36
+msgid "chat input"
+msgstr "entrada del chat"
+
+#: templates/index.html:37
+msgid "Send"
+msgstr "Enviar"
+
+#: templates/index.html:47
+msgid "How Jobcus works"
+msgstr "Cómo funciona Jobcus"
+
+#: templates/index.html:49
+msgid ""
+"<strong>Ask in chat</strong> - Tell us your goal (e.g., “switch to Data "
+"Analyst”)."
+msgstr "<strong>Pregunta en el chat</strong> - Cuéntanos tu objetivo (p. ej., “cambiar a Analista de Datos”)."
+
+#: templates/index.html:50
+msgid ""
+"<strong>Auto-route</strong> - We provide you with the right tool (resume,"
+" cover letter, interview coach…)."
+msgstr "<strong>Derivación automática</strong> - Te ofrecemos la herramienta adecuada (currículum, carta, entrenador de entrevistas…)."
+
+#: templates/index.html:51
+msgid ""
+"<strong>Iterate fast</strong> - Refine with AI suggestions and download "
+"polished results."
+msgstr "<strong>Itera rápido</strong> - Mejora con sugerencias de IA y descarga resultados pulidos."
+
+#: templates/index.html:78
+msgid "Everything flows from the chat"
+msgstr "Todo parte del chat"
+
+#: templates/index.html:79
+msgid "Ask one question. Jobcus routes you to the right tool."
+msgstr "Haz una pregunta. Jobcus te dirige a la herramienta correcta."
+
+#: templates/index.html:83
+msgid ""
+"Upload your resume to get an ATS score, keyword match, and actionable "
+"fixes in seconds."
+msgstr "Sube tu currículum para obtener una puntuación ATS, coincidencia de palabras clave y mejoras accionables en segundos."
+
+#: templates/index.html:87
+msgid ""
+"Build a polished, ATS-friendly resume with AI suggestions and "
+"modern/minimal templates."
+msgstr "Crea un currículum pulido y compatible con ATS con sugerencias de IA y plantillas modernas/minimalistas."
+
+#: templates/index.html:91
+msgid "Cover Letter Generator"
+msgstr "Generador de cartas de presentación"
+
+#: templates/index.html:91
+msgid ""
+"Turn your resume + job link into a polished, tailored letter in seconds. "
+"Choose tone and refine with AI."
+msgstr "Convierte tu currículum y la vacante en una carta personalizada en segundos. Elige el tono y perfílala con IA."
+
+#: templates/index.html:95
+msgid "Interview Coach (Jeni)"
+msgstr "Entrenador de entrevistas (Jeni)"
+
+#: templates/index.html:95
+msgid ""
+"Practice role-specific questions and receive feedback on clarity, tone, "
+"and confidence - anytime."
+msgstr "Practica preguntas específicas del rol y recibe comentarios sobre claridad, tono y confianza, en cualquier momento."
+
+#: templates/index.html:99
+msgid "Skill-Gap Analyzer"
+msgstr "Analizador de brechas de habilidades"
+
+#: templates/index.html:99
+msgid ""
+"Compare your skills to target roles and get a step-by-step upskilling "
+"plan with course suggestions."
+msgstr "Compara tus habilidades con los roles objetivo y obtén un plan de mejora paso a paso con sugerencias de cursos."
+
+#: templates/index.html:105
+msgid ""
+"Create clear, inclusive job descriptions in minutes and ready to copy or "
+"download."
+msgstr "Crea descripciones de puesto claras e inclusivas en minutos, listas para copiar o descargar."
+
+#: templates/index.html:115
+msgid "Loved by job seekers worldwide"
+msgstr "Amado por quienes buscan empleo en todo el mundo"
+
+#: templates/index.html:120
+msgid "“Jobcus helped me rebuild my resume and I got 3 interviews in a week.”"
+msgstr "“Jobcus me ayudó a rehacer mi currículum y conseguí 3 entrevistas en una semana.”"
+
+#: templates/index.html:121
+msgid "- Aisha O., Product Designer"
+msgstr "– Aisha O., Diseñadora de producto"
+
+#: templates/index.html:124
+msgid "“The interview coach felt real. I walked in confident and got an offer.”"
+msgstr "“El entrenador de entrevistas se sintió real. Entré con confianza y obtuve una oferta.”"
+
+#: templates/index.html:125
+msgid "- Marco R., Data Analyst"
+msgstr "– Marco R., Analista de datos"
+
+#: templates/index.html:128
+msgid "“Skill-gap insights + learning plan = clarity. Exactly what I needed.”"
+msgstr "“Diagnóstico de brechas + plan de aprendizaje = claridad. Justo lo que necesitaba.”"
+
+#: templates/index.html:129
+msgid "- Hannah S., Marketing Associate"
+msgstr "– Hannah S., Asociada de marketing"
+
+#: templates/index.html:142
+msgid "Ready to accelerate your job search?"
+msgstr "¿Listo para acelerar tu búsqueda de empleo?"
+
+#: templates/index.html:143
+msgid "Start free. No credit card required."
+msgstr "Empieza gratis. No se requiere tarjeta."
+
+#: templates/index.html:148
+msgid "you@email.com"
+msgstr "tu@email.com"
+
+#: templates/index.html:150
+msgid "Get started"
+msgstr "Comenzar"
+
+#: templates/index.html:158
+msgid "FAQs"
+msgstr "Preguntas frecuentes"
+
+#: templates/index.html:161
+msgid "Expand All"
+msgstr "Expandir todo"
+
+#: templates/index.html:162
+msgid "Collapse All"
+msgstr "Contraer todo"
+
+#: templates/index.html:167
+msgid "What is Jobcus?"
+msgstr "¿Qué es Jobcus?"
+
+#: templates/index.html:167
+msgid ""
+"Jobcus is an AI-powered career assistant designed to help job seekers "
+"build optimised resumes, analyse their skill gaps, prepare for "
+"interviews, and gain job market insights - all in one platform."
+msgstr "Jobcus es un asistente de carrera con IA diseñado para ayudar a quienes buscan empleo a crear currículos optimizados, analizar sus brechas de habilidades, prepararse para entrevistas y obtener información del mercado laboral, todo en una sola plataforma."
+
+#: templates/index.html:168
+msgid "How does the Resume Builder work?"
+msgstr "¿Cómo funciona el Generador de CV?"
+
+#: templates/index.html:168
+msgid ""
+"Simply fill in your career details and our AI formats it into a "
+"professionally structured resume. You can then download your resume in "
+"PDF, Word, or TXT formats."
+msgstr "Completa tus datos profesionales y nuestra IA los formatea en un currículum profesional. Luego puedes descargarlo en PDF, Word o TXT."
+
+#: templates/index.html:169
+msgid "What is Resume Optimisation?"
+msgstr "¿Qué es la optimización de currículum?"
+
+#: templates/index.html:169
+msgid ""
+"Our AI scans your resume and offers an optimised version tailored for ATS"
+" (Applicant Tracking Systems) to improve your chances of getting hired."
+msgstr "Nuestra IA analiza tu currículum y ofrece una versión optimizada para ATS (sistemas de seguimiento de candidatos) para mejorar tus posibilidades de contratación."
+
+#: templates/index.html:170
+msgid "What is the Resume Analyzer?"
+msgstr "¿Qué es el Analizador de CV?"
+
+#: templates/index.html:170
+msgid ""
+"The analyzer scores your resume based on keywords, relevance, and "
+"formatting. It also highlights areas you can improve for better results."
+msgstr "El analizador puntúa tu currículum según palabras clave, relevancia y formato. También resalta áreas que puedes mejorar para obtener mejores resultados."
+
+#: templates/index.html:171
+msgid "What kind of insights can I get from Job Insights?"
+msgstr "¿Qué información puedo obtener con Job Insights?"
+
+#: templates/index.html:171
+msgid ""
+"You can discover average salaries, job trends, in-demand skills, and "
+"opportunities by region - helping you make informed career choices."
+msgstr "Descubre salarios promedio, tendencias laborales, habilidades demandadas y oportunidades por región, lo que te ayuda a tomar decisiones informadas."
+
+#: templates/index.html:172
+msgid "What is the Interview Coach?"
+msgstr "¿Qué es el Entrenador de entrevistas?"
+
+#: templates/index.html:172
+msgid ""
+"Our AI Interview Coach helps you rehearse job interview questions, "
+"suggests best answers, and provides feedback to boost your confidence."
+msgstr "Nuestro Entrenador de entrevistas con IA te ayuda a practicar preguntas, sugiere las mejores respuestas y brinda retroalimentación para aumentar tu confianza."
+
+#: templates/index.html:173
+msgid "How is Jobcus different from other career tools?"
+msgstr "¿En qué se diferencia Jobcus de otras herramientas profesionales?"
+
+#: templates/index.html:173
+msgid ""
+"Jobcus combines AI resume writing, real-time job market data, "
+"personalised interview coaching, and skill gap analysis - all in one "
+"simple platform."
+msgstr "Jobcus combina redacción de currículos con IA, datos del mercado laboral en tiempo real, entrenamiento personalizado para entrevistas y análisis de brechas de habilidades, todo en una plataforma sencilla."
+
+#: templates/index.html:174
+msgid "Is Jobcus free to use?"
+msgstr "¿Jobcus es gratis?"
+
+#: templates/index.html:174
+msgid ""
+"Jobcus offers both free and premium features. You can build and analyse "
+"resumes for free, while advanced features may require a subscription."
+msgstr "Jobcus ofrece funciones gratuitas y premium. Puedes crear y analizar currículos gratis, mientras que las funciones avanzadas pueden requerir suscripción."
+
+#: templates/index.html:175
+msgid "Can I upload my existing resume?"
+msgstr "¿Puedo subir mi currículum actual?"
+
+#: templates/index.html:175
+msgid ""
+"Yes! You can upload a PDF version of your resume, and our AI will analyse"
+" and suggest improvements instantly."
+msgstr "¡Sí! Puedes subir un PDF de tu currículum y nuestra IA lo analizará y sugerirá mejoras al instante."
+
+#: templates/index.html:176
+msgid "I found a bug or have feedback. What should I do?"
+msgstr "Encontré un error o tengo comentarios. ¿Qué hago?"
+
+#: templates/index.html:176
+msgid ""
+"We’d love to hear from you! Use our contact form or reach out via "
+"support@jobcus.com. Your feedback helps us improve."
+msgstr "¡Nos encantaría saber de ti! Usa nuestro formulario de contacto o escribe a support@jobcus.com. Tus comentarios nos ayudan a mejorar."
+
+#: templates/index.html:191
+msgid "Create your account"
+msgstr "Crea tu cuenta"
+
+#: templates/pricing.html:14
+msgid "Simple pricing for job seekers"
+msgstr "Precios simples para quienes buscan empleo"
+
+#: templates/pricing.html:15
+msgid "Start free. Upgrade when you need the AI chat & advanced tools."
+msgstr ""
+"Comienza gratis. Mejora cuando necesites el chat de IA y herramientas "
+"avanzadas."
+
+#: templates/pricing.html:45
+msgid "Continue Free"
+msgstr "Continuar gratis"
+
+#: templates/pricing.html:71
+msgid "Get Weekly Pass"
+msgstr "Obtener pase semanal"
+
+#: templates/pricing.html:77
+msgid "Most Popular"
+msgstr "Más popular"
+
+#: templates/pricing.html:99
+msgid "Get Standard"
+msgstr "Elegir Estándar"
+
+#: templates/pricing.html:124
+msgid "Get Premium"
+msgstr "Elegir Premium"
+
+#: templates/pricing.html:133
+msgid "Pricing for employers & recruiters"
+msgstr "Precios para empleadores y reclutadores"
+
+#: templates/pricing.html:134
+msgid ""
+"Start with the AI Job Description Generator - now with built-in employer "
+"chat for drafting, revisions, and hiring workflows."
+msgstr ""
+"Comienza con el Generador de descripciones de puestos con IA; ahora "
+"incluye chat para empleadores para borradores, revisiones y flujos de "
+"contratación."
+
+#: templates/pricing.html:144 templates/subscribe.html:107
+msgid "Chat included"
+msgstr "Chat incluido"
+
+#: templates/pricing.html:152 templates/subscribe.html:84
+msgid "AI Job Description Generator + AI Chat"
+msgstr "Generador de descripciones con IA + chat IA"
+
+#: templates/pricing.html:156 templates/subscribe.html:87
+msgid "AI-Powered Chat:"
+msgstr "Chat impulsado por IA:"
+
+#: templates/pricing.html:160 templates/subscribe.html:87
+msgid "included"
+msgstr "incluido"
+
+#: templates/pricing.html:171
+msgid "Start JD Generator"
+msgstr "Iniciar generador de descripciones"
+
+#: templates/pricing.html:178
+msgid ""
+"*Fair use policy applies. Need enterprise or annual? <a "
+"href=\"/employers#contact\">Contact sales</a>."
+msgstr ""
+"*Se aplica la política de uso justo. ¿Necesitas un plan empresarial o "
+"anual? <a href=\"/employers#contact\">Contacta ventas</a>."
+
+#: templates/subscribe.html:101
+msgid "Confirm your plan"
+msgstr "Confirma tu plan"
+
+#: templates/subscribe.html:132
+msgid "Activate Free Plan"
+msgstr "Activar plan gratuito"
+
+#: templates/subscribe.html:132
+msgid "Continue to secure checkout"
+msgstr "Continuar al pago seguro"
+
+#: templates/subscribe.html:134
+msgid "Back to pricing"
+msgstr "Volver a los precios"

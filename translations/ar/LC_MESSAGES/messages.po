@@ -1,0 +1,149 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Jobcus\n"
+"Report-Msgid-Bugs-To: support@jobcus.com\n"
+"POT-Creation-Date: 2025-10-26 00:00+0000\n"
+"PO-Revision-Date: 2025-10-27 00:00+0000\n"
+"Last-Translator: Jobcus Team <support@jobcus.com>\n"
+"Language: ar\n"
+"Language-Team: Arabic\n"
+"Plural-Forms: nplurals=6; plural=(n==0?0:n==1?1:n==2?2:(n%100>=3 && n%100<=10)?3:(n%100>=11 && n%100<=99)?4:5);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: templates/base.html:120 templates/base.html:215 templates/index.html:28
+msgid "AI Career Chat"
+msgstr "محادثة الوظائف بالذكاء الاصطناعي"
+
+#: templates/base.html:121 templates/base.html:216 templates/index.html:83
+msgid "Resume Analyzer"
+msgstr "محلل السيرة الذاتية"
+
+#: templates/base.html:123 templates/base.html:218
+msgid "Features"
+msgstr "الميزات"
+
+#: templates/base.html:125 templates/base.html:220
+msgid "Resume Builder"
+msgstr "منشئ السيرة الذاتية"
+
+#: templates/base.html:126 templates/base.html:221
+msgid "Cover Letter"
+msgstr "خطاب التغطية"
+
+#: templates/base.html:127 templates/base.html:222
+msgid "Interview Coach"
+msgstr "مدرب المقابلات"
+
+#: templates/base.html:128 templates/base.html:223
+msgid "Skill Gap Analysis"
+msgstr "تحليل فجوة المهارات"
+
+#: templates/base.html:129 templates/base.html:224
+msgid "Job Insights"
+msgstr "رؤى الوظائف"
+
+#: templates/base.html:132 templates/base.html:227
+msgid "Pricing"
+msgstr "الأسعار"
+
+#: templates/base.html:133 templates/base.html:228
+msgid "Employers"
+msgstr "أصحاب العمل"
+
+#: templates/base.html:139
+msgid "Language"
+msgstr "اللغة"
+
+#: templates/base.html:146
+msgid "Currency"
+msgstr "العملة"
+
+#: templates/base.html:142
+msgid "Language & currency"
+msgstr "اللغة والعملة"
+
+#: templates/base.html:188
+msgid "Upgrade plan"
+msgstr "ترقية الخطة"
+
+#: templates/base.html:190
+msgid "Log out"
+msgstr "تسجيل الخروج"
+
+#: templates/base.html:192
+msgid "Sign up / Log in"
+msgstr "إنشاء حساب / تسجيل الدخول"
+
+#: templates/index.html:22
+msgid "AI Career Chat • Built for Job Seekers"
+msgstr "محادثة ذكاء اصطناعي مُصممة للباحثين عن عمل"
+
+#: templates/index.html:16
+msgid "Jobcus - AI Career Chat"
+msgstr "جوبكاس - محادثة وظائف بالذكاء الاصطناعي"
+
+#: templates/index.html:15
+msgid "Your personal AI career advisor - in one simple chat"
+msgstr "مستشارك المهني بالذكاء الاصطناعي في محادثة واحدة بسيطة"
+
+#: templates/index.html:18
+msgid "Ask career questions in natural language. Jobcus routes you to Resume Analyzer/Builder, Cover Letters, Interview Coach (Jeni), Skill-Gap, and live Job Insights."
+msgstr "اطرح أسئلتك المهنية بلغة طبيعية. يقوم Jobcus بتوجيهك إلى محلل السيرة، منشئ السيرة، خطابات التغطية، مدرب المقابلات (جيني)، تحليل فجوة المهارات، ورؤى الوظائف المباشرة."
+
+#: templates/index.html:21
+msgid "Try the AI Career Chat"
+msgstr "جرّب محادثة الذكاء الاصطناعي"
+
+#: templates/index.html:22 templates/base.html:130
+msgid "View pricing"
+msgstr "عرض الأسعار"
+
+#: templates/index.html:35
+msgid "Ask your career question…"
+msgstr "اطرح سؤالك المهني…"
+
+#: templates/index.html:36
+msgid "chat input"
+msgstr "حقل المحادثة"
+
+#: templates/index.html:37
+msgid "Send"
+msgstr "إرسال"
+
+#: templates/index.html:68
+msgid "How Jobcus works"
+msgstr "كيف يعمل Jobcus"
+
+#: templates/index.html:110
+msgid "Loved by job seekers worldwide"
+msgstr "محبوب من الباحثين عن عمل حول العالم"
+
+#: templates/index.html:130
+msgid "Ready to accelerate your job search?"
+msgstr "هل أنت مستعد لتسريع رحلة البحث عن وظيفة؟"
+
+#: templates/index.html:131
+msgid "Start free. No credit card required."
+msgstr "ابدأ مجانًا. لا حاجة لبطاقة ائتمان."
+
+#: templates/index.html:137
+msgid "Get started"
+msgstr "ابدأ الآن"
+
+#: templates/index.html:148
+msgid "FAQs"
+msgstr "الأسئلة الشائعة"
+
+#: templates/index.html:160
+msgid "Expand All"
+msgstr "توسيع الكل"
+
+#: templates/index.html:161
+msgid "Collapse All"
+msgstr "طي الكل"
+
+#: templates/index.html:188
+msgid "Create your account"
+msgstr "أنشئ حسابك"
