@@ -132,6 +132,31 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <a href="/employers">{{ _("Employers") }}</a>
           </nav>
 
+          <div class="locale-switcher">
+            <button id="localeToggle" class="locale-toggle" aria-haspopup="true" aria-expanded="false">
+             
+              <span class="locale-currency">{{ current_currency_meta.symbol }} {{ current_currency }}</span>
+              
+              <svg class="locale-chevron" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M4.47 5.97a.75.75 0 0 1 1.06 0L8 8.44l2.47-2.47a.75.75 0 0 1 1.06 1.06l-3 3a.75.75 0 0 1-1.06 0l-3-3a.75.75 0 0 1 0-1.06Z" fill="currentColor" />
+              </svg>
+            </button>
+            <div id="localeMenu" class="locale-menu" role="menu" aria-hidden="true">
+             
+              <div class="locale-section">
+                <div class="locale-section-title">{{ _("Currency") }}</div>
+                {% for code, meta in available_currencies.items() %}
+                  <a class="locale-option {% if code == current_currency %}active{% endif %}"
+                     href="{{ url_for('set_currency', currency_code=code, next=request.full_path if request else '') }}"
+                     role="menuitem">
+                    <span class="flag">{{ meta.flag }}</span>
+                    <span class="label">{{ meta.symbol }} {{ code }}</span>
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
           {# Avatar + dropdown #}
           {% set _first = None %}
           {% set _lasti = '' %}
@@ -189,17 +214,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </div>
           <a href="/employers">{{ _("Employers") }}</a>
           <div class="mobile-locale">
-            <div class="mobile-locale-title">{{ _("Language & currency") }}</div>
-            <div class="mobile-locale-group">
-              <div class="mobile-locale-sub">{{ _("Language") }}</div>
-              {% for code, meta in available_languages.items() %}
-                <a class="mobile-locale-option {% if code == current_language %}active{% endif %}"
-                   href="{{ url_for('set_lang', lang_code=code, next=request.full_path if request else '') }}">
-                  <span class="flag">{{ meta.flag }}</span>
-                  <span class="label">{{ meta.name }}</span>
-                </a>
-              {% endfor %}
-            </div>
+            <div class="mobile-locale-title">{{ _("currency") }}</div>
+            
             <div class="mobile-locale-group">
               <div class="mobile-locale-sub">{{ _("Currency") }}</div>
               {% for code, meta in available_currencies.items() %}
