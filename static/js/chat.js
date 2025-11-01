@@ -180,12 +180,8 @@ function maybeShowScrollIcon() {
   const chatboxEl = document.getElementById("chatbox");
   const scrollIcon = document.getElementById("scrollDown");
   if (!chatboxEl || !scrollIcon) return;
-
-  const hasOverflow = chatboxEl.scrollHeight > chatboxEl.clientHeight + 20;
-  const distanceFromBottom = chatboxEl.scrollHeight - chatboxEl.scrollTop - chatboxEl.clientHeight;
-  const shouldShow = hasOverflow && distanceFromBottom > 32; // only show when user is away from the bottom
-
-  scrollIcon.classList.toggle("is-visible", shouldShow);
+  scrollIcon.style.display =
+    chatboxEl.scrollHeight > chatboxEl.clientHeight + 20 ? "block" : "none";
 }
 
 // NEW: always snap the chat view to the latest message
@@ -948,19 +944,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatbox = document.getElementById("chatbox");
   const form    = document.getElementById("chat-form");
   const input   = document.getElementById("userInput");
-  const scrollDownBtn = document.getElementById("scrollDown");
+
+  // Wire scroll icon visibility
+  chatbox?.addEventListener('scroll', () => maybeShowScrollIcon());
+  maybeShowScrollIcon();
   
   // Wire file input → attachments
   document.getElementById('file-upload')
     ?.addEventListener('change', (e) => window.handleAttach?.(e));
 
   // Bind scroll listener so scrolldown icon shows/hides properly
-chatbox?.addEventListener("scroll", () => maybeShowScrollIcon());
-maybeShowScrollIcon();
-scrollDownBtn?.addEventListener("click", () => {
-  scrollToBottom();
-  maybeShowScrollIcon();
-});
+  chatbox?.addEventListener("scroll", () => maybeShowScrollIcon());
 
   // Keep textarea autosizing in sync
   input?.addEventListener("input", () => {
