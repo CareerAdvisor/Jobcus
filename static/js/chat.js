@@ -949,21 +949,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const form    = document.getElementById("chat-form");
   const input   = document.getElementById("userInput");
   const scrollDownBtn = document.getElementById("scrollDown");
-
-  // Wire scroll icon visibility
-  chatbox?.addEventListener('scroll', () => maybeShowScrollIcon());
-  maybeShowScrollIcon();
   
   // Wire file input → attachments
   document.getElementById('file-upload')
     ?.addEventListener('change', (e) => window.handleAttach?.(e));
 
   // Bind scroll listener so scrolldown icon shows/hides properly
-  chatbox?.addEventListener("scroll", () => maybeShowScrollIcon());
-  scrollDownBtn?.addEventListener("click", () => {
-    scrollToBottom();
-    maybeShowScrollIcon();
-  });
+chatbox?.addEventListener("scroll", () => maybeShowScrollIcon());
+maybeShowScrollIcon();
+scrollDownBtn?.addEventListener("click", () => {
+  scrollToBottom();
+  maybeShowScrollIcon();
+});
 
   // Keep textarea autosizing in sync
   input?.addEventListener("input", () => {
