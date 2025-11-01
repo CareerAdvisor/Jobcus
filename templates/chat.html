@@ -235,11 +235,12 @@
   </section>
 
   {# Scroll-to-bottom icon — in DOM so JS can toggle it #}
-  <img id="scrollDown"
-       class="scroll-down-icon"
-       src="{{ url_for('static', filename='icons/scrolldown.svg') }}"
-       alt="Scroll Down"
-       title="Jump to latest" />
+  <button id="scrollDown"
+          type="button"
+          class="scroll-down-icon"
+          aria-label="Jump to latest">
+    <img src="{{ url_for('static', filename='icons/scrolldown.svg') }}" alt="" aria-hidden="true">
+  </button>
 </main>
 {% endblock %}
 
