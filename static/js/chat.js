@@ -185,7 +185,7 @@ function maybeShowScrollIcon() {
   const distanceFromBottom = chatboxEl.scrollHeight - chatboxEl.scrollTop - chatboxEl.clientHeight;
   const shouldShow = hasOverflow && distanceFromBottom > 32; // only show when user is away from the bottom
 
-  scrollIcon.style.display = shouldShow ? "block" : "none";
+  scrollIcon.classList.toggle("is-visible", shouldShow);
 }
 
 // NEW: always snap the chat view to the latest message
