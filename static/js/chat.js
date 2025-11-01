@@ -180,8 +180,12 @@ function maybeShowScrollIcon() {
   const chatboxEl = document.getElementById("chatbox");
   const scrollIcon = document.getElementById("scrollDown");
   if (!chatboxEl || !scrollIcon) return;
-  scrollIcon.style.display =
-    chatboxEl.scrollHeight > chatboxEl.clientHeight + 20 ? "block" : "none";
+
+  const hasOverflow = chatboxEl.scrollHeight > chatboxEl.clientHeight + 20;
+  const distanceFromBottom = chatboxEl.scrollHeight - chatboxEl.scrollTop - chatboxEl.clientHeight;
+  const shouldShow = hasOverflow && distanceFromBottom > 32; // only show when user is away from the bottom
+
+  scrollIcon.style.display = shouldShow ? "block" : "none";
 }
 
 // NEW: always snap the chat view to the latest message
