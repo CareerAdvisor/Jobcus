@@ -1196,6 +1196,32 @@ document.addEventListener("DOMContentLoaded", () => {
   maybeShowScrollIcon();
   scrollToBottom();
 
+  // Make sure the newest thing is visible after it hits the DOM
+  function revealNewEntry(el) {
+    if (!el) return;
+    const box = document.getElementById("chatbox");
+    // Let the browser lay out the new node, then scroll
+    requestAnimationFrame(() => {
+      el.scrollIntoView({ block: "end", behavior: "instant" });
+      if (box) box.scrollTop = box.scrollHeight;
+    });
+  }
+  
+  // On mobile, keep last message visible when the keyboard opens
+  (function fixMobileKeyboardOverlap(){
+    if (!window.visualViewport) return;
+    const box  = document.getElementById("chatbox");
+    const form = document.getElementById("chat-form");
+    const adjust = () => {
+      const kb = Math.max(0, window.innerHeight - visualViewport.height);
+      if (box)  box.style.paddingBottom = `calc(var(--dock-h) + ${kb}px + 16px)`;
+      if (form) form.style.bottom       = `${Math.max(0, env?.("safe-area-inset-bottom") || 0)}px`;
+    };
+    visualViewport.addEventListener("resize", adjust);
+    visualViewport.addEventListener("scroll", adjust);
+    adjust();
+  })();
+
   // ---- send handler (self-contained and async) ----
   form?.addEventListener("submit", async (evt) => {
     evt.preventDefault();
@@ -1215,8 +1241,10 @@ document.addEventListener("DOMContentLoaded", () => {
       </h2>
     `;
     chatbox.appendChild(userMsg);
+    revealNewEntry(userMsg);       // 👈 add this
     scrollToBottom();
     maybeShowScrollIcon();
+
 
     // Save user message locally
     const msgs = getCurrent();
@@ -1240,6 +1268,13 @@ document.addEventListener("DOMContentLoaded", () => {
     aiBlock.appendChild(suggestRegion);
     aiBlock.appendChild(answerRegion);
     chatbox.appendChild(aiBlock);
+    
+    renderThinkingPlaceholder(answerRegion, "Thinking…");
+    revealNewEntry(aiBlock);       // 👈 add this
+    showAIStatus("Thinking…");
+    scrollToAI(answerRegion);
+    scrollToBottom();
+    maybeShowScrollIcon();
 
     const featureIntent = detectFeatureIntent(message);
     if (featureIntent) {
