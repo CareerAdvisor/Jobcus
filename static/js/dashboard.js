@@ -280,12 +280,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // “Analyze updated resume” button
   const openReBtn = document.getElementById("openReanalyze");
-  openReBtn?.addEventListener("click", () => {
+  openReBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
     openReBtn.classList.add("is-hot");
     setTimeout(() => openReBtn.classList.remove("is-hot"), 700);
-    dropzone?.scrollIntoView({ behavior: "smooth", block: "center" });
-    dropzone?.classList.add("pulse");
-    setTimeout(() => dropzone?.classList.remove("pulse"), 800);
+  
+    // Open the hidden file input directly
+    fileInput?.click();
   });
 
   // Helpers
@@ -406,10 +407,15 @@ document.addEventListener("DOMContentLoaded", () => {
     showFileName(f);
   });
 
+  // Auto-run analysis on file pick — REPLACE the old block with this
   fileInput?.addEventListener("change", () => {
     const f = fileInput.files?.[0];
-    if (analyzeBtn) analyzeBtn.disabled = !f;
-    showFileName(f || null);
+    if (!f) return;
+    if (analyzeBtn) analyzeBtn.disabled = false;
+    showFileName(f);
+  
+    // Immediately run the analysis so the user doesn’t have to click again
+    runAnalysis();
   });
 
   // -------- Run analysis --------
