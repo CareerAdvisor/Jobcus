@@ -10,6 +10,7 @@ window.escapeHtml = function (s = "") {
     .replace(/'/g, "&#39;");
 };
 
+// One global helper
 // One global helper (named so we can export it later)
 function insertSuggestion(text) {
   const el = document.getElementById('userInput');
@@ -35,7 +36,6 @@ document.addEventListener('click', (e) => {
     window.insertSuggestion(b.dataset.suggest);
   }
 });
-
 
 // ──────────────────────────────────────────────────────────────
 // Ensure cookies (SameSite/Lax) are sent on all fetches
@@ -190,17 +190,6 @@ function scrollToBottom() {
   if (!box) return;
   box.scrollTop = box.scrollHeight;
 }
-
-function revealNewEntry(el) {
-  if (!el) return;
-  const box = document.getElementById("chatbox");
-  requestAnimationFrame(() => {
-    el.scrollIntoView({ block: "end", behavior: "auto" });
-    // one more frame to catch late layout (images/fonts)
-    requestAnimationFrame(() => { if (box) box.scrollTop = box.scrollHeight; });
-  });
-}
-
 
 // Minimal helpers your old code referenced
 function showUpgradeBanner(msg) {
@@ -1207,40 +1196,6 @@ document.addEventListener("DOMContentLoaded", () => {
   maybeShowScrollIcon();
   scrollToBottom();
 
-  // Make sure the newest thing is visible after it hits the DOM
-  function revealNewEntry(el) {
-    if (!el) return;
-    const box = document.getElementById("chatbox");
-    // Let the browser lay out the new node, then scroll
-    requestAnimationFrame(() => {
-      el.scrollIntoView({ block: "end", behavior: "instant" });
-      if (box) box.scrollTop = box.scrollHeight;
-    });
-  }
-  
-  // Keep last message visible when the mobile keyboard opens (padding only)
-  (function fixMobileKeyboardOverlap(){
-    if (!window.visualViewport) return;
-  
-    const box = document.getElementById("chatbox");
-  
-    const adjust = () => {
-      const kb = Math.max(0, window.innerHeight - visualViewport.height); // keyboard height
-      const dock = parseInt(
-        getComputedStyle(document.documentElement).getPropertyValue('--dock-h')
-      ) || 72;
-  
-      if (box) {
-        box.style.paddingBottom = `${dock + 24 + kb}px`; // reserve space
-        box.style.scrollPaddingBottom = `${dock + 16 + kb}px`;
-      }
-    };
-  
-    visualViewport.addEventListener("resize", adjust);
-    visualViewport.addEventListener("scroll", adjust);
-    adjust();
-  })();
-
   // ---- send handler (self-contained and async) ----
   form?.addEventListener("submit", async (evt) => {
     evt.preventDefault();
@@ -1260,11 +1215,8 @@ document.addEventListener("DOMContentLoaded", () => {
       </h2>
     `;
     chatbox.appendChild(userMsg);
-    input?.blur();                 // <-- add
-    revealNewEntry(userMsg);       // 👈 add this
     scrollToBottom();
     maybeShowScrollIcon();
-
 
     // Save user message locally
     const msgs = getCurrent();
@@ -1288,14 +1240,6 @@ document.addEventListener("DOMContentLoaded", () => {
     aiBlock.appendChild(suggestRegion);
     aiBlock.appendChild(answerRegion);
     chatbox.appendChild(aiBlock);
-    
-    renderThinkingPlaceholder(answerRegion, "Thinking…");
-    input?.blur();                 // <-- add
-    revealNewEntry(aiBlock);       // 👈 add this
-    showAIStatus("Thinking…");
-    scrollToAI(answerRegion);
-    scrollToBottom();
-    maybeShowScrollIcon();
 
     const featureIntent = detectFeatureIntent(message);
     if (featureIntent) {
