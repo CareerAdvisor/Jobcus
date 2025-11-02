@@ -259,7 +259,6 @@ html, body, .chat-shell, .chat-main, .chatbox{ max-width:100%; overflow-x:hidden
     box-sizing: border-box;
     text-align: left;
   }
-   
   .chatbox .chat-entry.ai-answer,
   .chatbox .chat-entry.user{ width:100% !important; max-width:100% !important; }
   .chatbox .chat-entry.ai-answer .markdown,
@@ -458,6 +457,20 @@ html { -webkit-text-size-adjust: 100%; }
   margin-top:.6rem;
 }
 
+/* Stop new messages from hiding under the dock / header */
+.chatbox{
+  scroll-behavior: smooth;
+  scroll-padding-top:  calc(var(--header-h, 60px) + 10px);
+  scroll-padding-bottom: max(
+    calc(var(--dock-h, 72px) + 12px),
+    calc(env(safe-area-inset-bottom, 0px) + var(--dock-h, 72px))
+  );
+  padding-bottom: max(
+    calc(var(--dock-h, 72px) + 20px),
+    calc(env(safe-area-inset-bottom, 0px) + var(--dock-h, 72px) + 20px)
+  );
+}
+
 /* Keep entries clear of header & dock */
 .chatbox .chat-entry{
   scroll-margin-top:  calc(var(--header-h, 60px) + 10px);
@@ -510,20 +523,9 @@ html { -webkit-text-size-adjust: 100%; }
   flex: 1 1 auto;
   overflow-y: auto;
   padding: 16px;
-
-  /* leave enough room so the last bubble never hides behind the composer,
-     and account for iOS safe-area when the keyboard shows */
-padding-bottom: max(
-   calc(var(--dock-h, 72px) + 24px),
-   calc(env(safe-area-inset-bottom, 0px) + var(--dock-h, 72px) + 24px)
-  );
-scroll-behavior: smooth;
-scroll-padding-top:  calc(var(--header-h, 60px) + 10px);
-scroll-padding-bottom: max(
-   calc(var(--dock-h, 72px) + 16px),
-   calc(env(safe-area-inset-bottom, 0px) + var(--dock-h, 72px) + 16px)
-  );
- overscroll-behavior: contain;
+  /* leave room so last bubble isn't under the composer */
+  padding-bottom: 96px; /* ≈ composer height */
+  scroll-behavior: smooth;
 }
 
 /* composer at bottom, not inside the scroll flow */
