@@ -23,6 +23,7 @@
   const upload = document.querySelector(".upload-card");
   
   if (score) score.style.display = "";
+  if (upload) upload.style.display = "none";
   
   // If your dashboard renderer fills the card from localStorage, trigger it now if needed
   if (typeof window.renderResumeFromStorage === "function") {
