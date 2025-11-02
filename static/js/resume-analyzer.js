@@ -326,7 +326,9 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("resumeKind", isPdf(f) ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 
         incCount();
-        window.location.href = "/dashboard";
+        // Flag the intent and jump with an anchor so the dashboard can react instantly
+        sessionStorage.setItem("jobcus:jumpScore", "1");
+        window.location.assign("/dashboard#score");
       } catch (err) {
         console.error(err);
         showInlineBanner(dashAnalyzeBtn.closest(".upload-card"), "Analysis failed. Please try again.", "error");
