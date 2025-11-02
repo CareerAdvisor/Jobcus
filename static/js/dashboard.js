@@ -31,7 +31,7 @@
 
   // Bring the card into view, taking the fixed header into account
   requestAnimationFrame(() => {
-    try { score?.scrollIntoView({ block: "start", behavior: "instant" }); } catch {}
+    try { score?.scrollIntoView({ block: "start", behavior: "auto" }); } catch {}
     // nudge to absolute bottom once layout settles (fonts/images)
     const boxTop = score?.getBoundingClientRect().top ?? 0;
     if (boxTop < 0) window.scrollBy({ top: boxTop - 12, left: 0, behavior: "instant" });
