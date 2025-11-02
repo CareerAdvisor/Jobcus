@@ -19,16 +19,6 @@ function insertSuggestion(text) {
   window.autoResize?.(el);
 }
 
-function revealNewEntry(el) {
-  if (!el) return;
-  const box = document.getElementById("chatbox");
-  requestAnimationFrame(() => {
-    el.scrollIntoView({ block: "end", behavior: "auto" });
-    // one more frame to catch late layout (images/fonts)
-    requestAnimationFrame(() => { if (box) box.scrollTop = box.scrollHeight; });
-  });
-}
-
 // ===== GLOBAL HELPERS (place near the top, before DOMContentLoaded) =====
 window.setChatActive = function (on) {
   document.body.classList.toggle('chat-active', !!on);
@@ -45,6 +35,7 @@ document.addEventListener('click', (e) => {
     window.insertSuggestion(b.dataset.suggest);
   }
 });
+
 
 // ──────────────────────────────────────────────────────────────
 // Ensure cookies (SameSite/Lax) are sent on all fetches
@@ -199,6 +190,17 @@ function scrollToBottom() {
   if (!box) return;
   box.scrollTop = box.scrollHeight;
 }
+
+function revealNewEntry(el) {
+  if (!el) return;
+  const box = document.getElementById("chatbox");
+  requestAnimationFrame(() => {
+    el.scrollIntoView({ block: "end", behavior: "auto" });
+    // one more frame to catch late layout (images/fonts)
+    requestAnimationFrame(() => { if (box) box.scrollTop = box.scrollHeight; });
+  });
+}
+
 
 // Minimal helpers your old code referenced
 function showUpgradeBanner(msg) {
