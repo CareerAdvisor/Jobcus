@@ -7,6 +7,39 @@
   };
 })();
 
+(function jumpToScoreIfRequested() {
+  const wantsScore =
+    location.hash === "#score" ||
+    new URLSearchParams(location.search).get("show") === "score" ||
+    sessionStorage.getItem("jobcus:jumpScore") === "1";
+
+  if (!wantsScore) return;
+
+  // clear the one-shot flag
+  sessionStorage.removeItem("jobcus:jumpScore");
+
+  // Ensure the score card is visible (your HTML uses inline style="display:none")
+  const score = document.getElementById("resume-score-card");
+  const upload = document.querySelector(".upload-card");
+
+  if (score) score.style.display = "";
+  if (upload) upload.style.display = "none";       // optional: collapse the upload block on arrival
+
+  // If your dashboard renderer fills the card from localStorage, trigger it now if needed
+  if (typeof window.renderResumeFromStorage === "function") {
+    try { window.renderResumeFromStorage(); } catch (_) {}
+  }
+
+  // Bring the card into view, taking the fixed header into account
+  requestAnimationFrame(() => {
+    try { score?.scrollIntoView({ block: "start", behavior: "instant" }); } catch {}
+    // nudge to absolute bottom once layout settles (fonts/images)
+    const boxTop = score?.getBoundingClientRect().top ?? 0;
+    if (boxTop < 0) window.scrollBy({ top: boxTop - 12, left: 0, behavior: "instant" });
+    score?.focus?.();
+  });
+})();
+
 /* ======================= GLOBAL HELPERS (defined early) ======================= */
 // Use the global escapeHtml if already provided by template; else define a local one.
 const escapeHtml =
