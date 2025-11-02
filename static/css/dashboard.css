@@ -356,3 +356,22 @@ html, body { overflow-x: hidden; background: var(--bg); }
 /* just in case: no horizontal scroll on small screens */
 html, body { overflow-x: hidden; }
 
+/* Smooth transitions for buttons */
+.btn { transition: color .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease; }
+
+/* Outline button: turn white text on hover */
+.btn-outline:hover,
+.btn-outline:focus-visible {
+  background: var(--brand);
+  color: #fff;                 /* <-- makes “Analyze updated resume” appear white */
+  border-color: var(--brand);
+}
+
+/* Keep disabled buttons from changing on hover */
+.btn[disabled]:hover,
+.btn[disabled]:focus-visible {
+  background: inherit;
+  color: inherit;
+  border-color: inherit;
+  box-shadow: none;
+}
