@@ -10,7 +10,6 @@ window.escapeHtml = function (s = "") {
     .replace(/'/g, "&#39;");
 };
 
-// One global helper
 // One global helper (named so we can export it later)
 function insertSuggestion(text) {
   const el = document.getElementById('userInput');
@@ -18,6 +17,16 @@ function insertSuggestion(text) {
   el.value = text;
   el.focus();
   window.autoResize?.(el);
+}
+
+function revealNewEntry(el) {
+  if (!el) return;
+  const box = document.getElementById("chatbox");
+  requestAnimationFrame(() => {
+    el.scrollIntoView({ block: "end", behavior: "auto" });
+    // one more frame to catch late layout (images/fonts)
+    requestAnimationFrame(() => { if (box) box.scrollTop = box.scrollHeight; });
+  });
 }
 
 // ===== GLOBAL HELPERS (place near the top, before DOMContentLoaded) =====
