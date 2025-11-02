@@ -21,10 +21,9 @@
   // Ensure the score card is visible (your HTML uses inline style="display:none")
   const score = document.getElementById("resume-score-card");
   const upload = document.querySelector(".upload-card");
-
+  
   if (score) score.style.display = "";
-  if (upload) upload.style.display = "none";       // optional: collapse the upload block on arrival
-
+  
   // If your dashboard renderer fills the card from localStorage, trigger it now if needed
   if (typeof window.renderResumeFromStorage === "function") {
     try { window.renderResumeFromStorage(); } catch (_) {}
