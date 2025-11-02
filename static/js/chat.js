@@ -1218,28 +1218,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   
-  // On mobile, keep last message visible when the keyboard opens
+  // Keep last message visible when the mobile keyboard opens (padding only)
   (function fixMobileKeyboardOverlap(){
     if (!window.visualViewport) return;
   
-    const box  = document.getElementById("chatbox");
-    const form = document.getElementById("chat-form");
+    const box = document.getElementById("chatbox");
   
     const adjust = () => {
-      // Approx keyboard height = window.innerHeight - viewport height (>= 0)
-      const kb = Math.max(0, window.innerHeight - visualViewport.height);
+      const kb = Math.max(0, window.innerHeight - visualViewport.height); // keyboard height
+      const dock = parseInt(
+        getComputedStyle(document.documentElement).getPropertyValue('--dock-h')
+      ) || 72;
   
-      // Add extra space at the bottom of the scroll area while keyboard is open
       if (box) {
-        const base = 24; // extra cushion below the composer
-        const dock =  (parseInt(getComputedStyle(document.documentElement)
-                      .getPropertyValue('--dock-h')) || 72);
-        box.style.paddingBottom = `${dock + base + kb}px`;
-      }
-  
-      // Keep the composer visually docked; no CSS env() here
-      if (form) {
-        form.style.transform = kb ? `translateY(-${kb}px)` : '';
+        box.style.paddingBottom = `${dock + 24 + kb}px`; // reserve space
+        box.style.scrollPaddingBottom = `${dock + 16 + kb}px`;
       }
     };
   
@@ -1247,7 +1240,6 @@ document.addEventListener("DOMContentLoaded", () => {
     visualViewport.addEventListener("scroll", adjust);
     adjust();
   })();
-
 
   // ---- send handler (self-contained and async) ----
   form?.addEventListener("submit", async (evt) => {
@@ -1268,6 +1260,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </h2>
     `;
     chatbox.appendChild(userMsg);
+    input?.blur();                 // <-- add
     revealNewEntry(userMsg);       // 👈 add this
     scrollToBottom();
     maybeShowScrollIcon();
@@ -1297,6 +1290,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chatbox.appendChild(aiBlock);
     
     renderThinkingPlaceholder(answerRegion, "Thinking…");
+    input?.blur();                 // <-- add
     revealNewEntry(aiBlock);       // 👈 add this
     showAIStatus("Thinking…");
     scrollToAI(answerRegion);
