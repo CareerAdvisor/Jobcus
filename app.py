@@ -1910,6 +1910,8 @@ Disallow: /logout
 Disallow: /dashboard
 Disallow: /forgot-password
 Disallow: /api/
+# Disallow all URLs that contain a query string (?) to block currency/locale links, etc.
+Disallow: /*?
 # Note: Do NOT block static assets (CSS, JS, images), so we omit /static/
 
 Sitemap: https://www.jobcus.com/sitemap.xml
