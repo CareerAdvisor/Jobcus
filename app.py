@@ -2062,9 +2062,8 @@ def cookies():
 
 @app.route("/pricing")
 def pricing():
-    free_used = bool(getattr(current_user, "free_plan_used", False)) if getattr(current_user, "is_authenticated", False) else False
-    plans = _plans()
-    return render_template("pricing.html", free_used=free_used, plans=plans)
+    # Temporary redirect: users never see pricing.html
+    return redirect(url_for("index"), code=302)
 
 def _plans():
     currency = _current_currency()
