@@ -3071,9 +3071,13 @@ def _first_name_fallback():
         return fn or "there"
     return "there"
 
-def _chat_completion(model: str, user_msg: str, history=None) -> str:
+def _chat_completion(model: str, user_msg: str, history=None, fallback_model: str | None = None) -> str:
     """
     Minimal OpenAI wrapper. `history` can be a list of {role, content}.
+
+    If the requested model fails (common for preview models like gpt-5), we
+    automatically retry with the caller-provided fallback_model so users still
+    get an answer instead of a hard failure.
     """
     msgs = [
         {"role": "system", "content": CAREER_SYSTEM_PROMPT},
@@ -3086,15 +3090,28 @@ def _chat_completion(model: str, user_msg: str, history=None) -> str:
                 msgs.append({"role": m["role"], "content": m["content"]})
     msgs.append({"role": "user", "content": user_msg})
 
-    try:
+    def _run(model_id: str):
         resp = _client().chat.completions.create(
-            model=model or "gpt-4o-mini",
+            model=model_id or "gpt-4o-mini",
             messages=msgs,
             temperature=0.4,
         )
         return (resp.choices[0].message.content or "").strip()
+
+    try:
+        return _run(model)
     except Exception:
-        # Log if you want: current_app.logger.exception("OpenAI error")
+        current_app.logger.warning("OpenAI chat call failed for %s; attempting fallback", model, exc_info=True)
+
+        # Try once more with the safer fallback model if provided
+        if fallback_model and fallback_model != model:
+            try:
+                return _run(fallback_model)
+            except Exception:
+                current_app.logger.warning(
+                    "Fallback chat call also failed for %s", fallback_model, exc_info=True
+                )
+
         return "Sorry—I'm having trouble reaching the AI right now. Please try again."
 
 # SINGLE SOURCE OF TRUTH for chat
