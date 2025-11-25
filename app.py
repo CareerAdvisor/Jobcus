@@ -3125,6 +3125,9 @@ def api_ask():
     model     = choose_model(requested)
     conv_id   = data.get("conversation_id")
 
+    allowed_for_plan = allowed_models_for_plan((getattr(current_user, "plan", "free") or "free"))
+    plan_fallback_model = allowed_for_plan[0] if allowed_for_plan else model
+
     if not message:
         return jsonify(error="bad_request", message="message is required"), 400
 
@@ -3220,8 +3223,14 @@ def api_ask():
     history = list(reversed(ctx))
 
     # 6) call model
-    ai_reply = _chat_completion(model=model, user_msg=message, history=history)
-
+    fallback_for_chat = plan_fallback_model if plan_fallback_model != model else None
+    ai_reply = _chat_completion(
+        model=model,
+        user_msg=message,
+        history=history,
+        fallback_model=fallback_for_chat,
+    )
+    
     # 7) persist assistant message
     admin.table("conversation_messages").insert({
         "conversation_id": conv_id, "role": "assistant", "content": ai_reply
