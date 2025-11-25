@@ -1142,6 +1142,13 @@ def _dedupe(seq):
 
 def _available_models():
     """Return a set of model ids available to your account (best-effort)."""
+     # Some preview/alpha models (e.g., early "gpt-5" releases) might not appear in
+    # the public list API. When that happens, filtering by availability removes
+    # the user-selected model. Allow opting out of the filter so those models stay
+    # in the allow-list.
+    if os.getenv("MODEL_AVAILABILITY_FILTER", "0").strip().lower() not in {"1", "true", "yes", "on"}:
+        return None
+        
     try:
         client = current_app.config["OPENAI_CLIENT"]
         return {m.id for m in client.models.list().data}
@@ -1183,7 +1190,7 @@ def allowed_models_for_plan(plan: str) -> list[str]:
     STANDARD_ALLOW  = [s.strip() for s in (os.getenv("STANDARD_MODEL_ALLOW",
                            os.getenv("PAID_MODEL_ALLOW", "")) or "").split(",") if s.strip()]
     PREMIUM_ALLOW   = [s.strip() for s in (os.getenv("PREMIUM_MODEL_ALLOW",
-                           "gpt-4o-mini, gpt-4o, gpt-5-mini, gpt-5") or "").split(",") if s.strip()]
+                           "gpt-4o-mini, gpt-4o, gpt-5, gpt-5-thinking") or "").split(",") if s.strip()]
 
     # NEW: Employer JD allow-list
     EMPLOYER_JD_ALLOW = [s.strip() for s in (
