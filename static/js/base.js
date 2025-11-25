@@ -74,14 +74,30 @@ window.autoResize = window.autoResize || function (ta) {
 (function () {
   const originalFetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
-    init.credentials = init.credentials || 'include'; // send cookies
+    // Figure out the destination origin for this request
+    let urlOrigin = window.location.origin;
+    try {
+      const url = typeof input === "string" || input instanceof URL
+        ? new URL(input, window.location.origin)
+        : (input && input.url ? new URL(input.url) : null);
+      if (url) urlOrigin = url.origin;
+    } catch { /* ignore parsing errors */ }
+    const sameOrigin = urlOrigin === window.location.origin;
 
-    const token = (typeof getCSRFToken === 'function') ? getCSRFToken() : null;
-    if (token) {
-      init.headers = Object.assign(
-        { 'X-CSRF-Token': token },   // or 'X-CSRFToken' / 'X-XSRF-TOKEN' based on your server
-        init.headers || {}
-      );
+    // Default credentials: include only for same-origin; omit for cross-origin (e.g., Supabase)
+    if (!init.credentials) {
+      init.credentials = sameOrigin ? 'include' : 'omit';
+    }
+
+    // Only attach CSRF headers for same-origin calls
+    if (sameOrigin) {
+      const token = (typeof getCSRFToken === 'function') ? getCSRFToken() : null;
+      if (token) {
+        init.headers = Object.assign(
+          { 'X-CSRF-Token': token },   // or 'X-CSRFToken' / 'X-XSRF-TOKEN' based on your server
+          init.headers || {}
+        );
+      }
     }
 
     return originalFetch(input, init);
